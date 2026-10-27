@@ -85,6 +85,156 @@ the middleware itself return a `500` carrying the same headers. The raw PHP
 path needs no such flag: `helmet_boot()` sends the headers before your code
 runs, so they are already on the wire by the time an exception can happen.
 
+### Laravel
+
+The Laravel adapter is a service provider, two middlewares and a config file.
+It only wires and configures. Every rule (what the headers say, how a nonce is
+made, how a CSP is merged) lives in the core, so Laravel and raw PHP cannot
+drift apart. The suite runs against Laravel 13 with Orchestra Testbench.
+
+#### Install the adapter
+
+Strap It On:
+
+```
+composer require waynestate/helmet
+```
+
+Package discovery registers `Waynestate\Helmet\Laravel\HelmetServiceProvider`,
+so there is nothing to add to `bootstrap/providers.php`. The provider merges
+the `helmet` config and appends two middlewares to the `web` group:
+
+- `SecurityHeaders` sends the headers in [The headers](#the-headers) and strips
+  `X-Powered-By`. They go out on error pages too.
+- `InjectRibbon` adds the environment ribbon (below).
+
+They are appended through the HTTP kernel, so they run after Laravel's own
+`web` middleware and stay in the group when another package adds to it. Two
+edges to know about: a route outside the `web` group (the `api` group, say) is
+not covered, so add `Waynestate\Helmet\Laravel\SecurityHeaders::class` to it
+yourself; and a request that matches no route never enters the `web` group, so
+a plain `404` goes out without HELMET's headers.
+
+#### Publish the config
+
+```
+php artisan vendor:publish --tag=helmet-config
+```
+
+This copies `config/helmet.php` into your app. Do it: it is the best place to
+change the CSP, because the policy is a PHP array there, not JSON squeezed into
+`.env`. The config file is also the one place HELMET reads `env()`, so
+`php artisan config:cache` keeps working.
+
+#### Trust the proxy, once
+
+HELMET decides on its own whether a request was really HTTPS, from
+`HELMET_PROXIES`. Laravel has a separate trusted-proxy setting that drives
+`url()`, secure cookies and `$request->isSecure()`, and it can only be set in
+`bootstrap/app.php`, not in a service provider. Add this to the
+`Application::configure(...)` chain there, once, listing the same address as
+`HELMET_PROXIES`:
+
+```php
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->trustProxies(at: ['172.18.0.1']);
+})
+```
+
+Use a literal list. That closure runs before the configuration is loaded, so
+`config('helmet.proxies')` does not exist yet and calling it throws. As in the
+raw PHP section, list only the address HA-Proxy connects from, never a whole
+private range.
+
+The `/up` health route is Laravel's own: keep `health: '/up'` in
+`withRouting()`. The adapter registers no route.
+
+#### Environment variables
+
+| Variable | Config key | Default | What it does |
+| --- | --- | --- | --- |
+| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`, for example `172.18.0.1`. Empty trusts nothing. |
+| `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
+| `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
+| `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |
+| `HELMET_POLICY_PATH` | `helmet.policy_path` | `vendor/waynestate/creed/policy/policy.json` if it exists, else `null` | The CREED `policy.json`. The Laravel middlewares do not read it yet. |
+
+#### Customizing the CSP in Laravel
+
+`helmet.csp` takes the same shape as the raw PHP `csp` option and follows the
+same rule: it is merged over the default, per directive. A directive you set
+replaces the default's, a directive you leave out keeps it, and `null` removes
+one. Open the published `config/helmet.php` and replace the
+`$csp = SecurityHeaders::defaultCspPolicy();` line:
+
+```php
+$csp = [
+    'img-src' => ["'self'", 'data:', 'https://images.example.edu'],
+    'form-action' => null,
+];
+```
+
+If you would rather use the environment, `HELMET_CSP` takes the same array as
+JSON. In a `.env` file it needs double quotes and escaped inner quotes, which
+is the reason to publish the config instead:
+
+```
+HELMET_CSP="{\"img-src\":[\"'self'\",\"data:\"],\"form-action\":null}"
+```
+
+Invalid JSON is ignored and the default policy stays, so a typo in the
+environment cannot loosen the CSP.
+
+#### The nonce in Blade
+
+The middleware puts the per-request nonce on the request as the attribute
+`helmet.csp_nonce`, the same name the PSR-15 middleware uses. In Blade:
+
+```blade
+<script nonce="{{ request()->attributes->get('helmet.csp_nonce') }}">
+    // allowed by the nonce, and free to load more scripts (strict-dynamic)
+</script>
+```
+
+In a controller it is `$request->attributes->get('helmet.csp_nonce')`. A new
+nonce is made for every request. Repetition is a fine Helmet song and a
+terrible nonce.
+
+If you load your bundle with `@vite`, hand Laravel's Vite helper the same
+nonce before the tag, so the `script` tags it prints satisfy the CSP:
+
+```blade
+@php(\Illuminate\Support\Facades\Vite::useCspNonce(request()->attributes->get('helmet.csp_nonce')))
+@vite(['resources/js/app.js'])
+```
+
+#### The ribbon
+
+In `local`, `development`, `dev`, `testing`, `test` and `staging`, `InjectRibbon`
+adds `<div class="helmet-ribbon" data-environment="staging">staging</div>`
+right after the opening `<body>` tag of an HTML response, so nobody mistakes a
+test site for the real one. It never appears in `production`, on JSON or other
+non-HTML responses, or on HTML with no `<body>`. The package ships no
+stylesheet; style `.helmet-ribbon` in your own CSS. Even with
+`HELMET_RIBBON=true`, production never gets it, so there is no Aftertaste.
+
+#### Raw PHP and Laravel agree
+
+Both paths call `SecurityHeaders::build()`, so for the same request and
+settings they send the same headers. A test pins that down: it compares what
+the Laravel middleware sends, name and value, with `build()`. The settings map
+like this:
+
+| Setting | Raw PHP (`helmet_boot()`) | Laravel |
+| --- | --- | --- |
+| Trusted proxies | `trusted_proxies` | `HELMET_PROXIES` / `helmet.proxies` |
+| CSP overrides | `csp` | `HELMET_CSP` / `helmet.csp`, same merge, `null` removes |
+| HSTS max-age | `hsts_max_age` | `HELMET_HSTS_MAX_AGE` / `helmet.hsts` |
+| HSTS subdomains | `hsts_include_subdomains` | always on; there is no Laravel setting yet |
+| Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
+| Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
+| Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
+
 ## The headers
 
 Every response gets the same set, built by one shared function:

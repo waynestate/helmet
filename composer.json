@@ -18,17 +18,26 @@
     },
     "require-dev": {
         "nyholm/psr7": "^1.8",
+        "orchestra/testbench": "^10.0 || ^11.0",
         "phpunit/phpunit": "^11.5"
     },
     "suggest": {
         "laravel/framework": "For the Laravel adapter (step 2)"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Waynestate\\Helmet\\Laravel\\HelmetServiceProvider"
+            ]
+        }
     },
     "autoload": {
         "psr-4": {
             "Waynestate\\Helmet\\": "src/"
         },
         "files": [
-            "src/functions.php"
+            "src/functions.php",
+            "src/Ribbon/functions.php"
         ]
     },
     "autoload-dev": {
@@ -40,7 +49,10 @@
         "test": "phpunit"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "platform": {
+            "php": "8.3.0"
+        }
     },
     "minimum-stability": "stable",
     "prefer-stable": true
