@@ -78,6 +78,13 @@ $middleware = [
 `SecurityHeadersMiddleware` sets the request attribute `helmet.csp_nonce` so a
 downstream handler can read the same nonce the CSP header carries.
 
+The headers are sent even when the inner handler throws. By default the
+middleware rethrows, so the framework's error handler still runs and produces
+the error page; pass `rethrow: false` (and a PSR-17 `ResponseFactory`) to make
+the middleware itself return a `500` carrying the same headers. The raw PHP
+path needs no such flag: `helmet_boot()` sends the headers before your code
+runs, so they are already on the wire by the time an exception can happen.
+
 ## The headers
 
 Every response gets the same set, built by one shared function:

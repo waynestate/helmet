@@ -2,6 +2,7 @@
 
 namespace Waynestate\Helmet\Tests\Headers;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
@@ -25,6 +26,20 @@ final class SecurityHeadersMiddlewareTest extends TestCase
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 return (new Response(200))->withHeader('X-Powered-By', 'PHP/8.2');
+            }
+        };
+    }
+
+    private function throwingHandler(\Throwable $e): RequestHandlerInterface
+    {
+        return new class($e) implements RequestHandlerInterface {
+            public function __construct(private readonly \Throwable $e)
+            {
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                throw $this->e;
             }
         };
     }
@@ -201,5 +216,60 @@ final class SecurityHeadersMiddlewareTest extends TestCase
             $expected['X-Content-Type-Options'],
             $response->getHeaderLine('X-Content-Type-Options')
         );
+    }
+
+    public function testRethrowsByDefaultWhenHandlerThrows(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware($proxies);
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('boom');
+
+        $middleware->process($request, $this->throwingHandler(new \RuntimeException('boom')));
+    }
+
+    public function testReturns500WithHeadersWhenRethrowIsFalse(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $factory = new Psr17Factory();
+        $middleware = new SecurityHeadersMiddleware($proxies, null, false, $factory);
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->throwingHandler(new \RuntimeException('boom')));
+
+        self::assertSame(500, $response->getStatusCode());
+        self::assertSame('nosniff', $response->getHeaderLine('X-Content-Type-Options'));
+        self::assertSame('SAMEORIGIN', $response->getHeaderLine('X-Frame-Options'));
+        self::assertTrue($response->hasHeader('Content-Security-Policy'));
+        self::assertMatchesRegularExpression(
+            "#'nonce-[A-Za-z0-9+/=]+'#",
+            $response->getHeaderLine('Content-Security-Policy')
+        );
+    }
+
+    public function testRethrowFalseWithoutFactoryThrows(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware($proxies, null, false);
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('ResponseFactory');
+
+        $middleware->process($request, $this->throwingHandler(new \RuntimeException('boom')));
     }
 }

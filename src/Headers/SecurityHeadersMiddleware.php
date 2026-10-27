@@ -2,6 +2,7 @@
 
 namespace Waynestate\Helmet\Headers;
 
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -16,6 +17,10 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * the headers (including a per-request CSP nonce), exposes the nonce to the
  * application as the "helmet.csp_nonce" request attribute, and removes the
  * X-Powered-By header.
+ *
+ * The headers are sent even when the inner handler throws. By default the
+ * middleware rethrows so the framework's error handler still runs; when
+ * rethrow is false it returns a 500 response carrying the same headers.
  */
 final class SecurityHeadersMiddleware implements MiddlewareInterface
 {
@@ -26,10 +31,18 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
      * @param array<string, list<string>|null>|null $cspPolicy Merged per
      *        directive over the default policy. A directive set to null is
      *        removed. null (the default) uses the default policy unchanged.
+     * @param bool $rethrow When the inner handler throws, rethrow so the
+     *        framework's error handler runs (the default). When false, the
+     *        middleware returns a 500 response with the security headers
+     *        instead of propagating the exception.
+     * @param ResponseFactoryInterface|null $responseFactory Used to build the
+     *        500 response when rethrow is false. Only needed on that path.
      */
     public function __construct(
         private readonly TrustedProxies $proxies,
-        ?array $cspPolicy = null
+        ?array $cspPolicy = null,
+        private readonly bool $rethrow = true,
+        private readonly ?ResponseFactoryInterface $responseFactory = null
     ) {
         $this->cspPolicy = SecurityHeaders::mergePolicies(
             SecurityHeaders::defaultCspPolicy(),
@@ -45,12 +58,37 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
 
         $request = $request->withAttribute('helmet.csp_nonce', $nonce);
 
-        $response = $handler->handle($request);
+        try {
+            $response = $handler->handle($request);
+        } catch (\Throwable $e) {
+            if ($this->rethrow) {
+                throw $e;
+            }
+            $response = $this->errorResponse();
+        }
 
         foreach ($headers as $name => $value) {
             $response = $response->withHeader($name, $value);
         }
 
         return $response->withoutHeader('X-Powered-By');
+    }
+
+    /**
+     * Build the 500 response returned when the inner handler throws and
+     * rethrow is false.
+     */
+    private function errorResponse(): ResponseInterface
+    {
+        if ($this->responseFactory === null) {
+            throw new \RuntimeException(
+                'SecurityHeadersMiddleware needs a PSR-17 ResponseFactory to '
+                . 'build the 500 response when rethrow is false.'
+            );
+        }
+
+        return $this->responseFactory
+            ->createResponse(500)
+            ->withHeader('Content-Type', 'text/plain; charset=utf-8');
     }
 }
