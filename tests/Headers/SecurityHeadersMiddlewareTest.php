@@ -59,7 +59,10 @@ final class SecurityHeadersMiddlewareTest extends TestCase
         self::assertSame('nosniff', $response->getHeaderLine('X-Content-Type-Options'));
         self::assertSame('SAMEORIGIN', $response->getHeaderLine('X-Frame-Options'));
         self::assertSame('strict-origin-when-cross-origin', $response->getHeaderLine('Referrer-Policy'));
-        self::assertSame('camera=(), geolocation=(), microphone=()', $response->getHeaderLine('Permissions-Policy'));
+        self::assertSame(
+            'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
+            $response->getHeaderLine('Permissions-Policy')
+        );
     }
 
     public function testCspContainsDefaultPolicyAndNonce(): void
@@ -103,6 +106,22 @@ final class SecurityHeadersMiddlewareTest extends TestCase
             'max-age=31536000; includeSubDomains',
             $response->getHeaderLine('Strict-Transport-Security')
         );
+    }
+
+    public function testHstsHonorsCustomMaxAgeAndSubDomainSetting(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        // A short max-age with no subdomains is the staged-rollout starting point.
+        $middleware = new SecurityHeadersMiddleware($proxies, null, true, null, 600, false);
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertSame('max-age=600', $response->getHeaderLine('Strict-Transport-Security'));
     }
 
     public function testNoHstsWhenNotHttps(): void

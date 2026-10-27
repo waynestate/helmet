@@ -124,24 +124,62 @@ final class SecurityHeaders
      * Build the full list of security headers.
      *
      * @param array<string, list<string>> $policy
+     * @param int $hstsMaxAge The HSTS max-age in seconds. Only used when
+     *        $isHttps is true.
+     * @param bool $hstsIncludeSubDomains Whether HSTS covers subdomains. Only
+     *        used when $isHttps is true.
      *
      * @return array<string, string> Header name to value.
      */
-    public static function build(array $policy, string $nonce, bool $isHttps): array
-    {
+    public static function build(
+        array $policy,
+        string $nonce,
+        bool $isHttps,
+        int $hstsMaxAge = 31536000,
+        bool $hstsIncludeSubDomains = true
+    ): array {
         $headers = [
             'Content-Security-Policy' => self::buildCsp($policy, $nonce),
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'SAMEORIGIN',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
-            'Permissions-Policy' => 'camera=(), geolocation=(), microphone=()',
+            // Disable the browser features a typical app never uses. An
+            // injected script cannot use a feature the page has disabled.
+            'Permissions-Policy' => 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
         ];
 
         if ($isHttps) {
-            $headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains';
+            $headers['Strict-Transport-Security'] = self::buildHsts($hstsMaxAge, $hstsIncludeSubDomains);
         }
 
         return $headers;
+    }
+
+    /**
+     * Build the Strict-Transport-Security header value.
+     *
+     * Roll out in stages: start with a short max-age, raise it once nothing
+     * breaks, and only keep includeSubDomains when every subdomain serves
+     * HTTPS. preload is a decision for the domain owner, not for one app, so
+     * it is never added here.
+     *
+     * @param int $maxAge The max-age in seconds.
+     * @param bool $includeSubDomains Whether to cover subdomains.
+     *
+     * @throws \InvalidArgumentException If $maxAge is negative.
+     */
+    public static function buildHsts(int $maxAge = 31536000, bool $includeSubDomains = true): string
+    {
+        if ($maxAge < 0) {
+            throw new \InvalidArgumentException('HSTS max-age must be a non-negative number of seconds.');
+        }
+
+        $value = 'max-age=' . $maxAge;
+        if ($includeSubDomains) {
+            $value .= '; includeSubDomains';
+        }
+
+        return $value;
     }
 
     /**

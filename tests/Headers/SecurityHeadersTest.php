@@ -73,4 +73,70 @@ final class SecurityHeadersTest extends TestCase
 
         self::assertSame($default, SecurityHeaders::mergePolicies($default, []));
     }
+
+    public function testBuildHstsDefaultIsOneYearWithSubDomains(): void
+    {
+        self::assertSame(
+            'max-age=31536000; includeSubDomains',
+            SecurityHeaders::buildHsts()
+        );
+    }
+
+    public function testBuildHstsCustomMaxAgeKeepsSubDomains(): void
+    {
+        self::assertSame('max-age=600; includeSubDomains', SecurityHeaders::buildHsts(600));
+    }
+
+    public function testBuildHstsCanDropSubDomains(): void
+    {
+        self::assertSame('max-age=600', SecurityHeaders::buildHsts(600, false));
+    }
+
+    public function testBuildHstsRejectsNegativeMaxAge(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('non-negative');
+
+        SecurityHeaders::buildHsts(-1);
+    }
+
+    public function testBuildSendsConfiguredHstsOnHttps(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            true,
+            600,
+            false
+        );
+
+        self::assertSame('max-age=600', $headers['Strict-Transport-Security']);
+    }
+
+    public function testBuildOmitsHstsWhenNotHttps(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            600,
+            false
+        );
+
+        self::assertArrayNotHasKey('Strict-Transport-Security', $headers);
+    }
+
+    public function testBuildPermissionsPolicyCoversPaymentAndUsb(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false
+        );
+
+        self::assertSame(
+            'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
+            $headers['Permissions-Policy']
+        );
+    }
 }

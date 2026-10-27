@@ -95,8 +95,8 @@ Every response gets the same set, built by one shared function:
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `SAMEORIGIN` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | `camera=(), geolocation=(), microphone=()` |
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains`, HTTPS only |
+| `Permissions-Policy` | `camera=(), geolocation=(), microphone=(), payment=(), usb=()` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` by default, HTTPS only, configurable |
 
 The default CSP is the union of the WayneUI recipes, with `frame-ancestors
 'self'`, `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` added
@@ -124,6 +124,25 @@ $helmet = helmet_boot([
 ]);
 ```
 
+### Configuring HSTS
+
+The default is `max-age=31536000; includeSubDomains` (one year, all
+subdomains), sent on HTTPS responses only. Roll it out in stages: start with a
+short `max-age`, raise it once nothing breaks, and keep `includeSubDomains`
+only when every subdomain serves HTTPS. `preload` is a decision for the domain
+owner, not for one app, so HELMET never adds it.
+
+Set `hsts_max_age` (seconds) and `hsts_include_subdomains` (raw PHP), or pass
+the last two constructor arguments (middleware):
+
+```php
+$helmet = helmet_boot([
+    'trusted_proxies' => ['172.18.0.1'],
+    'hsts_max_age' => 600,
+    'hsts_include_subdomains' => false,
+]);
+```
+
 ## HTTPS, and why the proxy list matters
 
 Citadel sits behind HA-Proxy, so the PHP process sees the proxy's address, not
@@ -146,7 +165,7 @@ No PHP on the machine? Fine. Docker runs the suite:
 ```
 docker run --rm -v "${PWD}:/app" -w /app composer:2 composer install --no-interaction
 docker run --rm -v "${PWD}:/app" -w /app php:8.4-cli vendor/bin/phpunit
-docker run --rm -v "${PWD}:/app" -w /app php:8.2-cli vendor/bin/phpunit
+docker run --rm -v "${PWD}:/app" -w /app php:8.3-cli vendor/bin/phpunit
 ```
 
 ## Strongly recommended: a git.wayne.edu instance runner

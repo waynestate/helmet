@@ -37,12 +37,17 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
      *        instead of propagating the exception.
      * @param ResponseFactoryInterface|null $responseFactory Used to build the
      *        500 response when rethrow is false. Only needed on that path.
+     * @param int $hstsMaxAge The HSTS max-age in seconds, sent only on HTTPS.
+     * @param bool $hstsIncludeSubDomains Whether HSTS covers subdomains, sent
+     *        only on HTTPS.
      */
     public function __construct(
         private readonly TrustedProxies $proxies,
         ?array $cspPolicy = null,
         private readonly bool $rethrow = true,
-        private readonly ?ResponseFactoryInterface $responseFactory = null
+        private readonly ?ResponseFactoryInterface $responseFactory = null,
+        private readonly int $hstsMaxAge = 31536000,
+        private readonly bool $hstsIncludeSubDomains = true
     ) {
         $this->cspPolicy = SecurityHeaders::mergePolicies(
             SecurityHeaders::defaultCspPolicy(),
@@ -54,7 +59,13 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
     {
         $isHttps = HttpsDetector::isHttps($request->getServerParams(), $this->proxies);
         $nonce = SecurityHeaders::generateNonce();
-        $headers = SecurityHeaders::build($this->cspPolicy, $nonce, $isHttps);
+        $headers = SecurityHeaders::build(
+            $this->cspPolicy,
+            $nonce,
+            $isHttps,
+            $this->hstsMaxAge,
+            $this->hstsIncludeSubDomains
+        );
 
         $request = $request->withAttribute('helmet.csp_nonce', $nonce);
 

@@ -28,6 +28,8 @@ if (!function_exists('helmet_boot')) {
      *     trusted_proxies: list<string>,
      *     csp?: array<string, list<string>|null>,
      *     health_path?: string,
+     *     hsts_max_age?: int,
+     *     hsts_include_subdomains?: bool,
      *     log?: array{channel?: string, stream?: string, level?: string}
      * } $config
      *
@@ -75,7 +77,13 @@ if (!function_exists('helmet_boot')) {
             $config['csp'] ?? []
         );
         $nonce = SecurityHeaders::generateNonce();
-        $headers = SecurityHeaders::build($cspPolicy, $nonce, $isHttps);
+        $headers = SecurityHeaders::build(
+            $cspPolicy,
+            $nonce,
+            $isHttps,
+            $config['hsts_max_age'] ?? 31536000,
+            $config['hsts_include_subdomains'] ?? true
+        );
 
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value, true);
