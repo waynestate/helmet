@@ -25,21 +25,57 @@ final class SessionHardening
     /**
      * Apply the hardened session settings.
      *
+     * @param bool $https Whether the request is HTTPS; controls cookie_secure.
+     * @param array<string, string>|null $settings Settings to apply. null
+     *        (the default) applies the standard session settings for $https.
+     *        An explicit list is accepted so the failure path can be tested.
+     *
      * @throws \LogicException If a session is already active.
+     * @throws \RuntimeException If a setting could not be changed.
      */
-    public static function apply(bool $https): void
+    public static function apply(bool $https, ?array $settings = null): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             throw new \LogicException('Session hardening must be applied before the session starts.');
         }
 
-        ini_set('session.use_strict_mode', '1');
-        ini_set('session.use_only_cookies', '1');
-        ini_set('session.cookie_httponly', '1');
-        ini_set('session.cookie_samesite', 'Lax');
+        self::applySettings($settings ?? self::defaultSettings($https));
+    }
+
+    /**
+     * The standard session settings, with cookie_secure only for HTTPS.
+     *
+     * @return array<string, string>
+     */
+    private static function defaultSettings(bool $https): array
+    {
+        $settings = [
+            'session.use_strict_mode' => '1',
+            'session.use_only_cookies' => '1',
+            'session.cookie_httponly' => '1',
+            'session.cookie_samesite' => 'Lax',
+        ];
 
         if ($https) {
-            ini_set('session.cookie_secure', '1');
+            $settings['session.cookie_secure'] = '1';
+        }
+
+        return $settings;
+    }
+
+    /**
+     * Set each ini value, throwing if any of them cannot be changed.
+     *
+     * @param array<string, string> $settings
+     *
+     * @throws \RuntimeException Naming the first setting that could not be set.
+     */
+    private static function applySettings(array $settings): void
+    {
+        foreach ($settings as $key => $value) {
+            if (ini_set($key, $value) === false) {
+                throw new \RuntimeException("Session hardening could not set \"{$key}\".");
+            }
         }
     }
 }
