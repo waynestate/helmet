@@ -15,7 +15,7 @@ if (!function_exists('helmet_boot')) {
      *
      * Call this at the very top of the entry point, before any output. It:
      *  - decides whether the request is HTTPS from the trusted-proxy list,
-     *  - hardens the session settings (if the session has not started),
+     *  - hardens the session settings (throws if a session is already active),
      *  - answers the health check path with "ok" and stops,
      *  - sends the security headers (including a per-request CSP nonce),
      *  - removes the X-Powered-By header,
@@ -26,14 +26,17 @@ if (!function_exists('helmet_boot')) {
      *
      * @param array{
      *     trusted_proxies: list<string>,
-     *     csp?: array<string, list<string>>,
+     *     csp?: array<string, list<string>|null>,
      *     health_path?: string,
+     *     hsts_max_age?: int,
+     *     hsts_include_subdomains?: bool,
      *     log?: array{channel?: string, stream?: string, level?: string}
      * } $config
      *
      * @return array{nonce: string, logger: LoggerInterface|null}
      *
      * @throws \InvalidArgumentException If trusted_proxies is missing.
+     * @throws \LogicException If a session is already active.
      */
     function helmet_boot(array $config): array
     {
@@ -44,9 +47,7 @@ if (!function_exists('helmet_boot')) {
         $proxies = new TrustedProxies($config['trusted_proxies']);
         $isHttps = HttpsDetector::isHttps($_SERVER, $proxies);
 
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            SessionHardening::apply($isHttps);
-        }
+        SessionHardening::apply($isHttps);
 
         $logger = null;
         if (isset($config['log']) && is_array($config['log'])) {
@@ -71,9 +72,18 @@ if (!function_exists('helmet_boot')) {
             exit;
         }
 
-        $cspPolicy = $config['csp'] ?? SecurityHeaders::defaultCspPolicy();
+        $cspPolicy = SecurityHeaders::mergePolicies(
+            SecurityHeaders::defaultCspPolicy(),
+            $config['csp'] ?? []
+        );
         $nonce = SecurityHeaders::generateNonce();
-        $headers = SecurityHeaders::build($cspPolicy, $nonce, $isHttps);
+        $headers = SecurityHeaders::build(
+            $cspPolicy,
+            $nonce,
+            $isHttps,
+            $config['hsts_max_age'] ?? 31536000,
+            $config['hsts_include_subdomains'] ?? true
+        );
 
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value, true);

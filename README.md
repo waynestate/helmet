@@ -30,9 +30,9 @@ At the top of the front controller, before anything is echoed:
 use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([
-    // The private ranges HA-Proxy sits behind. Only these may set
-    // X-Forwarded-Proto. An empty list trusts nothing.
-    'trusted_proxies' => ['10.0.0.0/8'],
+    // The address HA-Proxy connects from, as the app sees it. Only these may
+    // set X-Forwarded-Proto. An empty list trusts nothing.
+    'trusted_proxies' => ['172.18.0.1'],
 
     // Optional. A Monolog JSON logger, one line per record. "stream" may be a
     // stream (php://stderr) or a file path.
@@ -46,6 +46,11 @@ $helmet = helmet_boot([
 // $helmet['nonce'] is the per-request CSP nonce. Put it in your <script> tags.
 // $helmet['logger'] is a Psr\Log\LoggerInterface, or null when no log is set.
 ```
+
+List only the address HA-Proxy connects from (for example the Docker bridge
+gateway `172.18.0.1`), never a whole private range. A broad range such as
+`10.0.0.0/8` also trusts other containers on the same network, and any of
+them could then set `X-Forwarded-Proto`.
 
 `helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up`
 with `200 ok` before your code runs. It returns the nonce and the logger so
@@ -62,7 +67,7 @@ use Waynestate\Helmet\Health\HealthCheck;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
 $factory = new Psr17Factory();
-$proxies = new TrustedProxies(['10.0.0.0/8']);
+$proxies = new TrustedProxies(['172.18.0.1']);
 
 $middleware = [
     new HealthCheck($factory, $factory, '/up'),
@@ -73,21 +78,70 @@ $middleware = [
 `SecurityHeadersMiddleware` sets the request attribute `helmet.csp_nonce` so a
 downstream handler can read the same nonce the CSP header carries.
 
+The headers are sent even when the inner handler throws. By default the
+middleware rethrows, so the framework's error handler still runs and produces
+the error page; pass `rethrow: false` (and a PSR-17 `ResponseFactory`) to make
+the middleware itself return a `500` carrying the same headers. The raw PHP
+path needs no such flag: `helmet_boot()` sends the headers before your code
+runs, so they are already on the wire by the time an exception can happen.
+
 ## The headers
 
 Every response gets the same set, built by one shared function:
 
 | Header | Value |
 | --- | --- |
-| `Content-Security-Policy` | the WayneUI default policy, plus a per-request nonce |
+| `Content-Security-Policy` | the WayneUI default policy, plus a per-request nonce and `strict-dynamic` |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `SAMEORIGIN` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
-| `Permissions-Policy` | `camera=(), geolocation=(), microphone=()` |
-| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains`, HTTPS only |
+| `Permissions-Policy` | `camera=(), geolocation=(), microphone=(), payment=(), usb=()` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` by default, HTTPS only, configurable |
 
 The default CSP is the union of the WayneUI recipes, with `frame-ancestors
-'self'` added so an app can never be framed by a stranger.
+'self'`, `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` added
+so an app can never be framed by a stranger, have its base tag hijacked, load
+plugins, or post its forms to an attacker. `script-src` carries a per-request
+nonce plus `strict-dynamic`, so a script loaded with the nonce can load other
+scripts without opening the door to `'unsafe-inline'`.
+
+### Customizing the CSP
+
+Pass a `csp` policy (raw PHP) or a second constructor argument (middleware).
+It is merged over the default, per directive: a directive you set replaces the
+default's value for that directive, and a directive you leave out keeps the
+default. To remove a directive the default sets, set it to `null`:
+
+```php
+$helmet = helmet_boot([
+    'trusted_proxies' => ['172.18.0.1'],
+    'csp' => [
+        // Replace the default img-src.
+        'img-src' => ["'self'", 'data:'],
+        // Remove form-action entirely.
+        'form-action' => null,
+    ],
+]);
+```
+
+### Configuring HSTS
+
+The default is `max-age=31536000; includeSubDomains` (one year, all
+subdomains), sent on HTTPS responses only. Roll it out in stages: start with a
+short `max-age`, raise it once nothing breaks, and keep `includeSubDomains`
+only when every subdomain serves HTTPS. `preload` is a decision for the domain
+owner, not for one app, so HELMET never adds it.
+
+Set `hsts_max_age` (seconds) and `hsts_include_subdomains` (raw PHP), or pass
+the last two constructor arguments (middleware):
+
+```php
+$helmet = helmet_boot([
+    'trusted_proxies' => ['172.18.0.1'],
+    'hsts_max_age' => 600,
+    'hsts_include_subdomains' => false,
+]);
+```
 
 ## HTTPS, and why the proxy list matters
 
@@ -111,7 +165,7 @@ No PHP on the machine? Fine. Docker runs the suite:
 ```
 docker run --rm -v "${PWD}:/app" -w /app composer:2 composer install --no-interaction
 docker run --rm -v "${PWD}:/app" -w /app php:8.4-cli vendor/bin/phpunit
-docker run --rm -v "${PWD}:/app" -w /app php:8.2-cli vendor/bin/phpunit
+docker run --rm -v "${PWD}:/app" -w /app php:8.3-cli vendor/bin/phpunit
 ```
 
 ## Strongly recommended: a git.wayne.edu instance runner

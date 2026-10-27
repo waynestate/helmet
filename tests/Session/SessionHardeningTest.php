@@ -52,4 +52,13 @@ final class SessionHardeningTest extends TestCase
 
         self::assertSame($before, $after);
     }
+
+    public function testThrowsNamingTheFailedSetting(): void
+    {
+        // disable_functions is PHP_INI_SYSTEM, so ini_set() cannot change it
+        // at runtime and returns false.
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('disable_functions');
+        SessionHardening::apply(false, ['disable_functions' => 'x']);
+    }
 }
