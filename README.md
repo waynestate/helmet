@@ -1,7 +1,7 @@
 # HELMET
 
-<!-- TODO(lead): GIF -->
-TODO(lead): GIF (HELMET, "The Devil's Account" live)
+![Three members of the band Helmet, two guitarists and a drummer at a Tama kit, tinted blue against a hazy orange and gold backdrop](https://media.tenor.com/WmJKjN9NQqoAAAAM/helmet-band.gif)
+<sub>GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120)</sub>
 
 HELMET is the Wayne State app stack's baseline runtime. One small
 framework-free PHP core, `Waynestate\Helmet`, does the five things every app on
@@ -105,6 +105,8 @@ plugins, or post its forms to an attacker. `script-src` carries a per-request
 nonce plus `strict-dynamic`, so a script loaded with the nonce can load other
 scripts without opening the door to `'unsafe-inline'`.
 
+Milquetoast is a Helmet song. It is not a Content-Security-Policy.
+
 ### Customizing the CSP
 
 Pass a `csp` policy (raw PHP) or a second constructor argument (middleware).
@@ -151,6 +153,9 @@ honors that header when the connection came from a trusted proxy. A spoofed
 `X-Forwarded-Proto: https` from the public internet is ignored, and no HSTS
 header is sent for a request that was not really secure.
 
+The proxy check is the Unsung hero of the headers. Nobody notices it until a
+forged `X-Forwarded-Proto` walks in and gets nowhere.
+
 ## The session
 
 `SessionHardening::apply()` sets the four `ini` values before the session
@@ -173,11 +178,14 @@ docker run --rm -v "${PWD}:/app" -w /app php:8.3-cli vendor/bin/phpunit
 git.wayne.edu has no runners today, so CI for this repo runs on GitLab. Every
 product in the stack strongly recommends a git.wayne.edu instance runner. The
 case for it is written up in `design/instance-runner-case.md` in the
-coordination repo (`the stack`).
+coordination repo (`the stack`). In the Meantime, GitLab carries the load.
 
-<!-- TODO(lead): GIF -->
-TODO(lead): GIF (HELMET, "The Bad Time" live)
+![Close-up of a man with a mustache and smudged dark eye makeup in front of a purple and gold backdrop, from the Wilma's Rainbow video by the band Helmet](https://media.tenor.com/1dGc4wPaaBQAAAAM/wilmas-rainbow-helmet.gif)
+<sub>GIF via [Tenor](https://tenor.com/view/wilmas-rainbow-helmet-wilmas-wilma-rainbow-gif-18685087)</sub>
 
 HELMET, the band, built their sound on precision: short songs, no filler,
 every part earning its place. That is the whole point of a baseline runtime.
 The floor is tight, the headers are exact, and nothing here is decoration.
+
+Call `helmet_boot()` once and the rest is Exactly What You Wanted. Size
+Matters too, which is why the core stays small enough to read in an afternoon.
