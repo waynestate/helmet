@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HELMET">
 <title>HELMET</title>
 <rect width="512" height="512" rx="112" fill="#0C5449"/>
-<g transform="translate(29.48 116.6) scale(0.92)">
-<path d="M78.77 263.63 A158 146 0 1 1 346.5 115.31 C320 122.31 292 146 292 184 C292 222 310 258 336 258 C352 258 356 276 342 280 L130.11 280 Q96.11 280 78.77 263.63 Z M180 206 A25 25 0 1 0 230 206 A25 25 0 1 0 180 206 Z" fill="#FFFFFF" fill-rule="evenodd"/>
-<path d="M314 136 L390 146 Q414 191 418 236 Q392 270 326 262" fill="none" stroke="#FFCC33" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(41.64 78.1) scale(0.88)">
+<path d="M62 303 C40 278 30 242 30 200 C30 105 115 25 215 25 C290 25 345 70 365 137 C335 143 278 148 257 180 C249 195 248 208 252 225 C257 255 266 285 273 312 C265 336 236 357 200 358 C166 359 142 337 118 319 C100 306 80 307 62 303 Z M149 257 A29 29 0 1 0 207 257 A29 29 0 1 0 149 257 Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path d="M340 168 C322 168 302 172 289 205 L317 318 C326 336 350 345 437 363 M300 228 L436 243 M310 280 L438 294 M436 243 L441 360" fill="none" stroke="#FFCC33" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>

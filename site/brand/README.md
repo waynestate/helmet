@@ -1,8 +1,8 @@
 # HELMET brand files
 
 **The mark is an American football helmet in side view, facing right, with a gold face mask**, because HELMET is what
-every app puts on before it ships. A white shell, a clear face opening, a jaw guard, one ear hole, and one gold detail:
-the mask, bolted to the shell. It suits Wayne State's Warriors green and gold.
+every app puts on before it ships. A white shell with a big round crown, a brow that juts forward, a jaw flap, one ear hole, and one gold detail:
+the mask. It suits Wayne State's Warriors green and gold.
 
 ## Colours
 | Role | Colour |
@@ -21,28 +21,30 @@ Gold never sits behind white text.
 | `helmet-mark-white.svg` | The mark on dark or green backgrounds: white shell, gold mask |
 | `helmet-mark-mono.svg` | One colour (`currentColor`), for print and single-ink use |
 | `helmet-tile.svg` | The app icon: a green rounded tile with the white helmet |
-| `helmet-favicon.svg` | The tile simplified for 32 and 64 px: a thicker mask, no bolt holes, a larger ear hole |
-| `helmet-favicon-16.svg` | Hand-hinted on the 16 px grid. One unit is one pixel. The ear hole is a single pixel, and both gold bars touch the white shell |
+| `helmet-favicon.svg` | The tile simplified for 32 and 64 px: a shorter top arm, two cross bars and a thicker stroke |
+| `helmet-favicon-16.svg` | Hand-hinted on the 16 px grid. One unit is one pixel. The shell keeps the brow lip and jaw flap, the ear hole is a single pixel, and the cage is a 4 by 4 gold block with one dark slit, touching the shell front |
 | `helmet-avatar-512.png` | The GitLab project avatar and the Open Graph image base |
 | `helmet-mark-1024.png`, `helmet-mark-white-1024.png` | Raster marks for slides and documents |
 | `favicon-16.png`, `favicon-32.png`, `favicon-64.png`, `favicon.ico` | Browser favicons; the `.ico` holds all three |
 
 ## Geometry
-The SVGs are drawn from exact geometry, not traced.
-- **The shell:** an ellipse 316 units wide and 292 tall, cut off by a flat lower edge with a small rounded nape. Under
-  the brow the shell steps back to a straight face-opening edge, and a jaw guard reaches forward at the bottom.
-- **The ear hole:** a circle of radius 19, cut out of the shell.
-- **The mask:** one gold stroke, 34 units thick with round ends. The top bar leaves the brow and runs forward, a front
-  upright bows gently and leans forward, and the bottom bar runs under the chin and sweeps back up into the jaw guard.
-  Both ends sit inside the shell, each with a small bolt hole, so the mask reads as a cage fixed to the helmet and not as
-  a letter. In the one-colour version everything uses `currentColor`.
-- **The face opening:** one open bay. The brow underside sweeps back and the jaw guard comes forward again; nothing
-  frames it, and the background shows through.
+The SVGs are drawn from exact geometry, not traced. The numbers below are in the units of the board's standalone mark
+(a 470 by 400 crop), which is how the drawing was checked: the silhouette was overlaid on the board and matched to a few
+pixels.
+- **The shell:** a big round crown. The brow juts forward to a point, and a concave curve cuts back and down into the face
+  opening. At the back the shell curls under at the nape, a small wave follows, and a jaw flap drops below the ear hole
+  and reaches forward to a rounded tip under the face. The lower edge is not flat.
+- **The ear hole:** a circle of radius 29, cut out of the shell.
+- **The mask:** one gold stroke, 28 units thick with round ends. A rear upright runs parallel to the face-opening edge
+  with an even gap from the shell. A top arm curls forward from it towards the brow, two bars cross to a front upright,
+  and a bottom bar slants down to the front. The closed grid of uprights and bars is what makes it a cage and not a
+  letter. In the one-colour version everything uses `currentColor`.
 
-Three rules came out of earlier drafts. There is no symmetric dome with a vertical slot, because it read as the wrong
-thing. The mask never floats free of the shell, and it is never three bars closed by an upright on the right, because
-that reads as the digit "3" or the letter "E". And the opening has no panel behind the mask, because a boxed panel
-frames the mask like a glyph.
+Rules that came out of earlier drafts. There is no symmetric dome with a vertical slot, because it read as the wrong
+thing. The silhouette keeps the brow, the jaw flap and the uneven lower edge, because a plain half-dome with a flat base
+drifts back toward the rejected dome. The mask is never open on one side with a single upright, because that reads as the
+digit "3" or the letter "E". It has no clips poking back into the shell, because with the top arm they read as a "G" at
+32 px.
 
 ## Rendering
 The PNGs were rendered with Inkscape 1.4, for example
