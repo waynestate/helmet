@@ -1,0 +1,48 @@
+{
+    "name": "waynestate/helmet",
+    "description": "Wayne State's baseline runtime: security headers, session hardening, trusted proxies, a health check and structured logs for apps on Citadel.",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Wayne State University, Enterprise Applications"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "akrabat/ip-address-middleware": "^2.6",
+        "monolog/monolog": "^3.0",
+        "paragonie/csp-builder": "^3.1",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^2.0",
+        "psr/http-server-middleware": "^1.0"
+    },
+    "require-dev": {
+        "nyholm/psr7": "^1.8",
+        "phpunit/phpunit": "^11.5"
+    },
+    "suggest": {
+        "laravel/framework": "For the Laravel adapter (step 2)"
+    },
+    "autoload": {
+        "psr-4": {
+            "Waynestate\\Helmet\\": "src/"
+        },
+        "files": [
+            "src/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Waynestate\\Helmet\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
