@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HELMET">
 <title>HELMET</title>
 <rect width="512" height="512" rx="112" fill="#0C5449"/>
-<g transform="translate(28.42 112.76) scale(0.94)">
-<path d="M78.77 263.63 A158 146 0 1 1 346.5 115.31 C300 121.31 290 151.31 290 177.31 L290 214 C290 242 304 256 334 256 C350 256 354 276 340 280 L130.11 280 Q96.11 280 78.77 263.63 Z M180 206 A25 25 0 1 0 230 206 A25 25 0 1 0 180 206 Z" fill="#FFFFFF" fill-rule="evenodd"/>
-<path d="M334 152 L402 158 Q424 194 414 230 L334 224" fill="none" stroke="#FFCC33" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(29.48 116.6) scale(0.92)">
+<path d="M78.77 263.63 A158 146 0 1 1 346.5 115.31 C320 122.31 292 146 292 184 C292 222 310 258 336 258 C352 258 356 276 342 280 L130.11 280 Q96.11 280 78.77 263.63 Z M180 206 A25 25 0 1 0 230 206 A25 25 0 1 0 180 206 Z" fill="#FFFFFF" fill-rule="evenodd"/>
+<path d="M314 136 L390 146 Q414 191 418 236 Q392 270 326 262" fill="none" stroke="#FFCC33" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
 </g>
 </svg>
