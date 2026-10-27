@@ -272,20 +272,6 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
-     * Server variables for an HTTPS request that arrived through the trusted
-     * proxy 10.0.0.1 (tests add that address to helmet.proxies).
-     *
-     * @return array<string, string>
-     */
-    private function httpsViaTrustedProxy(): array
-    {
-        return [
-            'REMOTE_ADDR' => '10.0.0.1',
-            'HTTP_X_FORWARDED_PROTO' => 'https',
-        ];
-    }
-
-    /**
      * Register a GET route in the "web" group that returns simple HTML and
      * records the CSP nonce the middleware put on the request.
      */

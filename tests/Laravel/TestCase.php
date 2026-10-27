@@ -2,7 +2,9 @@
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
+use Illuminate\Foundation\Http\Kernel as FoundationKernel;
 use Orchestra\Testbench\TestCase as Orchestra;
+use ReflectionObject;
 use Waynestate\Helmet\Laravel\HelmetServiceProvider;
 
 /**
@@ -65,5 +67,32 @@ abstract class TestCase extends Orchestra
         $config = require dirname(__DIR__, 2) . '/config/helmet.php';
 
         $this->app['config']->set('helmet', $config);
+    }
+
+    /**
+     * Read the kernel's global middleware list (a protected property with no
+     * public getter).
+     *
+     * @return list<string>
+     */
+    protected function globalMiddlewareList(FoundationKernel $kernel): array
+    {
+        $property = (new ReflectionObject($kernel))->getProperty('middleware');
+
+        return $property->getValue($kernel);
+    }
+
+    /**
+     * Server variables for an HTTPS request that arrived through the trusted
+     * proxy 10.0.0.1 (tests add that address to helmet.proxies).
+     *
+     * @return array<string, string>
+     */
+    protected function httpsViaTrustedProxy(): array
+    {
+        return [
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ];
     }
 }

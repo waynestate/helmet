@@ -17,6 +17,13 @@ use Waynestate\Helmet\Headers\SecurityHeaders;
 |               app trusts no proxy and HTTPS is detected from the direct
 |               connection only.
 |
+| "scope"       Where the SecurityHeaders middleware runs. "global" (the
+|               default) adds it to the kernel's global middleware, so every
+|               response - including 404s and JSON routes - carries the
+|               baseline headers. "web" keeps it in the `web` middleware
+|               group only. InjectRibbon always stays in the `web` group,
+|               because it edits HTML. Set with the HELMET_SCOPE env var.
+|
 | "csp"         The Content-Security-Policy, as a policy array in the shape
 |               SecurityHeaders::defaultCspPolicy() returns. The middleware
 |               merges it over the core default, per directive: a directive
@@ -50,6 +57,11 @@ if (is_string($helmetProxies) && $helmetProxies !== '') {
     }
 }
 
+$scope = env('HELMET_SCOPE', 'global');
+if ($scope !== 'web') {
+    $scope = 'global';
+}
+
 $csp = SecurityHeaders::defaultCspPolicy();
 $helmetCsp = env('HELMET_CSP');
 if (is_string($helmetCsp) && $helmetCsp !== '') {
@@ -67,6 +79,7 @@ if (!is_string($policyPath) || $policyPath === '') {
 
 return [
     'proxies' => $proxies,
+    'scope' => $scope,
     'csp' => $csp,
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
     'ribbon' => (bool) env('HELMET_RIBBON', true),

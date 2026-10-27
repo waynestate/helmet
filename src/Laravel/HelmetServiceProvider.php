@@ -57,7 +57,7 @@ final class HelmetServiceProvider extends ServiceProvider
             __DIR__ . '/../../config/helmet.php' => config_path('helmet.php'),
         ], 'helmet-config');
 
-        // Join the `web` group through the HTTP kernel, not the router. The
+        // Join the middleware through the HTTP kernel, not the router. The
         // kernel owns the group lists and copies them over the router's each
         // time it is built or asked to append a middleware, so a push made on
         // the router alone is wiped by the next sync. That is what happened to
@@ -72,7 +72,20 @@ final class HelmetServiceProvider extends ServiceProvider
                 return;
             }
 
-            $kernel->appendMiddlewareToGroup('web', SecurityHeaders::class);
+            // SecurityHeaders runs in the global middleware when scope is
+            // "global" (the default), so every response - including 404s and
+            // JSON routes - carries the baseline headers. When scope is "web",
+            // it stays in the `web` group only. pushMiddleware and
+            // appendMiddlewareToGroup are both idempotent, so the middleware
+            // is added once even if the callback runs more than once.
+            if (config('helmet.scope') === 'global') {
+                $kernel->pushMiddleware(SecurityHeaders::class);
+            } else {
+                $kernel->appendMiddlewareToGroup('web', SecurityHeaders::class);
+            }
+
+            // InjectRibbon always stays in the `web` group, because it edits
+            // HTML and a JSON or 404 response has no HTML to edit.
             $kernel->appendMiddlewareToGroup('web', InjectRibbon::class);
         });
     }
