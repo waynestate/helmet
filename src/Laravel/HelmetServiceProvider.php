@@ -14,10 +14,15 @@ use Illuminate\Support\ServiceProvider;
  * group, through the HTTP kernel, so every web route gets the baseline
  * headers and the environment ribbon.
  *
- * Trusted proxies are a one-time app step, not something this provider can
- * set. On Laravel 11+ the trusted-proxy list is configured in
+ * HELMET decides for itself whether a request really arrived over HTTPS,
+ * from the `helmet.proxies` list, so the HSTS header is only sent for
+ * requests that were really secure. Laravel has its own, separate
+ * trusted-proxy setting (it drives url(), secure cookies and
+ * $request->isSecure()), and trusting a proxy is a one-time app step, not
+ * something this provider can set. On Laravel 11+ it is configured in
  * `bootstrap/app.php`, not in a service provider. Add this to the app's
- * `bootstrap/app.php` (once, when the package is installed):
+ * `bootstrap/app.php` (once, when the package is installed), listing the
+ * same address as HELMET_PROXIES:
  *
  *     return Application::configure(basePath: dirname(__DIR__))
  *         ->withRouting(
@@ -26,15 +31,15 @@ use Illuminate\Support\ServiceProvider;
  *             health: '/up',
  *         )
  *         ->withMiddleware(function (Middleware $middleware) {
- *             $middleware->trustProxies(at: config('helmet.proxies'));
+ *             $middleware->trustProxies(at: ['172.18.0.1']);
  *         })
  *         ->withExceptions(function (Exceptions $exceptions) {
  *             //
  *         })->create();
  *
- * The `helmet.proxies` config is the same list the core uses to decide
- * whether a request really arrived over HTTPS, so the HSTS header is only
- * sent for requests that were really secure.
+ * Use a literal list there. That closure runs when the HTTP kernel is built,
+ * before the configuration is loaded, so config('helmet.proxies') does not
+ * exist yet and calling it throws.
  *
  * The `/up` health route is left to Laravel's built-in `health: '/up'`
  * option in `withRouting()`; this provider does not register a route.
