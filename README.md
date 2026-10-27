@@ -30,9 +30,9 @@ At the top of the front controller, before anything is echoed:
 use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([
-    // The private ranges HA-Proxy sits behind. Only these may set
-    // X-Forwarded-Proto. An empty list trusts nothing.
-    'trusted_proxies' => ['10.0.0.0/8'],
+    // The address HA-Proxy connects from, as the app sees it. Only these may
+    // set X-Forwarded-Proto. An empty list trusts nothing.
+    'trusted_proxies' => ['172.18.0.1'],
 
     // Optional. A Monolog JSON logger, one line per record. "stream" may be a
     // stream (php://stderr) or a file path.
@@ -46,6 +46,11 @@ $helmet = helmet_boot([
 // $helmet['nonce'] is the per-request CSP nonce. Put it in your <script> tags.
 // $helmet['logger'] is a Psr\Log\LoggerInterface, or null when no log is set.
 ```
+
+List only the address HA-Proxy connects from (for example the Docker bridge
+gateway `172.18.0.1`), never a whole private range. A broad range such as
+`10.0.0.0/8` also trusts other containers on the same network, and any of
+them could then set `X-Forwarded-Proto`.
 
 `helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up`
 with `200 ok` before your code runs. It returns the nonce and the logger so
@@ -62,7 +67,7 @@ use Waynestate\Helmet\Health\HealthCheck;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
 $factory = new Psr17Factory();
-$proxies = new TrustedProxies(['10.0.0.0/8']);
+$proxies = new TrustedProxies(['172.18.0.1']);
 
 $middleware = [
     new HealthCheck($factory, $factory, '/up'),
