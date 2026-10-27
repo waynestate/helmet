@@ -85,4 +85,48 @@ final class HttpsDetectorTest extends TestCase
 
         self::assertFalse(HttpsDetector::isHttps($server, $proxies));
     }
+
+    public function testMultiValueForwardedProtoUsesLastValueHttps(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $server = [
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'http, https',
+        ];
+
+        self::assertTrue(HttpsDetector::isHttps($server, $proxies));
+    }
+
+    public function testMultiValueForwardedProtoUsesLastValueHttp(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $server = [
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https, http',
+        ];
+
+        self::assertFalse(HttpsDetector::isHttps($server, $proxies));
+    }
+
+    public function testMultiValueForwardedProtoTrimsAndLowercasesLastValue(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $server = [
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'http,  HTTPS ',
+        ];
+
+        self::assertTrue(HttpsDetector::isHttps($server, $proxies));
+    }
+
+    public function testMultiValueForwardedProtoFromUntrustedPeerIsIgnored(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $server = [
+            'REMOTE_ADDR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_PROTO' => 'http, https',
+        ];
+
+        self::assertFalse(HttpsDetector::isHttps($server, $proxies));
+    }
 }
