@@ -1,0 +1,39 @@
+{
+    "schema_version": 1,
+    "components": {
+        "php": {
+            "8.2": {
+                "active_until": "2026-12-31",
+                "security_until": "2027-12-31"
+            },
+            "8.3": {
+                "active_until": "2027-11-30",
+                "security_until": "2028-11-30"
+            },
+            "8.4": {
+                "active_until": "2028-11-30",
+                "security_until": "2029-11-30"
+            }
+        },
+        "laravel": {
+            "11": {
+                "active_until": "2025-12-31",
+                "security_until": "2026-03-12"
+            },
+            "12": {
+                "active_until": "2026-12-31",
+                "security_until": "2027-03-12"
+            }
+        },
+        "node": {
+            "20": {
+                "active_until": "2026-04-30",
+                "security_until": "2026-10-28"
+            },
+            "22": {
+                "active_until": "2026-10-27",
+                "security_until": "2027-04-30"
+            }
+        }
+    }
+}

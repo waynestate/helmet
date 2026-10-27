@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7394e29b95bf7e19785cd979a09b4bb7",
+    "content-hash": "4e0dc79496cefff20fbc9a8393a260cd",
     "packages": [
         {
             "name": "akrabat/ip-address-middleware",
@@ -9422,7 +9422,7 @@
     },
     "platform-dev": {},
     "platform-overrides": {
-        "php": "8.2.0"
+        "php": "8.3.0"
     },
     "plugin-api-version": "2.9.0"
 }
