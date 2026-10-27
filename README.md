@@ -126,25 +126,19 @@ change the CSP, because the policy is a PHP array there, not JSON squeezed into
 `.env`. The config file is also the one place HELMET reads `env()`, so
 `php artisan config:cache` keeps working.
 
-#### Trust the proxy, once
+#### Trust the proxy
 
 HELMET decides on its own whether a request was really HTTPS, from
 `HELMET_PROXIES`. Laravel has a separate trusted-proxy setting that drives
-`url()`, secure cookies and `$request->isSecure()`, and it can only be set in
-`bootstrap/app.php`, not in a service provider. Add this to the
-`Application::configure(...)` chain there, once, listing the same address as
-`HELMET_PROXIES`:
+`url()`, secure cookies and `$request->isSecure()`. The provider follows the
+same list: when the app has not set `trustedproxy.proxies` itself, it copies
+`helmet.proxies` over, so `HELMET_PROXIES` drives both. An app that sets
+`trustedproxy.proxies` keeps its own value, and an explicit
+`trustProxies(at: ...)` call in `bootstrap/app.php` still wins, because
+Laravel applies it before the config fallback.
 
-```php
-->withMiddleware(function (Middleware $middleware) {
-    $middleware->trustProxies(at: ['172.18.0.1']);
-})
-```
-
-Use a literal list. That closure runs before the configuration is loaded, so
-`config('helmet.proxies')` does not exist yet and calling it throws. As in the
-raw PHP section, list only the address HA-Proxy connects from, never a whole
-private range.
+As in the raw PHP section, list only the address HA-Proxy connects from,
+never a whole private range.
 
 The `/up` health route is Laravel's own: keep `health: '/up'` in
 `withRouting()`. The adapter registers no route.
@@ -153,7 +147,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 
 | Variable | Config key | Default | What it does |
 | --- | --- | --- | --- |
-| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`, for example `172.18.0.1`. Empty trusts nothing. |
+| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Also copied to `trustedproxy.proxies` when the app has not set it. Empty trusts nothing. |
 | `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
 | `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |

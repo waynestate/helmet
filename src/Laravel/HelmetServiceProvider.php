@@ -16,30 +16,15 @@ use Illuminate\Support\ServiceProvider;
  *
  * HELMET decides for itself whether a request really arrived over HTTPS,
  * from the `helmet.proxies` list, so the HSTS header is only sent for
- * requests that were really secure. Laravel has its own, separate
- * trusted-proxy setting (it drives url(), secure cookies and
- * $request->isSecure()), and trusting a proxy is a one-time app step, not
- * something this provider can set. On Laravel 11+ it is configured in
- * `bootstrap/app.php`, not in a service provider. Add this to the app's
- * `bootstrap/app.php` (once, when the package is installed), listing the
- * same address as HELMET_PROXIES:
+ * requests that were really secure.
  *
- *     return Application::configure(basePath: dirname(__DIR__))
- *         ->withRouting(
- *             web: __DIR__.'/../routes/web.php',
- *             commands: __DIR__.'/../routes/console.php',
- *             health: '/up',
- *         )
- *         ->withMiddleware(function (Middleware $middleware) {
- *             $middleware->trustProxies(at: ['172.18.0.1']);
- *         })
- *         ->withExceptions(function (Exceptions $exceptions) {
- *             //
- *         })->create();
- *
- * Use a literal list there. That closure runs when the HTTP kernel is built,
- * before the configuration is loaded, so config('helmet.proxies') does not
- * exist yet and calling it throws.
+ * Laravel has its own, separate trusted-proxy setting (it drives url(),
+ * secure cookies and $request->isSecure()). This provider follows the same
+ * list: when the app has not set `trustedproxy.proxies` itself, the provider
+ * copies `helmet.proxies` over, so HELMET_PROXIES drives both. An app that
+ * sets `trustedproxy.proxies` keeps its own value, and an explicit
+ * `trustProxies(at: ...)` call in `bootstrap/app.php` still wins, because
+ * Laravel applies it before the config fallback.
  *
  * The `/up` health route is left to Laravel's built-in `health: '/up'`
  * option in `withRouting()`; this provider does not register a route.
@@ -56,6 +41,14 @@ final class HelmetServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../../config/helmet.php' => config_path('helmet.php'),
         ], 'helmet-config');
+
+        // Laravel's own trusted-proxy setting drives url(), secure cookies and
+        // $request->isSecure(). When the app has not set it, follow the same
+        // list HELMET uses, so HELMET_PROXIES drives both. An app value (or an
+        // explicit trustProxies(at: ...) call) wins.
+        if (config('trustedproxy.proxies') === null) {
+            config(['trustedproxy.proxies' => config('helmet.proxies')]);
+        }
 
         // Join the middleware through the HTTP kernel, not the router. The
         // kernel owns the group lists and copies them over the router's each
