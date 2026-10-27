@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HELMET">
+<title>HELMET</title>
+<rect width="512" height="512" rx="112" fill="#0C5449"/>
+<g transform="translate(0 305) scale(1.0)">
+<path d="M84 0 A172 188 0 0 1 230 -185.84 L230 -127.52 A26 26 0 0 0 282 -127.52 L282 -185.84 A172 188 0 0 1 428 0 Z" fill="#FFFFFF"/>
+<rect x="74" y="34" width="364" height="56" rx="28" fill="#FFCC33"/>
+</g>
+</svg>
