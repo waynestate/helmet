@@ -92,7 +92,7 @@ It only wires and configures. Every rule (what the headers say, how a nonce is
 made, how a CSP is merged) lives in the core, so Laravel and raw PHP cannot
 drift apart. The suite runs against Laravel 13 with Orchestra Testbench.
 
-#### Install
+#### Install the adapter
 
 Strap It On:
 
@@ -159,7 +159,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |
 | `HELMET_POLICY_PATH` | `helmet.policy_path` | `vendor/waynestate/creed/policy/policy.json` if it exists, else `null` | The CREED `policy.json`. The Laravel middlewares do not read it yet. |
 
-#### Customizing the CSP
+#### Customizing the CSP in Laravel
 
 `helmet.csp` takes the same shape as the raw PHP `csp` option and follows the
 same rule: it is merged over the default, per directive. A directive you set
