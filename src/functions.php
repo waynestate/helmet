@@ -15,7 +15,7 @@ if (!function_exists('helmet_boot')) {
      *
      * Call this at the very top of the entry point, before any output. It:
      *  - decides whether the request is HTTPS from the trusted-proxy list,
-     *  - hardens the session settings (if the session has not started),
+     *  - hardens the session settings (throws if a session is already active),
      *  - answers the health check path with "ok" and stops,
      *  - sends the security headers (including a per-request CSP nonce),
      *  - removes the X-Powered-By header,
@@ -34,6 +34,7 @@ if (!function_exists('helmet_boot')) {
      * @return array{nonce: string, logger: LoggerInterface|null}
      *
      * @throws \InvalidArgumentException If trusted_proxies is missing.
+     * @throws \LogicException If a session is already active.
      */
     function helmet_boot(array $config): array
     {
@@ -44,9 +45,7 @@ if (!function_exists('helmet_boot')) {
         $proxies = new TrustedProxies($config['trusted_proxies']);
         $isHttps = HttpsDetector::isHttps($_SERVER, $proxies);
 
-        if (session_status() !== PHP_SESSION_ACTIVE) {
-            SessionHardening::apply($isHttps);
-        }
+        SessionHardening::apply($isHttps);
 
         $logger = null;
         if (isset($config['log']) && is_array($config['log'])) {
