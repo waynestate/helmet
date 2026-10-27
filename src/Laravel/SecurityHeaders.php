@@ -20,7 +20,7 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * to the application as the "helmet.csp_nonce" request attribute, exactly
  * like the core middleware.
  *
- * The CSP policy comes from config('helmet.csp') and the HSTS max-age from
+ * The CSP overrides come from config('helmet.csp') and the HSTS max-age from
  * config('helmet.hsts'); this middleware never reads env() directly.
  */
 final class SecurityHeaders
@@ -31,16 +31,20 @@ final class SecurityHeaders
         $isHttps = HttpsDetector::isHttps($request->server->all(), $proxies);
 
         $nonce = CoreSecurityHeaders::generateNonce();
-        $headers = CoreSecurityHeaders::build(
-            (array) config('helmet.csp'),
-            $nonce,
-            $isHttps
+        // The config holds per-directive overrides, merged over the default by
+        // the core exactly as helmet_boot() and the PSR-15 middleware do, so a
+        // partial policy keeps the directives it does not mention and a null
+        // directive removes one.
+        $policy = CoreSecurityHeaders::mergePolicies(
+            CoreSecurityHeaders::defaultCspPolicy(),
+            (array) config('helmet.csp')
         );
-
-        if ($isHttps) {
-            $headers['Strict-Transport-Security'] =
-                'max-age=' . (int) config('helmet.hsts') . '; includeSubDomains';
-        }
+        $headers = CoreSecurityHeaders::build(
+            $policy,
+            $nonce,
+            $isHttps,
+            (int) config('helmet.hsts')
+        );
 
         $request->attributes->set('helmet.csp_nonce', $nonce);
 

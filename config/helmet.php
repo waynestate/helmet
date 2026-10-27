@@ -17,10 +17,15 @@ use Waynestate\Helmet\Headers\SecurityHeaders;
 |               app trusts no proxy and HTTPS is detected from the direct
 |               connection only.
 |
-| "csp"         The Content-Security-Policy, as the policy array that the
-|               core SecurityHeaders::build() method turns into a header.
+| "csp"         The Content-Security-Policy, as a policy array in the shape
+|               SecurityHeaders::defaultCspPolicy() returns. The middleware
+|               merges it over the core default, per directive: a directive
+|               you set replaces the default's, a directive you leave out
+|               keeps the default's, and a directive set to null is removed
+|               (the same rule helmet_boot() applies to its "csp" option).
 |               Defaults to the core default policy. Override it with a
-|               JSON-encoded policy array via the HELMET_CSP env var.
+|               JSON-encoded policy array via the HELMET_CSP env var, or edit
+|               the array here once the config is published.
 |
 | "hsts"        The Strict-Transport-Security max-age, in seconds. Only sent
 |               on HTTPS responses. Defaults to one year (31536000).
