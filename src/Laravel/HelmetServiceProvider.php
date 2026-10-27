@@ -2,6 +2,8 @@
 
 namespace Waynestate\Helmet\Laravel;
 
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Foundation\Http\Kernel as FoundationKernel;
 use Illuminate\Support\ServiceProvider;
 
 /**
@@ -9,8 +11,8 @@ use Illuminate\Support\ServiceProvider;
  *
  * It merges and publishes the `helmet` config, and appends the two HELMET
  * middlewares (SecurityHeaders and InjectRibbon) to the `web` middleware
- * group so every web route gets the baseline headers and the environment
- * ribbon.
+ * group, through the HTTP kernel, so every web route gets the baseline
+ * headers and the environment ribbon.
  *
  * Trusted proxies are a one-time app step, not something this provider can
  * set. On Laravel 11+ the trusted-proxy list is configured in
@@ -50,8 +52,23 @@ final class HelmetServiceProvider extends ServiceProvider
             __DIR__ . '/../../config/helmet.php' => config_path('helmet.php'),
         ], 'helmet-config');
 
-        $router = $this->app['router'];
-        $router->pushMiddlewareToGroup('web', SecurityHeaders::class);
-        $router->pushMiddlewareToGroup('web', InjectRibbon::class);
+        // Join the `web` group through the HTTP kernel, not the router. The
+        // kernel owns the group lists and copies them over the router's each
+        // time it is built or asked to append a middleware, so a push made on
+        // the router alone is wiped by the next sync. That is what happened to
+        // the headers under Testbench (the kernel is first resolved after the
+        // providers boot) and would happen in production to any app where a
+        // later provider appends to a group through the kernel.
+        // callAfterResolving runs the callback now when the kernel is already
+        // built, or right after it is built, once the framework's own groups
+        // are in place.
+        $this->callAfterResolving(Kernel::class, static function (Kernel $kernel): void {
+            if (!$kernel instanceof FoundationKernel) {
+                return;
+            }
+
+            $kernel->appendMiddlewareToGroup('web', SecurityHeaders::class);
+            $kernel->appendMiddlewareToGroup('web', InjectRibbon::class);
+        });
     }
 }
