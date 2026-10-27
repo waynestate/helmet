@@ -13,6 +13,7 @@ final class ConfigTest extends TestCase
         $this->clearEnv('HELMET_SCOPE');
         $this->clearEnv('HELMET_CSP');
         $this->clearEnv('HELMET_HSTS_MAX_AGE');
+        $this->clearEnv('HELMET_HSTS_INCLUDE_SUBDOMAINS');
         $this->clearEnv('HELMET_RIBBON');
 
         parent::tearDown();
@@ -45,6 +46,19 @@ final class ConfigTest extends TestCase
         $this->reloadPackageConfig();
 
         self::assertSame('global', config('helmet.scope'));
+    }
+
+    public function testHstsIncludeSubDomainsEnvVarIsReadWithTrueAsTheDefault(): void
+    {
+        self::assertTrue(config('helmet.hsts_include_subdomains'));
+
+        $this->putEnv('HELMET_HSTS_INCLUDE_SUBDOMAINS', 'false');
+        $this->reloadPackageConfig();
+        self::assertFalse(config('helmet.hsts_include_subdomains'));
+
+        $this->putEnv('HELMET_HSTS_INCLUDE_SUBDOMAINS', 'true');
+        $this->reloadPackageConfig();
+        self::assertTrue(config('helmet.hsts_include_subdomains'));
     }
 
     public function testValidCspEnvVarOverridesTheDefault(): void

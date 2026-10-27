@@ -213,13 +213,16 @@ final class SecurityHeadersTest extends TestCase
     /**
      * @param array<string, list<string>|null>|null $cspConfig
      */
-    #[DataProvider('cspConfigs')]
-    public function testLaravelHeadersMatchCoreBuild(?array $cspConfig): void
+    #[DataProvider('headerConfigs')]
+    public function testLaravelHeadersMatchCoreBuild(?array $cspConfig, bool $hstsIncludeSubDomains): void
     {
         if ($cspConfig !== null) {
             config(['helmet.csp' => $cspConfig]);
         }
-        config(['helmet.proxies' => ['10.0.0.1']]);
+        config([
+            'helmet.proxies' => ['10.0.0.1'],
+            'helmet.hsts_include_subdomains' => $hstsIncludeSubDomains,
+        ]);
 
         // Call the middleware directly so the only headers on the response are
         // the ones HELMET sends (plus the two Symfony adds to every Response).
@@ -237,7 +240,7 @@ final class SecurityHeadersTest extends TestCase
             $nonce,
             true,
             (int) config('helmet.hsts'),
-            true
+            $hstsIncludeSubDomains
         );
 
         // The set of header names the middleware sends equals build()'s.
@@ -257,17 +260,41 @@ final class SecurityHeadersTest extends TestCase
         }
     }
 
+    public function testHstsIncludeSubDomainsFollowsConfig(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config([
+            'helmet.proxies' => ['10.0.0.1'],
+            'helmet.hsts_include_subdomains' => false,
+        ]);
+        $response = $this->withServerVariables($this->httpsViaTrustedProxy())->get('/test');
+
+        $response->assertHeader('Strict-Transport-Security', 'max-age=31536000');
+    }
+
+    public function testHstsIncludeSubDomainsDefaultsToTrue(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.proxies' => ['10.0.0.1']]);
+        $response = $this->withServerVariables($this->httpsViaTrustedProxy())->get('/test');
+
+        $response->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+
     /**
-     * @return array<string, array{array<string, list<string>|null>|null}>
+     * @return array<string, array{array<string, list<string>|null>|null, bool}>
      */
-    public static function cspConfigs(): array
+    public static function headerConfigs(): array
     {
         return [
-            'the default policy' => [null],
-            'a partial policy with a removed directive' => [[
+            'the default policy, includeSubDomains on' => [null, true],
+            'the default policy, includeSubDomains off' => [null, false],
+            'a partial policy with a removed directive, includeSubDomains on' => [[
                 'img-src' => ["'self'", 'https://parity-test.example'],
                 'form-action' => null,
-            ]],
+            ], true],
         ];
     }
 

@@ -37,6 +37,11 @@ use Waynestate\Helmet\Headers\SecurityHeaders;
 | "hsts"        The Strict-Transport-Security max-age, in seconds. Only sent
 |               on HTTPS responses. Defaults to one year (31536000).
 |
+| "hsts_include_subdomains"
+|               Whether the Strict-Transport-Security header covers
+|               subdomains (the includeSubDomains directive). Only sent on
+|               HTTPS responses. Defaults to true.
+|
 | "ribbon"      Whether the environment ribbon is injected into HTML
 |               responses in non-production environments. On by default.
 |
@@ -71,6 +76,8 @@ if (is_string($helmetCsp) && $helmetCsp !== '') {
     }
 }
 
+$hstsIncludeSubDomains = (bool) env('HELMET_HSTS_INCLUDE_SUBDOMAINS', true);
+
 $policyPath = env('HELMET_POLICY_PATH');
 if (!is_string($policyPath) || $policyPath === '') {
     $defaultPolicyPath = base_path('vendor/waynestate/creed/policy/policy.json');
@@ -82,6 +89,7 @@ return [
     'scope' => $scope,
     'csp' => $csp,
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
+    'hsts_include_subdomains' => $hstsIncludeSubDomains,
     'ribbon' => (bool) env('HELMET_RIBBON', true),
     'policy_path' => $policyPath,
 ];
