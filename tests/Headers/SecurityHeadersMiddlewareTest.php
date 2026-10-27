@@ -64,8 +64,12 @@ final class SecurityHeadersMiddlewareTest extends TestCase
 
         self::assertStringContainsString("default-src 'self'", $csp);
         self::assertStringContainsString("frame-ancestors 'self'", $csp);
+        self::assertStringContainsString("base-uri 'self'", $csp);
+        self::assertStringContainsString("object-src 'none'", $csp);
+        self::assertStringContainsString("form-action 'self'", $csp);
         self::assertStringContainsString('https://wayneui.apps.wayne.edu', $csp);
         self::assertMatchesRegularExpression("#'nonce-[A-Za-z0-9+/=]+'#", $csp);
+        self::assertStringContainsString("'strict-dynamic'", $csp);
     }
 
     public function testHstsSentWhenHttps(): void
@@ -144,7 +148,7 @@ final class SecurityHeadersMiddlewareTest extends TestCase
         self::assertStringContainsString("'nonce-{$handler->capturedNonce}'", $csp);
     }
 
-    public function testCustomCspPolicyIsUsed(): void
+    public function testCustomCspPolicyMergesOverDefault(): void
     {
         $proxies = new TrustedProxies(['10.0.0.0/8']);
         $policy = ['default-src' => ["'none'"]];
@@ -158,7 +162,29 @@ final class SecurityHeadersMiddlewareTest extends TestCase
         $response = $middleware->process($request, $this->passthroughHandler());
 
         $csp = $response->getHeaderLine('Content-Security-Policy');
+        // The custom directive replaces the default's value for that directive...
         self::assertStringContainsString("default-src 'none'", $csp);
+        // ...while directives the app did not set are kept from the default.
+        self::assertStringContainsString("base-uri 'self'", $csp);
+        self::assertStringContainsString("object-src 'none'", $csp);
+    }
+
+    public function testCustomCspPolicyCanRemoveADirective(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $policy = ['form-action' => null];
+        $middleware = new SecurityHeadersMiddleware($proxies, $policy);
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        $csp = $response->getHeaderLine('Content-Security-Policy');
+        self::assertStringNotContainsString('form-action', $csp);
+        self::assertStringContainsString("base-uri 'self'", $csp);
     }
 
     public function testDefaultPolicyMatchesSharedDefault(): void

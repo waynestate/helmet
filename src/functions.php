@@ -26,7 +26,7 @@ if (!function_exists('helmet_boot')) {
      *
      * @param array{
      *     trusted_proxies: list<string>,
-     *     csp?: array<string, list<string>>,
+     *     csp?: array<string, list<string>|null>,
      *     health_path?: string,
      *     log?: array{channel?: string, stream?: string, level?: string}
      * } $config
@@ -71,7 +71,10 @@ if (!function_exists('helmet_boot')) {
             exit;
         }
 
-        $cspPolicy = $config['csp'] ?? SecurityHeaders::defaultCspPolicy();
+        $cspPolicy = SecurityHeaders::mergePolicies(
+            SecurityHeaders::defaultCspPolicy(),
+            $config['csp'] ?? []
+        );
         $nonce = SecurityHeaders::generateNonce();
         $headers = SecurityHeaders::build($cspPolicy, $nonce, $isHttps);
 

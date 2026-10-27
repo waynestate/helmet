@@ -17,15 +17,18 @@ final class SecurityHeaders
      * The default Content-Security-Policy.
      *
      * This is the union of the two WayneUI recipes (the framework-free raw PHP
-     * recipe and the Laravel/Blade recipe) plus frame-ancestors 'self':
+     * recipe and the Laravel/Blade recipe) plus a set of hardening directives
+     * that HELMET adds on top:
      *
      *  - default-src, style-src, style-src-attr, script-src, font-src, img-src
      *    and connect-src come from the raw PHP recipe.
-     *  - style-src-elem comes from the Laravel/Blade recipe, which needs
-     *    'unsafe-inline' for element style attributes that the raw recipe
-     *    covers only via style-src-attr.
-     *  - frame-ancestors 'self' is added by HELMET so the default also covers
-     *    clickjacking at the CSP layer.
+     *  - style-src-elem comes from the Laravel/Blade recipe. It does not carry
+     *    'unsafe-inline'; only style-src-attr does, and only for the inline
+     *    style="..." attributes the recipes rely on.
+     *  - frame-ancestors 'self' covers clickjacking at the CSP layer.
+     *  - base-uri 'self', object-src 'none' and form-action 'self' close the
+     *    base-tag, plugin and form-targeting gaps that default-src alone does
+     *    not cover in every browser.
      *
      * @return array<string, list<string>>
      */
@@ -34,12 +37,21 @@ final class SecurityHeaders
         return [
             'default-src' => ["'self'"],
             'style-src' => ["'self'", 'https://wayneui.apps.wayne.edu'],
+            // 'unsafe-inline' is kept only here, on style-src-attr: the WayneUI
+            // raw PHP and Laravel/Blade recipes set inline style="..." attributes
+            // (block spacing) that are silently dropped without it. style-src-attr
+            // governs only the style attribute, not <style> elements or
+            // stylesheets, so this is the narrowest allowance that keeps those
+            // recipes working. style-src-elem deliberately does not carry it.
             'style-src-attr' => ["'unsafe-inline'"],
-            'style-src-elem' => ["'self'", "'unsafe-inline'", 'https://wayneui.apps.wayne.edu'],
+            'style-src-elem' => ["'self'", 'https://wayneui.apps.wayne.edu'],
             'script-src' => ["'self'", 'https://wayneui.apps.wayne.edu'],
             'font-src' => ["'self'", 'https://wayneui.apps.wayne.edu'],
             'img-src' => ["'self'", 'data:', 'https://wayneui.apps.wayne.edu'],
             'connect-src' => ["'self'", 'https://wayneui.apps.wayne.edu'],
+            'base-uri' => ["'self'"],
+            'object-src' => ["'none'"],
+            'form-action' => ["'self'"],
             'frame-ancestors' => ["'self'"],
         ];
     }
@@ -72,7 +84,40 @@ final class SecurityHeaders
         // default policy, so the directive exists before the nonce is added.
         $builder->nonce('script-src', $nonce);
 
+        // strict-dynamic lets a script that was loaded with the nonce load other
+        // scripts dynamically, without opening script-src to 'unsafe-inline'.
+        $builder->setStrictDynamic('script-src', true);
+
         return $builder->compile();
+    }
+
+    /**
+     * Merge a custom CSP policy over the default, per directive.
+     *
+     * A directive present in $custom replaces the default's value for that
+     * directive. A directive set to null in $custom is removed from the merged
+     * policy. Directives absent from $custom keep the default's value. This is
+     * how an app extends or narrows the default without re-declaring every
+     * directive, and how it removes one it does not want.
+     *
+     * @param array<string, list<string>> $default
+     * @param array<string, list<string>|null> $custom
+     *
+     * @return array<string, list<string>>
+     */
+    public static function mergePolicies(array $default, array $custom): array
+    {
+        $merged = $default;
+
+        foreach ($custom as $directive => $sources) {
+            if ($sources === null) {
+                unset($merged[$directive]);
+            } else {
+                $merged[$directive] = $sources;
+            }
+        }
+
+        return $merged;
     }
 
     /**

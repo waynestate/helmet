@@ -84,7 +84,7 @@ Every response gets the same set, built by one shared function:
 
 | Header | Value |
 | --- | --- |
-| `Content-Security-Policy` | the WayneUI default policy, plus a per-request nonce |
+| `Content-Security-Policy` | the WayneUI default policy, plus a per-request nonce and `strict-dynamic` |
 | `X-Content-Type-Options` | `nosniff` |
 | `X-Frame-Options` | `SAMEORIGIN` |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` |
@@ -92,7 +92,30 @@ Every response gets the same set, built by one shared function:
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains`, HTTPS only |
 
 The default CSP is the union of the WayneUI recipes, with `frame-ancestors
-'self'` added so an app can never be framed by a stranger.
+'self'`, `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` added
+so an app can never be framed by a stranger, have its base tag hijacked, load
+plugins, or post its forms to an attacker. `script-src` carries a per-request
+nonce plus `strict-dynamic`, so a script loaded with the nonce can load other
+scripts without opening the door to `'unsafe-inline'`.
+
+### Customizing the CSP
+
+Pass a `csp` policy (raw PHP) or a second constructor argument (middleware).
+It is merged over the default, per directive: a directive you set replaces the
+default's value for that directive, and a directive you leave out keeps the
+default. To remove a directive the default sets, set it to `null`:
+
+```php
+$helmet = helmet_boot([
+    'trusted_proxies' => ['172.18.0.1'],
+    'csp' => [
+        // Replace the default img-src.
+        'img-src' => ["'self'", 'data:'],
+        // Remove form-action entirely.
+        'form-action' => null,
+    ],
+]);
+```
 
 ## HTTPS, and why the proxy list matters
 

@@ -21,11 +21,20 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
 {
     private readonly array $cspPolicy;
 
+    /**
+     * @param TrustedProxies $proxies
+     * @param array<string, list<string>|null>|null $cspPolicy Merged per
+     *        directive over the default policy. A directive set to null is
+     *        removed. null (the default) uses the default policy unchanged.
+     */
     public function __construct(
         private readonly TrustedProxies $proxies,
         ?array $cspPolicy = null
     ) {
-        $this->cspPolicy = $cspPolicy ?? SecurityHeaders::defaultCspPolicy();
+        $this->cspPolicy = SecurityHeaders::mergePolicies(
+            SecurityHeaders::defaultCspPolicy(),
+            $cspPolicy ?? []
+        );
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
