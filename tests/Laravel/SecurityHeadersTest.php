@@ -4,6 +4,7 @@ namespace Waynestate\Helmet\Tests\Laravel;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Vite;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
 use Waynestate\Helmet\Headers\SecurityHeaders as CoreSecurityHeaders;
@@ -133,6 +134,19 @@ final class SecurityHeadersTest extends TestCase
         $this->get('/test')->assertHeaderMissing('X-Powered-By');
     }
 
+    public function testHeadersAreSentOnAnErrorPage(): void
+    {
+        $this->app['router']->get('/boom', static function (): never {
+            throw new \RuntimeException('boom');
+        })->middleware('web');
+
+        $response = $this->get('/boom');
+
+        $response->assertStatus(500);
+        $response->assertHeader('Content-Security-Policy');
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
+    }
+
     public function testRouteCanReadTheNonceThatTheHeaderCarries(): void
     {
         $this->defineNonceCapturingRoute('/test');
@@ -163,6 +177,37 @@ final class SecurityHeadersTest extends TestCase
 
         self::assertNotNull($nonceInHeader);
         self::assertStringContainsString('<script nonce="' . $nonceInHeader . '">', (string) $response->getContent());
+    }
+
+    /**
+     * The README tells Vite users to hand Laravel's Vite helper the same
+     * nonce, so the @vite script tags satisfy the CSP. This is that snippet.
+     */
+    public function testViteTagsCarryTheNonce(): void
+    {
+        // A hot file makes @vite print dev-server tags without a build manifest.
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->app['router']->get('/vite', static fn () => response(
+                Blade::render(
+                    "@php(\\Illuminate\\Support\\Facades\\Vite::useCspNonce(request()->attributes->get('helmet.csp_nonce')))\n"
+                    . "@vite(['resources/js/app.js'])"
+                ),
+                200,
+                ['Content-Type' => 'text/html']
+            ))->middleware('web');
+
+            $response = $this->get('/vite');
+        } finally {
+            unlink($hotFile);
+        }
+
+        $nonceInHeader = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
+        self::assertNotNull($nonceInHeader);
+        self::assertStringContainsString('src="http://localhost:5173/resources/js/app.js" nonce="' . $nonceInHeader . '"', (string) $response->getContent());
     }
 
     /**
