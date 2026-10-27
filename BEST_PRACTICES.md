@@ -429,7 +429,7 @@ Each of these follows from the research above. Items marked "inferred" depend on
 5. `src/Session/SessionHardening.php:36-44`: `ini_set` results are not checked, so a refused setting goes unnoticed.
 6. `src/Proxy/TrustedProxies.php:92-94`: a `/0` range is accepted and trusts every IPv4 address. Reject prefixes shorter than a chosen minimum.
 7. `src/Proxy/TrustedProxies.php:34` and `:41`: invalid exact entries (`*`, IPv6, typos) are stored or skipped without error. Validate them with `filter_var` and throw.
-8. `README.md:35` and `:65`: the example list `10.0.0.0/8` is probably not the address the app sees from HA-Proxy (inferred: the Docker bridge gateway on `172.18.0.0/24`). Trusting the whole bridge would trust every other app's container. Replace with the exact proxy address, once the Citadel team confirms it.
+8. Done: the README examples use the exact address `172.18.0.1` and warn against broad ranges such as `10.0.0.0/8`. Confirmed read-only on 2026-10-27: on both Citadel hosts, apps sit on the `mysql_citadel` Docker network (`172.18.0.0/24`, gateway `172.18.0.1`) and HA-Proxy reaches them through `127.0.0.1` and docker-proxy, so the app sees `172.18.0.1`. On other hosts the address is a setting (ADR-0010).
 9. `src/Proxy/HttpsDetector.php:47-50`: exact comparison of a possibly multi-value header. Take the last element.
 10. `src/functions.php:74` and `src/Headers/SecurityHeadersMiddleware.php:24-28`: a custom `csp` replaces the default. Offer merge-by-default.
 11. `composer.json:13` (was cited as `:9`; the file has changed): `akrabat/ip-address-middleware` is required and unused. Use it for the client-IP function, or remove it.
