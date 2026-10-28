@@ -17,10 +17,12 @@ final class ProviderTest extends TestCase
 
         self::assertIsArray($config);
         self::assertArrayHasKey('proxies', $config);
+        self::assertArrayHasKey('scope', $config);
         self::assertArrayHasKey('csp', $config);
         self::assertArrayHasKey('hsts', $config);
+        self::assertArrayHasKey('hsts_include_subdomains', $config);
         self::assertArrayHasKey('ribbon', $config);
-        self::assertArrayHasKey('policy_path', $config);
+        self::assertArrayNotHasKey('policy_path', $config);
     }
 
     /**
@@ -30,29 +32,33 @@ final class ProviderTest extends TestCase
      * which is the state a request sees. (Checking the router before that
      * passed while every request went out without headers.)
      */
-    public function testMiddlewaresAreInTheWebGroupOnceTheKernelIsBuilt(): void
+    public function testSecurityHeadersIsGlobalByDefaultAndRibbonIsInWebGroupOnceTheKernelIsBuilt(): void
     {
-        $this->app->make(Kernel::class);
+        $kernel = $this->app->make(Kernel::class);
+        self::assertInstanceOf(FoundationKernel::class, $kernel);
 
+        $global = $this->globalMiddlewareList($kernel);
         $web = $this->app['router']->getMiddlewareGroups()['web'];
 
-        self::assertContains(SecurityHeaders::class, $web);
+        self::assertContains(SecurityHeaders::class, $global);
+        self::assertNotContains(SecurityHeaders::class, $web);
         self::assertContains(InjectRibbon::class, $web);
-        // Appended, so they run inside the framework's own web middleware.
-        self::assertSame(
-            [SecurityHeaders::class, InjectRibbon::class],
-            array_slice($web, -2)
-        );
+        // Appended, so it runs inside the framework's own web middleware.
+        self::assertSame([InjectRibbon::class], array_slice($web, -1));
     }
 
-    public function testMiddlewaresAreInTheWebGroupOnlyOnce(): void
+    public function testMiddlewaresAreAddedOnlyOnce(): void
     {
+        $kernel = $this->app->make(Kernel::class);
+        self::assertInstanceOf(FoundationKernel::class, $kernel);
+        // Resolving the kernel again must not add the middleware a second time.
         $this->app->make(Kernel::class);
 
-        $counts = array_count_values($this->app['router']->getMiddlewareGroups()['web']);
+        $globalCounts = array_count_values($this->globalMiddlewareList($kernel));
+        $webCounts = array_count_values($this->app['router']->getMiddlewareGroups()['web']);
 
-        self::assertSame(1, $counts[SecurityHeaders::class]);
-        self::assertSame(1, $counts[InjectRibbon::class]);
+        self::assertSame(1, $globalCounts[SecurityHeaders::class] ?? 0);
+        self::assertSame(1, $webCounts[InjectRibbon::class] ?? 0);
     }
 
     /**
@@ -66,9 +72,10 @@ final class ProviderTest extends TestCase
 
         $kernel->appendMiddlewareToGroup('web', 'Some\\Other\\Package\\Middleware');
 
+        $global = $this->globalMiddlewareList($kernel);
         $web = $this->app['router']->getMiddlewareGroups()['web'];
         self::assertContains('Some\\Other\\Package\\Middleware', $web);
-        self::assertContains(SecurityHeaders::class, $web);
+        self::assertContains(SecurityHeaders::class, $global);
         self::assertContains(InjectRibbon::class, $web);
     }
 

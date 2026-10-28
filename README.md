@@ -102,18 +102,18 @@ composer require waynestate/helmet
 
 Package discovery registers `Waynestate\Helmet\Laravel\HelmetServiceProvider`,
 so there is nothing to add to `bootstrap/providers.php`. The provider merges
-the `helmet` config and appends two middlewares to the `web` group:
+the `helmet` config and joins the HTTP kernel's middleware:
 
 - `SecurityHeaders` sends the headers in [The headers](#the-headers) and strips
-  `X-Powered-By`. They go out on error pages too.
-- `InjectRibbon` adds the environment ribbon (below).
+  `X-Powered-By`. By default it is global, so 404s and JSON routes carry them
+  too.
+- `InjectRibbon` adds the environment ribbon (below). It always stays in the
+  `web` group, because it edits HTML.
 
-They are appended through the HTTP kernel, so they run after Laravel's own
-`web` middleware and stay in the group when another package adds to it. Two
-edges to know about: a route outside the `web` group (the `api` group, say) is
-not covered, so add `Waynestate\Helmet\Laravel\SecurityHeaders::class` to it
-yourself; and a request that matches no route never enters the `web` group, so
-a plain `404` goes out without HELMET's headers.
+They are added through the HTTP kernel, so they survive another package adding
+to the same group. Set `HELMET_SCOPE=web` to keep `SecurityHeaders` in the
+`web` group only; then routes outside `web` and unmatched 404s do not carry
+its headers.
 
 #### Publish the config
 
@@ -126,25 +126,19 @@ change the CSP, because the policy is a PHP array there, not JSON squeezed into
 `.env`. The config file is also the one place HELMET reads `env()`, so
 `php artisan config:cache` keeps working.
 
-#### Trust the proxy, once
+#### Trust the proxy
 
 HELMET decides on its own whether a request was really HTTPS, from
 `HELMET_PROXIES`. Laravel has a separate trusted-proxy setting that drives
-`url()`, secure cookies and `$request->isSecure()`, and it can only be set in
-`bootstrap/app.php`, not in a service provider. Add this to the
-`Application::configure(...)` chain there, once, listing the same address as
-`HELMET_PROXIES`:
+`url()`, secure cookies and `$request->isSecure()`. The provider follows the
+same list: when the app has not set `trustedproxy.proxies` itself, it copies
+`helmet.proxies` over, so `HELMET_PROXIES` drives both. An app that sets
+`trustedproxy.proxies` keeps its own value, and an explicit
+`trustProxies(at: ...)` call in `bootstrap/app.php` still wins, because
+Laravel applies it before the config fallback.
 
-```php
-->withMiddleware(function (Middleware $middleware) {
-    $middleware->trustProxies(at: ['172.18.0.1']);
-})
-```
-
-Use a literal list. That closure runs before the configuration is loaded, so
-`config('helmet.proxies')` does not exist yet and calling it throws. As in the
-raw PHP section, list only the address HA-Proxy connects from, never a whole
-private range.
+As in the raw PHP section, list only the address HA-Proxy connects from,
+never a whole private range.
 
 The `/up` health route is Laravel's own: keep `health: '/up'` in
 `withRouting()`. The adapter registers no route.
@@ -153,11 +147,12 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 
 | Variable | Config key | Default | What it does |
 | --- | --- | --- | --- |
-| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`, for example `172.18.0.1`. Empty trusts nothing. |
+| `HELMET_SCOPE` | `helmet.scope` | `global` | `global` puts `SecurityHeaders` in the kernel's global middleware; `web` keeps it in the `web` group only. `InjectRibbon` always stays in `web`. |
+| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Also copied to `trustedproxy.proxies` when the app has not set it. Empty trusts nothing. |
 | `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
+| `HELMET_HSTS_INCLUDE_SUBDOMAINS` | `helmet.hsts_include_subdomains` | `true` | Set `false` to omit the HSTS `includeSubDomains` directive. |
 | `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |
-| `HELMET_POLICY_PATH` | `helmet.policy_path` | `vendor/waynestate/creed/policy/policy.json` if it exists, else `null` | The CREED `policy.json`. The Laravel middlewares do not read it yet. |
 
 #### Customizing the CSP in Laravel
 
@@ -230,10 +225,12 @@ like this:
 | Trusted proxies | `trusted_proxies` | `HELMET_PROXIES` / `helmet.proxies` |
 | CSP overrides | `csp` | `HELMET_CSP` / `helmet.csp`, same merge, `null` removes |
 | HSTS max-age | `hsts_max_age` | `HELMET_HSTS_MAX_AGE` / `helmet.hsts` |
-| HSTS subdomains | `hsts_include_subdomains` | always on; there is no Laravel setting yet |
+| HSTS subdomains | `hsts_include_subdomains` | `HELMET_HSTS_INCLUDE_SUBDOMAINS` / `helmet.hsts_include_subdomains`, default `true` |
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
+
+For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger.
 
 ## The headers
 

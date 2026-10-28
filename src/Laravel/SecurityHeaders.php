@@ -20,8 +20,10 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * to the application as the "helmet.csp_nonce" request attribute, exactly
  * like the core middleware.
  *
- * The CSP overrides come from config('helmet.csp') and the HSTS max-age from
- * config('helmet.hsts'); this middleware never reads env() directly.
+ * The CSP overrides come from config('helmet.csp'), the HSTS max-age from
+ * config('helmet.hsts'), and the HSTS includeSubDomains directive from
+ * config('helmet.hsts_include_subdomains'); this middleware never reads env()
+ * directly.
  */
 final class SecurityHeaders
 {
@@ -43,7 +45,8 @@ final class SecurityHeaders
             $policy,
             $nonce,
             $isHttps,
-            (int) config('helmet.hsts')
+            (int) config('helmet.hsts'),
+            (bool) config('helmet.hsts_include_subdomains')
         );
 
         $request->attributes->set('helmet.csp_nonce', $nonce);

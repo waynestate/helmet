@@ -10,8 +10,10 @@ final class ConfigTest extends TestCase
     protected function tearDown(): void
     {
         $this->clearEnv('HELMET_PROXIES');
+        $this->clearEnv('HELMET_SCOPE');
         $this->clearEnv('HELMET_CSP');
         $this->clearEnv('HELMET_HSTS_MAX_AGE');
+        $this->clearEnv('HELMET_HSTS_INCLUDE_SUBDOMAINS');
         $this->clearEnv('HELMET_RIBBON');
 
         parent::tearDown();
@@ -23,6 +25,40 @@ final class ConfigTest extends TestCase
         $this->reloadPackageConfig();
 
         self::assertSame(['10.0.0.1', '10.0.0.0/8'], config('helmet.proxies'));
+    }
+
+    public function testScopeEnvVarIsReadWithGlobalAsTheDefault(): void
+    {
+        self::assertSame('global', config('helmet.scope'));
+
+        $this->putEnv('HELMET_SCOPE', 'web');
+        $this->reloadPackageConfig();
+        self::assertSame('web', config('helmet.scope'));
+
+        $this->putEnv('HELMET_SCOPE', 'global');
+        $this->reloadPackageConfig();
+        self::assertSame('global', config('helmet.scope'));
+    }
+
+    public function testUnknownScopeFallsBackToGlobal(): void
+    {
+        $this->putEnv('HELMET_SCOPE', 'everywhere');
+        $this->reloadPackageConfig();
+
+        self::assertSame('global', config('helmet.scope'));
+    }
+
+    public function testHstsIncludeSubDomainsEnvVarIsReadWithTrueAsTheDefault(): void
+    {
+        self::assertTrue(config('helmet.hsts_include_subdomains'));
+
+        $this->putEnv('HELMET_HSTS_INCLUDE_SUBDOMAINS', 'false');
+        $this->reloadPackageConfig();
+        self::assertFalse(config('helmet.hsts_include_subdomains'));
+
+        $this->putEnv('HELMET_HSTS_INCLUDE_SUBDOMAINS', 'true');
+        $this->reloadPackageConfig();
+        self::assertTrue(config('helmet.hsts_include_subdomains'));
     }
 
     public function testValidCspEnvVarOverridesTheDefault(): void

@@ -3,6 +3,7 @@
 namespace Waynestate\Helmet\Tests\Laravel;
 
 use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Foundation\Http\Kernel as FoundationKernel;
 use Waynestate\Helmet\Laravel\InjectRibbon;
 use Waynestate\Helmet\Laravel\SecurityHeaders;
 
@@ -10,8 +11,8 @@ use Waynestate\Helmet\Laravel\SecurityHeaders;
  * The other boot order. A real app builds the HTTP kernel before the
  * providers boot (public/index.php resolves the kernel, then the kernel
  * bootstraps), whereas Testbench boots the providers first. The provider has
- * to join the `web` group in both orders, so this class forces the kernel to
- * be built before HELMET's provider boots.
+ * to join the kernel in both orders, so this class forces the kernel to be
+ * built before HELMET's provider boots.
  */
 final class KernelBuiltFirstTest extends TestCase
 {
@@ -24,11 +25,16 @@ final class KernelBuiltFirstTest extends TestCase
         $app->make(Kernel::class);
     }
 
-    public function testMiddlewaresAreInTheWebGroup(): void
+    public function testSecurityHeadersIsGlobalAndRibbonIsInWebGroup(): void
     {
+        $kernel = $this->app->make(Kernel::class);
+        self::assertInstanceOf(FoundationKernel::class, $kernel);
+
+        $global = $this->globalMiddlewareList($kernel);
         $web = $this->app['router']->getMiddlewareGroups()['web'];
 
-        self::assertContains(SecurityHeaders::class, $web);
+        self::assertContains(SecurityHeaders::class, $global);
+        self::assertNotContains(SecurityHeaders::class, $web);
         self::assertContains(InjectRibbon::class, $web);
     }
 

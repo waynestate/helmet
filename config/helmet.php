@@ -17,6 +17,13 @@ use Waynestate\Helmet\Headers\SecurityHeaders;
 |               app trusts no proxy and HTTPS is detected from the direct
 |               connection only.
 |
+| "scope"       Where the SecurityHeaders middleware runs. "global" (the
+|               default) adds it to the kernel's global middleware, so every
+|               response - including 404s and JSON routes - carries the
+|               baseline headers. "web" keeps it in the `web` middleware
+|               group only. InjectRibbon always stays in the `web` group,
+|               because it edits HTML. Set with the HELMET_SCOPE env var.
+|
 | "csp"         The Content-Security-Policy, as a policy array in the shape
 |               SecurityHeaders::defaultCspPolicy() returns. The middleware
 |               merges it over the core default, per directive: a directive
@@ -30,12 +37,13 @@ use Waynestate\Helmet\Headers\SecurityHeaders;
 | "hsts"        The Strict-Transport-Security max-age, in seconds. Only sent
 |               on HTTPS responses. Defaults to one year (31536000).
 |
+| "hsts_include_subdomains"
+|               Whether the Strict-Transport-Security header covers
+|               subdomains (the includeSubDomains directive). Only sent on
+|               HTTPS responses. Defaults to true.
+|
 | "ribbon"      Whether the environment ribbon is injected into HTML
 |               responses in non-production environments. On by default.
-|
-| "policy_path" The path to the CREED policy.json file. Defaults to the
-|               copy shipped in vendor/waynestate/creed/policy/policy.json
-|               when it exists, otherwise null (no policy).
 |
 */
 
@@ -50,6 +58,11 @@ if (is_string($helmetProxies) && $helmetProxies !== '') {
     }
 }
 
+$scope = env('HELMET_SCOPE', 'global');
+if ($scope !== 'web') {
+    $scope = 'global';
+}
+
 $csp = SecurityHeaders::defaultCspPolicy();
 $helmetCsp = env('HELMET_CSP');
 if (is_string($helmetCsp) && $helmetCsp !== '') {
@@ -59,16 +72,13 @@ if (is_string($helmetCsp) && $helmetCsp !== '') {
     }
 }
 
-$policyPath = env('HELMET_POLICY_PATH');
-if (!is_string($policyPath) || $policyPath === '') {
-    $defaultPolicyPath = base_path('vendor/waynestate/creed/policy/policy.json');
-    $policyPath = is_file($defaultPolicyPath) ? $defaultPolicyPath : null;
-}
+$hstsIncludeSubDomains = (bool) env('HELMET_HSTS_INCLUDE_SUBDOMAINS', true);
 
 return [
     'proxies' => $proxies,
+    'scope' => $scope,
     'csp' => $csp,
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
+    'hsts_include_subdomains' => $hstsIncludeSubDomains,
     'ribbon' => (bool) env('HELMET_RIBBON', true),
-    'policy_path' => $policyPath,
 ];
