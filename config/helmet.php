@@ -62,6 +62,30 @@ use Waynestate\Helmet\Platform\Presets;
 |               Defaults to false. Set with the HELMET_CSP_REPORT_ONLY env
 |               var.
 |
+| "coop"        The Cross-Origin-Opener-Policy value: "same-origin" (the
+|               default), "same-origin-allow-popups", "noopener-allow-popups"
+|               or "unsafe-none". null sends no COOP header. Set with the
+|               HELMET_COOP env var. An invalid value throws
+|               \InvalidArgumentException when the headers are built.
+|
+| "corp"        The Cross-Origin-Resource-Policy value: "same-site",
+|               "same-origin" or "cross-origin". null (the default) sends no
+|               CORP header. Set with the HELMET_CORP env var. An invalid
+|               value throws \InvalidArgumentException when the headers are
+|               built.
+|
+| "permissions_policy"
+|               The Permissions-Policy, as a feature map: each feature name
+|               maps to its allowlist, an array of "self" and https origins.
+|               An empty allowlist denies the feature. Defaults to the core
+|               deny list (camera, geolocation, microphone, payment and usb
+|               all denied). An empty array sends no Permissions-Policy
+|               header. Override it with a JSON-encoded feature map via the
+|               HELMET_PERMISSIONS_POLICY env var, or edit the array here
+|               once the config is published. An invalid feature name or
+|               allowlist entry throws \InvalidArgumentException when the
+|               headers are built.
+|
 | "hsts"        The Strict-Transport-Security max-age, in seconds. Only sent
 |               on HTTPS responses. Defaults to one year (31536000).
 |
@@ -157,6 +181,24 @@ $cspReportUri = is_string($cspReportUri) && $cspReportUri !== '' ? $cspReportUri
 
 $cspReportOnly = (bool) env('HELMET_CSP_REPORT_ONLY', false);
 
+// An empty string from env means "not set", so normalize it to null.
+$coop = env('HELMET_COOP', 'same-origin');
+$coop = is_string($coop) && $coop !== '' ? $coop : null;
+
+$corp = env('HELMET_CORP');
+$corp = is_string($corp) && $corp !== '' ? $corp : null;
+
+// An empty JSON object is meaningful: it sends no Permissions-Policy header.
+// Invalid JSON keeps the default deny list, like HELMET_CSP.
+$permissionsPolicy = null;
+$helmetPermissionsPolicy = env('HELMET_PERMISSIONS_POLICY');
+if (is_string($helmetPermissionsPolicy) && $helmetPermissionsPolicy !== '') {
+    $decoded = json_decode($helmetPermissionsPolicy, true);
+    if (is_array($decoded)) {
+        $permissionsPolicy = $decoded;
+    }
+}
+
 // The /metrics endpoint: off by default. When on, it is protected by a
 // bearer token and/or a client IP allow list.
 $metricsEnabled = (bool) env('HELMET_METRICS_ENABLED', false);
@@ -186,6 +228,9 @@ return [
     'csp' => $csp,
     'csp_report_uri' => $cspReportUri,
     'csp_report_only' => $cspReportOnly,
+    'coop' => $coop,
+    'corp' => $corp,
+    'permissions_policy' => $permissionsPolicy,
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
     'hsts_include_subdomains' => $hstsIncludeSubDomains,
     'ribbon' => (bool) env('HELMET_RIBBON', true),

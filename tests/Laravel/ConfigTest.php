@@ -20,6 +20,9 @@ final class ConfigTest extends TestCase
         $this->clearEnv('HELMET_RIBBON');
         $this->clearEnv('HELMET_CSP_REPORT_URI');
         $this->clearEnv('HELMET_CSP_REPORT_ONLY');
+        $this->clearEnv('HELMET_COOP');
+        $this->clearEnv('HELMET_CORP');
+        $this->clearEnv('HELMET_PERMISSIONS_POLICY');
 
         parent::tearDown();
     }
@@ -187,5 +190,58 @@ final class ConfigTest extends TestCase
         $this->putEnv('HELMET_CSP_REPORT_ONLY', 'false');
         $this->reloadPackageConfig();
         self::assertFalse(config('helmet.csp_report_only'));
+    }
+
+    public function testCoopEnvVarIsReadWithSameOriginAsTheDefault(): void
+    {
+        self::assertSame('same-origin', config('helmet.coop'));
+
+        $this->putEnv('HELMET_COOP', 'unsafe-none');
+        $this->reloadPackageConfig();
+        self::assertSame('unsafe-none', config('helmet.coop'));
+
+        // An empty value is treated as "no COOP header", the same as null.
+        $this->putEnv('HELMET_COOP', '');
+        $this->reloadPackageConfig();
+        self::assertNull(config('helmet.coop'));
+    }
+
+    public function testCorpEnvVarIsReadWithNullAsTheDefault(): void
+    {
+        self::assertNull(config('helmet.corp'));
+
+        $this->putEnv('HELMET_CORP', 'same-site');
+        $this->reloadPackageConfig();
+        self::assertSame('same-site', config('helmet.corp'));
+
+        // An empty value is treated as "no CORP header", the same as unset.
+        $this->putEnv('HELMET_CORP', '');
+        $this->reloadPackageConfig();
+        self::assertNull(config('helmet.corp'));
+    }
+
+    public function testPermissionsPolicyEnvVarIsReadWithNullAsTheDefault(): void
+    {
+        self::assertNull(config('helmet.permissions_policy'));
+
+        $this->putEnv('HELMET_PERMISSIONS_POLICY', '{"camera":["self"]}');
+        $this->reloadPackageConfig();
+        self::assertSame(['camera' => ['self']], config('helmet.permissions_policy'));
+
+        // An empty JSON object is meaningful: it sends no Permissions-Policy
+        // header, so it must survive as an empty array, not fall back to null.
+        $this->putEnv('HELMET_PERMISSIONS_POLICY', '{}');
+        $this->reloadPackageConfig();
+        self::assertSame([], config('helmet.permissions_policy'));
+
+        // Invalid JSON keeps the default (null), like HELMET_CSP.
+        $this->putEnv('HELMET_PERMISSIONS_POLICY', '{not valid json');
+        $this->reloadPackageConfig();
+        self::assertNull(config('helmet.permissions_policy'));
+
+        // An empty value is treated as "not set", the same as unset.
+        $this->putEnv('HELMET_PERMISSIONS_POLICY', '');
+        $this->reloadPackageConfig();
+        self::assertNull(config('helmet.permissions_policy'));
     }
 }

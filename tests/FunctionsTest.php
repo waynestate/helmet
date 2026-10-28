@@ -323,4 +323,97 @@ final class FunctionsTest extends TestCase
         self::assertIsString($result['nonce']);
         self::assertNotSame('', $result['nonce']);
     }
+
+    /**
+     * The raw PHP path forwards the cross-origin config to the core builder:
+     * valid coop, corp and permissions_policy boot cleanly and return a nonce.
+     * That proves the keys reached SecurityHeaders::build() (an invalid one
+     * throws, covered below). The header content itself is asserted in
+     * SecurityHeadersTest and the Laravel tests, because header() output is
+     * not inspectable in the CLI test SAPI (headers_sent() is always true).
+     */
+    public function testBootAcceptsCoopCorpAndPermissionsPolicy(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'coop' => 'unsafe-none',
+            'corp' => 'same-site',
+            'permissions_policy' => ['camera' => ['self']],
+        ]);
+
+        self::assertArrayHasKey('nonce', $result);
+        self::assertIsString($result['nonce']);
+        self::assertNotSame('', $result['nonce']);
+    }
+
+    /**
+     * An explicit null coop means "send no COOP header" (the same as the
+     * Laravel config), and an empty permissions_policy means "send no
+     * Permissions-Policy header". Both boot cleanly.
+     */
+    public function testBootAcceptsNullCoopAndEmptyPermissionsPolicy(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'coop' => null,
+            'permissions_policy' => [],
+        ]);
+
+        self::assertArrayHasKey('nonce', $result);
+        self::assertIsString($result['nonce']);
+        self::assertNotSame('', $result['nonce']);
+    }
+
+    public function testBootThrowsOnInvalidCoop(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('COOP must be one of');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'coop' => 'bogus',
+        ]);
+    }
+
+    public function testBootThrowsOnInvalidCorp(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('CORP must be one of');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'corp' => 'bogus',
+        ]);
+    }
+
+    public function testBootThrowsOnInvalidPermissionsPolicy(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('feature name "Camera" is invalid');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'permissions_policy' => ['Camera' => []],
+        ]);
+    }
 }

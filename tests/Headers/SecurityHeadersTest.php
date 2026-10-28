@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Headers;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Waynestate\Helmet\Headers\InvalidCspReportUriException;
 use Waynestate\Helmet\Headers\SecurityHeaders;
@@ -188,6 +189,383 @@ final class SecurityHeadersTest extends TestCase
         self::assertSame(
             'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
             $headers['Permissions-Policy'],
+        );
+    }
+
+    public function testDefaultPermissionsPolicyDeniesTheFiveFeatures(): void
+    {
+        $policy = SecurityHeaders::defaultPermissionsPolicy();
+
+        self::assertSame([], $policy['camera']);
+        self::assertSame([], $policy['geolocation']);
+        self::assertSame([], $policy['microphone']);
+        self::assertSame([], $policy['payment']);
+        self::assertSame([], $policy['usb']);
+        // interest-cohort is obsolete: the browser vendors dropped it, so the
+        // default deny list does not carry it.
+        self::assertArrayNotHasKey('interest-cohort', $policy);
+    }
+
+    /**
+     * @return array<string, array{0: string}>
+     */
+    public static function coopValues(): array
+    {
+        return [
+            'unsafe-none' => ['unsafe-none'],
+            'same-origin-allow-popups' => ['same-origin-allow-popups'],
+            'same-origin' => ['same-origin'],
+            'noopener-allow-popups' => ['noopener-allow-popups'],
+        ];
+    }
+
+    #[DataProvider('coopValues')]
+    public function testBuildCoopAcceptsEveryAllowedValue(string $value): void
+    {
+        self::assertSame($value, SecurityHeaders::buildCoop($value));
+    }
+
+    public function testBuildCoopRejectsInvalidValue(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('COOP must be one of');
+
+        SecurityHeaders::buildCoop('bogus');
+    }
+
+    public function testBuildCoopRejectsEmptyValue(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        SecurityHeaders::buildCoop('');
+    }
+
+    /**
+     * @return array<string, array{0: string}>
+     */
+    public static function corpValues(): array
+    {
+        return [
+            'same-site' => ['same-site'],
+            'same-origin' => ['same-origin'],
+            'cross-origin' => ['cross-origin'],
+        ];
+    }
+
+    #[DataProvider('corpValues')]
+    public function testBuildCorpAcceptsEveryAllowedValue(string $value): void
+    {
+        self::assertSame($value, SecurityHeaders::buildCorp($value));
+    }
+
+    public function testBuildCorpRejectsInvalidValue(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('CORP must be one of');
+
+        SecurityHeaders::buildCorp('bogus');
+    }
+
+    public function testBuildCorpRejectsEmptyValue(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        SecurityHeaders::buildCorp('');
+    }
+
+    public function testBuildPermissionsPolicyRendersTheDefaultDenyList(): void
+    {
+        self::assertSame(
+            'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
+            SecurityHeaders::buildPermissionsPolicy(SecurityHeaders::defaultPermissionsPolicy()),
+        );
+    }
+
+    public function testBuildPermissionsPolicyRendersSelfAndOrigins(): void
+    {
+        $value = SecurityHeaders::buildPermissionsPolicy([
+            'camera' => ['self'],
+            'microphone' => ['self', 'https://x.wayne.edu'],
+        ]);
+
+        self::assertSame(
+            'camera=(self), microphone=(self "https://x.wayne.edu")',
+            $value,
+        );
+    }
+
+    public function testBuildPermissionsPolicyAcceptsOriginWithPort(): void
+    {
+        self::assertSame(
+            'camera=("https://x.wayne.edu:8443")',
+            SecurityHeaders::buildPermissionsPolicy(['camera' => ['https://x.wayne.edu:8443']]),
+        );
+    }
+
+    public function testBuildPermissionsPolicyEmptyMapReturnsNull(): void
+    {
+        self::assertNull(SecurityHeaders::buildPermissionsPolicy([]));
+    }
+
+    public function testBuildPermissionsPolicyRejectsUppercaseFeatureName(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('feature name "Camera" is invalid');
+
+        SecurityHeaders::buildPermissionsPolicy(['Camera' => []]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsFeatureNameStartingWithDigit(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        SecurityHeaders::buildPermissionsPolicy(['9lives' => []]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsFeatureNameWithSpace(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        SecurityHeaders::buildPermissionsPolicy(['cam era' => []]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsNonStringFeatureName(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('feature names must be strings');
+
+        SecurityHeaders::buildPermissionsPolicy([0 => []]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsNonArrayAllowlist(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('allowlist for "camera" must be an array');
+
+        SecurityHeaders::buildPermissionsPolicy(['camera' => 'self']);
+    }
+
+    public function testBuildPermissionsPolicyRejectsNonStringEntry(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+
+        SecurityHeaders::buildPermissionsPolicy(['camera' => [123]]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsHttpOrigin(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be an https origin');
+
+        SecurityHeaders::buildPermissionsPolicy(['camera' => ['http://x.wayne.edu']]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsOriginWithPath(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must not contain a path');
+
+        SecurityHeaders::buildPermissionsPolicy(['camera' => ['https://x.wayne.edu/cam']]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsOriginWithTrailingSlash(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must not contain a path');
+
+        SecurityHeaders::buildPermissionsPolicy(['camera' => ['https://x.wayne.edu/']]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsOriginWithQuery(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must not contain a query or fragment');
+
+        SecurityHeaders::buildPermissionsPolicy(['camera' => ['https://x.wayne.edu?x=1']]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsOriginWithFragment(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must not contain a query or fragment');
+
+        SecurityHeaders::buildPermissionsPolicy(['camera' => ['https://x.wayne.edu#f']]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsOriginWithCredentials(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must not contain credentials');
+
+        SecurityHeaders::buildPermissionsPolicy(['camera' => ['https://u:p@x.wayne.edu']]);
+    }
+
+    public function testBuildPermissionsPolicyRejectsHostlessOrigin(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must be an https origin with a host');
+
+        SecurityHeaders::buildPermissionsPolicy(['camera' => ['https:']]);
+    }
+
+    public function testBuildSendsCoopByDefault(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+        );
+
+        self::assertSame('same-origin', $headers['Cross-Origin-Opener-Policy']);
+    }
+
+    public function testBuildOmitsCoopWhenNull(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            null,
+        );
+
+        self::assertArrayNotHasKey('Cross-Origin-Opener-Policy', $headers);
+    }
+
+    public function testBuildSendsConfiguredCoop(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'unsafe-none',
+        );
+
+        self::assertSame('unsafe-none', $headers['Cross-Origin-Opener-Policy']);
+    }
+
+    public function testBuildOmitsCorpByDefault(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+        );
+
+        self::assertArrayNotHasKey('Cross-Origin-Resource-Policy', $headers);
+    }
+
+    public function testBuildSendsConfiguredCorp(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            'same-site',
+        );
+
+        self::assertSame('same-site', $headers['Cross-Origin-Resource-Policy']);
+    }
+
+    public function testBuildRejectsInvalidCoop(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('COOP must be one of');
+
+        SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'bogus',
+        );
+    }
+
+    public function testBuildRejectsInvalidCorp(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('CORP must be one of');
+
+        SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            'bogus',
+        );
+    }
+
+    public function testBuildSendsConfiguredPermissionsPolicy(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            ['camera' => ['self']],
+        );
+
+        self::assertSame('camera=(self)', $headers['Permissions-Policy']);
+    }
+
+    public function testBuildOmitsPermissionsPolicyWhenEmpty(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            [],
+        );
+
+        self::assertArrayNotHasKey('Permissions-Policy', $headers);
+    }
+
+    public function testBuildRejectsInvalidPermissionsPolicy(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('feature name "Camera" is invalid');
+
+        SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            ['Camera' => []],
         );
     }
 

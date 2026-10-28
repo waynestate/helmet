@@ -50,6 +50,16 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
      * @param bool $cspReportOnly When true, the policy is sent as
      *        Content-Security-Policy-Report-Only instead of
      *        Content-Security-Policy.
+     * @param string|null $coop The Cross-Origin-Opener-Policy value, or null
+     *        to send no COOP header.
+     * @param string|null $corp The Cross-Origin-Resource-Policy value, or
+     *        null to send no CORP header.
+     * @param array<string, list<string>>|null $permissionsPolicy The
+     *        Permissions-Policy feature map, or null to use the default deny
+     *        list. An empty array sends no Permissions-Policy header.
+     *
+     * @throws \InvalidArgumentException If $coop, $corp or $permissionsPolicy
+     *         is invalid.
      */
     public function __construct(
         private readonly TrustedProxies $proxies,
@@ -60,11 +70,27 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         private readonly bool $hstsIncludeSubDomains = true,
         private readonly ?string $cspReportUri = null,
         private readonly bool $cspReportOnly = false,
+        private readonly ?string $coop = 'same-origin',
+        private readonly ?string $corp = null,
+        private readonly ?array $permissionsPolicy = null,
     ) {
         $this->cspPolicy = SecurityHeaders::mergePolicies(
             SecurityHeaders::defaultCspPolicy(),
             $cspPolicy ?? [],
         );
+
+        // Validate the cross-origin isolation settings at boot, not per
+        // request: a bad value is a config error, and it should fail where
+        // the app starts, not on the first request.
+        if ($coop !== null) {
+            SecurityHeaders::buildCoop($coop);
+        }
+        if ($corp !== null) {
+            SecurityHeaders::buildCorp($corp);
+        }
+        if ($permissionsPolicy !== null) {
+            SecurityHeaders::buildPermissionsPolicy($permissionsPolicy);
+        }
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -79,6 +105,9 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
             $this->hstsIncludeSubDomains,
             $this->cspReportUri,
             $this->cspReportOnly,
+            $this->coop,
+            $this->corp,
+            $this->permissionsPolicy,
         );
 
         $request = $request->withAttribute('helmet.csp_nonce', $nonce);
