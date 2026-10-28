@@ -127,6 +127,55 @@ final class SecurityHeadersTest extends TestCase
         self::assertStringNotContainsString('form-action', $csp);
     }
 
+    /**
+     * With csp_report_only on, the policy goes out as
+     * Content-Security-Policy-Report-Only and the enforced header is absent.
+     */
+    public function testReportOnlyModeSendsTheReportOnlyHeader(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.csp_report_only' => true]);
+
+        $response = $this->get('/test');
+
+        $response->assertHeader('Content-Security-Policy-Report-Only');
+        $response->assertHeaderMissing('Content-Security-Policy');
+    }
+
+    /**
+     * With a csp_report_uri set, the Reporting-Endpoints header names the
+     * endpoint and the policy carries report-uri and report-to.
+     */
+    public function testReportUriSendsReportingEndpointsAndDirectives(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.csp_report_uri' => 'https://example.com/csp-report']);
+
+        $response = $this->get('/test');
+
+        $response->assertHeader('Reporting-Endpoints', 'csp-endpoint="https://example.com/csp-report"');
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        self::assertStringContainsString('report-uri https://example.com/csp-report', $csp);
+        self::assertStringContainsString('report-to csp-endpoint', $csp);
+    }
+
+    /**
+     * With no csp_report_uri, no reporting headers or directives are sent.
+     */
+    public function testNoReportUriSendsNoReportingHeaders(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        $response = $this->get('/test');
+
+        $response->assertHeaderMissing('Reporting-Endpoints');
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        self::assertStringNotContainsString('report-uri', $csp);
+        self::assertStringNotContainsString('report-to', $csp);
+    }
+
     public function testXPoweredByIsRemoved(): void
     {
         $this->app['router']->get('/test', static fn() => response('<html><body>hi</body></html>', 200, [

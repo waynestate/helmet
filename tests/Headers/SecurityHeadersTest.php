@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Waynestate\Helmet\Tests\Headers;
 
 use PHPUnit\Framework\TestCase;
+use Waynestate\Helmet\Headers\InvalidCspReportUriException;
 use Waynestate\Helmet\Headers\SecurityHeaders;
 
 final class SecurityHeadersTest extends TestCase
@@ -188,5 +189,150 @@ final class SecurityHeadersTest extends TestCase
             'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
             $headers['Permissions-Policy'],
         );
+    }
+
+    public function testBuildSendsContentSecurityPolicyByDefault(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+        );
+
+        self::assertArrayHasKey('Content-Security-Policy', $headers);
+        self::assertArrayNotHasKey('Content-Security-Policy-Report-Only', $headers);
+    }
+
+    public function testBuildSendsReportOnlyHeaderWhenReportOnly(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            true,
+        );
+
+        self::assertArrayHasKey('Content-Security-Policy-Report-Only', $headers);
+        self::assertArrayNotHasKey('Content-Security-Policy', $headers);
+    }
+
+    public function testBuildSendsReportingEndpointsWhenReportUriSet(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            'https://example.com/csp-report',
+        );
+
+        self::assertSame(
+            'csp-endpoint="https://example.com/csp-report"',
+            $headers['Reporting-Endpoints'],
+        );
+        $csp = $headers['Content-Security-Policy'];
+        self::assertStringContainsString('report-uri https://example.com/csp-report', $csp);
+        self::assertStringContainsString('report-to csp-endpoint', $csp);
+    }
+
+    public function testBuildOmitsReportingDirectivesWhenNoReportUri(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+        );
+
+        self::assertArrayNotHasKey('Reporting-Endpoints', $headers);
+        self::assertStringNotContainsString('report-uri', $headers['Content-Security-Policy']);
+        self::assertStringNotContainsString('report-to', $headers['Content-Security-Policy']);
+    }
+
+    /**
+     * Report-only is exactly when reports are wanted, so the Reporting-Endpoints
+     * header and the report directives are sent in that mode too.
+     */
+    public function testBuildReportOnlyStillSendsReportingEndpoints(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            '/csp-report',
+            true,
+        );
+
+        self::assertSame('csp-endpoint="/csp-report"', $headers['Reporting-Endpoints']);
+        $csp = $headers['Content-Security-Policy-Report-Only'];
+        self::assertStringContainsString('report-uri /csp-report', $csp);
+        self::assertStringContainsString('report-to csp-endpoint', $csp);
+    }
+
+    public function testValidateReportUriAcceptsAbsoluteHttps(): void
+    {
+        self::assertSame(
+            'https://example.com/csp-report',
+            SecurityHeaders::validateReportUri('https://example.com/csp-report'),
+        );
+    }
+
+    public function testValidateReportUriAcceptsRelativePath(): void
+    {
+        self::assertSame('/csp-report', SecurityHeaders::validateReportUri('/csp-report'));
+    }
+
+    public function testValidateReportUriRejectsEmpty(): void
+    {
+        $this->expectException(InvalidCspReportUriException::class);
+
+        SecurityHeaders::validateReportUri('');
+    }
+
+    public function testValidateReportUriRejectsHttp(): void
+    {
+        $this->expectException(InvalidCspReportUriException::class);
+
+        SecurityHeaders::validateReportUri('http://example.com/csp-report');
+    }
+
+    public function testValidateReportUriRejectsProtocolRelative(): void
+    {
+        $this->expectException(InvalidCspReportUriException::class);
+
+        SecurityHeaders::validateReportUri('//example.com/csp-report');
+    }
+
+    public function testValidateReportUriRejectsHostlessAbsolute(): void
+    {
+        $this->expectException(InvalidCspReportUriException::class);
+
+        SecurityHeaders::validateReportUri('https:');
+    }
+
+    public function testValidateReportUriRejectsWhitespace(): void
+    {
+        $this->expectException(InvalidCspReportUriException::class);
+
+        SecurityHeaders::validateReportUri("https://example.com/csp\nreport");
+    }
+
+    public function testValidateReportUriRejectsDoubleQuote(): void
+    {
+        $this->expectException(InvalidCspReportUriException::class);
+
+        SecurityHeaders::validateReportUri('https://example.com/csp"report');
+    }
+
+    public function testBuildCspThrowsOnInvalidReportUri(): void
+    {
+        $this->expectException(InvalidCspReportUriException::class);
+
+        SecurityHeaders::buildCsp(SecurityHeaders::defaultCspPolicy(), 'testnonce', 'http://example.com');
     }
 }

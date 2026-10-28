@@ -42,6 +42,26 @@ use Waynestate\Helmet\Platform\Presets;
 |               JSON-encoded policy array via the HELMET_CSP env var, or edit
 |               the array here once the config is published.
 |
+| "csp_report_uri"
+|               The CSP report destination: an absolute https:// URL with a
+|               host, or a path relative to the page's origin that starts
+|               with a single slash. When set, the policy carries
+|               "report-to csp-endpoint" and "report-uri <uri>", and the
+|               response carries a Reporting-Endpoints header pointing
+|               "csp-endpoint" at the same URI. null (the default) sends no
+|               reporting directives. Set with the HELMET_CSP_REPORT_URI env
+|               var. An invalid value throws
+|               InvalidCspReportUriException when the headers are built.
+|
+| "csp_report_only"
+|               When true, the policy is sent as
+|               Content-Security-Policy-Report-Only instead of
+|               Content-Security-Policy, so the browser reports violations
+|               without enforcing them. Use it to roll out a stricter policy:
+|               watch the reports, then flip it to false to enforce.
+|               Defaults to false. Set with the HELMET_CSP_REPORT_ONLY env
+|               var.
+|
 | "hsts"        The Strict-Transport-Security max-age, in seconds. Only sent
 |               on HTTPS responses. Defaults to one year (31536000).
 |
@@ -99,11 +119,19 @@ if (is_string($helmetCsp) && $helmetCsp !== '') {
 
 $hstsIncludeSubDomains = (bool) env('HELMET_HSTS_INCLUDE_SUBDOMAINS', true);
 
+// An empty string from env means "not set", so normalize it to null.
+$cspReportUri = env('HELMET_CSP_REPORT_URI');
+$cspReportUri = is_string($cspReportUri) && $cspReportUri !== '' ? $cspReportUri : null;
+
+$cspReportOnly = (bool) env('HELMET_CSP_REPORT_ONLY', false);
+
 return [
     'preset' => $helmetPreset,
     'proxies' => $proxies,
     'scope' => $scope,
     'csp' => $csp,
+    'csp_report_uri' => $cspReportUri,
+    'csp_report_only' => $cspReportOnly,
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
     'hsts_include_subdomains' => $hstsIncludeSubDomains,
     'ribbon' => (bool) env('HELMET_RIBBON', true),

@@ -7,6 +7,7 @@ namespace Waynestate\Helmet\Tests;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
+use Waynestate\Helmet\Headers\InvalidCspReportUriException;
 use Waynestate\Helmet\Platform\UnknownPresetException;
 
 final class FunctionsTest extends TestCase
@@ -215,5 +216,50 @@ final class FunctionsTest extends TestCase
             '<meta property="csp-nonce" nonce="testnonce">',
             $meta,
         );
+    }
+
+    /**
+     * An invalid csp_report_uri is a configuration error, so helmet_boot()
+     * refuses to run rather than send a policy that points at a destination
+     * the browser cannot reach. The throw happens before any header is sent.
+     */
+    public function testBootThrowsOnInvalidCspReportUri(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $this->expectException(InvalidCspReportUriException::class);
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'csp_report_uri' => 'http://example.com/csp-report',
+        ]);
+    }
+
+    /**
+     * The raw PHP path forwards the reporting config to the core builder: a
+     * valid report URI with report-only on boots cleanly and returns a nonce.
+     * That proves csp_report_uri reached SecurityHeaders::build() (an invalid
+     * one throws, covered by testBootThrowsOnInvalidCspReportUri) and
+     * csp_report_only was accepted. The header content itself is asserted in
+     * SecurityHeadersTest and the Laravel tests, because header() output is
+     * not inspectable in the CLI test SAPI (headers_sent() is always true).
+     */
+    public function testBootAcceptsReportUriAndReportOnly(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'csp_report_uri' => 'https://example.com/csp-report',
+            'csp_report_only' => true,
+        ]);
+
+        self::assertArrayHasKey('nonce', $result);
+        self::assertIsString($result['nonce']);
+        self::assertNotSame('', $result['nonce']);
     }
 }

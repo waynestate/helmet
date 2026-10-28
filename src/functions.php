@@ -38,16 +38,22 @@ if (!function_exists('helmet_boot')) {
      *     trusted_proxies?: list<string>,
      *     preset?: string,
      *     csp?: array<string, list<string>|null>,
+     *     csp_report_uri?: string,
+     *     csp_report_only?: bool,
      *     health_path?: string,
      *     hsts_max_age?: int,
-      *     hsts_include_subdomains?: bool,
-      *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency'}
+     *     hsts_include_subdomains?: bool,
+     *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency'}
      * } $config
      *
      * @return array{nonce: string, logger: LoggerInterface|null}
      *
      * @throws UnknownPresetException If "preset" names a preset the package
      *         does not know.
+     * @throws \InvalidArgumentException If "trusted_proxies" or "preset" is
+     *         the wrong type.
+     * @throws \Waynestate\Helmet\Headers\InvalidCspReportUriException If
+     *         "csp_report_uri" is not a valid report destination.
      * @throws \LogicException If a session is already active.
      */
     function helmet_boot(array $config): array
@@ -108,6 +114,8 @@ if (!function_exists('helmet_boot')) {
             $isHttps,
             $config['hsts_max_age'] ?? 31536000,
             $config['hsts_include_subdomains'] ?? true,
+            $config['csp_report_uri'] ?? null,
+            $config['csp_report_only'] ?? false,
         );
 
         foreach ($headers as $name => $value) {
