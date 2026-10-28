@@ -4,7 +4,7 @@ Checked against primary sources on 2026-10-27. A second pass the same day added 
 
 ## What this covers
 
-HELMET is the baseline runtime for PHP apps on Citadel, WSU's Docker platform. It covers six areas: response headers and the Content-Security-Policy (CSP), HTTPS and proxy trust, session hardening, the health check, logging and errors, and environment and config. This guide is for WSU developers who install HELMET and for the people who maintain it. It lists what good practice looks like in each area, what the research says, and whether the stack holds each practice today.
+HELMET is the baseline runtime for PHP apps on Citadel, WSU's Docker platform. It covers seven areas: response headers and the Content-Security-Policy (CSP), HTTPS and proxy trust, session hardening, the health check, logging and errors, environment and config, and metrics. This guide is for WSU developers who install HELMET and for the people who maintain it. It lists what good practice looks like in each area, what the research says, and whether the stack holds each practice today.
 
 The platform matters for every item below. Citadel terminates TLS at an HA-Proxy in front of the app, the proxy appends `X-Forwarded-For` and `X-Forwarded-Proto` and strips nothing, and the shared `php.ini` leaves `session.use_strict_mode` at 0, `session.cookie_httponly` empty and `expose_php` On. HELMET exists to close the gaps that app code can close.
 
@@ -413,6 +413,16 @@ HELMET is at its first scaffold step. The Laravel adapter, the environment ribbo
 - **Why:** H45 says to keep secrets out of git. A scanner is how you find the ones that got in anyway. GitLab's secret detection docs list it for the Free, Premium and Ultimate tiers. The same docs say Dependency Scanning is Ultimate-tier, so on a lower tier `composer audit` is the dependency check. WSU's GitLab tier was not checked.
 - **Sources:** [GitLab Secret Detection](https://docs.gitlab.com/user/application_security/secret_detection/), [GitLab Dependency Scanning](https://docs.gitlab.com/user/application_security/dependency_scanning/)
 - **Stack:** `Not yet`. HELMET's pipeline includes `php-test` and `composer-audit` only. Whether PREFLIGHT offers a secret-detection component was not checked.
+
+---
+
+## 11. Metrics
+
+### H59. Expose Prometheus metrics behind authentication, off by default
+- **Practice:** Offer a `/metrics` endpoint in Prometheus exposition format (`text/plain; version=0.0.4`), disabled by default. When enabled, require a bearer token or an IP allowlist before serving data. Keep labels low-cardinality and free of personal data.
+- **Why:** A metrics endpoint that is open by default leaks version numbers, uptime and request counts to anyone who finds the URL. The Prometheus exposition format is the de facto standard for PHP scrapers. The stack's ADR-0011 requires Prometheus format only, off by default, protected by a token or allowlist, with no personal data in labels.
+- **Sources:** [Prometheus exposition format](https://prometheus.io/docs/instrumenting/exposition_formats/), [ADR-0011 (metrics speak Prometheus)](../design/ADR/ADR-0011-metrics-speak-prometheus.md)
+- **Stack:** `Enforced`. `Metrics::render()` produces the exposition format. `MetricsGate` returns `404` when disabled, `403` when unauthorized, and `404` plus a logged warning when enabled with neither token nor allowlist. The Laravel route is opt-in via `Route::helmetMetrics()`. The raw PHP helper `helmet_metrics()` applies the same gate. `MetricsGateTest`, `MetricsTest`, `FunctionsMetricsTest` and `Laravel\MetricsTest` cover the decision matrix.
 
 ---
 

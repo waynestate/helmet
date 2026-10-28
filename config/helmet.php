@@ -81,6 +81,30 @@ use Waynestate\Helmet\Platform\Presets;
 |               and a warning is logged. Set with the HELMET_DEV_ORIGIN env
 |               var. null when not set.
 |
+| "metrics"     The /metrics endpoint, in the Prometheus text exposition
+|               format. Off by default. When enabled, a request is served
+|               only if it presents the bearer token or comes from an
+|               allowed client IP; anything else is 403, and an
+|               enabled-but-unconfigured endpoint (no token and no allow
+|               list) is 404 plus a warning. The client IP is resolved
+|               through the "proxies" trusted-proxy list, so a spoofed
+|               X-Forwarded-For from an untrusted peer cannot grant access.
+|
+|               "metrics.enabled"
+|                       Whether the endpoint is on. Defaults to false. Set
+|                       with the HELMET_METRICS_ENABLED env var.
+|
+|               "metrics.token"
+|                       The bearer token a scraper must present
+|                       (Authorization: Bearer <token>). null when not set.
+|                       Set with the HELMET_METRICS_TOKEN env var.
+|
+|               "metrics.allow"
+|                       A list of client IPs or CIDR ranges allowed to read
+|                       the endpoint without a token. Filled from
+|                       HELMET_METRICS_ALLOW (comma-separated). Empty by
+|                       default.
+|
 */
 
 // HELMET_PROXIES wins over HELMET_PRESET, so an app can start from a preset
@@ -125,6 +149,24 @@ $cspReportUri = is_string($cspReportUri) && $cspReportUri !== '' ? $cspReportUri
 
 $cspReportOnly = (bool) env('HELMET_CSP_REPORT_ONLY', false);
 
+// The /metrics endpoint: off by default. When on, it is protected by a
+// bearer token and/or a client IP allow list.
+$metricsEnabled = (bool) env('HELMET_METRICS_ENABLED', false);
+
+$metricsToken = env('HELMET_METRICS_TOKEN');
+$metricsToken = is_string($metricsToken) && $metricsToken !== '' ? $metricsToken : null;
+
+$metricsAllow = env('HELMET_METRICS_ALLOW');
+$metricsAllowList = [];
+if (is_string($metricsAllow) && $metricsAllow !== '') {
+    foreach (explode(',', $metricsAllow) as $entry) {
+        $entry = trim($entry);
+        if ($entry !== '') {
+            $metricsAllowList[] = $entry;
+        }
+    }
+}
+
 return [
     'preset' => $helmetPreset,
     'proxies' => $proxies,
@@ -136,4 +178,9 @@ return [
     'hsts_include_subdomains' => $hstsIncludeSubDomains,
     'ribbon' => (bool) env('HELMET_RIBBON', true),
     'dev_origin' => env('HELMET_DEV_ORIGIN'),
+    'metrics' => [
+        'enabled' => $metricsEnabled,
+        'token' => $metricsToken,
+        'allow' => $metricsAllowList,
+    ],
 ];

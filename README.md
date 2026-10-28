@@ -458,6 +458,65 @@ starts: strict mode, cookies only, `HttpOnly`, and `SameSite=Lax`. It turns on
 `Secure` when the request is HTTPS. It refuses to run once a session is
 active, because changing those values mid-session does nothing.
 
+## Metrics
+
+HELMET can expose a Prometheus metrics endpoint. It is off by default and
+stays off until you turn it on. No Prometheus scraper is wired yet; the
+endpoint is there for when one is.
+
+### Enable it
+
+Set `HELMET_METRICS_ENABLED=true` and choose at least one way to prove who is
+asking:
+
+| Variable | What it does |
+| --- | --- |
+| `HELMET_METRICS_TOKEN` | A bearer token. The scraper sends `Authorization: Bearer <token>`. Compared with `hash_equals`. |
+| `HELMET_METRICS_ALLOW` | Comma-separated IPs or CIDR ranges allowed to scrape without a token. |
+
+With neither set the endpoint returns `404` and logs a warning, so a
+misconfigured app does not hand its metrics to the whole network.
+
+### Laravel
+
+The provider registers a `Route::helmetMetrics()` macro. The route is not
+created until you call it:
+
+```php
+// routes/web.php
+Route::helmetMetrics();                          // GET /metrics, throttle:60,1
+Route::helmetMetrics('/metrics', 'throttle:120,1'); // your own throttle
+Route::helmetMetrics('/metrics', null);           // no throttle
+```
+
+The controller reads `helmet.metrics` from the published config, resolves the
+client IP through the same trusted-proxy list the headers use, and renders
+`text/plain; version=0.0.4`.
+
+### Raw PHP
+
+```php
+use function Waynestate\Helmet\helmet_metrics;
+
+$result = helmet_metrics([
+    'enabled'         => true,
+    'token'           => 's3cret',
+    'allow'           => ['10.0.0.0/8'],
+    'trusted_proxies' => ['172.18.0.1'],
+]);
+
+http_response_code($result['status']);
+header('Content-Type: ' . $result['content_type']);
+echo $result['body'];
+```
+
+The response carries a `helmet_info` gauge with the PHP and HELMET versions,
+and a `helmet_php_version_status` gauge when a `PolicySource` is available.
+No personal data in labels; labels stay low-cardinality.
+
+The endpoint is the only place in HELMET that says "I am still here" without
+saying "here is your page". A lullaby, in a way.
+
 ## Tests
 
 No PHP on the machine? Fine. Docker runs the suite:
