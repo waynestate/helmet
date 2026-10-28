@@ -151,7 +151,6 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
 | `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |
-| `HELMET_POLICY_PATH` | `helmet.policy_path` | `vendor/waynestate/creed/policy/policy.json` if it exists, else `null` | The CREED `policy.json`. The Laravel middlewares do not read it yet. |
 
 #### Customizing the CSP in Laravel
 
@@ -228,6 +227,8 @@ like this:
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
+
+For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger.
 
 ## The headers
 

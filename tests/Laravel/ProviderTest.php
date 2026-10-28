@@ -22,7 +22,7 @@ final class ProviderTest extends TestCase
         self::assertArrayHasKey('hsts', $config);
         self::assertArrayHasKey('hsts_include_subdomains', $config);
         self::assertArrayHasKey('ribbon', $config);
-        self::assertArrayHasKey('policy_path', $config);
+        self::assertArrayNotHasKey('policy_path', $config);
     }
 
     /**

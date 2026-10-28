@@ -45,10 +45,6 @@ use Waynestate\Helmet\Headers\SecurityHeaders;
 | "ribbon"      Whether the environment ribbon is injected into HTML
 |               responses in non-production environments. On by default.
 |
-| "policy_path" The path to the CREED policy.json file. Defaults to the
-|               copy shipped in vendor/waynestate/creed/policy/policy.json
-|               when it exists, otherwise null (no policy).
-|
 */
 
 $helmetProxies = env('HELMET_PROXIES');
@@ -78,12 +74,6 @@ if (is_string($helmetCsp) && $helmetCsp !== '') {
 
 $hstsIncludeSubDomains = (bool) env('HELMET_HSTS_INCLUDE_SUBDOMAINS', true);
 
-$policyPath = env('HELMET_POLICY_PATH');
-if (!is_string($policyPath) || $policyPath === '') {
-    $defaultPolicyPath = base_path('vendor/waynestate/creed/policy/policy.json');
-    $policyPath = is_file($defaultPolicyPath) ? $defaultPolicyPath : null;
-}
-
 return [
     'proxies' => $proxies,
     'scope' => $scope,
@@ -91,5 +81,4 @@ return [
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
     'hsts_include_subdomains' => $hstsIncludeSubDomains,
     'ribbon' => (bool) env('HELMET_RIBBON', true),
-    'policy_path' => $policyPath,
 ];
