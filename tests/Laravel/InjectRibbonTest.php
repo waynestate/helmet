@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
@@ -8,7 +10,7 @@ final class InjectRibbonTest extends TestCase
 
     public function testRibbonIsInjectedAfterBodyInLocal(): void
     {
-        $this->app->detectEnvironment(static fn () => 'local');
+        $this->app->detectEnvironment(static fn() => 'local');
         $this->defineHtmlRoute('/test', self::HTML);
 
         $response = $this->get('/test');
@@ -22,20 +24,20 @@ final class InjectRibbonTest extends TestCase
 
     public function testRibbonIsInjectedAfterABodyTagWithAttributes(): void
     {
-        $this->app->detectEnvironment(static fn () => 'staging');
+        $this->app->detectEnvironment(static fn() => 'staging');
         $this->defineHtmlRoute('/test', '<html><body class="home" data-page="1"><p>hello</p></body></html>');
 
         $response = $this->get('/test');
 
         self::assertStringContainsString(
             '<body class="home" data-page="1"><div class="helmet-ribbon" data-environment="staging">staging</div>',
-            (string) $response->getContent()
+            (string) $response->getContent(),
         );
     }
 
     public function testRibbonIsAbsentInProduction(): void
     {
-        $this->app->detectEnvironment(static fn () => 'production');
+        $this->app->detectEnvironment(static fn() => 'production');
         $this->defineHtmlRoute('/test', self::HTML);
 
         $response = $this->get('/test');
@@ -47,7 +49,7 @@ final class InjectRibbonTest extends TestCase
 
     public function testRibbonIsAbsentWhenConfigIsDisabled(): void
     {
-        $this->app->detectEnvironment(static fn () => 'local');
+        $this->app->detectEnvironment(static fn() => 'local');
         config(['helmet.ribbon' => false]);
         $this->defineHtmlRoute('/test', self::HTML);
 
@@ -60,9 +62,9 @@ final class InjectRibbonTest extends TestCase
 
     public function testJsonResponseIsUnchanged(): void
     {
-        $this->app->detectEnvironment(static fn () => 'local');
+        $this->app->detectEnvironment(static fn() => 'local');
         $json = json_encode(['ok' => true]);
-        $this->app['router']->get('/test', static fn () => response($json, 200, ['Content-Type' => 'application/json']))
+        $this->app['router']->get('/test', static fn() => response($json, 200, ['Content-Type' => 'application/json']))
             ->middleware('web');
 
         $response = $this->get('/test');
@@ -72,7 +74,7 @@ final class InjectRibbonTest extends TestCase
 
     public function testHtmlWithoutBodyIsUnchanged(): void
     {
-        $this->app->detectEnvironment(static fn () => 'local');
+        $this->app->detectEnvironment(static fn() => 'local');
         $html = '<html><head><title>t</title></head></html>';
         $this->defineHtmlRoute('/test', $html);
 
@@ -88,7 +90,7 @@ final class InjectRibbonTest extends TestCase
      */
     private function defineHtmlRoute(string $uri, string $html): void
     {
-        $this->app['router']->get($uri, static fn () => response($html, 200, ['Content-Type' => 'text/html']))
+        $this->app['router']->get($uri, static fn() => response($html, 200, ['Content-Type' => 'text/html']))
             ->middleware('web');
     }
 

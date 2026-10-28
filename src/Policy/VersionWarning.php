@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Policy;
 
@@ -19,9 +21,8 @@ final class VersionWarning
 {
     public function __construct(
         private readonly PolicySource $source,
-        private readonly DateTimeInterface $now
-    ) {
-    }
+        private readonly DateTimeInterface $now,
+    ) {}
 
     /**
      * A warning message for the given component version, or null if no warning
@@ -36,12 +37,12 @@ final class VersionWarning
             VersionStatus::SECURITY => sprintf(
                 '%s %s is in its security-only phase and will not receive new features. Upgrade to a supported version.',
                 ucfirst($component),
-                $version
+                $version,
             ),
             VersionStatus::EOL => sprintf(
                 '%s %s is end of life and no longer receives security updates. Upgrade to a supported version.',
                 ucfirst($component),
-                $version
+                $version,
             ),
             default => null,
         };

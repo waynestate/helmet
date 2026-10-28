@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
@@ -61,7 +63,7 @@ final class WebScopeTest extends TestCase
 
     public function testJsonRouteCarriesNoHelmetHeaders(): void
     {
-        $this->app['router']->get('/json', static fn () => response()->json(['ok' => true]));
+        $this->app['router']->get('/json', static fn() => response()->json(['ok' => true]));
         config(['helmet.proxies' => ['10.0.0.1']]);
 
         $response = $this->withServerVariables($this->httpsViaTrustedProxy())->get('/json');

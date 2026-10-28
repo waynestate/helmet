@@ -1,0 +1,4 @@
+# Commits to skip when running `git blame`.
+# The Pint reformat touched every file at once; blaming through it hides the
+# real author of each line.
+13718d1f851d815ddb270f8a4c00b9fc150238c0

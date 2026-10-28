@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Headers;
 
@@ -32,10 +34,8 @@ final class SecurityHeadersMiddlewareTest extends TestCase
 
     private function throwingHandler(\Throwable $e): RequestHandlerInterface
     {
-        return new class($e) implements RequestHandlerInterface {
-            public function __construct(private readonly \Throwable $e)
-            {
-            }
+        return new class ($e) implements RequestHandlerInterface {
+            public function __construct(private readonly \Throwable $e) {}
 
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
@@ -61,7 +61,7 @@ final class SecurityHeadersMiddlewareTest extends TestCase
         self::assertSame('strict-origin-when-cross-origin', $response->getHeaderLine('Referrer-Policy'));
         self::assertSame(
             'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
-            $response->getHeaderLine('Permissions-Policy')
+            $response->getHeaderLine('Permissions-Policy'),
         );
     }
 
@@ -104,7 +104,7 @@ final class SecurityHeadersMiddlewareTest extends TestCase
 
         self::assertSame(
             'max-age=31536000; includeSubDomains',
-            $response->getHeaderLine('Strict-Transport-Security')
+            $response->getHeaderLine('Strict-Transport-Security'),
         );
     }
 
@@ -233,7 +233,7 @@ final class SecurityHeadersMiddlewareTest extends TestCase
 
         self::assertSame(
             $expected['X-Content-Type-Options'],
-            $response->getHeaderLine('X-Content-Type-Options')
+            $response->getHeaderLine('X-Content-Type-Options'),
         );
     }
 
@@ -272,7 +272,7 @@ final class SecurityHeadersMiddlewareTest extends TestCase
         self::assertTrue($response->hasHeader('Content-Security-Policy'));
         self::assertMatchesRegularExpression(
             "#'nonce-[A-Za-z0-9+/=]+'#",
-            $response->getHeaderLine('Content-Security-Policy')
+            $response->getHeaderLine('Content-Security-Policy'),
         );
     }
 

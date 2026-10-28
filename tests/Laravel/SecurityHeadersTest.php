@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
@@ -127,7 +129,7 @@ final class SecurityHeadersTest extends TestCase
 
     public function testXPoweredByIsRemoved(): void
     {
-        $this->app['router']->get('/test', static fn () => response('<html><body>hi</body></html>', 200, [
+        $this->app['router']->get('/test', static fn() => response('<html><body>hi</body></html>', 200, [
             'Content-Type' => 'text/html',
             'X-Powered-By' => 'PHP/8.3',
         ]))->middleware('web');
@@ -165,12 +167,12 @@ final class SecurityHeadersTest extends TestCase
      */
     public function testBladeTemplateCanPrintTheNonce(): void
     {
-        $this->app['router']->get('/blade', static fn () => response(
+        $this->app['router']->get('/blade', static fn() => response(
             Blade::render(
-                '<html><body><script nonce="{{ request()->attributes->get(\'helmet.csp_nonce\') }}">1;</script></body></html>'
+                '<html><body><script nonce="{{ request()->attributes->get(\'helmet.csp_nonce\') }}">1;</script></body></html>',
             ),
             200,
-            ['Content-Type' => 'text/html']
+            ['Content-Type' => 'text/html'],
         ))->middleware('web');
 
         $response = $this->get('/blade');
@@ -193,12 +195,12 @@ final class SecurityHeadersTest extends TestCase
         Vite::useHotFile($hotFile);
 
         try {
-            $this->app['router']->get('/vite', static fn () => response(
+            $this->app['router']->get('/vite', static fn() => response(
                 Blade::render(
-                    "@vite(['resources/js/app.js'])"
+                    "@vite(['resources/js/app.js'])",
                 ),
                 200,
-                ['Content-Type' => 'text/html']
+                ['Content-Type' => 'text/html'],
             ))->middleware('web');
 
             $response = $this->get('/vite');
@@ -217,10 +219,10 @@ final class SecurityHeadersTest extends TestCase
      */
     public function testViteCspNonceMatchesTheCspHeader(): void
     {
-        $this->app['router']->get('/vite-nonce', static fn () => response(
+        $this->app['router']->get('/vite-nonce', static fn() => response(
             (string) Vite::cspNonce(),
             200,
-            ['Content-Type' => 'text/plain']
+            ['Content-Type' => 'text/plain'],
         ))->middleware('web');
 
         $response = $this->get('/vite-nonce');
@@ -261,7 +263,7 @@ final class SecurityHeadersTest extends TestCase
      */
     public function testDevOriginIsAddedInLocalWhenHot(): void
     {
-        $this->app->detectEnvironment(static fn () => 'local');
+        $this->app->detectEnvironment(static fn() => 'local');
 
         $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
         file_put_contents($hotFile, 'http://localhost:5173');
@@ -286,7 +288,7 @@ final class SecurityHeadersTest extends TestCase
      */
     public function testDevOriginIsNotAddedInProduction(): void
     {
-        $this->app->detectEnvironment(static fn () => 'production');
+        $this->app->detectEnvironment(static fn() => 'production');
 
         $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
         file_put_contents($hotFile, 'http://localhost:5173');
@@ -310,7 +312,7 @@ final class SecurityHeadersTest extends TestCase
      */
     public function testInvalidDevOriginIsNotAdded(): void
     {
-        $this->app->detectEnvironment(static fn () => 'local');
+        $this->app->detectEnvironment(static fn() => 'local');
 
         $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
         file_put_contents($hotFile, 'http://evil.example:5173');
@@ -334,7 +336,7 @@ final class SecurityHeadersTest extends TestCase
      */
     public function testDevOriginConfigOverridesHotFile(): void
     {
-        $this->app->detectEnvironment(static fn () => 'local');
+        $this->app->detectEnvironment(static fn() => 'local');
         config(['helmet.dev_origin' => 'http://127.0.0.1:3000']);
 
         $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
@@ -364,7 +366,7 @@ final class SecurityHeadersTest extends TestCase
                 return str_contains($message, 'HELMET') && str_contains($message, 'invalid Vite dev origin');
             });
 
-        $this->app->detectEnvironment(static fn () => 'local');
+        $this->app->detectEnvironment(static fn() => 'local');
 
         $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
         file_put_contents($hotFile, 'http://evil.example:5173');
@@ -379,16 +381,112 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
+     * A dev origin with port 0 is rejected: parse_url keeps the port and the
+     * port check (port < 1) fails.
+     */
+    public function testDevOriginWithPortZeroIsRejected(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:0');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://localhost:0', $csp);
+            self::assertStringNotContainsString('ws://localhost:0', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * A dev origin with port 65536 is rejected: parse_url returns false for
+     * an out-of-range port, so the origin is never added.
+     */
+    public function testDevOriginWithPort65536IsRejected(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:65536');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://localhost:65536', $csp);
+            self::assertStringNotContainsString('ws://localhost:65536', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * A dev origin with port 99999 is rejected: parse_url returns false for
+     * an out-of-range port, so the origin is never added.
+     */
+    public function testDevOriginWithPort99999IsRejected(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:99999');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://localhost:99999', $csp);
+            self::assertStringNotContainsString('ws://localhost:99999', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * A dev origin with a valid port (5173, Vite's default) is accepted and
+     * added to the CSP.
+     */
+    public function testDevOriginWithPort5173IsAccepted(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString('http://localhost:5173', $csp);
+            self::assertStringContainsString('ws://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
      * The middleware injects the csp-nonce meta tag into HTML responses,
      * right after the opening <head> tag. Vite's dev runtime reads that tag
      * to nonce the CSS and preload tags it adds after page load.
      */
     public function testHtmlResponseGetsTheCspNonceMetaTag(): void
     {
-        $this->app['router']->get('/meta', static fn () => response(
+        $this->app['router']->get('/meta', static fn() => response(
             '<html><head><title>hi</title></head><body>hi</body></html>',
             200,
-            ['Content-Type' => 'text/html']
+            ['Content-Type' => 'text/html'],
         ))->middleware('web');
 
         $response = $this->get('/meta');
@@ -398,7 +496,7 @@ final class SecurityHeadersTest extends TestCase
         $body = (string) $response->getContent();
         self::assertStringContainsString(
             '<head><meta property="csp-nonce" nonce="' . $nonceInHeader . '"><title>hi</title></head>',
-            $body
+            $body,
         );
     }
 
@@ -408,10 +506,10 @@ final class SecurityHeadersTest extends TestCase
      */
     public function testCspNonceMetaTagHandlesHeadWithAttributesAndCase(): void
     {
-        $this->app['router']->get('/meta-attrs', static fn () => response(
+        $this->app['router']->get('/meta-attrs', static fn() => response(
             '<HTML><HEAD lang="en"><title>hi</title></HEAD><BODY>hi</BODY></HTML>',
             200,
-            ['Content-Type' => 'text/html']
+            ['Content-Type' => 'text/html'],
         ))->middleware('web');
 
         $response = $this->get('/meta-attrs');
@@ -421,7 +519,7 @@ final class SecurityHeadersTest extends TestCase
         $body = (string) $response->getContent();
         self::assertStringContainsString(
             '<HEAD lang="en"><meta property="csp-nonce" nonce="' . $nonceInHeader . '"><title>hi</title></HEAD>',
-            $body
+            $body,
         );
     }
 
@@ -431,10 +529,10 @@ final class SecurityHeadersTest extends TestCase
      */
     public function testJsonResponseIsNotModified(): void
     {
-        $this->app['router']->get('/json', static fn () => response(
+        $this->app['router']->get('/json', static fn() => response(
             '{"ok":true}',
             200,
-            ['Content-Type' => 'application/json']
+            ['Content-Type' => 'application/json'],
         ))->middleware('web');
 
         $response = $this->get('/json');
@@ -450,10 +548,10 @@ final class SecurityHeadersTest extends TestCase
     public function testHtmlWithoutHeadIsNotModified(): void
     {
         config(['helmet.ribbon' => false]);
-        $this->app['router']->get('/no-head', static fn () => response(
+        $this->app['router']->get('/no-head', static fn() => response(
             '<html><body>hi</body></html>',
             200,
-            ['Content-Type' => 'text/html']
+            ['Content-Type' => 'text/html'],
         ))->middleware('web');
 
         $response = $this->get('/no-head');
@@ -478,7 +576,7 @@ final class SecurityHeadersTest extends TestCase
         // Call the middleware directly so the only headers on the response are
         // the ones HELMET sends (plus the two Symfony adds to every Response).
         $request = Request::create('/', 'GET', [], [], [], $this->httpsViaTrustedProxy());
-        $response = (new LaravelSecurityHeaders())->handle($request, static fn () => new Response('ok'));
+        $response = (new LaravelSecurityHeaders())->handle($request, static fn() => new Response('ok'));
 
         $nonce = $request->attributes->get('helmet.csp_nonce');
         self::assertIsString($nonce, 'The nonce should be set as a request attribute.');
@@ -486,12 +584,12 @@ final class SecurityHeadersTest extends TestCase
         $expected = CoreSecurityHeaders::build(
             CoreSecurityHeaders::mergePolicies(
                 CoreSecurityHeaders::defaultCspPolicy(),
-                (array) config('helmet.csp')
+                (array) config('helmet.csp'),
             ),
             $nonce,
             true,
             (int) config('helmet.hsts'),
-            $hstsIncludeSubDomains
+            $hstsIncludeSubDomains,
         );
 
         // The set of header names the middleware sends equals build()'s.
@@ -504,7 +602,7 @@ final class SecurityHeadersTest extends TestCase
         // The HSTS header and every other value equal build()'s.
         self::assertSame(
             $expected['Strict-Transport-Security'],
-            $response->headers->get('Strict-Transport-Security')
+            $response->headers->get('Strict-Transport-Security'),
         );
         foreach ($expected as $name => $value) {
             self::assertSame($value, $response->headers->get($name), "Header mismatch: {$name}");
@@ -567,7 +665,7 @@ final class SecurityHeadersTest extends TestCase
      */
     private function defineHtmlRoute(string $uri): void
     {
-        $this->app['router']->get($uri, static fn () => response('<html><body>hi</body></html>', 200, ['Content-Type' => 'text/html']))
+        $this->app['router']->get($uri, static fn() => response('<html><body>hi</body></html>', 200, ['Content-Type' => 'text/html']))
             ->middleware('web');
     }
 

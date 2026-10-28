@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
@@ -140,7 +142,7 @@ final class ConfigTest extends TestCase
 
         self::assertSame(
             ['img-src' => ["'self'", 'data:'], 'form-action' => null],
-            config('helmet.csp')
+            config('helmet.csp'),
         );
     }
 

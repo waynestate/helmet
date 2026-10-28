@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests;
 
@@ -164,7 +166,7 @@ final class FunctionsTest extends TestCase
                     1 => ['pipe', 'w'],
                     2 => ['pipe', 'w'],
                 ],
-                $pipes
+                $pipes,
             );
 
             self::assertIsResource($process);
@@ -196,7 +198,7 @@ final class FunctionsTest extends TestCase
 
         self::assertSame(
             '<meta property="csp-nonce" nonce="abc&quot;def">',
-            $meta
+            $meta,
         );
     }
 
@@ -211,7 +213,7 @@ final class FunctionsTest extends TestCase
 
         self::assertSame(
             '<meta property="csp-nonce" nonce="testnonce">',
-            $meta
+            $meta,
         );
     }
 }

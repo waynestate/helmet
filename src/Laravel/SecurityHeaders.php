@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Laravel;
 
@@ -46,7 +48,9 @@ final class SecurityHeaders
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $proxies = new TrustedProxies((array) config('helmet.proxies'));
+        /** @var list<string> $proxyList */
+        $proxyList = (array) config('helmet.proxies');
+        $proxies = new TrustedProxies($proxyList);
         $isHttps = HttpsDetector::isHttps($request->server->all(), $proxies);
 
         $nonce = CoreSecurityHeaders::generateNonce();
@@ -56,7 +60,7 @@ final class SecurityHeaders
         // directive removes one.
         $policy = CoreSecurityHeaders::mergePolicies(
             CoreSecurityHeaders::defaultCspPolicy(),
-            (array) config('helmet.csp')
+            (array) config('helmet.csp'),
         );
         $policy = $this->maybeAddDevOrigin($policy);
         $headers = CoreSecurityHeaders::build(
@@ -64,7 +68,7 @@ final class SecurityHeaders
             $nonce,
             $isHttps,
             (int) config('helmet.hsts'),
-            (bool) config('helmet.hsts_include_subdomains')
+            (bool) config('helmet.hsts_include_subdomains'),
         );
 
         $request->attributes->set('helmet.csp_nonce', $nonce);
@@ -130,7 +134,7 @@ final class SecurityHeaders
                 return $matches[0] . $meta;
             },
             $content,
-            1
+            1,
         );
 
         if (is_string($modified) && $modified !== $content) {
@@ -228,7 +232,7 @@ final class SecurityHeaders
     {
         try {
             $hotFile = Vite::hotFile();
-            if (!is_string($hotFile) || !is_file($hotFile)) {
+            if (!is_file($hotFile)) {
                 return null;
             }
 
@@ -261,7 +265,7 @@ final class SecurityHeaders
             return false;
         }
 
-        if (isset($parts['port']) && (!is_int($parts['port']) || $parts['port'] < 1 || $parts['port'] > 65535)) {
+        if (isset($parts['port']) && $parts['port'] < 1) {
             return false;
         }
 

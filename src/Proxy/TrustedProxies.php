@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Proxy;
 
@@ -31,24 +33,29 @@ final class TrustedProxies
 
     /**
      * @param list<string> $proxies Exact IPv4/IPv6 addresses and/or IPv4/IPv6
-     *                              CIDR ranges.
+     *                               CIDR ranges. Every entry must be a
+     *                               non-empty string; anything else throws.
      *
      * @throws \InvalidArgumentException If an entry is not a valid address or
      *                                   CIDR, is a /0 range, or is "*".
      */
     public function __construct(array $proxies = [])
     {
-        foreach ($proxies as $proxy) {
+        // The docblock promises list<string>, but a caller can still pass a
+        // non-string at runtime; validate each entry before trusting it.
+        /** @var list<mixed> $entries */
+        $entries = $proxies;
+        foreach ($entries as $proxy) {
             if (!is_string($proxy) || $proxy === '') {
                 throw new \InvalidArgumentException(
                     'Trusted proxy entries must be non-empty strings; got '
-                    . get_debug_type($proxy) . '.'
+                    . get_debug_type($proxy) . '.',
                 );
             }
 
             if ($proxy === '*') {
                 throw new \InvalidArgumentException(
-                    'The "*" entry trusts every peer and is not allowed.'
+                    'The "*" entry trusts every peer and is not allowed.',
                 );
             }
 
@@ -58,7 +65,7 @@ final class TrustedProxies
                 $packed = @inet_pton($proxy);
                 if ($packed === false) {
                     throw new \InvalidArgumentException(
-                        "Not a valid IPv4 or IPv6 address: \"$proxy\"."
+                        "Not a valid IPv4 or IPv6 address: \"$proxy\".",
                     );
                 }
                 $this->exact[] = $packed;
@@ -137,7 +144,7 @@ final class TrustedProxies
         // A /0 range covers every address of the family.
         if ($prefixLen === 0) {
             throw new \InvalidArgumentException(
-                "A /0 prefix trusts every address and is not allowed in \"$cidr\"."
+                "A /0 prefix trusts every address and is not allowed in \"$cidr\".",
             );
         }
 

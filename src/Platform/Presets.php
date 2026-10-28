@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Platform;
 
@@ -50,6 +52,8 @@ final class Presets
 
     /**
      * The trusted proxies for a preset.
+     *
+     * @return list<string>
      *
      * @throws UnknownPresetException If the preset is not known.
      */

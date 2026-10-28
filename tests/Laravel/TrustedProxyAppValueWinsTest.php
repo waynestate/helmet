@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
@@ -58,7 +60,7 @@ final class TrustedProxyAppValueWinsTest extends TestCase
 
     private function defineSecureStatusRoute(string $uri): void
     {
-        $this->app['router']->get($uri, static fn () => response()->json([
+        $this->app['router']->get($uri, static fn() => response()->json([
             'secure' => request()->isSecure(),
         ]));
     }

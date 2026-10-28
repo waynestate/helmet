@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
@@ -39,7 +41,7 @@ final class TrustedHeadersTest extends TestCase
             Request::HEADER_X_FORWARDED_FOR
             | Request::HEADER_X_FORWARDED_PROTO
             | Request::HEADER_X_FORWARDED_PORT,
-            $headers
+            $headers,
         );
     }
 
@@ -50,7 +52,7 @@ final class TrustedHeadersTest extends TestCase
         // host; the forwarded header is ignored because HELMET does not trust
         // it. (A full URL is used because SymfonyRequest::create() takes the
         // host from the URL, not from a server variable.)
-        $this->app['router']->get('/host', static fn () => response()->json([
+        $this->app['router']->get('/host', static fn() => response()->json([
             'host' => request()->getHost(),
         ]));
 
@@ -66,7 +68,7 @@ final class TrustedHeadersTest extends TestCase
     public function testForwardedProtoIsTrusted(): void
     {
         // X-Forwarded-Proto from the trusted proxy still decides HTTPS.
-        $this->app['router']->get('/secure', static fn () => response()->json([
+        $this->app['router']->get('/secure', static fn() => response()->json([
             'secure' => request()->isSecure(),
         ]));
 

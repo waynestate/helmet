@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Headers;
 
@@ -24,6 +26,9 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  */
 final class SecurityHeadersMiddleware implements MiddlewareInterface
 {
+    /**
+     * @var array<string, list<string>>
+     */
     private readonly array $cspPolicy;
 
     /**
@@ -47,11 +52,11 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         private readonly bool $rethrow = true,
         private readonly ?ResponseFactoryInterface $responseFactory = null,
         private readonly int $hstsMaxAge = 31536000,
-        private readonly bool $hstsIncludeSubDomains = true
+        private readonly bool $hstsIncludeSubDomains = true,
     ) {
         $this->cspPolicy = SecurityHeaders::mergePolicies(
             SecurityHeaders::defaultCspPolicy(),
-            $cspPolicy ?? []
+            $cspPolicy ?? [],
         );
     }
 
@@ -64,7 +69,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
             $nonce,
             $isHttps,
             $this->hstsMaxAge,
-            $this->hstsIncludeSubDomains
+            $this->hstsIncludeSubDomains,
         );
 
         $request = $request->withAttribute('helmet.csp_nonce', $nonce);
@@ -94,7 +99,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         if ($this->responseFactory === null) {
             throw new \RuntimeException(
                 'SecurityHeadersMiddleware needs a PSR-17 ResponseFactory to '
-                . 'build the 500 response when rethrow is false.'
+                . 'build the 500 response when rethrow is false.',
             );
         }
 

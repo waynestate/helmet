@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Policy;
 
@@ -9,6 +11,4 @@ namespace Waynestate\Helmet\Policy;
  * time (the version warning) can catch it specifically, without swallowing
  * unrelated errors.
  */
-final class PolicyReadException extends \RuntimeException
-{
-}
+final class PolicyReadException extends \RuntimeException {}

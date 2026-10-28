@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Logging;
 
@@ -58,8 +60,9 @@ final class Logging
      *
      * @param string $channel      The logger channel (usually the app name).
      * @param string $streamOrPath A stream (php://stderr) or a file path.
-     * @param string $level        Minimum level: debug, info, notice, warning,
-     *                             error, critical, alert or emergency.
+     * @param 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency' $level
+     *        Minimum level: debug, info, notice, warning, error, critical,
+     *        alert or emergency.
      */
     public static function create(string $channel, string $streamOrPath, string $level = 'info'): LoggerInterface
     {
