@@ -127,4 +127,60 @@ final class FunctionsTest extends TestCase
             'preset' => 'openshift',
         ]);
     }
+
+    /**
+     * The raw health path answers "ok" and stops, no matter what host the
+     * request came in on (the orchestrator may probe by IP:port).
+     *
+     * helmet_boot() calls exit() on the health path, so it cannot be exercised
+     * in-process: a separate-process PHPUnit test would report "ended
+     * unexpectedly" even on success, because the result file is only written
+     * after the test method returns. Instead we shell out to a real PHP
+     * process (argument array, no shell) and check its exit code, stdout and
+     * stderr. The child writes a marker to stderr if control ever returns past
+     * the health path; a correct boot never reaches that line.
+     */
+    public function testRawHealthPathIsHostAgnostic(): void
+    {
+        $autoload = dirname(__DIR__) . '/vendor/autoload.php';
+        $tempFile = tempnam(sys_get_temp_dir(), 'helmet-up-');
+
+        $script = '<?php' . "\n"
+            . 'require ' . var_export($autoload, true) . ";\n"
+            . "\$_SERVER['HTTP_HOST'] = '10.1.2.3:8080';\n"
+            . "\$_SERVER['REMOTE_ADDR'] = '127.0.0.1';\n"
+            . "\$_SERVER['REQUEST_METHOD'] = 'GET';\n"
+            . "\$_SERVER['REQUEST_URI'] = '/up';\n"
+            . "\Waynestate\Helmet\helmet_boot(['trusted_proxies' => ['127.0.0.1']]);\n"
+            . "fwrite(STDERR, 'REACHED_PAST_HEALTH_PATH');\n";
+
+        file_put_contents($tempFile, $script);
+
+        try {
+            $process = proc_open(
+                [PHP_BINARY, $tempFile],
+                [
+                    0 => ['pipe', 'r'],
+                    1 => ['pipe', 'w'],
+                    2 => ['pipe', 'w'],
+                ],
+                $pipes
+            );
+
+            self::assertIsResource($process);
+
+            fclose($pipes[0]);
+            $stdout = stream_get_contents($pipes[1]);
+            $stderr = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $exitCode = proc_close($process);
+        } finally {
+            @unlink($tempFile);
+        }
+
+        self::assertSame(0, $exitCode, "child stderr: $stderr");
+        self::assertSame('ok', $stdout);
+        self::assertStringNotContainsString('REACHED_PAST_HEALTH_PATH', $stderr);
+    }
 }
