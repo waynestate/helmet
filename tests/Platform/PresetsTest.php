@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Platform;
 
@@ -40,7 +42,7 @@ final class PresetsTest extends TestCase
     {
         self::assertSame(
             ['X-Forwarded-For', 'X-Forwarded-Proto', 'X-Forwarded-Port'],
-            Presets::TRUSTED_HEADERS
+            Presets::TRUSTED_HEADERS,
         );
     }
 

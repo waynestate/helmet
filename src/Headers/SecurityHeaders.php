@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Headers;
 
@@ -151,7 +153,7 @@ final class SecurityHeaders
         string $nonce,
         bool $isHttps,
         int $hstsMaxAge = 31536000,
-        bool $hstsIncludeSubDomains = true
+        bool $hstsIncludeSubDomains = true,
     ): array {
         $headers = [
             'Content-Security-Policy' => self::buildCsp($policy, $nonce),

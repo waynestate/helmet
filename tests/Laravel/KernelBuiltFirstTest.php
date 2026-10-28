@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
@@ -40,7 +42,7 @@ final class KernelBuiltFirstTest extends TestCase
 
     public function testWebResponseCarriesTheHeaders(): void
     {
-        $this->app['router']->get('/test', static fn () => response('<html><body>hi</body></html>', 200, ['Content-Type' => 'text/html']))
+        $this->app['router']->get('/test', static fn() => response('<html><body>hi</body></html>', 200, ['Content-Type' => 'text/html']))
             ->middleware('web');
 
         $response = $this->get('/test');

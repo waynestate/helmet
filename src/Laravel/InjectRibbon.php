@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Laravel;
 
@@ -81,7 +83,7 @@ final class InjectRibbon
                 return $matches[0] . $ribbonHtml;
             },
             $content,
-            1
+            1,
         );
 
         if (is_string($modified) && $modified !== $content) {

@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Platform;
 
@@ -15,7 +17,7 @@ final class UnknownPresetException extends \InvalidArgumentException
         parent::__construct(sprintf(
             'Unknown HELMET preset "%s". Known presets: %s.',
             $name,
-            implode(', ', Presets::names())
+            implode(', ', Presets::names()),
         ));
     }
 }

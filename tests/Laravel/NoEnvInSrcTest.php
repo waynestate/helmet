@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
@@ -25,7 +27,7 @@ final class NoEnvInSrcTest extends TestCase
 
         $offenders = [];
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($srcDir, FilesystemIterator::SKIP_DOTS)
+            new RecursiveDirectoryIterator($srcDir, FilesystemIterator::SKIP_DOTS),
         );
 
         foreach ($iterator as $file) {

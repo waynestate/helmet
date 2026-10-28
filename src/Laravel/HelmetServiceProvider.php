@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Laravel;
 
@@ -66,7 +68,7 @@ final class HelmetServiceProvider extends ServiceProvider
             TrustProxies::withHeaders(
                 Request::HEADER_X_FORWARDED_FOR
                 | Request::HEADER_X_FORWARDED_PROTO
-                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PORT,
             );
         }
 

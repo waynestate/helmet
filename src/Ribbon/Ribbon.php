@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Ribbon;
 
@@ -17,9 +19,8 @@ final class Ribbon
 {
     public function __construct(
         private readonly string $environment,
-        private readonly bool $enabled = true
-    ) {
-    }
+        private readonly bool $enabled = true,
+    ) {}
 
     /**
      * Whether the ribbon should be shown.

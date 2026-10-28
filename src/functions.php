@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet;
 
@@ -76,7 +78,7 @@ if (!function_exists('helmet_boot')) {
             $logger = Logging::create(
                 $log['channel'] ?? 'helmet',
                 $log['stream'] ?? 'php://stderr',
-                $log['level'] ?? 'info'
+                $log['level'] ?? 'info',
             );
         }
 
@@ -95,7 +97,7 @@ if (!function_exists('helmet_boot')) {
 
         $cspPolicy = SecurityHeaders::mergePolicies(
             SecurityHeaders::defaultCspPolicy(),
-            $config['csp'] ?? []
+            $config['csp'] ?? [],
         );
         $nonce = SecurityHeaders::generateNonce();
         $headers = SecurityHeaders::build(
@@ -103,7 +105,7 @@ if (!function_exists('helmet_boot')) {
             $nonce,
             $isHttps,
             $config['hsts_max_age'] ?? 31536000,
-            $config['hsts_include_subdomains'] ?? true
+            $config['hsts_include_subdomains'] ?? true,
         );
 
         foreach ($headers as $name => $value) {

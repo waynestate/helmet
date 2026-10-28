@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Proxy;
 
@@ -42,13 +44,13 @@ final class TrustedProxies
             if (!is_string($proxy) || $proxy === '') {
                 throw new \InvalidArgumentException(
                     'Trusted proxy entries must be non-empty strings; got '
-                    . get_debug_type($proxy) . '.'
+                    . get_debug_type($proxy) . '.',
                 );
             }
 
             if ($proxy === '*') {
                 throw new \InvalidArgumentException(
-                    'The "*" entry trusts every peer and is not allowed.'
+                    'The "*" entry trusts every peer and is not allowed.',
                 );
             }
 
@@ -58,7 +60,7 @@ final class TrustedProxies
                 $packed = @inet_pton($proxy);
                 if ($packed === false) {
                     throw new \InvalidArgumentException(
-                        "Not a valid IPv4 or IPv6 address: \"$proxy\"."
+                        "Not a valid IPv4 or IPv6 address: \"$proxy\".",
                     );
                 }
                 $this->exact[] = $packed;
@@ -137,7 +139,7 @@ final class TrustedProxies
         // A /0 range covers every address of the family.
         if ($prefixLen === 0) {
             throw new \InvalidArgumentException(
-                "A /0 prefix trusts every address and is not allowed in \"$cidr\"."
+                "A /0 prefix trusts every address and is not allowed in \"$cidr\".",
             );
         }
 

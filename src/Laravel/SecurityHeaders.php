@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Laravel;
 
@@ -56,7 +58,7 @@ final class SecurityHeaders
         // directive removes one.
         $policy = CoreSecurityHeaders::mergePolicies(
             CoreSecurityHeaders::defaultCspPolicy(),
-            (array) config('helmet.csp')
+            (array) config('helmet.csp'),
         );
         $policy = $this->maybeAddDevOrigin($policy);
         $headers = CoreSecurityHeaders::build(
@@ -64,7 +66,7 @@ final class SecurityHeaders
             $nonce,
             $isHttps,
             (int) config('helmet.hsts'),
-            (bool) config('helmet.hsts_include_subdomains')
+            (bool) config('helmet.hsts_include_subdomains'),
         );
 
         $request->attributes->set('helmet.csp_nonce', $nonce);
@@ -130,7 +132,7 @@ final class SecurityHeaders
                 return $matches[0] . $meta;
             },
             $content,
-            1
+            1,
         );
 
         if (is_string($modified) && $modified !== $content) {

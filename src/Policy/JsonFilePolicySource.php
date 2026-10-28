@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Policy;
 
@@ -58,7 +60,7 @@ final class JsonFilePolicySource implements PolicySource
         } catch (JsonException $e) {
             throw new PolicyReadException(
                 "The policy file is not valid JSON: {$this->path}",
-                previous: $e
+                previous: $e,
             );
         }
 
@@ -69,7 +71,7 @@ final class JsonFilePolicySource implements PolicySource
         $schemaVersion = $data['schema_version'] ?? null;
         if (!in_array($schemaVersion, self::SUPPORTED_SCHEMA_VERSIONS, true)) {
             throw new PolicyReadException(
-                'The policy file has an unknown schema_version: ' . var_export($schemaVersion, true)
+                'The policy file has an unknown schema_version: ' . var_export($schemaVersion, true),
             );
         }
 

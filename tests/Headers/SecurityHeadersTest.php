@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Headers;
 
@@ -35,7 +37,7 @@ final class SecurityHeadersTest extends TestCase
         // strict-dynamic belongs to script-src, next to the nonce.
         self::assertMatchesRegularExpression(
             "#script-src [^;]*'nonce-testnonce'[^;]*'strict-dynamic'[^;]*;#",
-            $csp
+            $csp,
         );
     }
 
@@ -49,11 +51,11 @@ final class SecurityHeadersTest extends TestCase
 
         self::assertMatchesRegularExpression(
             "#(^|;) style-src [^;]*'nonce-testnonce';#",
-            $csp
+            $csp,
         );
         self::assertMatchesRegularExpression(
             "#(^|;) style-src-elem [^;]*'nonce-testnonce';#",
-            $csp
+            $csp,
         );
     }
 
@@ -65,7 +67,7 @@ final class SecurityHeadersTest extends TestCase
     {
         $policy = SecurityHeaders::mergePolicies(
             SecurityHeaders::defaultCspPolicy(),
-            ['style-src-elem' => null]
+            ['style-src-elem' => null],
         );
 
         $csp = SecurityHeaders::buildCsp($policy, 'testnonce');
@@ -126,7 +128,7 @@ final class SecurityHeadersTest extends TestCase
     {
         self::assertSame(
             'max-age=31536000; includeSubDomains',
-            SecurityHeaders::buildHsts()
+            SecurityHeaders::buildHsts(),
         );
     }
 
@@ -155,7 +157,7 @@ final class SecurityHeadersTest extends TestCase
             'testnonce',
             true,
             600,
-            false
+            false,
         );
 
         self::assertSame('max-age=600', $headers['Strict-Transport-Security']);
@@ -168,7 +170,7 @@ final class SecurityHeadersTest extends TestCase
             'testnonce',
             false,
             600,
-            false
+            false,
         );
 
         self::assertArrayNotHasKey('Strict-Transport-Security', $headers);
@@ -179,12 +181,12 @@ final class SecurityHeadersTest extends TestCase
         $headers = SecurityHeaders::build(
             SecurityHeaders::defaultCspPolicy(),
             'testnonce',
-            false
+            false,
         );
 
         self::assertSame(
             'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
-            $headers['Permissions-Policy']
+            $headers['Permissions-Policy'],
         );
     }
 }

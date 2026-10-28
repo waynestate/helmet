@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Waynestate\Helmet\Policy;
 
@@ -30,9 +32,8 @@ final class VersionStatus
      */
     public function __construct(
         private readonly DateTimeInterface $now,
-        private readonly array $components
-    ) {
-    }
+        private readonly array $components,
+    ) {}
 
     /**
      * The status of the given component version on the injected date.
