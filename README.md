@@ -3,6 +3,11 @@
 ![Three members of the band Helmet, two guitarists and a drummer at a Tama kit, tinted blue against a hazy orange and gold backdrop](https://media.tenor.com/WmJKjN9NQqoAAAAM/helmet-band.gif)
 <sub>GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120)</sub>
 
+[![GitLab pipeline](https://gitlab.example/enterprise-apps/helmet/badges/main/pipeline.svg)](https://gitlab.example/enterprise-apps/helmet/-/pipelines)
+[![GitHub CI](https://github.com/waynestate/helmet/actions/workflows/ci.yml/badge.svg)](https://github.com/waynestate/helmet/actions/workflows/ci.yml)
+Checks: `composer ci` (the same command runs on GitLab and GitHub).
+Two mirrors, one command — the only thing in this repo that plays both sides is the CI.
+
 HELMET is the Wayne State app stack's baseline runtime. One small
 framework-free PHP core, `Waynestate\Helmet`, does the five things every app on
 Citadel needs before it serves a single page: it sends the security headers,

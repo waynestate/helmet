@@ -52,7 +52,11 @@
         "test": "phpunit",
         "lint": "pint --test",
         "fix": "pint",
-        "analyse": "phpstan analyse --memory-limit=1G"
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "ci": ["@composer validate --strict", "@test", "@lint", "@analyse", "@composer audit"]
+    },
+    "scripts-descriptions": {
+        "ci": "Run every CI check: validate, tests, Pint, PHPStan, audit."
     },
     "config": {
         "sort-packages": true,
