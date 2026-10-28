@@ -168,7 +168,7 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
   gap: clamp(1.5rem, 3.5vw, 3rem);
   align-items: center;
 }
-.hero__copy { grid-area: copy; min-width: 0; }
+.hero__copy { grid-area: copy; min-width: 0; container-type: inline-size; }
 .hero__play { grid-area: play; margin: 0; min-width: 0; }
 
 .hero__title {
@@ -176,6 +176,7 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
   font-family: var(--h-display);
   font-weight: 400;
   font-size: clamp(3.4rem, 9vw, 6.6rem);
+  font-size: clamp(2.6rem, 21cqi, 6.6rem);
   line-height: 0.95;
   color: var(--h-chalk);
   letter-spacing: 0.02em;
@@ -256,7 +257,7 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
 .board .pair.is-lit .prot { fill: var(--h-gold); }
 
 .board__foot { margin-top: 0.5rem; }
-.board__caption { margin: 0 0 0.6rem; min-height: 3.1em; color: var(--h-chalk); line-height: 1.5; font-size: 0.98rem; }
+.board__caption { margin: 0.7rem 0 0; min-height: 4.5em; color: var(--h-chalk); line-height: 1.5; font-size: 0.98rem; }
 .calls { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.45rem; }
 .call {
   cursor: pointer; border-radius: 999px; padding: 0.35rem 0.75rem;
@@ -264,7 +265,7 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
   font: inherit; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em;
   transition: background 0.2s, border-color 0.2s, transform 0.2s var(--h-spring);
 }
-.call:hover, .call[aria-pressed="true"] { background: rgba(255, 204, 51, 0.14); border-color: var(--h-gold); border-style: solid; transform: translateY(-2px); }
+.call:hover, .call[aria-pressed="true"] { background: rgba(255, 204, 51, 0.14); border-color: var(--h-gold); border-style: solid; box-shadow: 0 3px 0 rgba(255, 204, 51, 0.35); }
 .call__x { color: var(--h-berry-chalk); }
 .call__vs { color: var(--h-chalk-dim); font-weight: 400; }
 
@@ -673,10 +674,15 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
   .down__no { justify-self: start; padding: 0.25rem 0.7rem; }
   .sb-top { gap: 0.4rem; padding-inline: 0.6rem; }
   .sb-team__sub { font-size: 0.68rem; letter-spacing: 0.04em; }
+  .sb-tab { padding: 0.5rem 0.7rem; font-size: 0.82rem; letter-spacing: 0.02em; }
+  .sb-tabs { gap: 0.35rem; padding-inline: 0.8rem; }
   .tray__hint { display: none !important; }
   .play-card { rotate: none; }
   .binder-head, .stadium__head, .film__head { flex-direction: column; }
   .wristband__calls { font-size: 0.98rem; }
+  .cmd { flex-direction: column; }
+  .cmd__code { font-size: 0.8rem; }
+  .copy-btn { padding: 0.5rem 1rem; text-align: left; }
 }
 @media (max-width: 360px) {
   .wristband__calls { grid-template-columns: minmax(0, 1fr); }
