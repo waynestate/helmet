@@ -20,6 +20,40 @@ rules live in one place, and every consumer path agrees.
 composer require waynestate/helmet
 ```
 
+## Platform presets
+
+A preset names a platform's trusted-proxy list, so an app does not hard-code
+an address that belongs to the platform, not the app. The presets live in
+`Waynestate\Helmet\Platform\Presets`:
+
+| Preset | Trusted proxies |
+| --- | --- |
+| `citadel` | `172.18.0.1` — the Docker bridge gateway to the HA-Proxy front |
+| `docker` | none — a plain Docker network with no front proxy |
+
+Raw PHP passes the preset name:
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+]);
+```
+
+Laravel reads it from `HELMET_PRESET` (see the environment table below); an
+explicit `HELMET_PROXIES` always wins over the preset.
+
+Off the WSU platform, skip the preset and pass your own list of the addresses
+your front proxy connects from:
+
+```php
+$helmet = helmet_boot([
+    'trusted_proxies' => ['203.0.113.10'],
+]);
+```
+
+An unknown preset name throws at boot, so a typo fails loudly instead of
+silently trusting nothing.
+
 ## Usage
 
 ### Raw PHP
@@ -30,9 +64,9 @@ At the top of the front controller, before anything is echoed:
 use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([
-    // The address HA-Proxy connects from, as the app sees it. Only these may
-    // set X-Forwarded-Proto. An empty list trusts nothing.
-    'trusted_proxies' => ['172.18.0.1'],
+    // The platform preset that supplies the trusted proxies. An explicit
+    // 'trusted_proxies' list wins over the preset.
+    'preset' => 'citadel',
 
     // Optional. A Monolog JSON logger, one line per record. "stream" may be a
     // stream (php://stderr) or a file path.
@@ -47,10 +81,11 @@ $helmet = helmet_boot([
 // $helmet['logger'] is a Psr\Log\LoggerInterface, or null when no log is set.
 ```
 
-List only the address HA-Proxy connects from (for example the Docker bridge
-gateway `172.18.0.1`), never a whole private range. A broad range such as
-`10.0.0.0/8` also trusts other containers on the same network, and any of
-them could then set `X-Forwarded-Proto`.
+Use a platform preset (for example `citadel`, which trusts the Docker bridge
+gateway), or list only the address the front proxy connects from — never a
+whole private range. A broad range such as `10.0.0.0/8` also trusts other
+containers on the same network, and any of them could then set
+`X-Forwarded-Proto`.
 
 `helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up`
 with `200 ok` before your code runs. It returns the nonce and the logger so
@@ -64,10 +99,11 @@ The same core, mounted in a middleware pipeline:
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Waynestate\Helmet\Headers\SecurityHeadersMiddleware;
 use Waynestate\Helmet\Health\HealthCheck;
+use Waynestate\Helmet\Platform\Presets;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
 $factory = new Psr17Factory();
-$proxies = new TrustedProxies(['172.18.0.1']);
+$proxies = new TrustedProxies(Presets::proxies('citadel'));
 
 $middleware = [
     new HealthCheck($factory, $factory, '/up'),
@@ -148,7 +184,8 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | Variable | Config key | Default | What it does |
 | --- | --- | --- | --- |
 | `HELMET_SCOPE` | `helmet.scope` | `global` | `global` puts `SecurityHeaders` in the kernel's global middleware; `web` keeps it in the `web` group only. `InjectRibbon` always stays in `web`. |
-| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Also copied to `trustedproxy.proxies` when the app has not set it. Empty trusts nothing. |
+| `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. `HELMET_PROXIES` wins when both are set. |
+| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Wins over `HELMET_PRESET`. Also copied to `trustedproxy.proxies` when the app has not set it. Empty trusts nothing. |
 | `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
 | `HELMET_HSTS_INCLUDE_SUBDOMAINS` | `helmet.hsts_include_subdomains` | `true` | Set `false` to omit the HSTS `includeSubDomains` directive. |
@@ -263,7 +300,7 @@ default. To remove a directive the default sets, set it to `null`:
 
 ```php
 $helmet = helmet_boot([
-    'trusted_proxies' => ['172.18.0.1'],
+    'preset' => 'citadel',
     'csp' => [
         // Replace the default img-src.
         'img-src' => ["'self'", 'data:'],
@@ -286,7 +323,7 @@ the last two constructor arguments (middleware):
 
 ```php
 $helmet = helmet_boot([
-    'trusted_proxies' => ['172.18.0.1'],
+    'preset' => 'citadel',
     'hsts_max_age' => 600,
     'hsts_include_subdomains' => false,
 ]);
