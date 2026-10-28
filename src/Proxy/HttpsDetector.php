@@ -18,7 +18,7 @@ namespace Waynestate\Helmet\Proxy;
  * the app talks to) appended, so it is the only one that is read; it is
  * trimmed and lower-cased before comparison.
  *
- * X-Forwarded-Port is deliberately never read: the Citadel HA-Proxy front sets
+ * X-Forwarded-Port is deliberately never read: the front proxy sets
  * X-Forwarded-Proto and the port is always 443 on the TLS edge, so the port
  * header adds no information and only creates a spoofing surface.
  */
