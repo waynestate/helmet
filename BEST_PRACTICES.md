@@ -388,7 +388,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** In Laravel, set `trustProxies(at: ...)` from the same list HELMET uses. Do not use `*`.
 - **Why:** Two lists disagree, and `*` trusts any peer. On Citadel's flat network, that includes other apps' containers. The Laravel 13.x requests page was read in the second pass. Its trusted-proxy text matches 12.x, including the `*` option, which it offers for cloud balancers whose addresses you cannot know. Citadel's proxy address can be known, so `*` has no excuse here.
 - **Sources:** [Laravel requests 12.x](https://laravel.com/docs/12.x/requests), [Laravel requests 13.x](https://laravel.com/docs/13.x/requests)
-- **Stack:** `Not yet`. The Laravel adapter is step 2 and is not built.
+- **Stack:** `Enforced`. The Laravel adapter's `HelmetServiceProvider` copies `helmet.proxies` to `trustedproxy.proxies` when the app has not set it, and narrows the trusted headers to `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Port` (the same set as `Presets::TRUSTED_HEADERS`). The `SecurityHeaders` middleware builds the headers from the core `SecurityHeaders::build()`, so the two consumer paths agree. `testTrustedProxyProxiesFollowHelmetProxiesWhenTheAppHasNotSetThem`, `testRequestIsSecureBehindTheProxyHelmetTrusted`, `testProviderNarrowsTheTrustedHeaderSet` and `testForwardedHostIsNotTrusted` cover it.
 
 ### H50. Lock dependencies and audit them
 - **Practice:** Commit `composer.lock`, bound every runtime constraint, and run `composer audit --locked` in CI and at release.
@@ -406,7 +406,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Test on each PHP branch the stack supports and drop a branch the day it loses security support. Today that is 8.3, 8.4 and 8.5, with 8.2 only until 2026-12-31.
 - **Why:** The stack allows only non-EOL PHP and Citadel offers 8.4 and 8.5 images. A library tested on one version can break on another through a deprecation or a changed default. Session deprecations are one example (H26, H32).
 - **Sources:** [php.net supported versions](https://www.php.net/supported-versions.php), [PHP 8.4 deprecations](https://www.php.net/manual/en/migration84.deprecated.php)
-- **Stack:** `Not yet`. The README's Docker commands run the suite on `php:8.4-cli` and `php:8.2-cli`. 8.5 is missing and 8.3 is skipped. Which versions the PREFLIGHT `php-test` component runs was not read. `composer.json` still allows `^8.2` (gap 13).
+- **Stack:** `Checked`. The CI matrix (`.gitlab-ci.yml` and `.github/workflows/ci.yml`) tests on 8.3, 8.4 and 8.5, the three supported branches. The README's Docker commands cover 8.4 and 8.3; 8.5 is missing from the manual path. `composer.json` requires `^8.3` (gap 13 is done).
 
 ### H58. Scan for committed secrets in CI
 - **Practice:** Run secret detection on every pipeline for every project in the stack, in addition to the dependency audit.
@@ -432,16 +432,16 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 
 Each of these follows from the research above. Items marked "inferred" depend on how Citadel's network works and need confirming.
 
-1. `src/Headers/SecurityHeaders.php:37-38`: `'unsafe-inline'` in `style-src-attr` and `style-src-elem`. Move WayneUI inline styles to nonces or hashes, or document the exception.
-2. `src/Headers/SecurityHeaders.php:35-43`: no `base-uri`, `object-src` or `form-action`. Add `base-uri 'none'`, `object-src 'none'` and `form-action 'self'`.
-3. `src/Headers/SecurityHeaders.php:39` and `:73`: host allowlist plus nonce, no `strict-dynamic`. Check whether `csp-builder` can emit it.
+1. Done. `'unsafe-inline'` was narrowed to `style-src-attr` only (not `style-src-elem`), and the exception is documented in `defaultCspPolicy()`: WayneUI's static path inlines a few style attributes, which `style-src-attr` governs, while `<style>` tags (`style-src-elem`) do not need it.
+2. Done. `defaultCspPolicy()` now sets `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` (`src/Headers/SecurityHeaders.php:56-58`); `testDefaultPolicyIncludesHardeningDirectives` covers it.
+3. Done. `buildCsp()` calls `setStrictDynamic('script-src', true)` (`src/Headers/SecurityHeaders.php:113`), so the nonce is paired with `strict-dynamic`; `testBuildCspAddsStrictDynamicAlongsideNonce` covers it.
 4. `src/functions.php:47-49`: `helmet_boot()` silently skips session hardening when a session is already active, which contradicts the README line "It refuses to run once a session is active" (`README.md:104`). Log it or throw.
 5. `src/Session/SessionHardening.php:36-44`: `ini_set` results are not checked, so a refused setting goes unnoticed.
 6. `src/Proxy/TrustedProxies.php:92-94`: a `/0` range is accepted and trusts every IPv4 address. Reject prefixes shorter than a chosen minimum.
 7. `src/Proxy/TrustedProxies.php:34` and `:41`: invalid exact entries (`*`, IPv6, typos) are stored or skipped without error. Validate them with `filter_var` and throw.
 8. Done: the README examples use the exact address `172.18.0.1` and warn against broad ranges such as `10.0.0.0/8`. That is the Docker bridge gateway the `citadel` preset trusts; on other hosts the address is a setting.
 9. `src/Proxy/HttpsDetector.php:47-50`: exact comparison of a possibly multi-value header. Take the last element.
-10. `src/functions.php:74` and `src/Headers/SecurityHeadersMiddleware.php:24-28`: a custom `csp` replaces the default. Offer merge-by-default.
+10. Done. Both `helmet_boot()` (`src/functions.php:112`) and the `SecurityHeadersMiddleware` constructor (`src/Headers/SecurityHeadersMiddleware.php:64`) call `SecurityHeaders::mergePolicies()`, so a custom `csp` is merged over the default rather than replacing it; `testMergePoliciesReplacesDirectiveAndKeepsTheRest` and `testMergePoliciesRemovesDirectiveWhenNull` cover it.
 11. Done: `akrabat/ip-address-middleware` is no longer in the `require` list, so there is nothing unused to remove.
 12. `src/Logging/Logging.php:27-37`: no redaction, no processors, no failure-safe handler.
 13. Done: `composer.json` now requires `php: ^8.3` (platform `8.3.0`), so the floor is already at 8.3.
@@ -450,14 +450,14 @@ Each of these follows from the research above. Items marked "inferred" depend on
 
 14. Report-Only mode and a CSP report endpoint.
 15. Configurable HSTS `max-age` and `includeSubDomains`, with a staged rollout note.
-16. Permissions-Policy covering more features, such as `payment` and `usb`.
+16. Done. `build()` sends `Permissions-Policy` with `payment=()` and `usb=()` (`src/Headers/SecurityHeaders.php:239`); `testBuildPermissionsPolicyCoversPaymentAndUsb` covers it.
 17. COOP and CORP headers, tested against WayneUI assets.
 18. A client-IP function that walks the forwarded list from the right.
 19. A readiness endpoint, separate from `/up`.
 20. A global error handler that logs details and shows a generic page.
 21. Request ID and context processors, and a redacting formatter.
 22. A test for `Logging::create()` and for `helmet_boot()` itself.
-23. The Laravel adapter, the environment ribbon and the version warning.
+23. The version warning. The Laravel adapter and the environment ribbon are built; the `VersionWarning` class exists but is not wired into the runtime and has no test.
 24. A proven CI run. The `.gitlab-ci.yml` exists (PREFLIGHT `php-test` and `composer-audit`, pinned to a commit), but git.wayne.edu has no runners today. Get one pipeline run on record, add PHP 8.5 and 8.3 to the test matrix, and add secret detection.
 
 ### Needs Citadel
@@ -470,14 +470,14 @@ Each of these follows from the research above. Items marked "inferred" depend on
 
 Items 28 to 37 continue the numbering above.
 
-28. One nonce for the header and the bundler (H51): pass `helmet.csp_nonce` to `Vite::useCspNonce()`, document the `html.cspNonce` placeholder swap for raw PHP + Vue, and allow `data:` in `font-src` or turn off asset inlining.
+28. Done. The Laravel middleware passes the nonce to Vite via `Vite::useCspNonce()` (`src/Laravel/SecurityHeaders.php:86`) and sets the `helmet.csp_nonce` request attribute; the default policy allows `data:` in `font-src` and `img-src` (`src/Headers/SecurityHeaders.php:53-54`); the raw PHP path prints the `csp-nonce` meta tag via `helmet_csp_nonce_meta()` (`src/functions.php:147`), and H51 documents the `html.cspNonce` placeholder swap.
 29. Trusted Types in Report-Only mode for JS-framework apps (H52), after Report-Only mode exists (item 14).
 30. CSP reporting through `Reporting-Endpoints` plus `report-to`, with `report-uri` as the fallback, and a report endpoint that accepts `application/reports+json` (H7, item 14).
 31. A `Clear-Site-Data` logout helper, or a note for the auth library (H53).
 32. A CSRF answer for the raw PHP paths: an Origin and `Sec-Fetch-Site` check, or a documented token rule (H54).
 33. Laravel adapter: set `trustProxies(headers: ...)` to FOR and PROTO only, from HELMET's config (H55).
 34. Explicit Composer audit and policy settings in `composer.json` and CI (H56).
-35. Test the CSP `strict-dynamic` keyword through `SecurityHeaders::addSource()`, or confirm `csp-builder` support (H3).
+35. Done. `csp-builder` support is confirmed: `buildCsp()` calls `setStrictDynamic('script-src', true)` (`src/Headers/SecurityHeaders.php:113`), and `testBuildCspAddsStrictDynamicAlongsideNonce` covers it.
 36. `Cache-Control: no-store` (or `private`) on pages that carry a nonce and on authenticated pages (H8, H31).
 37. `src/Proxy/TrustedProxies.php` is IPv4 only by design (its docblock). An IPv6 range throws at boot. An exact IPv6 address is stored as a plain string and matches only by identical text, with no normalisation (`::1` and `0:0:0:0:0:0:0:1` differ). If the Citadel proxy ever reached an app over IPv6, requests could silently read as plain HTTP: no HSTS and no `Secure` flag. Add IPv6 support, or reject IPv6 entries with a clear message (see item 7).
 
