@@ -386,6 +386,7 @@ final class SecurityHeaders
         }
 
         foreach ($policies as $policy) {
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says list<string>, but a caller may pass a non-string at runtime)
             if (! is_string($policy) || preg_match('/^[A-Za-z][A-Za-z0-9_-]*$/', $policy) !== 1) {
                 throw new \InvalidArgumentException(
                     'Trusted Types policies must be identifier-like names: letters, digits, '
@@ -422,6 +423,7 @@ final class SecurityHeaders
         }
 
         foreach ($paths as $prefix) {
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says list<string>, but a caller may pass a non-string at runtime)
             if (is_string($prefix) && $prefix !== '' && str_starts_with($path, $prefix)) {
                 return true;
             }

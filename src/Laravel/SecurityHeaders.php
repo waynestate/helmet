@@ -96,6 +96,10 @@ final class SecurityHeaders
         $noStoreEnabled = (bool) ($noStore['enabled'] ?? false);
         $noStorePaths = $noStore['paths'] ?? [];
         $noStorePaths = is_array($noStorePaths) ? $noStorePaths : [];
+        /** @var list<string> $trustedTypesPolicies */
+        $trustedTypesPolicies = array_values($trustedTypesPolicies);
+        /** @var list<string> $noStorePaths */
+        $noStorePaths = array_values($noStorePaths);
         $headers = CoreSecurityHeaders::build(
             $policy,
             $nonce,
