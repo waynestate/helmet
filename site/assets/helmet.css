@@ -738,3 +738,13 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
 .motion .play-card[data-reveal] { transform: translateY(40px); }
 .motion .play-card[data-reveal].is-in { animation: rise 0.6s calc(var(--i) * 0.08s) var(--h-spring) forwards; }
 .motion .roster__row[data-reveal].is-in { animation-delay: calc(var(--j) * 0.05s); }
+
+/* Part names in the stack list link to each part's own front page. They keep
+   this page's colours; the underline is the only new thing. */
+.part-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .18em;
+}
+.part-link:hover { text-decoration-thickness: 2px; }
