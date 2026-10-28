@@ -109,6 +109,8 @@ that calls HELMET directly:
 
 ```php
 <?php // public/up.php
+use function Waynestate\Helmet\helmet_up;
+
 require __DIR__ . '/../vendor/autoload.php';
 helmet_up();
 ```
