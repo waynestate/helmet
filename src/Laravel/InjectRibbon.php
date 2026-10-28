@@ -71,7 +71,12 @@ final class InjectRibbon
             return;
         }
 
-        $ribbon = new Ribbon((string) app()->environment());
+        $ribbon = new Ribbon(
+            (string) app()->environment(),
+            true,
+            $this->policyPath(),
+            $this->components(),
+        );
         $ribbonHtml = $ribbon->html();
         if ($ribbonHtml === '') {
             return;
@@ -97,6 +102,30 @@ final class InjectRibbon
     private function shouldShowForEnvironment(): bool
     {
         return in_array(app()->environment(), self::RIBBON_ENVIRONMENTS, true);
+    }
+
+    /**
+     * The configured policy file path, or null for no version warnings.
+     */
+    private function policyPath(): ?string
+    {
+        $path = config('helmet.policy_path');
+
+        return is_string($path) && $path !== '' ? $path : null;
+    }
+
+    /**
+     * The [component, version] pairs the ribbon checks against the policy:
+     * the running PHP version and the Laravel framework's major version.
+     *
+     * @return list<array{0: string, 1: string}>
+     */
+    private function components(): array
+    {
+        return [
+            ['php', PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION],
+            ['laravel', explode('.', (string) app()->version(), 2)[0]],
+        ];
     }
 
     /**

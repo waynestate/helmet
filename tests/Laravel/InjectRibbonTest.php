@@ -60,6 +60,64 @@ final class InjectRibbonTest extends TestCase
         self::assertSame($expected, $response->getContent());
     }
 
+    /**
+     * When a policy file is configured, the ribbon shows a version warning for
+     * the running PHP version. The policy file puts the running PHP version in
+     * its end-of-life phase, so the warning is deterministic regardless of the
+     * current date.
+     */
+    public function testRibbonShowsVersionWarningWhenPolicyIsConfigured(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $phpVersion = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
+        $policy = [
+            'schema_version' => 1,
+            'components' => [
+                'php' => [
+                    $phpVersion => [
+                        'active_until' => '2020-01-01',
+                        'security_until' => '2020-01-01',
+                    ],
+                ],
+            ],
+        ];
+        $path = tempnam(sys_get_temp_dir(), 'helmet-policy-');
+        self::assertIsString($path);
+        file_put_contents($path, json_encode($policy));
+
+        try {
+            config(['helmet.policy_path' => $path]);
+            $this->defineHtmlRoute('/test', self::HTML);
+
+            $response = $this->get('/test');
+            $content = (string) $response->getContent();
+
+            self::assertStringContainsString(
+                '<div class="helmet-ribbon-warning">Php ' . $phpVersion . ' is end of life and no longer receives security updates. Upgrade to a supported version.</div>',
+                $content,
+            );
+        } finally {
+            unlink($path);
+        }
+    }
+
+    /**
+     * With no policy file configured, the ribbon shows no version warning.
+     */
+    public function testRibbonShowsNoVersionWarningWithoutPolicy(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+        config(['helmet.policy_path' => null]);
+        $this->defineHtmlRoute('/test', self::HTML);
+
+        $response = $this->get('/test');
+        $content = (string) $response->getContent();
+
+        self::assertStringContainsString('<div class="helmet-ribbon" data-environment="local">local</div>', $content);
+        self::assertStringNotContainsString('helmet-ribbon-warning', $content);
+    }
+
     public function testJsonResponseIsUnchanged(): void
     {
         $this->app->detectEnvironment(static fn() => 'local');

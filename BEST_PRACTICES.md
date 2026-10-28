@@ -19,7 +19,7 @@ Each practice ends with exactly one tag.
 | `Documented` | Written down in the README or a design note, with no code behind it. |
 | `Not yet` | A gap. |
 
-HELMET is at its first scaffold step. The Laravel adapter and the environment ribbon are built. The version warning class exists but is not yet wired into the runtime.
+HELMET is at its first scaffold step. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life.
 
 ---
 
@@ -372,7 +372,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Use a PHP version that still gets security fixes. PHP 8.2 reaches end of security support on 2026-12-31. 8.3 follows on 2027-12-31.
 - **Why:** An unsupported version gets no security patches. The dates were re-checked against php.net's supported-versions page (dated 2026-10-27), and they match: 8.2 active support ended 2024-12-31 and security support ends 2026-12-31; 8.3 active support ended 2025-12-31 and security ends 2027-12-31; 8.4 (released 2024-11-21) has active support to 2026-12-31 and security to 2028-12-31; 8.5 (released 2025-11-20) has active support to 2027-12-31 and security to 2029-12-31. So 8.3 is already in security-only support, and 8.4 enters it on 2027-01-01. 8.1 reached end of life on 2025-12-31 (from a secondary page, not php.net).
 - **Sources:** [endoflife.date PHP](https://endoflife.date/php), [php.net supported versions](https://www.php.net/supported-versions.php)
-- **Stack:** `Checked`. PROCTOR's `php-floor` check fails an app whose lowest allowed PHP version is past support, using the policy file. HELMET's own runtime version warning is `Not yet`: the `VersionWarning` class exists but is not wired into the runtime and has no test. HELMET's `composer.json` requires `^8.3` (platform `8.3.0`), so the floor is already at 8.3.
+- **Stack:** `Checked`. PROCTOR's `php-floor` check fails an app whose lowest allowed PHP version is past support, using the policy file. HELMET's own runtime version warning is wired into the environment ribbon: when `helmet.policy_path` (raw PHP `helmet_ribbon()`'s third argument) points at a CREED `policy.json`, the ribbon shows a warning line for each component version that is in its security-only phase or end of life (`src/Ribbon/Ribbon.php`, `src/Policy/VersionWarning.php`). `RibbonTest` covers the active, security-only, end-of-life, no-policy-path and broken-file cases, and `InjectRibbonTest` covers the Laravel wiring. HELMET's `composer.json` requires `^8.3` (platform `8.3.0`), so the floor is already at 8.3.
 
 ---
 
@@ -457,7 +457,7 @@ Each of these follows from the research above. Items marked "inferred" depend on
 20. A global error handler that logs details and shows a generic page.
 21. Request ID and context processors, and a redacting formatter.
 22. A test for `Logging::create()` and for `helmet_boot()` itself.
-23. The version warning. The Laravel adapter and the environment ribbon are built; the `VersionWarning` class exists but is not wired into the runtime and has no test.
+23. Done. The version warning is wired into the environment ribbon: when a policy file is configured (`helmet.policy_path` / `HELMET_POLICY_PATH`, or `helmet_ribbon()`'s third argument), the ribbon shows a warning line for each component version that is in its security-only phase or end of life (`src/Ribbon/Ribbon.php`, `src/Policy/VersionWarning.php`). `RibbonTest` covers the active, security-only, end-of-life, no-policy-path and broken-file cases, and `InjectRibbonTest` covers the Laravel wiring.
 24. A proven CI run. The `.gitlab-ci.yml` exists (PREFLIGHT `php-test` and `composer-audit`, pinned to a commit), but git.wayne.edu has no runners today. Get one pipeline run on record, add PHP 8.5 and 8.3 to the test matrix, and add secret detection.
 
 ### Needs Citadel

@@ -209,6 +209,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
 | `HELMET_HSTS_INCLUDE_SUBDOMAINS` | `helmet.hsts_include_subdomains` | `true` | Set `false` to omit the HSTS `includeSubDomains` directive. |
 | `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |
+| `HELMET_POLICY_PATH` | `helmet.policy_path` | none | Path to a CREED `policy.json`. When set, the ribbon shows a version warning for the running PHP (and, in Laravel, the framework) version. A missing or invalid file shows no warning and never breaks the page. |
 | `HELMET_DEV_ORIGIN` | `helmet.dev_origin` | none | The Vite dev server origin, used in `local` only when the dev server is running. Must be `http` or `https` on `localhost`, `127.0.0.1` or `[::1]`. Overrides the hot file. |
 | `HELMET_CSP_REPORT_URI` | `helmet.csp_report_uri` | none | The URL browsers POST CSP violation reports to. Adds `report-uri` and `report-to` to the policy and a `Reporting-Endpoints` header. Must be `https`. |
 | `HELMET_CSP_REPORT_ONLY` | `helmet.csp_report_only` | `false` | Set `true` to send the policy as `Content-Security-Policy-Report-Only` (observe violations without blocking them). |
@@ -307,6 +308,14 @@ test site for the real one. It never appears in `production`, on JSON or other
 non-HTML responses, or on HTML with no `<body>`. The package ships no
 stylesheet; style `.helmet-ribbon` in your own CSS. Even with
 `HELMET_RIBBON=true`, production never gets it, so there is no Aftertaste.
+
+**Version warnings.** Point `HELMET_POLICY_PATH` at a CREED `policy.json` and
+the ribbon gains a warning line for each component version that is in its
+security-only phase or end of life. The raw PHP path checks the running PHP
+version; the Laravel adapter also checks the framework's major version. With
+no policy path there is no warning and no file read, and a missing, unreadable
+or invalid file shows no warning and never breaks the page. Style
+`.helmet-ribbon-warning` in your own CSS.
 
 #### Raw PHP and Laravel agree
 
