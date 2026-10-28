@@ -28,8 +28,8 @@ an address that belongs to the platform, not the app. The presets live in
 
 | Preset | Trusted proxies |
 | --- | --- |
-| `citadel` | `172.18.0.1` — the Docker bridge gateway to the HA-Proxy front |
-| `docker` | none — a plain Docker network with no front proxy |
+| `citadel` | `172.18.0.1`, the Docker bridge gateway to the HA-Proxy front |
+| `docker` | none: a plain Docker network with no front proxy |
 
 Raw PHP passes the preset name:
 
@@ -82,7 +82,7 @@ $helmet = helmet_boot([
 ```
 
 Use a platform preset (for example `citadel`, which trusts the Docker bridge
-gateway), or list only the address the front proxy connects from — never a
+gateway), or list only the address the front proxy connects from, never a
 whole private range. A broad range such as `10.0.0.0/8` also trusts other
 containers on the same network, and any of them could then set
 `X-Forwarded-Proto`.
@@ -173,8 +173,17 @@ same list: when the app has not set `trustedproxy.proxies` itself, it copies
 `trustProxies(at: ...)` call in `bootstrap/app.php` still wins, because
 Laravel applies it before the config fallback.
 
-As in the raw PHP section, list only the address HA-Proxy connects from,
-never a whole private range.
+The provider also narrows which forwarded headers Laravel believes from those
+proxies: `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Port`, and
+nothing else. Laravel's own default also trusts `X-Forwarded-Host` and
+`X-Forwarded-Prefix`, and a client can pre-seed those on a platform whose proxy
+does not overwrite them, which poisons `url()`, redirects and password-reset
+links. If your app needs one of them, choose the set yourself with
+`trustProxies(at: ..., headers: ...)` in `bootstrap/app.php`; HELMET then
+leaves your choice alone.
+
+As in the raw PHP section, use a preset or list only the address your front
+proxy connects from, never a whole private range.
 
 The `/up` health route is Laravel's own: keep `health: '/up'` in
 `withRouting()`. The adapter registers no route.
