@@ -15,9 +15,16 @@ use Illuminate\Support\Facades\Log;
  * Content-Security-Policy-Report-Only) is violated and the policy names this
  * endpoint via report-to / report-uri. The report body is attacker-influenced
  * and can be large, so the controller caps the body size, accepts only the two
- * report content types, and logs a single one-line summary - the violated
+ * report content types, and logs one line per violation - the violated
  * directive, the blocked URI's host, and the document path - never the full
  * body.
+ *
+ * The two content types carry different shapes. The legacy
+ * application/csp-report body is a single object with the report under
+ * "csp-report" (kebab-case fields). The Reporting API
+ * (application/reports+json) body is a JSON array of report objects, each
+ * with a "type" and a "body" (camelCase fields); browsers batch other report
+ * types into the same POST, so only the csp-violation entries are logged.
  *
  * The route is not registered by the service provider. An app opts in by
  * calling Route::cspReport() (see CspReportRoute), so the endpoint is off
@@ -33,6 +40,15 @@ final class CspReportController
      * can force.
      */
     public const int MAX_BODY_BYTES = 16 * 1024;
+
+    /**
+     * The most entries of a Reporting API batch that the endpoint processes.
+     *
+     * A browser batches a handful of reports per POST; 20 is far more than any
+     * legitimate batch and bounds the work (and log lines) one request can
+     * force.
+     */
+    public const int MAX_REPORTS = 20;
 
     /**
      * The content types a browser sends a CSP report with.
@@ -68,27 +84,61 @@ final class CspReportController
             return new Response('Invalid report.', 400);
         }
 
-        // The report sits at the top level for CSP, or under "body" for the
-        // generic Reporting API.
-        $report = $data['csp-report'] ?? $data['body']['csp-report'] ?? null;
+        if ($contentType === 'application/reports+json') {
+            // The Reporting API batches: the body is a JSON array of report
+            // objects. Anything that is not an array (a bare object, a
+            // scalar) is not a report batch.
+            if (!array_is_list($data)) {
+                return new Response('Invalid report.', 400);
+            }
+
+            // Browsers batch other report types (deprecations, integrity
+            // violations) into the same POST, so only the csp-violation
+            // entries are logged - and only the first MAX_REPORTS of them.
+            foreach (array_slice($data, 0, self::MAX_REPORTS) as $entry) {
+                if (!is_array($entry) || ($entry['type'] ?? null) !== 'csp-violation') {
+                    continue;
+                }
+
+                $report = is_array($entry['body'] ?? null) ? $entry['body'] : [];
+                $this->logViolation(
+                    (string) ($report['effectiveDirective'] ?? 'unknown'),
+                    (string) ($report['blockedURL'] ?? ''),
+                    (string) ($report['documentURL'] ?? ''),
+                );
+            }
+
+            return new Response('', 204);
+        }
+
+        // The legacy format: a single object with the report under
+        // "csp-report".
+        $report = $data['csp-report'] ?? null;
         if (!is_array($report)) {
             return new Response('Invalid report.', 400);
         }
 
-        $directive = (string) ($report['violated-directive'] ?? $report['effective-directive'] ?? 'unknown');
-        $blockedHost = $this->hostOf((string) ($report['blocked-uri'] ?? ''));
-        $documentPath = $this->pathOf((string) ($report['document-uri'] ?? ''));
+        $this->logViolation(
+            (string) ($report['violated-directive'] ?? $report['effective-directive'] ?? 'unknown'),
+            (string) ($report['blocked-uri'] ?? ''),
+            (string) ($report['document-uri'] ?? ''),
+        );
 
-        // One line, the three fields an operator needs to triage, and nothing
-        // from the rest of the report.
+        return new Response('', 204);
+    }
+
+    /**
+     * Log one line for a violation: the three fields an operator needs to
+     * triage, and nothing from the rest of the report.
+     */
+    private function logViolation(string $directive, string $blockedUri, string $documentUri): void
+    {
         Log::warning(sprintf(
             'CSP violation: directive=%s blocked_host=%s document_path=%s',
             $directive,
-            $blockedHost,
-            $documentPath,
+            $this->hostOf($blockedUri),
+            $this->pathOf($documentUri),
         ));
-
-        return new Response('', 204);
     }
 
     /**

@@ -415,7 +415,11 @@ at a destination it cannot reach.
 
 Laravel ships an opt-in endpoint that receives the reports and logs one line
 per violation — the violated directive, the blocked URI's host, and the
-document path — and nothing else. The route is off until you register it:
+document path — and nothing else. It accepts both report formats: the legacy
+`application/csp-report` object, and the Reporting API's
+`application/reports+json` array, from which it logs the `csp-violation`
+entries (at most 20 per POST — browsers batch other report types into the
+same request, and those are ignored). The route is off until you register it:
 
 ```php
 // routes/web.php
@@ -423,9 +427,18 @@ Route::cspReport();                 // POST /csp-report
 Route::cspReport('/reports/csp');   // or your own path
 ```
 
-The endpoint caps the body at 16 KiB, accepts only the two report content
-types, and returns `204`. It carries no authentication of its own; wrap it in
-your own middleware if you want to keep it private.
+The endpoint caps the body at 16 KiB, returns `204`, and carries no
+authentication of its own; wrap it in your own middleware if you want to keep
+it private. Browsers POST reports without a CSRF token, so the route excludes
+the `web` group's CSRF middleware. Because the endpoint is public and its
+input is attacker-influenced, it is throttled by default to 60 reports a
+minute per IP (`throttle:60,1`); pass a second argument to use a different
+throttle, or `null` to disable it:
+
+```php
+Route::cspReport('/reports/csp', 'throttle:120,1'); // your own limit
+Route::cspReport('/reports/csp', null);             // no throttle
+```
 
 ## HTTPS, and why the proxy list matters
 
