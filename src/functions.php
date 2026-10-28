@@ -286,9 +286,9 @@ if (!function_exists('helmet_up')) {
      *     require __DIR__ . '/../vendor/autoload.php';
      *     helmet_up();
      *
-     * It sends exactly what helmet_boot() sends for the health path —
-     * 200, Content-Type: text/plain; charset=utf-8, Cache-Control:
-     * no-store, body "ok" — and exits. No session, no other headers, no
+     * It sends exactly what helmet_boot() sends for the health path
+     * (200, Content-Type: text/plain; charset=utf-8, Cache-Control:
+     * no-store, body "ok") and exits. No session, no other headers, no
      * config read.
      */
     function helmet_up(): never
@@ -333,9 +333,9 @@ if (!function_exists('helmet_forbidden')) {
     /**
      * Reject a state-changing request and stop.
      *
-     * It sends exactly what helmet_forbidden_response() returns — 403,
+     * It sends exactly what helmet_forbidden_response() returns (403,
      * Content-Type: text/plain; charset=utf-8, Cache-Control: no-store,
-     * body "Forbidden" — and exits. It never echoes request headers.
+     * body "Forbidden") and exits. It never echoes request headers.
      */
     function helmet_forbidden(): never
     {
