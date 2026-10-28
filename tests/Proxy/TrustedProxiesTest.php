@@ -146,4 +146,49 @@ final class TrustedProxiesTest extends TestCase
             self::assertStringContainsString('10.0.0.256/8', $e->getMessage());
         }
     }
+
+    public function testIpv4MappedIpv6DoesNotMatchAnIpv4Range(): void
+    {
+        // IpUtils dispatches on the request address family: an IPv4-mapped
+        // IPv6 address is checked as IPv6, so it never falls in an IPv4
+        // range. IpUtils::checkIp('::ffff:10.0.0.1', ['10.0.0.0/8']) is
+        // false, and that is what is asserted here.
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+
+        self::assertFalse($proxies->isTrusted('::ffff:10.0.0.1'));
+    }
+
+    public function testIpv6Cidr64RangeIsTrusted(): void
+    {
+        $proxies = new TrustedProxies(['2001:db8:0:0::/64']);
+
+        self::assertTrue($proxies->isTrusted('2001:db8:0:0::1'));
+        self::assertTrue($proxies->isTrusted('2001:db8:0:0:ffff:ffff:ffff:ffff'));
+        self::assertFalse($proxies->isTrusted('2001:db8:0:1::1'));
+    }
+
+    public function testIpv6Cidr128IsAnExactAddress(): void
+    {
+        $proxies = new TrustedProxies(['2001:db8::1/128']);
+
+        self::assertTrue($proxies->isTrusted('2001:db8::1'));
+        self::assertFalse($proxies->isTrusted('2001:db8::2'));
+    }
+
+    public function testIpv4Cidr32IsAnExactAddress(): void
+    {
+        $proxies = new TrustedProxies(['10.1.2.3/32']);
+
+        self::assertTrue($proxies->isTrusted('10.1.2.3'));
+        self::assertFalse($proxies->isTrusted('10.1.2.4'));
+    }
+
+    public function testIpv4Cidr1Boundary(): void
+    {
+        $proxies = new TrustedProxies(['0.0.0.0/1']);
+
+        self::assertTrue($proxies->isTrusted('0.0.0.0'));
+        self::assertTrue($proxies->isTrusted('127.255.255.255'));
+        self::assertFalse($proxies->isTrusted('128.0.0.0'));
+    }
 }
