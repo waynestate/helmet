@@ -20,6 +20,25 @@ final class FunctionsTest extends TestCase
         // known cookie_secure and no forwarded-proto / TLS signal.
         ini_set('session.cookie_secure', '0');
         unset($_SERVER['HTTP_X_FORWARDED_PROTO'], $_SERVER['HTTPS']);
+
+        // Make the request-forgery assertions deterministic: start with no
+        // host, Origin or Sec-Fetch-Site header.
+        unset($_SERVER['HTTP_HOST'], $_SERVER['HTTP_ORIGIN'], $_SERVER['HTTP_SEC_FETCH_SITE']);
+    }
+
+    protected function tearDown(): void
+    {
+        // Keep TLS and request-origin signals from leaking into later test
+        // files: CSPBuilder reads $_SERVER['HTTPS'] when it compiles a policy.
+        unset(
+            $_SERVER['HTTP_X_FORWARDED_PROTO'],
+            $_SERVER['HTTPS'],
+            $_SERVER['HTTP_HOST'],
+            $_SERVER['HTTP_ORIGIN'],
+            $_SERVER['HTTP_SEC_FETCH_SITE'],
+        );
+
+        parent::tearDown();
     }
 
     #[RunInSeparateProcess]
@@ -414,6 +433,218 @@ final class FunctionsTest extends TestCase
         \Waynestate\Helmet\helmet_boot([
             'trusted_proxies' => ['127.0.0.1'],
             'permissions_policy' => ['Camera' => []],
+        ]);
+    }
+
+    /**
+     * The request-forgery guard is off by default: a cross-site
+     * state-changing request boots cleanly when no "csrf" option is given.
+     */
+    public function testBootCsrfIsDisabledByDefault(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI'] = '/submit';
+        $_SERVER['HTTP_HOST'] = 'app.example';
+        $_SERVER['HTTPS'] = 'on';
+        $_SERVER['HTTP_SEC_FETCH_SITE'] = 'cross-site';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+        ]);
+
+        self::assertArrayHasKey('nonce', $result);
+        self::assertIsString($result['nonce']);
+        self::assertNotSame('', $result['nonce']);
+    }
+
+    /**
+     * A safe method passes the request-forgery guard even when it is enabled.
+     */
+    public function testBootCsrfAllowsSafeMethods(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/submit';
+        $_SERVER['HTTP_HOST'] = 'app.example';
+        $_SERVER['HTTPS'] = 'on';
+        $_SERVER['HTTP_SEC_FETCH_SITE'] = 'cross-site';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'csrf' => ['enabled' => true],
+        ]);
+
+        self::assertArrayHasKey('nonce', $result);
+        self::assertIsString($result['nonce']);
+        self::assertNotSame('', $result['nonce']);
+    }
+
+    /**
+     * A same-origin state-changing request passes the request-forgery guard.
+     */
+    public function testBootCsrfAllowsSameOriginSecFetchSite(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI'] = '/submit';
+        $_SERVER['HTTP_HOST'] = 'app.example';
+        $_SERVER['HTTPS'] = 'on';
+        $_SERVER['HTTP_SEC_FETCH_SITE'] = 'same-origin';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'csrf' => ['enabled' => true],
+        ]);
+
+        self::assertArrayHasKey('nonce', $result);
+        self::assertIsString($result['nonce']);
+        self::assertNotSame('', $result['nonce']);
+    }
+
+    /**
+     * When Sec-Fetch-Site is absent, an Origin header that matches the
+     * request's own origin passes the request-forgery guard.
+     */
+    public function testBootCsrfAllowsSameOriginFallback(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI'] = '/submit';
+        $_SERVER['HTTP_HOST'] = 'app.example';
+        $_SERVER['HTTPS'] = 'on';
+        $_SERVER['HTTP_ORIGIN'] = 'https://app.example';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'csrf' => ['enabled' => true],
+        ]);
+
+        self::assertArrayHasKey('nonce', $result);
+        self::assertIsString($result['nonce']);
+        self::assertNotSame('', $result['nonce']);
+    }
+
+    /**
+     * An excepted path skips the request-forgery guard.
+     */
+    public function testBootCsrfAllowsExceptedPath(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI'] = '/webhook';
+        $_SERVER['HTTP_HOST'] = 'app.example';
+        $_SERVER['HTTPS'] = 'on';
+        $_SERVER['HTTP_SEC_FETCH_SITE'] = 'cross-site';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'csrf' => [
+                'enabled' => true,
+                'except' => ['/webhook'],
+            ],
+        ]);
+
+        self::assertArrayHasKey('nonce', $result);
+        self::assertIsString($result['nonce']);
+        self::assertNotSame('', $result['nonce']);
+    }
+
+    /**
+     * helmet_forbidden_response() is the single definition of the rejection
+     * answer: 403, the two headers, and the body "Forbidden".
+     */
+    public function testForbiddenResponseReturnsStatusHeadersAndBody(): void
+    {
+        self::assertSame(
+            [
+                'status' => 403,
+                'headers' => [
+                    'Content-Type' => 'text/plain; charset=utf-8',
+                    'Cache-Control' => 'no-store',
+                ],
+                'body' => 'Forbidden',
+            ],
+            \Waynestate\Helmet\helmet_forbidden_response(),
+        );
+    }
+
+    /**
+     * A cross-site state-changing request is rejected by helmet_boot() and
+     * stops. helmet_forbidden() calls exit(), so it cannot be exercised
+     * in-process (see testRawHealthPathIsHostAgnostic): we shell out to a
+     * real PHP process and check its exit code, stdout and stderr. The child
+     * writes a marker to stderr if control ever returns past the guard; a
+     * correct rejection never reaches that line.
+     */
+    public function testBootCsrfRejectsCrossSiteAndExits(): void
+    {
+        $autoload = dirname(__DIR__) . '/vendor/autoload.php';
+        $tempFile = tempnam(sys_get_temp_dir(), 'helmet-csrf-');
+
+        $script = '<?php' . "\n"
+            . 'require ' . var_export($autoload, true) . ";\n"
+            . "\$_SERVER['REMOTE_ADDR'] = '127.0.0.1';\n"
+            . "\$_SERVER['REQUEST_METHOD'] = 'POST';\n"
+            . "\$_SERVER['REQUEST_URI'] = '/submit';\n"
+            . "\$_SERVER['HTTP_HOST'] = 'app.example';\n"
+            . "\$_SERVER['HTTPS'] = 'on';\n"
+            . "\$_SERVER['HTTP_SEC_FETCH_SITE'] = 'cross-site';\n"
+            . "\Waynestate\Helmet\helmet_boot(['trusted_proxies' => ['127.0.0.1'], 'csrf' => ['enabled' => true]]);\n"
+            . "fwrite(STDERR, 'REACHED_PAST_CSRF_GUARD');\n";
+
+        file_put_contents($tempFile, $script);
+
+        try {
+            $process = proc_open(
+                [PHP_BINARY, $tempFile],
+                [
+                    0 => ['pipe', 'r'],
+                    1 => ['pipe', 'w'],
+                    2 => ['pipe', 'w'],
+                ],
+                $pipes,
+            );
+
+            self::assertIsResource($process);
+
+            fclose($pipes[0]);
+            $stdout = stream_get_contents($pipes[1]);
+            $stderr = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $exitCode = proc_close($process);
+        } finally {
+            @unlink($tempFile);
+        }
+
+        self::assertSame(0, $exitCode, "child stderr: $stderr");
+        self::assertSame('Forbidden', $stdout);
+        self::assertStringNotContainsString('REACHED_PAST_CSRF_GUARD', $stderr);
+    }
+
+    /**
+     * An invalid "csrf" option is a configuration error, so helmet_boot()
+     * refuses to run rather than apply a guard the caller did not ask for.
+     */
+    public function testBootThrowsOnInvalidCsrfConfig(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI'] = '/submit';
+        $_SERVER['HTTP_HOST'] = 'app.example';
+        $_SERVER['HTTPS'] = 'on';
+        $_SERVER['HTTP_SEC_FETCH_SITE'] = 'cross-site';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('csrf.trusted_origins');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'csrf' => [
+                'enabled' => true,
+                'trusted_origins' => 'https://trusted.example',
+            ],
         ]);
     }
 }

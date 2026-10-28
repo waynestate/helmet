@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Waynestate\Helmet;
 
 use Psr\Log\LoggerInterface;
+use Waynestate\Helmet\Csrf\RequestForgeryGuard;
 use Waynestate\Helmet\Headers\SecurityHeaders;
 use Waynestate\Helmet\Logging\Logging;
 use Waynestate\Helmet\Metrics\BearerToken;
@@ -24,10 +25,13 @@ if (!function_exists('helmet_boot')) {
      * Boot HELMET in a framework-free PHP app.
      *
      * Call this at the very top of the entry point, before any output. It:
-     *  - decides whether the request is HTTPS from the trusted-proxy list,
-     *  - hardens the session settings (throws if a session is already active),
-     *  - answers the health check path with "ok" and stops,
-     *  - sends the security headers (including a per-request CSP nonce),
+      *  - decides whether the request is HTTPS from the trusted-proxy list,
+      *  - hardens the session settings (throws if a session is already active),
+      *  - answers the health check path with "ok" and stops,
+      *  - rejects a state-changing request when the request-forgery guard is
+      *    enabled and the request is not same-origin (or from a trusted
+      *    origin),
+      *  - sends the security headers (including a per-request CSP nonce),
      *  - removes the X-Powered-By header,
      *  - sets up a JSON logger (if configured).
      *
@@ -40,28 +44,29 @@ if (!function_exists('helmet_boot')) {
      *    Waynestate\Helmet\Platform\Presets), e.g. "citadel" or "docker".
      *  - neither: an empty list, which trusts nothing.
      *
-     * @param array{
-     *     trusted_proxies?: list<string>,
-     *     preset?: string,
-     *     csp?: array<string, list<string>|null>,
-     *     csp_report_uri?: string,
-     *     csp_report_only?: bool,
-     *     coop?: string|null,
-     *     corp?: string|null,
-     *     permissions_policy?: array<string, list<string>>|null,
-     *     health_path?: string,
-     *     hsts_max_age?: int,
-     *     hsts_include_subdomains?: bool,
-     *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency'}
-     * } $config
+      * @param array{
+      *     trusted_proxies?: list<string>,
+      *     preset?: string,
+      *     csp?: array<string, list<string>|null>,
+      *     csp_report_uri?: string,
+      *     csp_report_only?: bool,
+      *     coop?: string|null,
+      *     corp?: string|null,
+      *     permissions_policy?: array<string, list<string>>|null,
+      *     health_path?: string,
+      *     hsts_max_age?: int,
+      *     hsts_include_subdomains?: bool,
+      *     csrf?: array{enabled?: bool, allow_same_site?: bool, trusted_origins?: list<string>, except?: list<string>},
+      *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency'}
+      * } $config
      *
      * @return array{nonce: string, logger: LoggerInterface|null}
      *
      * @throws UnknownPresetException If "preset" names a preset the package
      *         does not know.
-     * @throws \InvalidArgumentException If "trusted_proxies" or "preset" is
-     *         the wrong type, or "coop", "corp" or "permissions_policy" is
-     *         invalid.
+      * @throws \InvalidArgumentException If "trusted_proxies" or "preset" is
+      *         the wrong type, "csrf" is the wrong type, or "coop", "corp",
+      *         "permissions_policy" or a "csrf" value is invalid.
      * @throws \Waynestate\Helmet\Headers\InvalidCspReportUriException If
      *         "csp_report_uri" is not a valid report destination.
      * @throws \LogicException If a session is already active.
@@ -107,6 +112,50 @@ if (!function_exists('helmet_boot')) {
 
         if (($method === 'GET' || $method === 'HEAD') && $path === $healthPath) {
             helmet_up();
+        }
+
+        $csrf = $config['csrf'] ?? null;
+        if ($csrf !== null) {
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
+            if (!is_array($csrf)) {
+                throw new \InvalidArgumentException('helmet_boot() "csrf" must be an array.');
+            }
+        }
+
+        if (is_array($csrf) && ($csrf['enabled'] ?? false) === true) {
+            $csrfAllowSameSite = $csrf['allow_same_site'] ?? false;
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says bool, but a caller may pass a non-bool at runtime)
+            if (!is_bool($csrfAllowSameSite)) {
+                throw new \InvalidArgumentException('helmet_boot() "csrf.allow_same_site" must be a bool.');
+            }
+            $csrfTrustedOrigins = $csrf['trusted_origins'] ?? [];
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says list<string>, but a caller may pass a non-array at runtime)
+            if (!is_array($csrfTrustedOrigins)) {
+                throw new \InvalidArgumentException('helmet_boot() "csrf.trusted_origins" must be a list.');
+            }
+            $csrfExcept = $csrf['except'] ?? [];
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says list<string>, but a caller may pass a non-array at runtime)
+            if (!is_array($csrfExcept)) {
+                throw new \InvalidArgumentException('helmet_boot() "csrf.except" must be a list.');
+            }
+
+            $guard = new RequestForgeryGuard(
+                $proxies,
+                null,
+                null,
+                $csrfAllowSameSite,
+                $csrfTrustedOrigins,
+                $csrfExcept,
+            );
+            $secFetchSite = $_SERVER['HTTP_SEC_FETCH_SITE'] ?? null;
+            $secFetchSite = is_string($secFetchSite) && $secFetchSite !== '' ? $secFetchSite : null;
+            $origin = $_SERVER['HTTP_ORIGIN'] ?? null;
+            $origin = is_string($origin) && $origin !== '' ? $origin : null;
+            $requestOrigin = RequestForgeryGuard::originFromServerParams($_SERVER, $proxies);
+
+            if (!$guard->allows($method, $path, $secFetchSite, $origin, $requestOrigin)) {
+                helmet_forbidden();
+            }
         }
 
         $cspPolicy = SecurityHeaders::mergePolicies(
@@ -184,6 +233,52 @@ if (!function_exists('helmet_up')) {
     function helmet_up(): never
     {
         $response = helmet_up_response();
+
+        http_response_code($response['status']);
+        foreach ($response['headers'] as $name => $value) {
+            header($name . ': ' . $value, true);
+        }
+        echo $response['body'];
+        exit;
+    }
+}
+
+if (!function_exists('helmet_forbidden_response')) {
+    /**
+     * The request-forgery rejection answer, as data.
+     *
+     * Returns the status code, headers and body that answer a rejected
+     * state-changing request. It does not send anything; the caller does.
+     * This keeps the answer testable and lets helmet_forbidden() and
+     * helmet_boot() share one definition, so the two paths cannot drift
+     * apart.
+     *
+     * @return array{status: int, headers: array<string, string>, body: string}
+     */
+    function helmet_forbidden_response(): array
+    {
+        return [
+            'status' => 403,
+            'headers' => [
+                'Content-Type' => 'text/plain; charset=utf-8',
+                'Cache-Control' => 'no-store',
+            ],
+            'body' => 'Forbidden',
+        ];
+    }
+}
+
+if (!function_exists('helmet_forbidden')) {
+    /**
+     * Reject a state-changing request and stop.
+     *
+     * It sends exactly what helmet_forbidden_response() returns — 403,
+     * Content-Type: text/plain; charset=utf-8, Cache-Control: no-store,
+     * body "Forbidden" — and exits. It never echoes request headers.
+     */
+    function helmet_forbidden(): never
+    {
+        $response = helmet_forbidden_response();
 
         http_response_code($response['status']);
         foreach ($response['headers'] as $name => $value) {

@@ -23,6 +23,10 @@ final class ConfigTest extends TestCase
         $this->clearEnv('HELMET_COOP');
         $this->clearEnv('HELMET_CORP');
         $this->clearEnv('HELMET_PERMISSIONS_POLICY');
+        $this->clearEnv('HELMET_CSRF_ENABLED');
+        $this->clearEnv('HELMET_CSRF_ALLOW_SAME_SITE');
+        $this->clearEnv('HELMET_CSRF_TRUSTED_ORIGINS');
+        $this->clearEnv('HELMET_CSRF_EXCEPT');
 
         parent::tearDown();
     }
@@ -243,5 +247,35 @@ final class ConfigTest extends TestCase
         $this->putEnv('HELMET_PERMISSIONS_POLICY', '');
         $this->reloadPackageConfig();
         self::assertNull(config('helmet.permissions_policy'));
+    }
+
+    public function testCsrfEnvVarsAreReadWithTheirDefaults(): void
+    {
+        self::assertFalse(config('helmet.csrf.enabled'));
+        self::assertFalse(config('helmet.csrf.allow_same_site'));
+        self::assertSame([], config('helmet.csrf.trusted_origins'));
+        self::assertSame([], config('helmet.csrf.except'));
+
+        $this->putEnv('HELMET_CSRF_ENABLED', 'true');
+        $this->putEnv('HELMET_CSRF_ALLOW_SAME_SITE', 'true');
+        $this->putEnv('HELMET_CSRF_TRUSTED_ORIGINS', 'https://a.example, https://b.example:8443');
+        $this->putEnv('HELMET_CSRF_EXCEPT', '/webhook, /api/*');
+        $this->reloadPackageConfig();
+
+        self::assertTrue(config('helmet.csrf.enabled'));
+        self::assertTrue(config('helmet.csrf.allow_same_site'));
+        self::assertSame(['https://a.example', 'https://b.example:8443'], config('helmet.csrf.trusted_origins'));
+        self::assertSame(['/webhook', '/api/*'], config('helmet.csrf.except'));
+
+        $this->putEnv('HELMET_CSRF_ENABLED', 'false');
+        $this->putEnv('HELMET_CSRF_ALLOW_SAME_SITE', 'false');
+        $this->putEnv('HELMET_CSRF_TRUSTED_ORIGINS', '');
+        $this->putEnv('HELMET_CSRF_EXCEPT', '');
+        $this->reloadPackageConfig();
+
+        self::assertFalse(config('helmet.csrf.enabled'));
+        self::assertFalse(config('helmet.csrf.allow_same_site'));
+        self::assertSame([], config('helmet.csrf.trusted_origins'));
+        self::assertSame([], config('helmet.csrf.except'));
     }
 }

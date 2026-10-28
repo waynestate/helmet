@@ -266,7 +266,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Protect every state-changing request (POST, PUT, PATCH, DELETE) with a server-checked token, or with Fetch Metadata (`Sec-Fetch-Site`) plus an `Origin` check, or both. Treat `SameSite=Lax` as a second layer only.
 - **Why:** OWASP's CSRF sheet calls SameSite "useful as a defense-in-depth control" that does not replace a real defence in most deployments. `Lax` still sends cookies on top-level GET navigations, it works at the registrable-domain level (so sibling subdomains count as same-site), and it does not stop client-side CSRF. The same sheet calls `Sec-Fetch-Site` the primary signal for modern browsers and says an `Origin`/`Referer` check is a mandatory fallback. Laravel 13.x does both in `PreventRequestForgery` (in the `web` group by default): it checks `Sec-Fetch-Site` first and falls back to token validation. Its docs note browsers send that header only over HTTPS, and the middleware exposes `originOnly` (check the `Origin` header instead of `Sec-Fetch-Site`) and `allowSameSite` (also trust `same-site` requests, not just `same-origin`) options. The raw PHP paths have no equivalent unless the app writes one.
 - **Sources:** [OWASP CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html), [Laravel 13.x CSRF](https://laravel.com/docs/13.x/csrf)
-- **Stack:** `Not yet`. HELMET sets `SameSite=Lax` (`Enforced`, see H26) and nothing else. For the raw PHP and raw PHP + Vue SPA paths, HELMET or the auth library should offer an Origin and `Sec-Fetch-Site` check, or the docs should say plainly that the app must add a token.
+- **Stack:** `Enforced` when enabled. HELMET sets `SameSite=Lax` (`Enforced`, see H26) and now also provides an opt-in request-forgery guard: `helmet_boot(['csrf' => ['enabled' => true]])`, the PSR-15 `RequestForgeryGuard`, and the Laravel `RequestForgeryGuard` middleware when `helmet.csrf.enabled` is true. It checks `Sec-Fetch-Site` first and falls back to `Origin` against the request's own origin and `csrf.trusted_origins`; `GET`, `HEAD` and `OPTIONS` always pass, and a rejected state-changing request receives `403 Forbidden`. It is off by default, so an app that does not enable it still needs its own CSRF defence.
 
 ---
 
@@ -474,7 +474,7 @@ Items 28 to 37 continue the numbering above.
 29. Trusted Types in Report-Only mode for JS-framework apps (H52), after Report-Only mode exists (item 14).
 30. CSP reporting through `Reporting-Endpoints` plus `report-to`, with `report-uri` as the fallback, and a report endpoint that accepts `application/reports+json` (H7, item 14).
 31. A `Clear-Site-Data` logout helper, or a note for the auth library (H53).
-32. A CSRF answer for the raw PHP paths: an Origin and `Sec-Fetch-Site` check, or a documented token rule (H54).
+32. Done. The opt-in request-forgery guard gives the raw PHP, PSR-15 and Laravel paths an `Origin` and `Sec-Fetch-Site` check (H54): `helmet_boot()` accepts a `csrf` option, `RequestForgeryGuard` is the PSR-15 middleware, and the Laravel adapter registers it when `helmet.csrf.enabled` is true.
 33. Laravel adapter: set `trustProxies(headers: ...)` to FOR and PROTO only, from HELMET's config (H55).
 34. Explicit Composer audit and policy settings in `composer.json` and CI (H56).
 35. Done. `csp-builder` support is confirmed: `buildCsp()` calls `setStrictDynamic('script-src', true)` (`src/Headers/SecurityHeaders.php:113`), and `testBuildCspAddsStrictDynamicAlongsideNonce` covers it.

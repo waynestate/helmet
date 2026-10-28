@@ -142,6 +142,7 @@ The same core, mounted in a middleware pipeline:
 
 ```php
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Waynestate\Helmet\Csrf\RequestForgeryGuard;
 use Waynestate\Helmet\Headers\SecurityHeadersMiddleware;
 use Waynestate\Helmet\Health\HealthCheck;
 use Waynestate\Helmet\Platform\Presets;
@@ -152,12 +153,17 @@ $proxies = new TrustedProxies(Presets::proxies('citadel'));
 
 $middleware = [
     new HealthCheck($factory, $factory, '/up'),
+    new RequestForgeryGuard($proxies, $factory, $factory, except: ['/api/webhooks/*']),
     new SecurityHeadersMiddleware($proxies),
 ];
 ```
 
 `SecurityHeadersMiddleware` sets the request attribute `helmet.csp_nonce` so a
 downstream handler can read the same nonce the CSP header carries.
+
+`RequestForgeryGuard` is opt-in: mounting it turns the check on for that
+pipeline. Its options are described in
+[The request-forgery guard](#the-request-forgery-guard).
 
 The headers are sent even when the inner handler throws. By default the
 middleware rethrows, so the framework's error handler still runs and produces
@@ -168,10 +174,12 @@ runs, so they are already on the wire by the time an exception can happen.
 
 ### Laravel
 
-The Laravel adapter is a service provider, two middlewares and a config file.
+The Laravel adapter is a service provider, two always-on middlewares, an
+optional request-forgery guard, and a config file.
 It only wires and configures. Every rule (what the headers say, how a nonce is
-made, how a CSP is merged) lives in the core, so Laravel and raw PHP cannot
-drift apart. The suite runs against Laravel 13 with Orchestra Testbench.
+made, how a CSP is merged, and how a request-forgery check is applied) lives in
+the core, so Laravel and raw PHP cannot drift apart. The suite runs against
+Laravel 13 with Orchestra Testbench.
 
 #### Install the adapter
 
@@ -190,6 +198,9 @@ the `helmet` config and joins the HTTP kernel's middleware:
   too.
 - `InjectRibbon` adds the environment ribbon (below). It always stays in the
   `web` group, because it edits HTML.
+- `RequestForgeryGuard` is opt-in. When `helmet.csrf.enabled` is true, it joins
+  the `web` group after `InjectRibbon` and applies the check in
+  [The request-forgery guard](#the-request-forgery-guard).
 
 They are added through the HTTP kernel, so they survive another package adding
 to the same group. Set `HELMET_SCOPE=web` to keep `SecurityHeaders` in the
@@ -248,6 +259,10 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | `HELMET_DEV_ORIGIN` | `helmet.dev_origin` | none | The Vite dev server origin, used in `local` only when the dev server is running. Must be `http` or `https` on `localhost`, `127.0.0.1` or `[::1]`. Overrides the hot file. |
 | `HELMET_CSP_REPORT_URI` | `helmet.csp_report_uri` | none | The URL browsers POST CSP violation reports to. Adds `report-uri` and `report-to` to the policy and a `Reporting-Endpoints` header. Must be `https`. |
 | `HELMET_CSP_REPORT_ONLY` | `helmet.csp_report_only` | `false` | Set `true` to send the policy as `Content-Security-Policy-Report-Only` (observe violations without blocking them). |
+| `HELMET_CSRF_ENABLED` | `helmet.csrf.enabled` | `false` | Set `true` to turn on the request-forgery guard for state-changing requests. |
+| `HELMET_CSRF_ALLOW_SAME_SITE` | `helmet.csrf.allow_same_site` | `false` | Set `true` to let `Sec-Fetch-Site: same-site` pass. Off by default because sibling subdomains are still same-site. |
+| `HELMET_CSRF_TRUSTED_ORIGINS` | `helmet.csrf.trusted_origins` | none | Comma-separated origins allowed to make state-changing requests when the `Origin` fallback is used. |
+| `HELMET_CSRF_EXCEPT` | `helmet.csrf.except` | none | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. |
 
 #### Customizing the CSP in Laravel
 
@@ -372,6 +387,7 @@ like this:
 | Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
+| Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
 For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger.
@@ -555,6 +571,78 @@ forged `X-Forwarded-Proto` walks in and gets nowhere.
 starts: strict mode, cookies only, `HttpOnly`, and `SameSite=Lax`. It turns on
 `Secure` when the request is HTTPS. It refuses to run once a session is
 active, because changing those values mid-session does nothing.
+
+## The request-forgery guard
+
+`SameSite=Lax` is a layer, not a wall. HELMET can also check state-changing
+requests before they reach the app. The guard is off by default; when it is on,
+it is the same rule on every consumer path.
+
+For `GET`, `HEAD` and `OPTIONS` the request passes. For anything else:
+
+1. `Sec-Fetch-Site` is the primary signal when the browser sends it.
+   `same-origin` and `none` pass, `same-site` passes only when
+   `allow_same_site` is true, and `cross-site` or an unknown value is
+   rejected.
+2. When `Sec-Fetch-Site` is absent, the `Origin` header is checked against the
+   request's own origin and `trusted_origins`. `Origin: null` is rejected, an
+   unparseable origin is rejected, and an absent origin passes, because a
+   non-browser client authenticates some other way.
+3. A path in `except` skips the guard. A pattern is an exact path, a prefix
+   ending in `*`, or `*` for every path.
+
+A rejected request receives `403`, `Content-Type: text/plain; charset=utf-8`,
+`Cache-Control: no-store` and the body `Forbidden`. The answer never echoes
+request headers.
+
+### Raw PHP
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'csrf' => [
+        'enabled' => true,
+        'allow_same_site' => false,
+        'trusted_origins' => ['https://forms.example.edu'],
+        'except' => ['/api/webhooks/*'],
+    ],
+]);
+```
+
+`helmet_boot()` runs the check after the health path and before the security
+headers. A rejected request stops there.
+
+### PSR-15
+
+```php
+use Waynestate\Helmet\Csrf\RequestForgeryGuard;
+
+$guard = new RequestForgeryGuard(
+    $proxies,
+    $factory,
+    $factory,
+    false,
+    ['https://forms.example.edu'],
+    ['/api/webhooks/*'],
+);
+```
+
+The guard needs the PSR-17 response and stream factories only when it rejects
+a request.
+
+### Laravel
+
+Set the config or the environment:
+
+```
+HELMET_CSRF_ENABLED=true
+HELMET_CSRF_TRUSTED_ORIGINS=https://forms.example.edu
+HELMET_CSRF_EXCEPT=/api/webhooks/*
+```
+
+The provider registers the `RequestForgeryGuard` middleware in the `web` group
+only when `helmet.csrf.enabled` is true. It calls the same core rule, so a
+Laravel app and a raw PHP app with the same settings make the same decision.
 
 ## Metrics
 

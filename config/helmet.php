@@ -137,6 +137,35 @@ use Waynestate\Helmet\Platform\Presets;
 |                       HELMET_METRICS_ALLOW (comma-separated). Empty by
 |                       default.
 |
+| "csrf"        The request-forgery guard. Off by default. When enabled, a
+|               state-changing request (anything other than GET, HEAD and
+|               OPTIONS) is rejected with 403 unless Sec-Fetch-Site says
+|               same-origin or none, says same-site when allow_same_site is
+|               true, or the Origin header matches the request's own origin
+|               or a trusted origin. An absent Origin passes, because a
+|               non-browser client authenticates some other way.
+|
+|               "csrf.enabled"
+|                       Whether the guard is on. Defaults to false. Set with
+|                       the HELMET_CSRF_ENABLED env var.
+|
+|               "csrf.allow_same_site"
+|                       Whether Sec-Fetch-Site: same-site passes. Defaults to
+|                       false, because same-site still includes sibling
+|                       subdomains. Set with the HELMET_CSRF_ALLOW_SAME_SITE
+|                       env var.
+|
+|               "csrf.trusted_origins"
+|                       Origins that may make state-changing requests to this
+|                       app. Filled from HELMET_CSRF_TRUSTED_ORIGINS
+|                       (comma-separated). Empty by default.
+|
+|               "csrf.except"
+|                       Paths that skip the guard. A pattern is either an
+|                       exact path or a prefix ending in "*"; "*" matches
+|                       every path. Filled from HELMET_CSRF_EXCEPT
+|                       (comma-separated). Empty by default.
+|
 */
 
 // HELMET_PROXIES wins over HELMET_PRESET, so an app can start from a preset
@@ -221,6 +250,34 @@ if (is_string($metricsAllow) && $metricsAllow !== '') {
 $policyPath = env('HELMET_POLICY_PATH');
 $policyPath = is_string($policyPath) && $policyPath !== '' ? $policyPath : null;
 
+// The request-forgery guard: off by default. When on, it rejects
+// state-changing requests that are not same-origin (or from a trusted
+// origin).
+$csrfEnabled = (bool) env('HELMET_CSRF_ENABLED', false);
+$csrfAllowSameSite = (bool) env('HELMET_CSRF_ALLOW_SAME_SITE', false);
+
+$csrfTrustedOrigins = env('HELMET_CSRF_TRUSTED_ORIGINS');
+$csrfTrustedOriginsList = [];
+if (is_string($csrfTrustedOrigins) && $csrfTrustedOrigins !== '') {
+    foreach (explode(',', $csrfTrustedOrigins) as $origin) {
+        $origin = trim($origin);
+        if ($origin !== '') {
+            $csrfTrustedOriginsList[] = $origin;
+        }
+    }
+}
+
+$csrfExcept = env('HELMET_CSRF_EXCEPT');
+$csrfExceptList = [];
+if (is_string($csrfExcept) && $csrfExcept !== '') {
+    foreach (explode(',', $csrfExcept) as $pattern) {
+        $pattern = trim($pattern);
+        if ($pattern !== '') {
+            $csrfExceptList[] = $pattern;
+        }
+    }
+}
+
 return [
     'preset' => $helmetPreset,
     'proxies' => $proxies,
@@ -240,5 +297,11 @@ return [
         'enabled' => $metricsEnabled,
         'token' => $metricsToken,
         'allow' => $metricsAllowList,
+    ],
+    'csrf' => [
+        'enabled' => $csrfEnabled,
+        'allow_same_site' => $csrfAllowSameSite,
+        'trusted_origins' => $csrfTrustedOriginsList,
+        'except' => $csrfExceptList,
     ],
 ];

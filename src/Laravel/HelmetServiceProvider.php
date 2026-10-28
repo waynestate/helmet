@@ -14,10 +14,11 @@ use ReflectionProperty;
 /**
  * The Laravel adapter for HELMET.
  *
- * It merges and publishes the `helmet` config, and appends the two HELMET
- * middlewares (SecurityHeaders and InjectRibbon) to the `web` middleware
- * group, through the HTTP kernel, so every web route gets the baseline
- * headers and the environment ribbon.
+ * It merges and publishes the `helmet` config, and appends the HELMET
+ * middlewares (SecurityHeaders, InjectRibbon, and the opt-in
+ * RequestForgeryGuard) to the `web` middleware group, through the HTTP
+ * kernel, so every web route gets the baseline headers, the environment
+ * ribbon, and the request-forgery check when it is enabled.
  *
  * HELMET decides for itself whether a request really arrived over HTTPS,
  * from the `helmet.proxies` list, so the HSTS header is only sent for
@@ -112,6 +113,13 @@ final class HelmetServiceProvider extends ServiceProvider
             // InjectRibbon always stays in the `web` group, because it edits
             // HTML and a JSON or 404 response has no HTML to edit.
             $kernel->appendMiddlewareToGroup('web', InjectRibbon::class);
+
+            // RequestForgeryGuard is opt-in. When enabled, it joins the `web`
+            // group after InjectRibbon, so a rejected request never reaches
+            // the route.
+            if ((bool) config('helmet.csrf.enabled') === true) {
+                $kernel->appendMiddlewareToGroup('web', RequestForgeryGuard::class);
+            }
         });
     }
 }
