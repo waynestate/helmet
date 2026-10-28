@@ -73,6 +73,14 @@ use Waynestate\Helmet\Platform\Presets;
 | "ribbon"      Whether the environment ribbon is injected into HTML
 |               responses in non-production environments. On by default.
 |
+| "policy_path" The path to a CREED policy.json that the environment ribbon
+|               reads to show a version warning for the running PHP (and, in
+|               the Laravel adapter, the framework) version. null (the
+|               default) means no version warning and no file read. A
+|               missing, unreadable or invalid file produces no warning and
+|               never breaks the page. Set with the HELMET_POLICY_PATH env
+|               var.
+|
 | "dev_origin"  The Vite dev server origin, used only in the local
 |               environment when the dev server is running (a hot file
 |               exists). When set, it overrides the hot file contents. The
@@ -167,6 +175,10 @@ if (is_string($metricsAllow) && $metricsAllow !== '') {
     }
 }
 
+// An empty string from env means "not set", so normalize it to null.
+$policyPath = env('HELMET_POLICY_PATH');
+$policyPath = is_string($policyPath) && $policyPath !== '' ? $policyPath : null;
+
 return [
     'preset' => $helmetPreset,
     'proxies' => $proxies,
@@ -177,6 +189,7 @@ return [
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
     'hsts_include_subdomains' => $hstsIncludeSubDomains,
     'ribbon' => (bool) env('HELMET_RIBBON', true),
+    'policy_path' => $policyPath,
     'dev_origin' => env('HELMET_DEV_ORIGIN'),
     'metrics' => [
         'enabled' => $metricsEnabled,
