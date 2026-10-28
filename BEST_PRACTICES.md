@@ -420,8 +420,8 @@ HELMET is at its first scaffold step. The Laravel adapter, the environment ribbo
 
 ### H59. Expose Prometheus metrics behind authentication, off by default
 - **Practice:** Offer a `/metrics` endpoint in Prometheus exposition format (`text/plain; version=0.0.4`), disabled by default. When enabled, require a bearer token or an IP allowlist before serving data. Keep labels low-cardinality and free of personal data.
-- **Why:** A metrics endpoint that is open by default leaks version numbers, uptime and request counts to anyone who finds the URL. The Prometheus exposition format is the de facto standard for PHP scrapers. The stack's ADR-0011 requires Prometheus format only, off by default, protected by a token or allowlist, with no personal data in labels.
-- **Sources:** [Prometheus exposition format](https://prometheus.io/docs/instrumenting/exposition_formats/), [ADR-0011 (metrics speak Prometheus)](../design/ADR/ADR-0011-metrics-speak-prometheus.md)
+- **Why:** A metrics endpoint that is open by default leaks version numbers, uptime and request counts to anyone who finds the URL. The Prometheus exposition format is the de facto standard for PHP scrapers. The stack's metrics rule requires Prometheus format only, off by default, protected by a token or allowlist, with no personal data in labels.
+- **Sources:** [Prometheus exposition format](https://prometheus.io/docs/instrumenting/exposition_formats/)
 - **Stack:** `Enforced`. `Metrics::render()` produces the exposition format. `MetricsGate` returns `404` when disabled, `403` when unauthorized, and `404` plus a logged warning when enabled with neither token nor allowlist. The Laravel route is opt-in via `Route::helmetMetrics()`. The raw PHP helper `helmet_metrics()` applies the same gate. `MetricsGateTest`, `MetricsTest`, `FunctionsMetricsTest` and `Laravel\MetricsTest` cover the decision matrix.
 
 ---
