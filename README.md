@@ -1,10 +1,22 @@
+<div align="center">
+  <a href="site/index.html"><img src="docs/readme/hero.jpg" width="100%" alt="HELMET's front page: the headline 'HELMET. Put it on before you ship.' and the composer require command beside a chalkboard play where five rushers, XSS, clickjack, fake HTTPS, fixation and false down, are stopped at the line by CSP, frames, proxies, session and /up, in front of the HELMET mark marked 'your app'. Sacks allowed: 0."></a>
+</div>
+
 # HELMET
 
 ![Three members of the band Helmet, two guitarists and a drummer at a Tama kit, tinted blue against a hazy orange and gold backdrop](https://media.tenor.com/WmJKjN9NQqoAAAAM/helmet-band.gif)
 <sub>GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120)</sub>
 
-[![CI](https://github.com/waynestate/helmet/actions/workflows/ci.yml/badge.svg)](https://github.com/waynestate/helmet/actions/workflows/ci.yml)
-[![GitHub CI](https://github.com/waynestate/helmet/actions/workflows/ci.yml/badge.svg)](https://github.com/waynestate/helmet/actions/workflows/ci.yml)
+<p>
+  <img src="docs/readme/badges/php.svg" alt="php ^8.3">
+  <img src="docs/readme/badges/license.svg" alt="licence MIT">
+  <img src="docs/readme/badges/psr15.svg" alt="psr-15: middleware">
+  <a href="https://github.com/waynestate/helmet/actions/workflows/ci.yml"><img src="https://github.com/waynestate/helmet/actions/workflows/ci.yml/badge.svg" alt="GitHub CI"></a>
+</p>
+
+**Put it on before you ship.** Security headers, a hardened session and an honest proxy check, snapped on before
+the first page is served.
+
 Checks: `composer ci` (the same command runs on GitLab and GitHub).
 Two mirrors, one command — the only thing in this repo that plays both sides is the CI.
 Front page: [`site/index.html`](site/index.html), the playbook, as static files ([`site/README.md`](site/README.md)).
@@ -29,6 +41,12 @@ rules live in one place, and every consumer path agrees.
 ```
 composer require waynestate/helmet
 ```
+
+<details>
+<summary><b>Walk the sideline</b>: the front page's playbook, pregame and film room</summary>
+<br>
+<div align="center"><img src="docs/readme/gallery.jpg" width="100%" alt="Three phone cuts of the front page: 01 The playbook, six plays that each stop a named rusher, with play 22 Nonce Dive blocking an injected script; 02 Pregame: three steps to kickoff, with the scoreboard and the Raw PHP, Laravel and PSR-15 tabs; and 03 The film room, where HELMET's one-line JSON logs and version warnings are kept."></div>
+</details>
 
 ## Platform presets
 
@@ -360,6 +378,14 @@ For session hardening in Laravel, use the framework's own session config: set `s
 
 ## The headers
 
+<div align="center">
+  <img src="docs/readme/play.svg" width="100%" alt="A chalkboard play of HELMET's default headers. Seven O's on the line of scrimmage each run a route to one header: Content-Security-Policy (default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self', plus 7 more directives, a fresh nonce and 'strict-dynamic'), X-Content-Type-Options nosniff, X-Frame-Options SAMEORIGIN, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy camera=(), geolocation=(), microphone=(), payment=(), usb=(), Cross-Origin-Opener-Policy same-origin, and Strict-Transport-Security max-age=31536000; includeSubDomains on HTTPS responses only. Cross-Origin-Resource-Policy is on the bench, opt-in. The HELMET mark sits in the pocket.">
+  <br>
+  <sub>The play is read from <code>src/Headers/SecurityHeaders.php</code>: seven routes, one per default header,
+  drawn in the order HELMET sets them. Cross-Origin-Resource-Policy waits on the bench until you opt in. With
+  reduced motion on, you get the finished play.</sub>
+</div>
+
 Every response gets the same set, built by one shared function:
 
 | Header | Value |
@@ -614,3 +640,30 @@ The floor is tight, the headers are exact, and nothing here is decoration.
 
 Call `helmet_boot()` once and the rest is Exactly What You Wanted. Size
 Matters too, which is why the core stays small enough to read in an afternoon.
+
+<details>
+<summary><b>The brand board</b>: the mark, lockups, palette and type</summary>
+<br>
+<div align="center"><img src="docs/readme/board.jpg" width="100%" alt="HELMET's brand board: the helmet mark on a Wayne State green tile, the app icon, horizontal and stacked lockups reading 'Put it on before you ship.', the mark on light and dark, the palette of WSU green, gold, cream and berry (site accent only), Inter type, favicons at 64, 32 and 16 px, clear space, do and don't, and a response-headers mockup."></div>
+</details>
+
+<div align="center"><b>Same team, every snap</b><br><sub>WayneUI and the stack. HELMET plays the line.</sub></div>
+
+<div align="center">
+  <a href="https://github.com/waynestate/wayne-ui" title="WayneUI"><img src="docs/readme/cast/wayneui.png" width="40" alt="WayneUI"></a>
+  <a href="https://github.com/waynestate/creed" title="CREED"><img src="docs/readme/cast/creed.png" width="40" alt="CREED"></a>
+  <a href="https://github.com/waynestate/proctor" title="PROCTOR"><img src="docs/readme/cast/proctor.png" width="40" alt="PROCTOR"></a>
+  <a href="https://github.com/waynestate/sesame" title="SESAME"><img src="docs/readme/cast/sesame.png" width="40" alt="SESAME"></a>
+  <a href="https://github.com/waynestate/helmet" title="HELMET"><img src="docs/readme/cast/helmet.png" width="40" alt="HELMET"></a>
+  <a href="https://github.com/waynestate/sourdough" title="Sourdough"><img src="docs/readme/cast/sourdough.png" width="40" alt="Sourdough"></a>
+  <a href="https://github.com/waynestate/squire" title="SQUIRE"><img src="docs/readme/cast/squire.png" width="40" alt="SQUIRE"></a>
+  <a href="https://github.com/waynestate/preflight" title="PREFLIGHT"><img src="docs/readme/cast/preflight.png" width="40" alt="PREFLIGHT"></a>
+  <a href="https://github.com/waynestate/pinstripe" title="Pinstripe"><img src="docs/readme/cast/pinstripe.png" width="40" alt="Pinstripe"></a>
+  <a href="https://github.com/waynestate/booster" title="BOOSTER"><img src="docs/readme/cast/booster.png" width="40" alt="BOOSTER"></a>
+  <a href="https://github.com/waynestate/rollcall" title="ROLLCALL"><img src="docs/readme/cast/rollcall.png" width="40" alt="ROLLCALL"></a>
+  <a href="https://github.com/waynestate/drawbridge" title="DRAWBRIDGE"><img src="docs/readme/cast/drawbridge.png" width="40" alt="DRAWBRIDGE"></a>
+  <a href="https://github.com/waynestate/advisor" title="ADVISOR"><img src="docs/readme/cast/advisor.png" width="40" alt="ADVISOR"></a>
+  <a href="https://github.com/waynestate/weld" title="WELD"><img src="docs/readme/cast/weld.png" width="40" alt="WELD"></a>
+</div>
+
+<div align="center"><sub>Images are regenerated from the front page by <a href="scripts/readme-art/README.md"><code>scripts/readme-art</code></a>. Chalk dust included.</sub></div>
