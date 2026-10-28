@@ -255,6 +255,130 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
+     * In the local environment with a hot file, the Vite dev server origin
+     * is added to the CSP so the dev server's scripts, styles, fonts,
+     * images and HMR websocket are allowed.
+     */
+    public function testDevOriginIsAddedInLocalWhenHot(): void
+    {
+        $this->app->detectEnvironment(static fn () => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString('http://localhost:5173', $csp);
+            self::assertStringContainsString('ws://localhost:5173', $csp);
+            self::assertStringContainsString('worker-src blob:', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * In the production environment, the Vite dev server origin is never
+     * added, even when a hot file exists.
+     */
+    public function testDevOriginIsNotAddedInProduction(): void
+    {
+        $this->app->detectEnvironment(static fn () => 'production');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://localhost:5173', $csp);
+            self::assertStringNotContainsString('ws://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * An invalid dev origin (a non-local host) is never added, even in the
+     * local environment.
+     */
+    public function testInvalidDevOriginIsNotAdded(): void
+    {
+        $this->app->detectEnvironment(static fn () => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://evil.example:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://evil.example:5173', $csp);
+            self::assertStringNotContainsString('ws://evil.example:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * config('helmet.dev_origin') takes precedence over the hot file
+     * contents.
+     */
+    public function testDevOriginConfigOverridesHotFile(): void
+    {
+        $this->app->detectEnvironment(static fn () => 'local');
+        config(['helmet.dev_origin' => 'http://127.0.0.1:3000']);
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString('http://127.0.0.1:3000', $csp);
+            self::assertStringNotContainsString('http://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * An invalid dev origin logs a warning.
+     */
+    public function testInvalidDevOriginLogsAWarning(): void
+    {
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(static function (string $message): bool {
+                return str_contains($message, 'HELMET') && str_contains($message, 'invalid Vite dev origin');
+            });
+
+        $this->app->detectEnvironment(static fn () => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://evil.example:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $this->get('/test');
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
      * The middleware injects the csp-nonce meta tag into HTML responses,
      * right after the opening <head> tag. Vite's dev runtime reads that tag
      * to nonce the CSS and preload tags it adds after page load.

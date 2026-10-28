@@ -213,6 +213,9 @@ final class SecurityHeaders
             case 'data:':
                 $builder->setDataAllowed($directive, true);
                 break;
+            case 'blob:':
+                $builder->setBlobAllowed($directive, true);
+                break;
             case "'unsafe-inline'":
                 $builder->setAllowUnsafeInline($directive, true);
                 break;

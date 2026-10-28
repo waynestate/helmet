@@ -58,6 +58,7 @@ final class SecurityHeaders
             CoreSecurityHeaders::defaultCspPolicy(),
             (array) config('helmet.csp')
         );
+        $policy = $this->maybeAddDevOrigin($policy);
         $headers = CoreSecurityHeaders::build(
             $policy,
             $nonce,
@@ -150,5 +151,135 @@ final class SecurityHeaders
         $mime = strtolower(trim(explode(';', $contentType)[0]));
 
         return str_starts_with($mime, 'text/html');
+    }
+
+    /**
+     * Add the Vite dev server origin to the policy, but only in the local
+     * environment when the dev server is running (a hot file exists). The
+     * origin is validated: it must be http or https, on localhost,
+     * 127.0.0.1 or [::1], with an optional port. An invalid origin is
+     * ignored and a warning is logged.
+     *
+     * @param array<string, list<string>> $policy
+     *
+     * @return array<string, list<string>>
+     */
+    private function maybeAddDevOrigin(array $policy): array
+    {
+        if (!app()->environment('local')) {
+            return $policy;
+        }
+
+        if (!Vite::isRunningHot()) {
+            return $policy;
+        }
+
+        $origin = $this->devOrigin();
+        if ($origin === null) {
+            return $policy;
+        }
+
+        // The dev server serves scripts, styles, fonts and images.
+        foreach (['script-src', 'style-src', 'style-src-elem', 'font-src', 'img-src'] as $directive) {
+            $policy[$directive][] = $origin;
+        }
+
+        // The dev server's HMR websocket and the page's fetch calls.
+        $policy['connect-src'][] = $origin;
+        $policy['connect-src'][] = $this->websocketTwin($origin);
+
+        // Vite's dev server may use web workers loaded from blob: URLs.
+        $policy['worker-src'][] = 'blob:';
+
+        return $policy;
+    }
+
+    /**
+     * The Vite dev server origin: config('helmet.dev_origin') when set,
+     * otherwise the hot file contents. Returns null when the origin is
+     * missing or invalid.
+     */
+    private function devOrigin(): ?string
+    {
+        $origin = config('helmet.dev_origin');
+        if (!is_string($origin) || $origin === '') {
+            $origin = $this->hotFileContents();
+        }
+
+        if (!is_string($origin) || $origin === '') {
+            return null;
+        }
+
+        $origin = trim($origin);
+
+        if (!$this->isValidDevOrigin($origin)) {
+            Log::warning('HELMET ignored an invalid Vite dev origin: ' . $origin . '. The origin must be http or https on localhost, 127.0.0.1 or [::1], with an optional port.');
+
+            return null;
+        }
+
+        return $origin;
+    }
+
+    /**
+     * Read the Vite hot file contents, or null when it cannot be read.
+     */
+    private function hotFileContents(): ?string
+    {
+        try {
+            $hotFile = Vite::hotFile();
+            if (!is_string($hotFile) || !is_file($hotFile)) {
+                return null;
+            }
+
+            $contents = file_get_contents($hotFile);
+
+            return is_string($contents) ? trim($contents) : null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Whether the origin is a valid Vite dev server origin: http or https,
+     * on localhost, 127.0.0.1 or [::1], with an optional port.
+     */
+    private function isValidDevOrigin(string $origin): bool
+    {
+        $parts = parse_url($origin);
+        if ($parts === false) {
+            return false;
+        }
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        if ($scheme !== 'http' && $scheme !== 'https') {
+            return false;
+        }
+
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        if ($host !== 'localhost' && $host !== '127.0.0.1' && $host !== '[::1]') {
+            return false;
+        }
+
+        if (isset($parts['port']) && (!is_int($parts['port']) || $parts['port'] < 1 || $parts['port'] > 65535)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * The ws:// or wss:// twin of an http/https origin.
+     */
+    private function websocketTwin(string $origin): string
+    {
+        $parts = parse_url($origin);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = (string) ($parts['host'] ?? '');
+        $port = isset($parts['port']) ? ':' . $parts['port'] : '';
+
+        $wsScheme = $scheme === 'https' ? 'wss' : 'ws';
+
+        return $wsScheme . '://' . $host . $port;
     }
 }
