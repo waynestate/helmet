@@ -18,6 +18,8 @@ final class ConfigTest extends TestCase
         $this->clearEnv('HELMET_HSTS_MAX_AGE');
         $this->clearEnv('HELMET_HSTS_INCLUDE_SUBDOMAINS');
         $this->clearEnv('HELMET_RIBBON');
+        $this->clearEnv('HELMET_CSP_REPORT_URI');
+        $this->clearEnv('HELMET_CSP_REPORT_ONLY');
 
         parent::tearDown();
     }
@@ -158,5 +160,32 @@ final class ConfigTest extends TestCase
 
         self::assertSame(600, config('helmet.hsts'));
         self::assertFalse(config('helmet.ribbon'));
+    }
+
+    public function testCspReportUriEnvVarIsReadWithNullAsTheDefault(): void
+    {
+        self::assertNull(config('helmet.csp_report_uri'));
+
+        $this->putEnv('HELMET_CSP_REPORT_URI', 'https://example.com/csp-report');
+        $this->reloadPackageConfig();
+        self::assertSame('https://example.com/csp-report', config('helmet.csp_report_uri'));
+
+        // An empty value is treated as "no endpoint", the same as unset.
+        $this->putEnv('HELMET_CSP_REPORT_URI', '');
+        $this->reloadPackageConfig();
+        self::assertNull(config('helmet.csp_report_uri'));
+    }
+
+    public function testCspReportOnlyEnvVarIsReadWithFalseAsTheDefault(): void
+    {
+        self::assertFalse(config('helmet.csp_report_only'));
+
+        $this->putEnv('HELMET_CSP_REPORT_ONLY', 'true');
+        $this->reloadPackageConfig();
+        self::assertTrue(config('helmet.csp_report_only'));
+
+        $this->putEnv('HELMET_CSP_REPORT_ONLY', 'false');
+        $this->reloadPackageConfig();
+        self::assertFalse(config('helmet.csp_report_only'));
     }
 }

@@ -47,6 +47,11 @@ final class HelmetServiceProvider extends ServiceProvider
             __DIR__ . '/../../config/helmet.php' => config_path('helmet.php'),
         ], 'helmet-config');
 
+        // Make Route::cspReport() available so an app can opt into the CSP
+        // report endpoint. The macro is always registered; the route is only
+        // added when the app calls it, so the endpoint stays off by default.
+        CspReportRoute::registerMacro();
+
         // Laravel's own trusted-proxy setting drives url(), secure cookies and
         // $request->isSecure(). When the app has not set it, follow the same
         // list HELMET uses, so HELMET_PROXIES drives both. An app value (or an

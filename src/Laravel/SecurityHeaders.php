@@ -27,8 +27,10 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * like the core middleware.
  *
  * The CSP overrides come from config('helmet.csp'), the HSTS max-age from
- * config('helmet.hsts'), and the HSTS includeSubDomains directive from
- * config('helmet.hsts_include_subdomains'); this middleware never reads env()
+ * config('helmet.hsts'), the HSTS includeSubDomains directive from
+ * config('helmet.hsts_include_subdomains'), the CSP report destination from
+ * config('helmet.csp_report_uri'), and the report-only switch from
+ * config('helmet.csp_report_only'); this middleware never reads env()
  * directly.
  *
  * It also hands the per-request nonce to Laravel's Vite helper, so the @vite
@@ -63,12 +65,17 @@ final class SecurityHeaders
             (array) config('helmet.csp'),
         );
         $policy = $this->maybeAddDevOrigin($policy);
+        // An empty string from env means "not set", so normalize it to null.
+        $reportUri = config('helmet.csp_report_uri');
+        $reportUri = is_string($reportUri) && $reportUri !== '' ? $reportUri : null;
         $headers = CoreSecurityHeaders::build(
             $policy,
             $nonce,
             $isHttps,
             (int) config('helmet.hsts'),
             (bool) config('helmet.hsts_include_subdomains'),
+            $reportUri,
+            (bool) config('helmet.csp_report_only'),
         );
 
         $request->attributes->set('helmet.csp_nonce', $nonce);
