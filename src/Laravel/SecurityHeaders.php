@@ -48,7 +48,9 @@ final class SecurityHeaders
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $proxies = new TrustedProxies((array) config('helmet.proxies'));
+        /** @var list<string> $proxyList */
+        $proxyList = (array) config('helmet.proxies');
+        $proxies = new TrustedProxies($proxyList);
         $isHttps = HttpsDetector::isHttps($request->server->all(), $proxies);
 
         $nonce = CoreSecurityHeaders::generateNonce();
@@ -230,7 +232,7 @@ final class SecurityHeaders
     {
         try {
             $hotFile = Vite::hotFile();
-            if (!is_string($hotFile) || !is_file($hotFile)) {
+            if (!is_file($hotFile)) {
                 return null;
             }
 
@@ -263,7 +265,7 @@ final class SecurityHeaders
             return false;
         }
 
-        if (isset($parts['port']) && (!is_int($parts['port']) || $parts['port'] < 1 || $parts['port'] > 65535)) {
+        if (isset($parts['port']) && $parts['port'] < 1) {
             return false;
         }
 

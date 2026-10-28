@@ -71,7 +71,7 @@ final class InjectRibbon
             return;
         }
 
-        $ribbon = new Ribbon(app()->environment());
+        $ribbon = new Ribbon((string) app()->environment());
         $ribbonHtml = $ribbon->html();
         if ($ribbonHtml === '') {
             return;

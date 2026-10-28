@@ -41,7 +41,7 @@ if (!function_exists('helmet_boot')) {
      *     health_path?: string,
      *     hsts_max_age?: int,
      *     hsts_include_subdomains?: bool,
-     *     log?: array{channel?: string, stream?: string, level?: string}
+      *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency'}
      * } $config
      *
      * @return array{nonce: string, logger: LoggerInterface|null}
@@ -54,11 +54,13 @@ if (!function_exists('helmet_boot')) {
     {
         $proxyList = null;
         if (isset($config['trusted_proxies'])) {
+            // @phpstan-ignore booleanNot.alwaysFalse (the docblock says list<string>, but a caller may pass a non-array at runtime)
             if (!is_array($config['trusted_proxies'])) {
                 throw new \InvalidArgumentException('helmet_boot() "trusted_proxies" must be a list.');
             }
             $proxyList = $config['trusted_proxies'];
         } elseif (isset($config['preset'])) {
+            // @phpstan-ignore booleanNot.alwaysFalse (the docblock says string, but a caller may pass a non-string at runtime)
             if (!is_string($config['preset']) || $config['preset'] === '') {
                 throw new \InvalidArgumentException('helmet_boot() "preset" must be a non-empty string.');
             }
@@ -73,8 +75,8 @@ if (!function_exists('helmet_boot')) {
         SessionHardening::apply($isHttps);
 
         $logger = null;
-        if (isset($config['log']) && is_array($config['log'])) {
-            $log = $config['log'];
+        $log = $config['log'] ?? null;
+        if (is_array($log)) {
             $logger = Logging::create(
                 $log['channel'] ?? 'helmet',
                 $log['stream'] ?? 'php://stderr',

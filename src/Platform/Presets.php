@@ -53,6 +53,8 @@ final class Presets
     /**
      * The trusted proxies for a preset.
      *
+     * @return list<string>
+     *
      * @throws UnknownPresetException If the preset is not known.
      */
     public static function proxies(string $name): array

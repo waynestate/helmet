@@ -32,8 +32,9 @@ final class TrustedProxies
     private array $ranges = [];
 
     /**
-     * @param list<string> $proxies Exact IPv4/IPv6 addresses and/or IPv4/IPv6
-     *                              CIDR ranges.
+     * @param list<mixed> $proxies Exact IPv4/IPv6 addresses and/or IPv4/IPv6
+     *                              CIDR ranges. Every entry must be a
+     *                              non-empty string; anything else throws.
      *
      * @throws \InvalidArgumentException If an entry is not a valid address or
      *                                   CIDR, is a /0 range, or is "*".

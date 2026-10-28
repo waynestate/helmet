@@ -26,6 +26,9 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  */
 final class SecurityHeadersMiddleware implements MiddlewareInterface
 {
+    /**
+     * @var array<string, list<string>>
+     */
     private readonly array $cspPolicy;
 
     /**
