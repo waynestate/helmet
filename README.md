@@ -9,6 +9,10 @@ Citadel needs before it serves a single page: it sends the security headers,
 hardens the session, decides whether the request really arrived over HTTPS,
 answers the load balancer's `/up` ping, and writes structured logs.
 
+This repository is published from Wayne State University's internal
+GitLab and mirrored here. Changes land there first; Wayne State
+developers open issues and merge requests on the internal project.
+
 It is the floor, not the ceiling. An app on raw PHP calls `helmet_boot()` once
 at the top of its front controller and is done. An app on Laravel or a PSR-15
 stack mounts the same core as middleware and gets the identical headers. The
@@ -405,10 +409,9 @@ docker run --rm -v "${PWD}:/app" -w /app php:8.3-cli vendor/bin/phpunit
 
 ## Strongly recommended: a git.wayne.edu instance runner
 
-git.wayne.edu has no runners today, so CI for this repo runs on GitLab. Every
-product in the stack strongly recommends a git.wayne.edu instance runner. The
-case for it is written up in `design/instance-runner-case.md` in the
-coordination repo (`the stack`). In the Meantime, GitLab carries the load.
+git.wayne.edu has no runners today, so CI for this repo runs on the test
+GitLab instance. Every product in the stack strongly recommends a
+git.wayne.edu instance runner.
 
 ![Close-up of a man with a mustache and smudged dark eye makeup in front of a purple and gold backdrop, from the Wilma's Rainbow video by the band Helmet](https://media.tenor.com/1dGc4wPaaBQAAAAM/wilmas-rainbow-helmet.gif)
 <sub>GIF via [Tenor](https://tenor.com/view/wilmas-rainbow-helmet-wilmas-wilma-rainbow-gif-18685087)</sub>
