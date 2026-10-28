@@ -36,15 +36,25 @@ final class VersionWarning
         return match ($status) {
             VersionStatus::SECURITY => sprintf(
                 '%s %s is in its security-only phase and will not receive new features. Upgrade to a supported version.',
-                ucfirst($component),
+                self::label($component),
                 $version,
             ),
             VersionStatus::EOL => sprintf(
                 '%s %s is end of life and no longer receives security updates. Upgrade to a supported version.',
-                ucfirst($component),
+                self::label($component),
                 $version,
             ),
             default => null,
+        };
+    }
+
+    /** The display name for a policy component id. */
+    private static function label(string $component): string
+    {
+        return match ($component) {
+            'php' => 'PHP',
+            'mysql' => 'MySQL',
+            default => ucfirst($component),
         };
     }
 }

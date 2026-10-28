@@ -49,7 +49,7 @@ final class RibbonTest extends TestCase
         $html = $ribbon->html();
 
         self::assertStringContainsString(
-            '<div class="helmet-ribbon-warning">Php 8.3 is in its security-only phase and will not receive new features. Upgrade to a supported version.</div>',
+            '<div class="helmet-ribbon-warning">PHP 8.3 is in its security-only phase and will not receive new features. Upgrade to a supported version.</div>',
             $html,
         );
         // The environment label is still present.
@@ -73,7 +73,7 @@ final class RibbonTest extends TestCase
         $html = $ribbon->html();
 
         self::assertStringContainsString(
-            '<div class="helmet-ribbon-warning">Php 8.3 is end of life and no longer receives security updates. Upgrade to a supported version.</div>',
+            '<div class="helmet-ribbon-warning">PHP 8.3 is end of life and no longer receives security updates. Upgrade to a supported version.</div>',
             $html,
         );
     }
