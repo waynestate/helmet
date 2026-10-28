@@ -7,6 +7,7 @@
 [![GitHub CI](https://github.com/waynestate/helmet/actions/workflows/ci.yml/badge.svg)](https://github.com/waynestate/helmet/actions/workflows/ci.yml)
 Checks: `composer ci` (the same command runs on GitLab and GitHub).
 Two mirrors, one command — the only thing in this repo that plays both sides is the CI.
+Front page: [`site/index.html`](site/index.html), the playbook, as static files ([`site/README.md`](site/README.md)).
 
 HELMET is the Wayne State app stack's baseline runtime. One small
 framework-free PHP core, `Waynestate\Helmet`, does the five things every app on
