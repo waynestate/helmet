@@ -62,6 +62,25 @@ use Waynestate\Helmet\Platform\Presets;
 |               Defaults to false. Set with the HELMET_CSP_REPORT_ONLY env
 |               var.
 |
+| "csp_trusted_types"
+|               The Trusted Types directives, appended to the report-only
+|               Content-Security-Policy header only (never the enforcing
+|               header). Off by default. When enabled, the report-only policy
+|               carries "require-trusted-types-for 'script'" and
+|               "trusted-types <policies>".
+|
+|               "csp_trusted_types.enabled"
+|                       Whether the directives are appended. Defaults to
+|                       false. Set with the HELMET_CSP_TRUSTED_TYPES_ENABLED
+|                       env var.
+|
+|               "csp_trusted_types.policies"
+|                       The Trusted Types policy names. Defaults to
+|                       ["default"]. Filled from
+|                       HELMET_CSP_TRUSTED_TYPES_POLICIES (comma-separated).
+|                       An invalid policy name throws
+|                       \InvalidArgumentException when the headers are built.
+|
 | "coop"        The Cross-Origin-Opener-Policy value: "same-origin" (the
 |               default), "same-origin-allow-popups", "noopener-allow-popups"
 |               or "unsafe-none". null sends no COOP header. Set with the
@@ -93,6 +112,29 @@ use Waynestate\Helmet\Platform\Presets;
 |               Whether the Strict-Transport-Security header covers
 |               subdomains (the includeSubDomains directive). Only sent on
 |               HTTPS responses. Defaults to true.
+|
+| "hsts_preload"
+|               Whether to append the preload directive to the
+|               Strict-Transport-Security header. Only sent on HTTPS
+|               responses. Defaults to false. Set with the
+|               HELMET_HSTS_PRELOAD env var. Preload is hard to undo: once a
+|               browser has preloaded the domain it refuses plain-HTTP
+|               connections until the preload entry is removed, so enable it
+|               only when every subdomain serves HTTPS.
+|
+| "no_store"      Whether to send Cache-Control: no-store on matching
+|               responses. Off by default. When enabled, the header is added
+|               to every response (or to the matching path prefixes) unless
+|               the response already sets Cache-Control.
+|
+|               "no_store.enabled"
+|                       Whether the header is sent. Defaults to false. Set
+|                       with the HELMET_NO_STORE_ENABLED env var.
+|
+|               "no_store.paths"
+|                       Path prefixes that carry no-store. Empty (the
+|                       default) means every response. Filled from
+|                       HELMET_NO_STORE_PATHS (comma-separated).
 |
 | "ribbon"      Whether the environment ribbon is injected into HTML
 |               responses in non-production environments. On by default.
@@ -203,12 +245,32 @@ if (is_string($helmetCsp) && $helmetCsp !== '') {
 }
 
 $hstsIncludeSubDomains = (bool) env('HELMET_HSTS_INCLUDE_SUBDOMAINS', true);
+$hstsPreload = (bool) env('HELMET_HSTS_PRELOAD', false);
 
 // An empty string from env means "not set", so normalize it to null.
 $cspReportUri = env('HELMET_CSP_REPORT_URI');
 $cspReportUri = is_string($cspReportUri) && $cspReportUri !== '' ? $cspReportUri : null;
 
 $cspReportOnly = (bool) env('HELMET_CSP_REPORT_ONLY', false);
+
+// Trusted Types: off by default. The policy names default to ["default"]; a
+// non-empty HELMET_CSP_TRUSTED_TYPES_POLICIES replaces them, but a value that
+// parses to nothing keeps the default so the header never goes empty.
+$cspTrustedTypesEnabled = (bool) env('HELMET_CSP_TRUSTED_TYPES_ENABLED', false);
+$cspTrustedTypesPolicies = ['default'];
+$helmetCspTrustedTypesPolicies = env('HELMET_CSP_TRUSTED_TYPES_POLICIES');
+if (is_string($helmetCspTrustedTypesPolicies) && $helmetCspTrustedTypesPolicies !== '') {
+    $parsedPolicies = [];
+    foreach (explode(',', $helmetCspTrustedTypesPolicies) as $policy) {
+        $policy = trim($policy);
+        if ($policy !== '') {
+            $parsedPolicies[] = $policy;
+        }
+    }
+    if ($parsedPolicies !== []) {
+        $cspTrustedTypesPolicies = $parsedPolicies;
+    }
+}
 
 // An empty string from env means "not set", so normalize it to null.
 $coop = env('HELMET_COOP', 'same-origin');
@@ -278,6 +340,19 @@ if (is_string($csrfExcept) && $csrfExcept !== '') {
     }
 }
 
+// Cache-Control: no-store: off by default. Empty paths mean every response.
+$noStoreEnabled = (bool) env('HELMET_NO_STORE_ENABLED', false);
+$noStorePaths = env('HELMET_NO_STORE_PATHS');
+$noStorePathsList = [];
+if (is_string($noStorePaths) && $noStorePaths !== '') {
+    foreach (explode(',', $noStorePaths) as $path) {
+        $path = trim($path);
+        if ($path !== '') {
+            $noStorePathsList[] = $path;
+        }
+    }
+}
+
 return [
     'preset' => $helmetPreset,
     'proxies' => $proxies,
@@ -285,11 +360,20 @@ return [
     'csp' => $csp,
     'csp_report_uri' => $cspReportUri,
     'csp_report_only' => $cspReportOnly,
+    'csp_trusted_types' => [
+        'enabled' => $cspTrustedTypesEnabled,
+        'policies' => $cspTrustedTypesPolicies,
+    ],
     'coop' => $coop,
     'corp' => $corp,
     'permissions_policy' => $permissionsPolicy,
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
     'hsts_include_subdomains' => $hstsIncludeSubDomains,
+    'hsts_preload' => $hstsPreload,
+    'no_store' => [
+        'enabled' => $noStoreEnabled,
+        'paths' => $noStorePathsList,
+    ],
     'ribbon' => (bool) env('HELMET_RIBBON', true),
     'policy_path' => $policyPath,
     'dev_origin' => env('HELMET_DEV_ORIGIN'),

@@ -44,29 +44,33 @@ if (!function_exists('helmet_boot')) {
      *    Waynestate\Helmet\Platform\Presets), e.g. "citadel" or "docker".
      *  - neither: an empty list, which trusts nothing.
      *
-      * @param array{
-      *     trusted_proxies?: list<string>,
-      *     preset?: string,
-      *     csp?: array<string, list<string>|null>,
-      *     csp_report_uri?: string,
-      *     csp_report_only?: bool,
-      *     coop?: string|null,
-      *     corp?: string|null,
-      *     permissions_policy?: array<string, list<string>>|null,
-      *     health_path?: string,
-      *     hsts_max_age?: int,
-      *     hsts_include_subdomains?: bool,
-      *     csrf?: array{enabled?: bool, allow_same_site?: bool, trusted_origins?: list<string>, except?: list<string>},
-      *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency'}
-      * } $config
+       * @param array{
+       *     trusted_proxies?: list<string>,
+       *     preset?: string,
+       *     csp?: array<string, list<string>|null>,
+       *     csp_report_uri?: string,
+       *     csp_report_only?: bool,
+       *     csp_trusted_types?: array{enabled?: bool, policies?: list<string>},
+       *     coop?: string|null,
+       *     corp?: string|null,
+       *     permissions_policy?: array<string, list<string>>|null,
+       *     health_path?: string,
+       *     hsts_max_age?: int,
+       *     hsts_include_subdomains?: bool,
+       *     hsts_preload?: bool,
+       *     no_store?: array{enabled?: bool, paths?: list<string>},
+       *     csrf?: array{enabled?: bool, allow_same_site?: bool, trusted_origins?: list<string>, except?: list<string>},
+       *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency'}
+       * } $config
      *
      * @return array{nonce: string, logger: LoggerInterface|null}
      *
      * @throws UnknownPresetException If "preset" names a preset the package
      *         does not know.
-      * @throws \InvalidArgumentException If "trusted_proxies" or "preset" is
-      *         the wrong type, "csrf" is the wrong type, or "coop", "corp",
-      *         "permissions_policy" or a "csrf" value is invalid.
+       * @throws \InvalidArgumentException If "trusted_proxies" or "preset" is
+       *         the wrong type, "csrf" is the wrong type, or "coop", "corp",
+       *         "permissions_policy", "csp_trusted_types", "no_store" or a
+       *         "csrf" value is invalid.
      * @throws \Waynestate\Helmet\Headers\InvalidCspReportUriException If
      *         "csp_report_uri" is not a valid report destination.
      * @throws \LogicException If a session is already active.
@@ -167,6 +171,47 @@ if (!function_exists('helmet_boot')) {
         // "send no COOP header" (the same as the Laravel config), while an
         // absent key keeps the same-origin default.
         $coop = array_key_exists('coop', $config) ? $config['coop'] : 'same-origin';
+
+        $trustedTypes = $config['csp_trusted_types'] ?? null;
+        $trustedTypesEnabled = false;
+        $trustedTypesPolicies = ['default'];
+        if ($trustedTypes !== null) {
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
+            if (!is_array($trustedTypes)) {
+                throw new \InvalidArgumentException('helmet_boot() "csp_trusted_types" must be an array.');
+            }
+            $trustedTypesEnabled = $trustedTypes['enabled'] ?? false;
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says bool, but a caller may pass a non-bool at runtime)
+            if (!is_bool($trustedTypesEnabled)) {
+                throw new \InvalidArgumentException('helmet_boot() "csp_trusted_types.enabled" must be a bool.');
+            }
+            $trustedTypesPolicies = $trustedTypes['policies'] ?? ['default'];
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says list<string>, but a caller may pass a non-array at runtime)
+            if (!is_array($trustedTypesPolicies)) {
+                throw new \InvalidArgumentException('helmet_boot() "csp_trusted_types.policies" must be a list.');
+            }
+        }
+
+        $noStore = $config['no_store'] ?? null;
+        $noStoreEnabled = false;
+        $noStorePaths = [];
+        if ($noStore !== null) {
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
+            if (!is_array($noStore)) {
+                throw new \InvalidArgumentException('helmet_boot() "no_store" must be an array.');
+            }
+            $noStoreEnabled = $noStore['enabled'] ?? false;
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says bool, but a caller may pass a non-bool at runtime)
+            if (!is_bool($noStoreEnabled)) {
+                throw new \InvalidArgumentException('helmet_boot() "no_store.enabled" must be a bool.');
+            }
+            $noStorePaths = $noStore['paths'] ?? [];
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says list<string>, but a caller may pass a non-array at runtime)
+            if (!is_array($noStorePaths)) {
+                throw new \InvalidArgumentException('helmet_boot() "no_store.paths" must be a list.');
+            }
+        }
+
         $headers = SecurityHeaders::build(
             $cspPolicy,
             $nonce,
@@ -178,12 +223,28 @@ if (!function_exists('helmet_boot')) {
             $coop,
             $config['corp'] ?? null,
             $config['permissions_policy'] ?? null,
+            $config['hsts_preload'] ?? false,
+            $trustedTypesEnabled,
+            $trustedTypesPolicies,
         );
 
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value, true);
         }
         header_remove('X-Powered-By');
+
+        if (SecurityHeaders::noStoreApplies($noStoreEnabled, $path, $noStorePaths)) {
+            $hasCacheControl = false;
+            foreach (headers_list() as $sentHeader) {
+                if (stripos($sentHeader, 'Cache-Control:') === 0) {
+                    $hasCacheControl = true;
+                    break;
+                }
+            }
+            if (!$hasCacheControl) {
+                header('Cache-Control: no-store', true);
+            }
+        }
 
         return ['nonce' => $nonce, 'logger' => $logger];
     }

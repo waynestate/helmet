@@ -438,4 +438,308 @@ final class SecurityHeadersMiddlewareTest extends TestCase
 
         $middleware->process($request, $this->throwingHandler(new \RuntimeException('boom')));
     }
+
+    // ── HSTS preload ──────────────────────────────────────────────────────
+
+    public function testHstsPreloadSendsPreloadDirective(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            true,
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertSame(
+            'max-age=31536000; includeSubDomains; preload',
+            $response->getHeaderLine('Strict-Transport-Security'),
+        );
+    }
+
+    public function testHstsPreloadNotSentOnHttp(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            true,
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertFalse($response->hasHeader('Strict-Transport-Security'));
+    }
+
+    // ── Trusted Types ─────────────────────────────────────────────────────
+
+    public function testTrustedTypesAppendedToReportOnlyCsp(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            true,
+            'same-origin',
+            null,
+            null,
+            false,
+            true,
+            ['default'],
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        $csp = $response->getHeaderLine('Content-Security-Policy-Report-Only');
+        self::assertStringContainsString("require-trusted-types-for 'script'", $csp);
+        self::assertStringContainsString("trusted-types 'default'", $csp);
+    }
+
+    public function testTrustedTypesNotAppendedToEnforcingCsp(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            false,
+            true,
+            ['default'],
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        $csp = $response->getHeaderLine('Content-Security-Policy');
+        self::assertStringNotContainsString('require-trusted-types-for', $csp);
+    }
+
+    public function testTrustedTypesInvalidPolicyThrowsAtConstruction(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('identifier-like names');
+
+        new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            false,
+            true,
+            ['9lives'],
+        );
+    }
+
+    // ── no-store ──────────────────────────────────────────────────────────
+
+    public function testNoStoreEnabledSendsNoStoreHeader(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            false,
+            false,
+            ['default'],
+            true,
+            [],
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+    }
+
+    public function testNoStoreDisabledDoesNotSendNoStoreHeader(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware($proxies);
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertFalse($response->hasHeader('Cache-Control'));
+    }
+
+    public function testNoStorePathMatchingSendsHeader(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            false,
+            false,
+            ['default'],
+            true,
+            ['/api'],
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+        $request = $request->withUri($request->getUri()->withPath('/api/data'));
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+    }
+
+    public function testNoStorePathNonMatchingDoesNotSendHeader(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            false,
+            false,
+            ['default'],
+            true,
+            ['/api'],
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+        $request = $request->withUri($request->getUri()->withPath('/public'));
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertFalse($response->hasHeader('Cache-Control'));
+    }
+
+    public function testNoStoreDoesNotOverrideExistingCacheControl(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            false,
+            false,
+            ['default'],
+            true,
+            [],
+        );
+
+        $handler = new class implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return (new Response(200))->withHeader('Cache-Control', 'max-age=60');
+            }
+        };
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $handler);
+
+        self::assertSame('max-age=60', $response->getHeaderLine('Cache-Control'));
+    }
 }

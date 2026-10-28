@@ -713,4 +713,236 @@ final class SecurityHeadersTest extends TestCase
 
         SecurityHeaders::buildCsp(SecurityHeaders::defaultCspPolicy(), 'testnonce', 'http://example.com');
     }
+
+    // ── HSTS preload ──────────────────────────────────────────────────────
+
+    public function testBuildHstsPreloadAppendsPreloadDirective(): void
+    {
+        self::assertSame(
+            'max-age=31536000; includeSubDomains; preload',
+            SecurityHeaders::buildHsts(31536000, true, true),
+        );
+    }
+
+    public function testBuildHstsPreloadAcceptsLongerMaxAge(): void
+    {
+        self::assertSame(
+            'max-age=63072000; includeSubDomains; preload',
+            SecurityHeaders::buildHsts(63072000, true, true),
+        );
+    }
+
+    public function testBuildHstsPreloadRejectsShortMaxAge(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('HSTS preload requires a max-age of at least 31536000');
+
+        SecurityHeaders::buildHsts(600, true, true);
+    }
+
+    public function testBuildHstsPreloadRejectsNoIncludeSubDomains(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('HSTS preload requires a max-age of at least 31536000');
+
+        SecurityHeaders::buildHsts(31536000, false, true);
+    }
+
+    public function testBuildSendsPreloadHstsOnHttps(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            true,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            true,
+        );
+
+        self::assertSame(
+            'max-age=31536000; includeSubDomains; preload',
+            $headers['Strict-Transport-Security'],
+        );
+    }
+
+    public function testBuildOmitsHstsEntirelyWhenNotHttpsEvenWithPreload(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            true,
+        );
+
+        self::assertArrayNotHasKey('Strict-Transport-Security', $headers);
+    }
+
+    public function testBuildRejectsPreloadWithShortMaxAge(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('HSTS preload requires a max-age of at least 31536000');
+
+        SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            true,
+            600,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            true,
+        );
+    }
+
+    // ── Trusted Types ─────────────────────────────────────────────────────
+
+    public function testBuildTrustedTypesRendersSinglePolicy(): void
+    {
+        self::assertSame(
+            "require-trusted-types-for 'script'; trusted-types 'default'",
+            SecurityHeaders::buildTrustedTypes(['default']),
+        );
+    }
+
+    public function testBuildTrustedTypesRendersMultiplePolicies(): void
+    {
+        self::assertSame(
+            "require-trusted-types-for 'script'; trusted-types 'default' 'my-policy'",
+            SecurityHeaders::buildTrustedTypes(['default', 'my-policy']),
+        );
+    }
+
+    public function testBuildTrustedTypesRejectsEmptyList(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Trusted Types requires at least one policy');
+
+        SecurityHeaders::buildTrustedTypes([]);
+    }
+
+    public function testBuildTrustedTypesRejectsPolicyStartingWithDigit(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('identifier-like names');
+
+        SecurityHeaders::buildTrustedTypes(['9lives']);
+    }
+
+    public function testBuildTrustedTypesRejectsNonStringPolicy(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('identifier-like names');
+
+        SecurityHeaders::buildTrustedTypes([123]);
+    }
+
+    public function testBuildAppendsTrustedTypesToReportOnlyCsp(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            true,
+            'same-origin',
+            null,
+            null,
+            false,
+            true,
+            ['default'],
+        );
+
+        $csp = $headers['Content-Security-Policy-Report-Only'];
+        self::assertStringContainsString("require-trusted-types-for 'script'", $csp);
+        self::assertStringContainsString("trusted-types 'default'", $csp);
+    }
+
+    public function testBuildDoesNotAppendTrustedTypesToEnforcingCsp(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            false,
+            true,
+            ['default'],
+        );
+
+        $csp = $headers['Content-Security-Policy'];
+        self::assertStringNotContainsString('require-trusted-types-for', $csp);
+        self::assertStringNotContainsString('trusted-types', $csp);
+    }
+
+    public function testBuildValidatesTrustedTypesEvenWhenReportOnlyOff(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('identifier-like names');
+
+        SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            null,
+            false,
+            true,
+            ['9lives'],
+        );
+    }
+
+    // ── no-store ──────────────────────────────────────────────────────────
+
+    public function testNoStoreAppliesDisabledReturnsFalse(): void
+    {
+        self::assertFalse(SecurityHeaders::noStoreApplies(false, '/anything', []));
+    }
+
+    public function testNoStoreAppliesEnabledNoPathsReturnsTrue(): void
+    {
+        self::assertTrue(SecurityHeaders::noStoreApplies(true, '/anything', []));
+    }
+
+    public function testNoStoreAppliesEnabledMatchingPathReturnsTrue(): void
+    {
+        self::assertTrue(SecurityHeaders::noStoreApplies(true, '/api/data', ['/api']));
+    }
+
+    public function testNoStoreAppliesEnabledNonMatchingPathReturnsFalse(): void
+    {
+        self::assertFalse(SecurityHeaders::noStoreApplies(true, '/public', ['/api']));
+    }
+
+    public function testNoStoreAppliesIgnoresEmptyPrefix(): void
+    {
+        self::assertFalse(SecurityHeaders::noStoreApplies(true, '/api', ['']));
+    }
 }

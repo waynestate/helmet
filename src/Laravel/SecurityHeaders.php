@@ -28,13 +28,16 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  *
  * The CSP overrides come from config('helmet.csp'), the HSTS max-age from
  * config('helmet.hsts'), the HSTS includeSubDomains directive from
- * config('helmet.hsts_include_subdomains'), the CSP report destination from
+ * config('helmet.hsts_include_subdomains'), the HSTS preload directive from
+ * config('helmet.hsts_preload'), the CSP report destination from
  * config('helmet.csp_report_uri'), the report-only switch from
- * config('helmet.csp_report_only'), the Cross-Origin-Opener-Policy value from
- * config('helmet.coop'), the Cross-Origin-Resource-Policy value from
- * config('helmet.corp'), and the Permissions-Policy feature map from
- * config('helmet.permissions_policy'); this middleware never reads env()
- * directly.
+ * config('helmet.csp_report_only'), the Trusted Types report-only switch and
+ * policy names from config('helmet.csp_trusted_types'), the
+ * Cross-Origin-Opener-Policy value from config('helmet.coop'), the
+ * Cross-Origin-Resource-Policy value from config('helmet.corp'), the
+ * Permissions-Policy feature map from config('helmet.permissions_policy'), and
+ * the no-store switch and path prefixes from config('helmet.no_store'); this
+ * middleware never reads env() directly.
  *
  * It also hands the per-request nonce to Laravel's Vite helper, so the @vite
  * script and style tags carry the same nonce the CSP header sends. The app no
@@ -79,6 +82,20 @@ final class SecurityHeaders
         // header. null (or a non-array) falls back to the default deny list.
         $permissionsPolicy = config('helmet.permissions_policy');
         $permissionsPolicy = is_array($permissionsPolicy) ? $permissionsPolicy : null;
+        $hstsPreload = (bool) config('helmet.hsts_preload');
+        // A non-array csp_trusted_types falls back to the disabled default, so
+        // a malformed value never changes the CSP header.
+        $trustedTypes = config('helmet.csp_trusted_types');
+        $trustedTypes = is_array($trustedTypes) ? $trustedTypes : [];
+        $trustedTypesEnabled = (bool) ($trustedTypes['enabled'] ?? false);
+        $trustedTypesPolicies = $trustedTypes['policies'] ?? ['default'];
+        $trustedTypesPolicies = is_array($trustedTypesPolicies) ? $trustedTypesPolicies : ['default'];
+        // A non-array no_store falls back to the disabled default.
+        $noStore = config('helmet.no_store');
+        $noStore = is_array($noStore) ? $noStore : [];
+        $noStoreEnabled = (bool) ($noStore['enabled'] ?? false);
+        $noStorePaths = $noStore['paths'] ?? [];
+        $noStorePaths = is_array($noStorePaths) ? $noStorePaths : [];
         $headers = CoreSecurityHeaders::build(
             $policy,
             $nonce,
@@ -90,6 +107,9 @@ final class SecurityHeaders
             $coop,
             $corp,
             $permissionsPolicy,
+            $hstsPreload,
+            $trustedTypesEnabled,
+            $trustedTypesPolicies,
         );
 
         $request->attributes->set('helmet.csp_nonce', $nonce);
@@ -110,6 +130,11 @@ final class SecurityHeaders
 
         foreach ($headers as $name => $value) {
             $response->headers->set($name, $value);
+        }
+
+        if (CoreSecurityHeaders::noStoreApplies($noStoreEnabled, $request->getPathInfo(), $noStorePaths)
+            && !$response->headers->has('Cache-Control')) {
+            $response->headers->set('Cache-Control', 'no-store');
         }
 
         $response->headers->remove('X-Powered-By');

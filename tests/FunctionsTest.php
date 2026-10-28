@@ -647,4 +647,100 @@ final class FunctionsTest extends TestCase
             ],
         ]);
     }
+
+    // ── HSTS preload ──────────────────────────────────────────────────────
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testBootHstsPreloadSendsPreloadHeader(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+        $_SERVER['HTTPS'] = 'on';
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'hsts_preload' => true,
+        ]);
+
+        $headers = headers_list();
+        $hsts = null;
+        foreach ($headers as $header) {
+            if (stripos($header, 'Strict-Transport-Security:') === 0) {
+                $hsts = trim(substr($header, strlen('Strict-Transport-Security:')));
+                break;
+            }
+        }
+
+        self::assertSame('max-age=31536000; includeSubDomains; preload', $hsts);
+    }
+
+    // ── Trusted Types config validation ───────────────────────────────────
+
+    public function testBootThrowsOnInvalidTrustedTypesConfig(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('csp_trusted_types" must be an array');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'csp_trusted_types' => 'not-an-array',
+        ]);
+    }
+
+    public function testBootThrowsOnInvalidTrustedTypesEnabled(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('csp_trusted_types.enabled" must be a bool');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'csp_trusted_types' => [
+                'enabled' => 'yes',
+            ],
+        ]);
+    }
+
+    // ── no-store config validation ────────────────────────────────────────
+
+    public function testBootThrowsOnInvalidNoStoreConfig(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('no_store" must be an array');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'no_store' => 'not-an-array',
+        ]);
+    }
+
+    public function testBootThrowsOnInvalidNoStoreEnabled(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('no_store.enabled" must be a bool');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'no_store' => [
+                'enabled' => 'yes',
+            ],
+        ]);
+    }
 }

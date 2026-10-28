@@ -57,9 +57,19 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
      * @param array<string, list<string>>|null $permissionsPolicy The
      *        Permissions-Policy feature map, or null to use the default deny
      *        list. An empty array sends no Permissions-Policy header.
+     * @param bool $hstsPreload Whether to append the preload directive to
+     *        HSTS, sent only on HTTPS.
+     * @param bool $trustedTypesEnabled Whether to append the Trusted Types
+     *        directives to the report-only CSP header.
+     * @param list<string> $trustedTypesPolicies The Trusted Types policy
+     *        names, used when $trustedTypesEnabled is true.
+     * @param bool $noStoreEnabled Whether to send Cache-Control: no-store on
+     *        matching responses.
+     * @param list<string> $noStorePaths Path prefixes that carry no-store, or
+     *        empty for every response.
      *
-     * @throws \InvalidArgumentException If $coop, $corp or $permissionsPolicy
-     *         is invalid.
+     * @throws \InvalidArgumentException If $coop, $corp, $permissionsPolicy or
+     *         $trustedTypesPolicies is invalid.
      */
     public function __construct(
         private readonly TrustedProxies $proxies,
@@ -73,6 +83,11 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         private readonly ?string $coop = 'same-origin',
         private readonly ?string $corp = null,
         private readonly ?array $permissionsPolicy = null,
+        private readonly bool $hstsPreload = false,
+        private readonly bool $trustedTypesEnabled = false,
+        private readonly array $trustedTypesPolicies = ['default'],
+        private readonly bool $noStoreEnabled = false,
+        private readonly array $noStorePaths = [],
     ) {
         $this->cspPolicy = SecurityHeaders::mergePolicies(
             SecurityHeaders::defaultCspPolicy(),
@@ -91,6 +106,10 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         if ($permissionsPolicy !== null) {
             SecurityHeaders::buildPermissionsPolicy($permissionsPolicy);
         }
+
+        if ($trustedTypesEnabled) {
+            SecurityHeaders::buildTrustedTypes($trustedTypesPolicies);
+        }
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -108,6 +127,9 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
             $this->coop,
             $this->corp,
             $this->permissionsPolicy,
+            $this->hstsPreload,
+            $this->trustedTypesEnabled,
+            $this->trustedTypesPolicies,
         );
 
         $request = $request->withAttribute('helmet.csp_nonce', $nonce);
@@ -123,6 +145,11 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
 
         foreach ($headers as $name => $value) {
             $response = $response->withHeader($name, $value);
+        }
+
+        if (SecurityHeaders::noStoreApplies($this->noStoreEnabled, $request->getUri()->getPath(), $this->noStorePaths)
+            && !$response->hasHeader('Cache-Control')) {
+            $response = $response->withHeader('Cache-Control', 'no-store');
         }
 
         return $response->withoutHeader('X-Powered-By');

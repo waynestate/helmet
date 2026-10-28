@@ -243,11 +243,17 @@ final class SecurityHeaders
      * @param array<string, list<string>>|null $permissionsPolicy The
      *        Permissions-Policy feature map, or null to use the default deny
      *        list. An empty array sends no Permissions-Policy header.
+     * @param bool $hstsPreload Whether to append the preload directive to
+     *        HSTS. Only used when $isHttps is true.
+     * @param bool $trustedTypesEnabled Whether to append the Trusted Types
+     *        directives to the report-only CSP header.
+     * @param list<string> $trustedTypesPolicies The Trusted Types policy
+     *        names, used when $trustedTypesEnabled is true.
      *
      * @return array<string, string> Header name to value.
      *
-     * @throws \InvalidArgumentException If $coop, $corp or $permissionsPolicy
-     *         is invalid.
+     * @throws \InvalidArgumentException If $coop, $corp, $permissionsPolicy,
+     *         $trustedTypesPolicies or the HSTS preload combination is invalid.
      */
     public static function build(
         array $policy,
@@ -260,13 +266,29 @@ final class SecurityHeaders
         ?string $coop = 'same-origin',
         ?string $corp = null,
         ?array $permissionsPolicy = null,
+        bool $hstsPreload = false,
+        bool $trustedTypesEnabled = false,
+        array $trustedTypesPolicies = ['default'],
     ): array {
         $cspHeaderName = $cspReportOnly
             ? 'Content-Security-Policy-Report-Only'
             : 'Content-Security-Policy';
 
+        $cspValue = self::buildCsp($policy, $nonce, $cspReportUri);
+        if ($trustedTypesEnabled) {
+            // Trusted Types is only ever sent on the report-only header: it
+            // reports violations without breaking the page, so an app can see
+            // what it would need to allow before enforcing. The policies are
+            // validated even when report-only is off, so a bad value fails at
+            // boot instead of silently doing nothing.
+            $trustedTypes = self::buildTrustedTypes($trustedTypesPolicies);
+            if ($cspReportOnly) {
+                $cspValue .= ' ' . $trustedTypes;
+            }
+        }
+
         $headers = [
-            $cspHeaderName => self::buildCsp($policy, $nonce, $cspReportUri),
+            $cspHeaderName => $cspValue,
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'SAMEORIGIN',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
@@ -298,7 +320,7 @@ final class SecurityHeaders
         }
 
         if ($isHttps) {
-            $headers['Strict-Transport-Security'] = self::buildHsts($hstsMaxAge, $hstsIncludeSubDomains);
+            $headers['Strict-Transport-Security'] = self::buildHsts($hstsMaxAge, $hstsIncludeSubDomains, $hstsPreload);
         }
 
         return $headers;
@@ -310,25 +332,102 @@ final class SecurityHeaders
      * Roll out in stages: start with a short max-age, raise it once nothing
      * breaks, and only keep includeSubDomains when every subdomain serves
      * HTTPS. preload is a decision for the domain owner, not for one app, so
-     * it is never added here.
+     * it is opt-in: when asked for it is appended, but only with a max-age of
+     * at least a year and includeSubDomains on, because the browser refuses a
+     * preload HSTS header that does not meet both.
      *
      * @param int $maxAge The max-age in seconds.
      * @param bool $includeSubDomains Whether to cover subdomains.
+     * @param bool $preload Whether to append the preload directive.
      *
-     * @throws \InvalidArgumentException If $maxAge is negative.
+     * @throws \InvalidArgumentException If $maxAge is negative, or if $preload
+     *         is set without a year-long max-age and includeSubDomains.
      */
-    public static function buildHsts(int $maxAge = 31536000, bool $includeSubDomains = true): string
+    public static function buildHsts(int $maxAge = 31536000, bool $includeSubDomains = true, bool $preload = false): string
     {
         if ($maxAge < 0) {
             throw new \InvalidArgumentException('HSTS max-age must be a non-negative number of seconds.');
+        }
+
+        if ($preload && ($maxAge < 31536000 || ! $includeSubDomains)) {
+            throw new \InvalidArgumentException(
+                'HSTS preload requires a max-age of at least 31536000 and includeSubDomains.',
+            );
         }
 
         $value = 'max-age=' . $maxAge;
         if ($includeSubDomains) {
             $value .= '; includeSubDomains';
         }
+        if ($preload) {
+            $value .= '; preload';
+        }
 
         return $value;
+    }
+
+    /**
+     * Build the Trusted Types CSP directives.
+     *
+     * Trusted Types stops an injected script from creating new scripts through
+     * the DOM: only scripts from an allowed policy may run. The directives are
+     * only ever sent on the report-only header, so an app can see what it
+     * would need to allow before it is forced to.
+     *
+     * @param list<string> $policies The allowed policy names.
+     *
+     * @throws \InvalidArgumentException If the list is empty or a name is not
+     *         an identifier-like policy name.
+     */
+    public static function buildTrustedTypes(array $policies): string
+    {
+        if ($policies === []) {
+            throw new \InvalidArgumentException('Trusted Types requires at least one policy.');
+        }
+
+        foreach ($policies as $policy) {
+            if (! is_string($policy) || preg_match('/^[A-Za-z][A-Za-z0-9_-]*$/', $policy) !== 1) {
+                throw new \InvalidArgumentException(
+                    'Trusted Types policies must be identifier-like names: letters, digits, '
+                    . 'hyphens and underscores, starting with a letter.',
+                );
+            }
+        }
+
+        $quoted = array_map(
+            static fn (string $policy): string => "'" . $policy . "'",
+            $policies,
+        );
+
+        return "require-trusted-types-for 'script'; trusted-types " . implode(' ', $quoted);
+    }
+
+    /**
+     * Decide whether a response path should carry Cache-Control: no-store.
+     *
+     * The feature is off unless $enabled is true. When enabled with no paths,
+     * every response is covered. When enabled with paths, only a response whose
+     * path starts with one of the given prefixes is covered.
+     *
+     * @param list<string> $paths Path prefixes to cover, or empty for all.
+     */
+    public static function noStoreApplies(bool $enabled, string $path, array $paths): bool
+    {
+        if (! $enabled) {
+            return false;
+        }
+
+        if ($paths === []) {
+            return true;
+        }
+
+        foreach ($paths as $prefix) {
+            if (is_string($prefix) && $prefix !== '' && str_starts_with($path, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -859,4 +859,149 @@ final class SecurityHeadersTest extends TestCase
 
         return null;
     }
+
+    // ── HSTS preload ──────────────────────────────────────────────────────
+
+    public function testHstsPreloadFollowsConfig(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config([
+            'helmet.proxies' => ['10.0.0.1'],
+            'helmet.hsts_preload' => true,
+        ]);
+        $response = $this->withServerVariables($this->httpsViaTrustedProxy())->get('/test');
+
+        $response->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+    }
+
+    public function testHstsPreloadDefaultsToFalse(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.proxies' => ['10.0.0.1']]);
+        $response = $this->withServerVariables($this->httpsViaTrustedProxy())->get('/test');
+
+        $response->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    }
+
+    public function testHstsPreloadNotSentOnHttp(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config([
+            'helmet.proxies' => ['10.0.0.1'],
+            'helmet.hsts_preload' => true,
+        ]);
+        $response = $this->get('/test');
+
+        $response->assertHeaderMissing('Strict-Transport-Security');
+    }
+
+    // ── Trusted Types ─────────────────────────────────────────────────────
+
+    public function testTrustedTypesFollowsConfig(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config([
+            'helmet.csp_report_only' => true,
+            'helmet.csp_trusted_types' => [
+                'enabled' => true,
+                'policies' => ['default'],
+            ],
+        ]);
+        $response = $this->get('/test');
+
+        $csp = $response->headers->get('Content-Security-Policy-Report-Only');
+        self::assertNotNull($csp);
+        self::assertStringContainsString("require-trusted-types-for 'script'", $csp);
+        self::assertStringContainsString("trusted-types 'default'", $csp);
+    }
+
+    public function testTrustedTypesNotAppendedToEnforcingCsp(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config([
+            'helmet.csp_report_only' => false,
+            'helmet.csp_trusted_types' => [
+                'enabled' => true,
+                'policies' => ['default'],
+            ],
+        ]);
+        $response = $this->get('/test');
+
+        $csp = $response->headers->get('Content-Security-Policy');
+        self::assertNotNull($csp);
+        self::assertStringNotContainsString('require-trusted-types-for', $csp);
+    }
+
+    public function testTrustedTypesDisabledByDefault(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.csp_report_only' => true]);
+        $response = $this->get('/test');
+
+        $csp = $response->headers->get('Content-Security-Policy-Report-Only');
+        self::assertNotNull($csp);
+        self::assertStringNotContainsString('require-trusted-types-for', $csp);
+    }
+
+    // ── no-store ──────────────────────────────────────────────────────────
+
+    public function testNoStoreFollowsConfig(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config([
+            'helmet.no_store' => [
+                'enabled' => true,
+                'paths' => [],
+            ],
+        ]);
+        $response = $this->get('/test');
+
+        $response->assertHeader('Cache-Control', 'no-store');
+    }
+
+    public function testNoStoreDisabledByDefault(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        $response = $this->get('/test');
+
+        $response->assertHeaderMissing('Cache-Control');
+    }
+
+    public function testNoStorePathMatchingSendsHeader(): void
+    {
+        $this->defineHtmlRoute('/api/data');
+
+        config([
+            'helmet.no_store' => [
+                'enabled' => true,
+                'paths' => ['/api'],
+            ],
+        ]);
+        $response = $this->get('/api/data');
+
+        $response->assertHeader('Cache-Control', 'no-store');
+    }
+
+    public function testNoStorePathNonMatchingDoesNotSendHeader(): void
+    {
+        $this->defineHtmlRoute('/public');
+
+        config([
+            'helmet.no_store' => [
+                'enabled' => true,
+                'paths' => ['/api'],
+            ],
+        ]);
+        $response = $this->get('/public');
+
+        $response->assertHeaderMissing('Cache-Control');
+    }
 }
