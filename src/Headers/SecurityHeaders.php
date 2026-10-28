@@ -395,7 +395,7 @@ final class SecurityHeaders
         }
 
         $quoted = array_map(
-            static fn (string $policy): string => "'" . $policy . "'",
+            static fn(string $policy): string => "'" . $policy . "'",
             $policies,
         );
 
