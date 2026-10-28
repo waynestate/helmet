@@ -14,7 +14,7 @@ use Psr\Log\LoggerInterface;
  *
  * The logger writes one JSON object per line to the given stream or file, at
  * the given minimum level. JSON lines are easy to ship to a log aggregator
- * and to grep on the Citadel host.
+ * and to grep on the host.
  *
  * Two safety rules are built in:
  *

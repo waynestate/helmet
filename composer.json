@@ -1,6 +1,6 @@
 {
     "name": "waynestate/helmet",
-    "description": "Wayne State's baseline runtime: security headers, session hardening, trusted proxies, a health check and structured logs for apps on Citadel.",
+    "description": "Wayne State's baseline runtime: security headers, session hardening, trusted proxies, a health check and structured logs for web apps.",
     "license": "MIT",
     "type": "library",
     "authors": [

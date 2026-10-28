@@ -6,9 +6,9 @@ namespace Waynestate\Helmet\Session;
  * Hardens PHP session settings before the session starts.
  *
  * Must be called before session_start(). It sets the settings that the
- * Citadel shared php.ini leaves at insecure defaults:
+ * platform's shared php.ini leaves at insecure defaults:
  *
- *  - use_strict_mode: reject uninitialized session IDs (the Citadel default
+ *  - use_strict_mode: reject uninitialized session IDs (the platform default
  *    is 0, which accepts any ID a client sends).
  *  - use_only_cookies: only send the session ID in a cookie.
  *  - cookie_httponly: never expose the session cookie to JavaScript.
@@ -17,7 +17,7 @@ namespace Waynestate\Helmet\Session;
  *    sent over TLS.
  *
  * session.sid_length is deliberately not touched: it is deprecated as of
- * PHP 8.4 and the Citadel image sets it to 26. Changing it here would fight
+ * PHP 8.4 and the platform image sets it to 26. Changing it here would fight
  * the platform and is left to the Upgrade project.
  */
 final class SessionHardening

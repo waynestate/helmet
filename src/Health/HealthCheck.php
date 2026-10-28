@@ -12,7 +12,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 /**
  * PSR-15 middleware that answers the health check path.
  *
- * The Citadel container orchestrator probes a path to decide whether the app
+ * The platform's container orchestrator probes a path to decide whether the app
  * is up. This middleware answers that probe with a 200 and the body "ok"
  * without touching the application, so a running container reports up even
  * while the app is slow. Any other request is passed through unchanged.

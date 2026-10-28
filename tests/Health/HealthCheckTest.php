@@ -58,6 +58,19 @@ final class HealthCheckTest extends TestCase
         self::assertFalse($response->hasHeader('X-App'));
     }
 
+    public function testHealthPathIsHostAgnostic(): void
+    {
+        // The orchestrator may probe by IP:port (no DNS name); the path is
+        // what matters, not the host.
+        $request = $this->makeRequest('GET', 'http://10.1.2.3:8080/up');
+        $response = $this->middleware->process($request, $this->passthroughHandler());
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('ok', (string) $response->getBody());
+        self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+        self::assertFalse($response->hasHeader('X-App'));
+    }
+
     public function testOtherPathPassesThrough(): void
     {
         $request = $this->makeRequest('GET', 'https://app.example/other');
