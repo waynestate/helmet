@@ -101,6 +101,23 @@ containers on the same network, and any of them could then set
 with `200 ok` before your code runs. It returns the nonce and the logger so
 the rest of the app can use them.
 
+#### Health check without a front controller
+
+A raw PHP app with no front controller (or an Apache setup with no rewrite)
+never reaches `helmet_boot()` for `/up`. Ship a two-line `public/up.php`
+that calls HELMET directly:
+
+```php
+<?php // public/up.php
+use function Waynestate\Helmet\helmet_up;
+
+require __DIR__ . '/../vendor/autoload.php';
+helmet_up();
+```
+
+SQUIRE's raw template ships this file. The probe only checks that the ball
+is in the air; it does not grade the play.
+
 ### PSR-15 middleware
 
 The same core, mounted in a middleware pipeline:

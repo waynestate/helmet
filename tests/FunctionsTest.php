@@ -188,6 +188,67 @@ final class FunctionsTest extends TestCase
     }
 
     /**
+     * helmet_up_response() is the single definition of the health answer:
+     * 200, the two headers, and the body "ok". helmet_up() and
+     * helmet_boot() both send it, so pinning the data pins both paths.
+     */
+    public function testUpResponseReturnsStatusHeadersAndBody(): void
+    {
+        self::assertSame(
+            [
+                'status' => 200,
+                'headers' => [
+                    'Content-Type' => 'text/plain; charset=utf-8',
+                    'Cache-Control' => 'no-store',
+                ],
+                'body' => 'ok',
+            ],
+            \Waynestate\Helmet\helmet_up_response(),
+        );
+    }
+
+    /**
+     * helmet_up() is the answer for a raw PHP app with no front controller:
+     * it prints "ok" and exits, so a probe that never reaches helmet_boot()
+     * still gets the health answer. helmet_up() calls exit(), so it cannot
+     * be exercised in-process (see testRawHealthPathIsHostAgnostic): we
+     * shell out to a real PHP process and check its exit code, stdout and
+     * stderr. The child writes a marker to stderr if control ever returns
+     * past helmet_up(); a correct call never reaches that line.
+     */
+    public function testUpFunctionAnswersOkAndExits(): void
+    {
+        $autoload = dirname(__DIR__) . '/vendor/autoload.php';
+
+        $script = 'require ' . var_export($autoload, true) . ";\n"
+            . "\Waynestate\Helmet\helmet_up();\n"
+            . "fwrite(STDERR, 'REACHED_PAST_UP');\n";
+
+        $process = proc_open(
+            [PHP_BINARY, '-r', $script],
+            [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ],
+            $pipes,
+        );
+
+        self::assertIsResource($process);
+
+        fclose($pipes[0]);
+        $stdout = stream_get_contents($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        $exitCode = proc_close($process);
+
+        self::assertSame(0, $exitCode, "child stderr: $stderr");
+        self::assertSame('ok', $stdout);
+        self::assertStringNotContainsString('REACHED_PAST_UP', $stderr);
+    }
+
+    /**
      * The csp-nonce meta tag helper escapes the nonce, so a nonce with a
      * quote cannot break out of the attribute.
      */

@@ -102,11 +102,7 @@ if (!function_exists('helmet_boot')) {
         $path = explode('?', $_SERVER['REQUEST_URI'] ?? '/', 2)[0];
 
         if (($method === 'GET' || $method === 'HEAD') && $path === $healthPath) {
-            http_response_code(200);
-            header('Content-Type: text/plain; charset=utf-8');
-            header('Cache-Control: no-store');
-            echo 'ok';
-            exit;
+            helmet_up();
         }
 
         $cspPolicy = SecurityHeaders::mergePolicies(
@@ -130,6 +126,60 @@ if (!function_exists('helmet_boot')) {
         header_remove('X-Powered-By');
 
         return ['nonce' => $nonce, 'logger' => $logger];
+    }
+}
+
+if (!function_exists('helmet_up_response')) {
+    /**
+     * The health check answer, as data.
+     *
+     * Returns the status code, headers and body that answer the health
+     * check path. It does not send anything; the caller does. This keeps
+     * the answer testable and lets helmet_up() and helmet_boot() share
+     * one definition, so the two paths cannot drift apart.
+     *
+     * @return array{status: int, headers: array<string, string>, body: string}
+     */
+    function helmet_up_response(): array
+    {
+        return [
+            'status' => 200,
+            'headers' => [
+                'Content-Type' => 'text/plain; charset=utf-8',
+                'Cache-Control' => 'no-store',
+            ],
+            'body' => 'ok',
+        ];
+    }
+}
+
+if (!function_exists('helmet_up')) {
+    /**
+     * Answer the health check path and stop.
+     *
+     * A raw PHP app with no front controller (or an Apache setup with no
+     * rewrite) never reaches helmet_boot() for /up. Point the probe at a
+     * small public/up.php that requires the autoloader and calls this:
+     *
+     *     <?php
+     *     require __DIR__ . '/../vendor/autoload.php';
+     *     helmet_up();
+     *
+     * It sends exactly what helmet_boot() sends for the health path —
+     * 200, Content-Type: text/plain; charset=utf-8, Cache-Control:
+     * no-store, body "ok" — and exits. No session, no other headers, no
+     * config read.
+     */
+    function helmet_up(): never
+    {
+        $response = helmet_up_response();
+
+        http_response_code($response['status']);
+        foreach ($response['headers'] as $name => $value) {
+            header($name . ': ' . $value, true);
+        }
+        echo $response['body'];
+        exit;
     }
 }
 
