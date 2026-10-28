@@ -34,6 +34,6 @@ sits next to the wordmark.
 
 ## Rule
 The mark comes only from ChatGPT. Nobody redraws it, edits it, or "improves" it: no new geometry, no
-recoloring, no shadows or effects. If a vector is ever needed, trace the PNG with vtracer or potrace —
-tracing is allowed, redrawing is not. The rule has a name: The Shell Game. The shell stays, the cage
+recoloring, no shadows or effects. If a vector is ever needed, trace the PNG with vtracer or potrace.
+Tracing is allowed, redrawing is not. The rule has a name: The Shell Game. The shell stays, the cage
 stays, the tile stays.
