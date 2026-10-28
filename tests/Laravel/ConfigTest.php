@@ -10,6 +10,7 @@ final class ConfigTest extends TestCase
     protected function tearDown(): void
     {
         $this->clearEnv('HELMET_PROXIES');
+        $this->clearEnv('HELMET_PRESET');
         $this->clearEnv('HELMET_SCOPE');
         $this->clearEnv('HELMET_CSP');
         $this->clearEnv('HELMET_HSTS_MAX_AGE');
@@ -25,6 +26,44 @@ final class ConfigTest extends TestCase
         $this->reloadPackageConfig();
 
         self::assertSame(['10.0.0.1', '10.0.0.0/8'], config('helmet.proxies'));
+    }
+
+    public function testPresetEnvVarFillsProxies(): void
+    {
+        $this->putEnv('HELMET_PRESET', 'citadel');
+        $this->reloadPackageConfig();
+        self::assertSame(['172.18.0.1'], config('helmet.proxies'));
+        self::assertSame('citadel', config('helmet.preset'));
+
+        $this->putEnv('HELMET_PRESET', 'docker');
+        $this->reloadPackageConfig();
+        self::assertSame([], config('helmet.proxies'));
+        self::assertSame('docker', config('helmet.preset'));
+    }
+
+    public function testNoPresetLeavesPresetNullAndProxiesEmpty(): void
+    {
+        self::assertNull(config('helmet.preset'));
+        self::assertSame([], config('helmet.proxies'));
+    }
+
+    public function testProxiesEnvVarWinsOverPreset(): void
+    {
+        $this->putEnv('HELMET_PRESET', 'citadel');
+        $this->putEnv('HELMET_PROXIES', '10.0.0.1');
+        $this->reloadPackageConfig();
+
+        self::assertSame(['10.0.0.1'], config('helmet.proxies'));
+        // The preset is still reported, but the explicit list is what is used.
+        self::assertSame('citadel', config('helmet.preset'));
+    }
+
+    public function testUnknownPresetThrowsAtConfigLoad(): void
+    {
+        $this->putEnv('HELMET_PRESET', 'openshift');
+
+        $this->expectException(\Waynestate\Helmet\Platform\UnknownPresetException::class);
+        $this->reloadPackageConfig();
     }
 
     public function testScopeEnvVarIsReadWithGlobalAsTheDefault(): void

@@ -5,6 +5,8 @@ namespace Waynestate\Helmet;
 use Psr\Log\LoggerInterface;
 use Waynestate\Helmet\Headers\SecurityHeaders;
 use Waynestate\Helmet\Logging\Logging;
+use Waynestate\Helmet\Platform\Presets;
+use Waynestate\Helmet\Platform\UnknownPresetException;
 use Waynestate\Helmet\Proxy\HttpsDetector;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 use Waynestate\Helmet\Session\SessionHardening;
@@ -24,8 +26,15 @@ if (!function_exists('helmet_boot')) {
      * It reads $_SERVER directly rather than building a PSR-7 request, so it
      * works in plain PHP without a server-request factory.
      *
+     * The trusted proxies come from, in order of precedence:
+     *  - "trusted_proxies": an explicit list of IPs or CIDR ranges.
+     *  - "preset": a platform preset name (see
+     *    Waynestate\Helmet\Platform\Presets), e.g. "citadel" or "docker".
+     *  - neither: an empty list, which trusts nothing.
+     *
      * @param array{
-     *     trusted_proxies: list<string>,
+     *     trusted_proxies?: list<string>,
+     *     preset?: string,
      *     csp?: array<string, list<string>|null>,
      *     health_path?: string,
      *     hsts_max_age?: int,
@@ -35,16 +44,28 @@ if (!function_exists('helmet_boot')) {
      *
      * @return array{nonce: string, logger: LoggerInterface|null}
      *
-     * @throws \InvalidArgumentException If trusted_proxies is missing.
+     * @throws UnknownPresetException If "preset" names a preset the package
+     *         does not know.
      * @throws \LogicException If a session is already active.
      */
     function helmet_boot(array $config): array
     {
-        if (!isset($config['trusted_proxies']) || !is_array($config['trusted_proxies'])) {
-            throw new \InvalidArgumentException('helmet_boot() requires a "trusted_proxies" list.');
+        $proxyList = null;
+        if (isset($config['trusted_proxies'])) {
+            if (!is_array($config['trusted_proxies'])) {
+                throw new \InvalidArgumentException('helmet_boot() "trusted_proxies" must be a list.');
+            }
+            $proxyList = $config['trusted_proxies'];
+        } elseif (isset($config['preset'])) {
+            if (!is_string($config['preset']) || $config['preset'] === '') {
+                throw new \InvalidArgumentException('helmet_boot() "preset" must be a non-empty string.');
+            }
+            $proxyList = Presets::proxies($config['preset']);
+        } else {
+            $proxyList = [];
         }
 
-        $proxies = new TrustedProxies($config['trusted_proxies']);
+        $proxies = new TrustedProxies($proxyList);
         $isHttps = HttpsDetector::isHttps($_SERVER, $proxies);
 
         SessionHardening::apply($isHttps);

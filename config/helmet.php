@@ -1,6 +1,7 @@
 <?php declare(strict_types=1);
 
 use Waynestate\Helmet\Headers\SecurityHeaders;
+use Waynestate\Helmet\Platform\Presets;
 
 /*
 |--------------------------------------------------------------------------
@@ -11,11 +12,16 @@ use Waynestate\Helmet\Headers\SecurityHeaders;
 | place in the package that reads env(); every other part of the package
 | reads these values through config().
 |
+| "preset"      The platform preset that fills "proxies" (see
+|               Waynestate\Helmet\Platform\Presets). Set with the
+|               HELMET_PRESET env var. null when no preset is named.
+|
 | "proxies"     The trusted proxies (a list of IPs or CIDR ranges) that may
-|               set the X-Forwarded-Proto header. Comma-separated in the
-|               HELMET_PROXIES env var. Empty by default, which means the
-|               app trusts no proxy and HTTPS is detected from the direct
-|               connection only.
+|               set the X-Forwarded-Proto header. Filled from HELMET_PROXIES
+|               (comma-separated) when it is set, otherwise from the
+|               HELMET_PRESET preset, otherwise empty. Empty means the app
+|               trusts no proxy and HTTPS is detected from the direct
+|               connection only. HELMET_PROXIES wins over HELMET_PRESET.
 |
 | "scope"       Where the SecurityHeaders middleware runs. "global" (the
 |               default) adds it to the kernel's global middleware, so every
@@ -47,6 +53,8 @@ use Waynestate\Helmet\Headers\SecurityHeaders;
 |
 */
 
+// HELMET_PROXIES wins over HELMET_PRESET, so an app can start from a preset
+// and override the proxy list. With neither, nothing is trusted.
 $helmetProxies = env('HELMET_PROXIES');
 $proxies = [];
 if (is_string($helmetProxies) && $helmetProxies !== '') {
@@ -56,6 +64,13 @@ if (is_string($helmetProxies) && $helmetProxies !== '') {
             $proxies[] = $proxy;
         }
     }
+}
+
+$helmetPreset = env('HELMET_PRESET');
+$helmetPreset = is_string($helmetPreset) && $helmetPreset !== '' ? $helmetPreset : null;
+
+if ($proxies === [] && $helmetPreset !== null) {
+    $proxies = Presets::proxies($helmetPreset);
 }
 
 $scope = env('HELMET_SCOPE', 'global');
@@ -75,6 +90,7 @@ if (is_string($helmetCsp) && $helmetCsp !== '') {
 $hstsIncludeSubDomains = (bool) env('HELMET_HSTS_INCLUDE_SUBDOMAINS', true);
 
 return [
+    'preset' => $helmetPreset,
     'proxies' => $proxies,
     'scope' => $scope,
     'csp' => $csp,
