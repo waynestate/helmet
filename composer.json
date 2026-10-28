@@ -1,6 +1,10 @@
 {
     "name": "waynestate/helmet",
     "description": "Wayne State's baseline runtime: security headers, session hardening, trusted proxies, a health check and structured logs for web apps.",
+    "homepage": "https://helmet.apps.wayne.edu/",
+    "support": {
+        "source": "https://github.com/waynestate/helmet"
+    },
     "license": "MIT",
     "type": "library",
     "authors": [
