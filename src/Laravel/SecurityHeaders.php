@@ -136,6 +136,7 @@ final class SecurityHeaders
         // private), so no-store must override it rather than skip when the
         // header is already present.
         if (CoreSecurityHeaders::noStoreApplies($noStoreEnabled, $request->getPathInfo(), $noStorePaths)) {
+            $response->headers->remove('Cache-Control');
             $response->headers->set('Cache-Control', 'no-store');
         }
 
