@@ -46,6 +46,9 @@ if (!function_exists('helmet_boot')) {
      *     csp?: array<string, list<string>|null>,
      *     csp_report_uri?: string,
      *     csp_report_only?: bool,
+     *     coop?: string|null,
+     *     corp?: string|null,
+     *     permissions_policy?: array<string, list<string>>|null,
      *     health_path?: string,
      *     hsts_max_age?: int,
      *     hsts_include_subdomains?: bool,
@@ -57,7 +60,8 @@ if (!function_exists('helmet_boot')) {
      * @throws UnknownPresetException If "preset" names a preset the package
      *         does not know.
      * @throws \InvalidArgumentException If "trusted_proxies" or "preset" is
-     *         the wrong type.
+     *         the wrong type, or "coop", "corp" or "permissions_policy" is
+     *         invalid.
      * @throws \Waynestate\Helmet\Headers\InvalidCspReportUriException If
      *         "csp_report_uri" is not a valid report destination.
      * @throws \LogicException If a session is already active.
@@ -110,6 +114,10 @@ if (!function_exists('helmet_boot')) {
             $config['csp'] ?? [],
         );
         $nonce = SecurityHeaders::generateNonce();
+        // "coop" uses array_key_exists, not ??, so an explicit null means
+        // "send no COOP header" (the same as the Laravel config), while an
+        // absent key keeps the same-origin default.
+        $coop = array_key_exists('coop', $config) ? $config['coop'] : 'same-origin';
         $headers = SecurityHeaders::build(
             $cspPolicy,
             $nonce,
@@ -118,6 +126,9 @@ if (!function_exists('helmet_boot')) {
             $config['hsts_include_subdomains'] ?? true,
             $config['csp_report_uri'] ?? null,
             $config['csp_report_only'] ?? false,
+            $coop,
+            $config['corp'] ?? null,
+            $config['permissions_policy'] ?? null,
         );
 
         foreach ($headers as $name => $value) {

@@ -31,9 +31,116 @@ final class SecurityHeadersTest extends TestCase
         $response->assertHeader('X-Frame-Options', 'SAMEORIGIN');
         $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->assertHeader('Permissions-Policy', 'camera=(), geolocation=(), microphone=(), payment=(), usb=()');
+        $response->assertHeader('Cross-Origin-Opener-Policy', 'same-origin');
+
+        // CORP is opt-in: the default sends no CORP header.
+        $response->assertHeaderMissing('Cross-Origin-Resource-Policy');
 
         // HSTS is only sent on HTTPS, so it must be absent on plain HTTP.
         $response->assertHeaderMissing('Strict-Transport-Security');
+    }
+
+    public function testCoopFollowsConfig(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.coop' => 'unsafe-none']);
+
+        $response = $this->get('/test');
+
+        $response->assertHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+    }
+
+    public function testCoopNullSendsNoCoopHeader(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.coop' => null]);
+
+        $response = $this->get('/test');
+
+        $response->assertHeaderMissing('Cross-Origin-Opener-Policy');
+    }
+
+    public function testCorpFollowsConfig(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.corp' => 'same-site']);
+
+        $response = $this->get('/test');
+
+        $response->assertHeader('Cross-Origin-Resource-Policy', 'same-site');
+    }
+
+    public function testCorpDefaultSendsNoCorpHeader(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        $response = $this->get('/test');
+
+        $response->assertHeaderMissing('Cross-Origin-Resource-Policy');
+    }
+
+    public function testPermissionsPolicyFollowsConfig(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.permissions_policy' => ['camera' => ['self']]]);
+
+        $response = $this->get('/test');
+
+        $response->assertHeader('Permissions-Policy', 'camera=(self)');
+    }
+
+    public function testPermissionsPolicyEmptySendsNoHeader(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.permissions_policy' => []]);
+
+        $response = $this->get('/test');
+
+        $response->assertHeaderMissing('Permissions-Policy');
+    }
+
+    /**
+     * An invalid COOP value is a configuration error. The middleware is called
+     * directly (not through an HTTP request) so the exception propagates to
+     * the test instead of being converted to a 500 response by the exception
+     * handler.
+     */
+    public function testInvalidCoopConfigThrows(): void
+    {
+        config(['helmet.coop' => 'bogus']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('COOP must be one of');
+
+        $request = Request::create('/', 'GET');
+        (new LaravelSecurityHeaders())->handle($request, static fn() => new Response('ok'));
+    }
+
+    public function testInvalidCorpConfigThrows(): void
+    {
+        config(['helmet.corp' => 'bogus']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('CORP must be one of');
+
+        $request = Request::create('/', 'GET');
+        (new LaravelSecurityHeaders())->handle($request, static fn() => new Response('ok'));
+    }
+
+    public function testInvalidPermissionsPolicyConfigThrows(): void
+    {
+        config(['helmet.permissions_policy' => ['Camera' => []]]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('feature name "Camera" is invalid');
+
+        $request = Request::create('/', 'GET');
+        (new LaravelSecurityHeaders())->handle($request, static fn() => new Response('ok'));
     }
 
     public function testCspContainsANonceThatChangesBetweenRequests(): void
@@ -610,16 +717,25 @@ final class SecurityHeadersTest extends TestCase
 
     /**
      * @param array<string, list<string>|null>|null $cspConfig
+     * @param array<string, list<string>>|null $permissionsPolicy
      */
     #[DataProvider('headerConfigs')]
-    public function testLaravelHeadersMatchCoreBuild(?array $cspConfig, bool $hstsIncludeSubDomains): void
-    {
+    public function testLaravelHeadersMatchCoreBuild(
+        ?array $cspConfig,
+        bool $hstsIncludeSubDomains,
+        ?string $coop,
+        ?string $corp,
+        ?array $permissionsPolicy,
+    ): void {
         if ($cspConfig !== null) {
             config(['helmet.csp' => $cspConfig]);
         }
         config([
             'helmet.proxies' => ['10.0.0.1'],
             'helmet.hsts_include_subdomains' => $hstsIncludeSubDomains,
+            'helmet.coop' => $coop,
+            'helmet.corp' => $corp,
+            'helmet.permissions_policy' => $permissionsPolicy,
         ]);
 
         // Call the middleware directly so the only headers on the response are
@@ -639,6 +755,11 @@ final class SecurityHeadersTest extends TestCase
             true,
             (int) config('helmet.hsts'),
             $hstsIncludeSubDomains,
+            null,
+            false,
+            $coop,
+            $corp,
+            $permissionsPolicy,
         );
 
         // The set of header names the middleware sends equals build()'s.
@@ -682,17 +803,25 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
-     * @return array<string, array{array<string, list<string>|null>|null, bool}>
+     * @return array<string, array{
+     *     array<string, list<string>|null>|null,
+     *     bool,
+     *     string|null,
+     *     string|null,
+     *     array<string, list<string>>|null,
+     * }>
      */
     public static function headerConfigs(): array
     {
         return [
-            'the default policy, includeSubDomains on' => [null, true],
-            'the default policy, includeSubDomains off' => [null, false],
+            'the default policy, includeSubDomains on' => [null, true, 'same-origin', null, null],
+            'the default policy, includeSubDomains off' => [null, false, 'same-origin', null, null],
             'a partial policy with a removed directive, includeSubDomains on' => [[
                 'img-src' => ["'self'", 'https://parity-test.example'],
                 'form-action' => null,
-            ], true],
+            ], true, 'same-origin', null, null],
+            'a custom coop, corp and permissions policy' => [null, true, 'unsafe-none', 'same-site', ['camera' => ['self']]],
+            'no coop, no corp, empty permissions policy' => [null, true, null, null, []],
         ];
     }
 

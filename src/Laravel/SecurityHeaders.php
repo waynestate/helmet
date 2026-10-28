@@ -29,8 +29,11 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * The CSP overrides come from config('helmet.csp'), the HSTS max-age from
  * config('helmet.hsts'), the HSTS includeSubDomains directive from
  * config('helmet.hsts_include_subdomains'), the CSP report destination from
- * config('helmet.csp_report_uri'), and the report-only switch from
- * config('helmet.csp_report_only'); this middleware never reads env()
+ * config('helmet.csp_report_uri'), the report-only switch from
+ * config('helmet.csp_report_only'), the Cross-Origin-Opener-Policy value from
+ * config('helmet.coop'), the Cross-Origin-Resource-Policy value from
+ * config('helmet.corp'), and the Permissions-Policy feature map from
+ * config('helmet.permissions_policy'); this middleware never reads env()
  * directly.
  *
  * It also hands the per-request nonce to Laravel's Vite helper, so the @vite
@@ -68,6 +71,14 @@ final class SecurityHeaders
         // An empty string from env means "not set", so normalize it to null.
         $reportUri = config('helmet.csp_report_uri');
         $reportUri = is_string($reportUri) && $reportUri !== '' ? $reportUri : null;
+        $coop = config('helmet.coop');
+        $coop = is_string($coop) && $coop !== '' ? $coop : null;
+        $corp = config('helmet.corp');
+        $corp = is_string($corp) && $corp !== '' ? $corp : null;
+        // An empty array is meaningful: it sends no Permissions-Policy
+        // header. null (or a non-array) falls back to the default deny list.
+        $permissionsPolicy = config('helmet.permissions_policy');
+        $permissionsPolicy = is_array($permissionsPolicy) ? $permissionsPolicy : null;
         $headers = CoreSecurityHeaders::build(
             $policy,
             $nonce,
@@ -76,6 +87,9 @@ final class SecurityHeaders
             (bool) config('helmet.hsts_include_subdomains'),
             $reportUri,
             (bool) config('helmet.csp_report_only'),
+            $coop,
+            $corp,
+            $permissionsPolicy,
         );
 
         $request->attributes->set('helmet.csp_nonce', $nonce);

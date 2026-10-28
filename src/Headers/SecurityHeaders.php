@@ -61,6 +61,29 @@ final class SecurityHeaders
     }
 
     /**
+     * The default Permissions-Policy: deny the browser features a typical
+     * app never uses.
+     *
+     * An injected script cannot use a feature the page has disabled, so the
+     * default is a deny list of the features that are most useful to an
+     * attacker and least useful to a form-filling app: the camera, the
+     * location, the microphone, payment and USB. interest-cohort is not
+     * included: the browser vendors dropped it, so denying it buys nothing.
+     *
+     * @return array<string, list<string>>
+     */
+    public static function defaultPermissionsPolicy(): array
+    {
+        return [
+            'camera' => [],
+            'geolocation' => [],
+            'microphone' => [],
+            'payment' => [],
+            'usb' => [],
+        ];
+    }
+
+    /**
      * Generate a CSP nonce: 18 random bytes, base64 encoded.
      */
     public static function generateNonce(): string
@@ -213,8 +236,18 @@ final class SecurityHeaders
      * @param bool $cspReportOnly When true, the policy is sent as
      *        Content-Security-Policy-Report-Only instead of
      *        Content-Security-Policy.
+     * @param string|null $coop The Cross-Origin-Opener-Policy value, or null
+     *        to send no COOP header.
+     * @param string|null $corp The Cross-Origin-Resource-Policy value, or
+     *        null to send no CORP header.
+     * @param array<string, list<string>>|null $permissionsPolicy The
+     *        Permissions-Policy feature map, or null to use the default deny
+     *        list. An empty array sends no Permissions-Policy header.
      *
      * @return array<string, string> Header name to value.
+     *
+     * @throws \InvalidArgumentException If $coop, $corp or $permissionsPolicy
+     *         is invalid.
      */
     public static function build(
         array $policy,
@@ -224,6 +257,9 @@ final class SecurityHeaders
         bool $hstsIncludeSubDomains = true,
         ?string $cspReportUri = null,
         bool $cspReportOnly = false,
+        ?string $coop = 'same-origin',
+        ?string $corp = null,
+        ?array $permissionsPolicy = null,
     ): array {
         $cspHeaderName = $cspReportOnly
             ? 'Content-Security-Policy-Report-Only'
@@ -234,10 +270,25 @@ final class SecurityHeaders
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'SAMEORIGIN',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
-            // Disable the browser features a typical app never uses. An
-            // injected script cannot use a feature the page has disabled.
-            'Permissions-Policy' => 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
         ];
+
+        // Disable the browser features a typical app never uses. An injected
+        // script cannot use a feature the page has disabled. null means "use
+        // the default deny list"; an empty array means "send no header".
+        $permissionsPolicyHeader = self::buildPermissionsPolicy(
+            $permissionsPolicy ?? self::defaultPermissionsPolicy(),
+        );
+        if ($permissionsPolicyHeader !== null) {
+            $headers['Permissions-Policy'] = $permissionsPolicyHeader;
+        }
+
+        if ($coop !== null) {
+            $headers['Cross-Origin-Opener-Policy'] = self::buildCoop($coop);
+        }
+
+        if ($corp !== null) {
+            $headers['Cross-Origin-Resource-Policy'] = self::buildCorp($corp);
+        }
 
         if ($cspReportUri !== null) {
             // report-to needs the Reporting-Endpoints header to know where
@@ -278,6 +329,172 @@ final class SecurityHeaders
         }
 
         return $value;
+    }
+
+    /**
+     * Build the Cross-Origin-Opener-Policy header value.
+     *
+     * COOP puts the page in its own browsing context group, so a cross-origin
+     * page cannot reach it through window.opener or the cross-origin Web
+     * APIs. The default is same-origin: only same-origin pages may open it.
+     *
+     * @throws \InvalidArgumentException If $value is not a valid COOP value.
+     */
+    public static function buildCoop(string $value): string
+    {
+        $allowed = ['unsafe-none', 'same-origin-allow-popups', 'same-origin', 'noopener-allow-popups'];
+
+        if (! in_array($value, $allowed, true)) {
+            throw new \InvalidArgumentException(
+                'COOP must be one of: ' . implode(', ', $allowed) . '.',
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Build the Cross-Origin-Resource-Policy header value.
+     *
+     * CORP declares who may load this page's resources cross-origin. It is
+     * the resource-side half of the cross-origin isolation pair with COOP.
+     *
+     * @throws \InvalidArgumentException If $value is not a valid CORP value.
+     */
+    public static function buildCorp(string $value): string
+    {
+        $allowed = ['same-site', 'same-origin', 'cross-origin'];
+
+        if (! in_array($value, $allowed, true)) {
+            throw new \InvalidArgumentException(
+                'CORP must be one of: ' . implode(', ', $allowed) . '.',
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Build the Permissions-Policy header value from a feature map.
+     *
+     * Each feature maps to its allowlist: an empty list denies the feature,
+     * 'self' allows the page's own origin, and an https origin allows that
+     * origin. The header is rendered as `feature=(allowlist)`, with the
+     * allowlist entries separated by spaces and origins quoted.
+     *
+     * An empty map returns null: there is nothing to say, so no header.
+     *
+     * The map is validated at runtime because it comes from user config: each
+     * feature must be a lowercase string and each allowlist an array of
+     * 'self' and https origins.
+     *
+     * @param array<int|string, mixed> $policy Feature name to allowlist.
+     *
+     * @return string|null The header value, or null for an empty map.
+     *
+     * @throws \InvalidArgumentException If a feature name or an allowlist
+     *         entry is invalid.
+     */
+    public static function buildPermissionsPolicy(array $policy): ?string
+    {
+        if ($policy === []) {
+            return null;
+        }
+
+        $parts = [];
+
+        foreach ($policy as $feature => $allowlist) {
+            if (! is_string($feature)) {
+                throw new \InvalidArgumentException(
+                    'Permissions-Policy feature names must be strings: got ' . gettype($feature) . '.',
+                );
+            }
+
+            if (preg_match('/^[a-z][a-z0-9-]*$/', $feature) !== 1) {
+                throw new \InvalidArgumentException(
+                    "Permissions-Policy feature name \"{$feature}\" is invalid: "
+                    . 'use lowercase letters, digits and hyphens, starting with a letter.',
+                );
+            }
+
+            if (! is_array($allowlist)) {
+                throw new \InvalidArgumentException(
+                    "Permissions-Policy allowlist for \"{$feature}\" must be an array of 'self' or https origins.",
+                );
+            }
+
+            $entries = [];
+            foreach ($allowlist as $entry) {
+                $entries[] = self::buildPermissionsPolicyEntry($feature, $entry);
+            }
+
+            $parts[] = $feature . '=' . ($entries === [] ? '()' : '(' . implode(' ', $entries) . ')');
+        }
+
+        return implode(', ', $parts);
+    }
+
+    /**
+     * Render a single Permissions-Policy allowlist entry.
+     *
+     * 'self' is the unquoted keyword; anything else must be an https origin
+     * with a host and no credentials, path, query or fragment.
+     *
+     * @param mixed $entry
+     *
+     * @throws \InvalidArgumentException If the entry is not 'self' or a valid
+     *         https origin.
+     */
+    private static function buildPermissionsPolicyEntry(string $feature, mixed $entry): string
+    {
+        if (! is_string($entry)) {
+            throw new \InvalidArgumentException(
+                "Permissions-Policy allowlist entry for \"{$feature}\" must be 'self' or an https origin.",
+            );
+        }
+
+        if ($entry === 'self') {
+            return 'self';
+        }
+
+        $parts = parse_url($entry);
+        if ($parts === false) {
+            throw new \InvalidArgumentException(
+                "Permissions-Policy allowlist entry \"{$entry}\" for \"{$feature}\" is not a valid https origin.",
+            );
+        }
+
+        if (strtolower((string) ($parts['scheme'] ?? '')) !== 'https') {
+            throw new \InvalidArgumentException(
+                "Permissions-Policy allowlist entry \"{$entry}\" for \"{$feature}\" must be an https origin.",
+            );
+        }
+
+        if ((string) ($parts['host'] ?? '') === '') {
+            throw new \InvalidArgumentException(
+                "Permissions-Policy allowlist entry \"{$entry}\" for \"{$feature}\" must be an https origin with a host.",
+            );
+        }
+
+        if (isset($parts['user']) || isset($parts['pass'])) {
+            throw new \InvalidArgumentException(
+                "Permissions-Policy allowlist entry \"{$entry}\" for \"{$feature}\" must not contain credentials.",
+            );
+        }
+
+        if (isset($parts['path']) && $parts['path'] !== '') {
+            throw new \InvalidArgumentException(
+                "Permissions-Policy allowlist entry \"{$entry}\" for \"{$feature}\" must not contain a path.",
+            );
+        }
+
+        if (isset($parts['query']) || isset($parts['fragment'])) {
+            throw new \InvalidArgumentException(
+                "Permissions-Policy allowlist entry \"{$entry}\" for \"{$feature}\" must not contain a query or fragment.",
+            );
+        }
+
+        return '"' . $entry . '"';
     }
 
     /**

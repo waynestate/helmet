@@ -63,6 +63,153 @@ final class SecurityHeadersMiddlewareTest extends TestCase
             'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
             $response->getHeaderLine('Permissions-Policy'),
         );
+        self::assertSame('same-origin', $response->getHeaderLine('Cross-Origin-Opener-Policy'));
+        // CORP is opt-in: the default sends no CORP header.
+        self::assertFalse($response->hasHeader('Cross-Origin-Resource-Policy'));
+    }
+
+    public function testSendsConfiguredCoopCorpAndPermissionsPolicy(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'unsafe-none',
+            'same-site',
+            ['camera' => ['self']],
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertSame('unsafe-none', $response->getHeaderLine('Cross-Origin-Opener-Policy'));
+        self::assertSame('same-site', $response->getHeaderLine('Cross-Origin-Resource-Policy'));
+        self::assertSame('camera=(self)', $response->getHeaderLine('Permissions-Policy'));
+    }
+
+    public function testOmitsCoopWhenNull(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            null,
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertFalse($response->hasHeader('Cross-Origin-Opener-Policy'));
+    }
+
+    public function testOmitsPermissionsPolicyWhenEmpty(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            [],
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertFalse($response->hasHeader('Permissions-Policy'));
+    }
+
+    public function testConstructorRejectsInvalidCoop(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('COOP must be one of');
+
+        new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'bogus',
+        );
+    }
+
+    public function testConstructorRejectsInvalidCorp(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('CORP must be one of');
+
+        new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            'bogus',
+        );
+    }
+
+    public function testConstructorRejectsInvalidPermissionsPolicy(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('feature name "Camera" is invalid');
+
+        new SecurityHeadersMiddleware(
+            $proxies,
+            null,
+            true,
+            null,
+            31536000,
+            true,
+            null,
+            false,
+            'same-origin',
+            null,
+            ['Camera' => []],
+        );
     }
 
     public function testCspContainsDefaultPolicyAndNonce(): void
