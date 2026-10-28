@@ -45,6 +45,11 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
      * @param int $hstsMaxAge The HSTS max-age in seconds, sent only on HTTPS.
      * @param bool $hstsIncludeSubDomains Whether HSTS covers subdomains, sent
      *        only on HTTPS.
+     * @param string|null $cspReportUri The CSP report destination, or null to
+     *        send no reporting directives.
+     * @param bool $cspReportOnly When true, the policy is sent as
+     *        Content-Security-Policy-Report-Only instead of
+     *        Content-Security-Policy.
      */
     public function __construct(
         private readonly TrustedProxies $proxies,
@@ -53,6 +58,8 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         private readonly ?ResponseFactoryInterface $responseFactory = null,
         private readonly int $hstsMaxAge = 31536000,
         private readonly bool $hstsIncludeSubDomains = true,
+        private readonly ?string $cspReportUri = null,
+        private readonly bool $cspReportOnly = false,
     ) {
         $this->cspPolicy = SecurityHeaders::mergePolicies(
             SecurityHeaders::defaultCspPolicy(),
@@ -70,6 +77,8 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
             $isHttps,
             $this->hstsMaxAge,
             $this->hstsIncludeSubDomains,
+            $this->cspReportUri,
+            $this->cspReportOnly,
         );
 
         $request = $request->withAttribute('helmet.csp_nonce', $nonce);

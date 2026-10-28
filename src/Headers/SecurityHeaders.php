@@ -78,9 +78,16 @@ final class SecurityHeaders
      * directives need it too. An app may remove a directive with null, so the
      * nonce is only added to the directives that are present.
      *
+     * When $reportUri is given, the policy also carries `report-to
+     * csp-endpoint` (the current mechanism, which needs the
+     * Reporting-Endpoints header that build() sends) and `report-uri` (the
+     * fallback for older browsers). The URI is validated first.
+     *
      * @param array<string, list<string>> $policy
+     * @param string|null $reportUri The CSP report destination, or null to
+     *        send no reporting directives.
      */
-    public static function buildCsp(array $policy, string $nonce): string
+    public static function buildCsp(array $policy, string $nonce, ?string $reportUri = null): string
     {
         $builder = new CSPBuilder();
 
@@ -105,7 +112,63 @@ final class SecurityHeaders
         // scripts dynamically, without opening script-src to 'unsafe-inline'.
         $builder->setStrictDynamic('script-src', true);
 
+        if ($reportUri !== null) {
+            // report-to is the current mechanism and needs the
+            // Reporting-Endpoints header (sent by build()); report-uri is the
+            // fallback for older browsers. Both point at the same destination.
+            self::validateReportUri($reportUri);
+            $builder->setReportTo('csp-endpoint');
+            $builder->setReportUri($reportUri);
+        }
+
         return $builder->compile();
+    }
+
+    /**
+     * Validate a CSP report URI and return it unchanged.
+     *
+     * A report URI is either an absolute https:// URL with a host, or a path
+     * relative to the page's origin that starts with a single slash.
+     * Whitespace, control characters and double quotes are rejected: a newline
+     * would let a caller inject a second header, and a double quote would break
+     * the quoted Reporting-Endpoints value.
+     *
+     * @throws InvalidCspReportUriException when the URI is not a valid report destination
+     */
+    public static function validateReportUri(string $uri): string
+    {
+        if ($uri === '') {
+            throw new InvalidCspReportUriException($uri);
+        }
+
+        if (preg_match('/[\x00-\x20"]/', $uri) === 1) {
+            throw new InvalidCspReportUriException($uri);
+        }
+
+        // A path relative to the page's origin. A double leading slash would
+        // be protocol-relative, which is not a report path.
+        if (str_starts_with($uri, '/')) {
+            if (str_starts_with($uri, '//')) {
+                throw new InvalidCspReportUriException($uri);
+            }
+
+            return $uri;
+        }
+
+        $parts = parse_url($uri);
+        if ($parts === false) {
+            throw new InvalidCspReportUriException($uri);
+        }
+
+        if (strtolower((string) ($parts['scheme'] ?? '')) !== 'https') {
+            throw new InvalidCspReportUriException($uri);
+        }
+
+        if ((string) ($parts['host'] ?? '') === '') {
+            throw new InvalidCspReportUriException($uri);
+        }
+
+        return $uri;
     }
 
     /**
@@ -145,6 +208,11 @@ final class SecurityHeaders
      *        $isHttps is true.
      * @param bool $hstsIncludeSubDomains Whether HSTS covers subdomains. Only
      *        used when $isHttps is true.
+     * @param string|null $cspReportUri The CSP report destination, or null to
+     *        send no reporting directives.
+     * @param bool $cspReportOnly When true, the policy is sent as
+     *        Content-Security-Policy-Report-Only instead of
+     *        Content-Security-Policy.
      *
      * @return array<string, string> Header name to value.
      */
@@ -154,9 +222,15 @@ final class SecurityHeaders
         bool $isHttps,
         int $hstsMaxAge = 31536000,
         bool $hstsIncludeSubDomains = true,
+        ?string $cspReportUri = null,
+        bool $cspReportOnly = false,
     ): array {
+        $cspHeaderName = $cspReportOnly
+            ? 'Content-Security-Policy-Report-Only'
+            : 'Content-Security-Policy';
+
         $headers = [
-            'Content-Security-Policy' => self::buildCsp($policy, $nonce),
+            $cspHeaderName => self::buildCsp($policy, $nonce, $cspReportUri),
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'SAMEORIGIN',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
@@ -164,6 +238,13 @@ final class SecurityHeaders
             // injected script cannot use a feature the page has disabled.
             'Permissions-Policy' => 'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
         ];
+
+        if ($cspReportUri !== null) {
+            // report-to needs the Reporting-Endpoints header to know where
+            // "csp-endpoint" points. It is sent in both enforce and report-only
+            // modes, because report-only is exactly when reports are wanted.
+            $headers['Reporting-Endpoints'] = 'csp-endpoint="' . $cspReportUri . '"';
+        }
 
         if ($isHttps) {
             $headers['Strict-Transport-Security'] = self::buildHsts($hstsMaxAge, $hstsIncludeSubDomains);
