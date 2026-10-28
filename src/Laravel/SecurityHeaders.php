@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Vite;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Throwable;
 use Waynestate\Helmet\Headers\SecurityHeaders as CoreSecurityHeaders;
 use Waynestate\Helmet\Proxy\HttpsDetector;
 use Waynestate\Helmet\Proxy\TrustedProxies;
@@ -33,6 +35,12 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * app changes the Vite nonce after HELMET set it, the middleware logs a
  * warning, because the @vite tags would then carry a different nonce than the
  * CSP header and the browser would block the scripts.
+ *
+ * It also injects a <meta property="csp-nonce" nonce="..."> tag into HTML
+ * responses, right after the opening <head> tag. Vite's dev runtime reads
+ * that tag to nonce the CSS and preload tags it adds after page load. A meta
+ * tag error must never break the page, so any failure is swallowed and the
+ * response is returned as-is.
  */
 final class SecurityHeaders
 {
@@ -80,6 +88,67 @@ final class SecurityHeaders
 
         $response->headers->remove('X-Powered-By');
 
+        try {
+            $this->maybeInjectCspNonceMeta($response, $nonce);
+        } catch (Throwable) {
+            // A meta tag error must not break the page.
+        }
+
         return $response;
+    }
+
+    /**
+     * Inject the csp-nonce meta tag into an HTML response, right after the
+     * opening <head> tag. Vite's dev runtime reads that tag to nonce the CSS
+     * and preload tags it adds after page load.
+     *
+     * The tag is only injected when the response is HTML (Content-Type starts
+     * with text/html) and is not a streamed response. If the content has no
+     * <head> tag, it is left unchanged.
+     */
+    private function maybeInjectCspNonceMeta(Response $response, string $nonce): void
+    {
+        if ($response instanceof StreamedResponse) {
+            return;
+        }
+
+        if (!$this->isHtml($response)) {
+            return;
+        }
+
+        $content = $response->getContent();
+        if (!is_string($content) || $content === '') {
+            return;
+        }
+
+        $meta = '<meta property="csp-nonce" nonce="' . htmlspecialchars($nonce, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">';
+
+        $modified = preg_replace_callback(
+            '/<head[^>]*>/i',
+            static function (array $matches) use ($meta): string {
+                return $matches[0] . $meta;
+            },
+            $content,
+            1
+        );
+
+        if (is_string($modified) && $modified !== $content) {
+            $response->setContent($modified);
+        }
+    }
+
+    /**
+     * Whether the response Content-Type is HTML.
+     */
+    private function isHtml(Response $response): bool
+    {
+        $contentType = $response->headers->get('Content-Type');
+        if (!is_string($contentType) || $contentType === '') {
+            return false;
+        }
+
+        $mime = strtolower(trim(explode(';', $contentType)[0]));
+
+        return str_starts_with($mime, 'text/html');
     }
 }

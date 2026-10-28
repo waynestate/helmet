@@ -183,4 +183,35 @@ final class FunctionsTest extends TestCase
         self::assertSame('ok', $stdout);
         self::assertStringNotContainsString('REACHED_PAST_HEALTH_PATH', $stderr);
     }
+
+    /**
+     * The csp-nonce meta tag helper escapes the nonce, so a nonce with a
+     * quote cannot break out of the attribute.
+     */
+    public function testCspNonceMetaEscapesTheNonce(): void
+    {
+        $nonce = 'abc"def';
+
+        $meta = \Waynestate\Helmet\helmet_csp_nonce_meta($nonce);
+
+        self::assertSame(
+            '<meta property="csp-nonce" nonce="abc&quot;def">',
+            $meta
+        );
+    }
+
+    /**
+     * The csp-nonce meta tag helper returns the tag with the nonce.
+     */
+    public function testCspNonceMetaReturnsTheTag(): void
+    {
+        $nonce = 'testnonce';
+
+        $meta = \Waynestate\Helmet\helmet_csp_nonce_meta($nonce);
+
+        self::assertSame(
+            '<meta property="csp-nonce" nonce="testnonce">',
+            $meta
+        );
+    }
 }

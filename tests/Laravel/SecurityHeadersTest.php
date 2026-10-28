@@ -255,6 +255,89 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
+     * The middleware injects the csp-nonce meta tag into HTML responses,
+     * right after the opening <head> tag. Vite's dev runtime reads that tag
+     * to nonce the CSS and preload tags it adds after page load.
+     */
+    public function testHtmlResponseGetsTheCspNonceMetaTag(): void
+    {
+        $this->app['router']->get('/meta', static fn () => response(
+            '<html><head><title>hi</title></head><body>hi</body></html>',
+            200,
+            ['Content-Type' => 'text/html']
+        ))->middleware('web');
+
+        $response = $this->get('/meta');
+        $nonceInHeader = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
+
+        self::assertNotNull($nonceInHeader);
+        $body = (string) $response->getContent();
+        self::assertStringContainsString(
+            '<head><meta property="csp-nonce" nonce="' . $nonceInHeader . '"><title>hi</title></head>',
+            $body
+        );
+    }
+
+    /**
+     * The meta tag is injected after a <head> tag that carries attributes,
+     * and the match is case-insensitive.
+     */
+    public function testCspNonceMetaTagHandlesHeadWithAttributesAndCase(): void
+    {
+        $this->app['router']->get('/meta-attrs', static fn () => response(
+            '<HTML><HEAD lang="en"><title>hi</title></HEAD><BODY>hi</BODY></HTML>',
+            200,
+            ['Content-Type' => 'text/html']
+        ))->middleware('web');
+
+        $response = $this->get('/meta-attrs');
+        $nonceInHeader = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
+
+        self::assertNotNull($nonceInHeader);
+        $body = (string) $response->getContent();
+        self::assertStringContainsString(
+            '<HEAD lang="en"><meta property="csp-nonce" nonce="' . $nonceInHeader . '"><title>hi</title></HEAD>',
+            $body
+        );
+    }
+
+    /**
+     * A JSON response is not HTML, so the middleware leaves its body
+     * unchanged.
+     */
+    public function testJsonResponseIsNotModified(): void
+    {
+        $this->app['router']->get('/json', static fn () => response(
+            '{"ok":true}',
+            200,
+            ['Content-Type' => 'application/json']
+        ))->middleware('web');
+
+        $response = $this->get('/json');
+
+        self::assertSame('{"ok":true}', (string) $response->getContent());
+    }
+
+    /**
+     * An HTML body without a <head> tag is left unchanged. The ribbon is
+     * disabled so the only middleware that could touch the body is the meta
+     * tag injection.
+     */
+    public function testHtmlWithoutHeadIsNotModified(): void
+    {
+        config(['helmet.ribbon' => false]);
+        $this->app['router']->get('/no-head', static fn () => response(
+            '<html><body>hi</body></html>',
+            200,
+            ['Content-Type' => 'text/html']
+        ))->middleware('web');
+
+        $response = $this->get('/no-head');
+
+        self::assertSame('<html><body>hi</body></html>', (string) $response->getContent());
+    }
+
+    /**
      * @param array<string, list<string>|null>|null $cspConfig
      */
     #[DataProvider('headerConfigs')]
