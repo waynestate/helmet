@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en" data-theme="wsu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HELMET — Put it on before you ship.</title>
+<meta name="description" content="HELMET is the Wayne State app stack's baseline runtime: security headers and CSP, session hardening, trusted proxies, a /up health check, structured logs and version warnings, in one small PHP core.">
+<meta name="theme-color" content="#13261f">
+<link rel="icon" href="brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="brand/favicon-16.png">
+<link rel="apple-touch-icon" href="brand/helmet-avatar-256.png">
+<!--
+  WayneUI 2.0.8, copied from its documented static path
+  (wayne-ui/apps/site/public/v2) so this page works offline: tokens, Lato,
+  container, buttons, skip link, focus ring and wsu-sr-only. Everything in
+  helmet.css sits outside WayneUI's @layer and wins without !important.
+-->
+<link rel="stylesheet" href="assets/wayne-ui/wayne-ui.css">
+<link rel="stylesheet" href="assets/helmet.css">
+<script>
+  /* Chalk only moves for people who are happy with motion. Everyone else gets
+     the play already drawn: every X, every O, zero sacks, nothing moving. */
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+    document.documentElement.classList.add("motion");
+    /* If helmet.js never arrives, draw the play anyway rather than leave a
+       blank board. */
+    setTimeout(function () {
+      if (!window.__helmetReady) document.documentElement.classList.remove("motion");
+    }, 4000);
+  }
+  document.documentElement.classList.add("js");
+</script>
+</head>
+<body>
+<a class="wsu-skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wsu-container site-header__row">
+    <a class="brand" href="#main">
+      <img src="brand/helmet-avatar-256.png" width="34" height="34" alt="">
+      <span class="brand__name">HELMET</span>
+      <span class="brand__version">0.1</span>
+    </a>
+    <nav class="site-nav" aria-label="Page">
+      <a href="#playbook">Playbook</a>
+      <a href="#quick-start">Quick start</a>
+      <a href="#depth-chart">Depth chart</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ============================================================ hero -->
+  <!-- A chalkboard in a coach's office. The play on it is HELMET itself:
+       five rushers, five blockers, and the app (the mark) safe in the pocket. -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="wsu-container">
+      <div class="chalkboard">
+        <div class="hero__grid">
+
+          <div class="hero__copy">
+            <p class="eyebrow eyebrow--marker">Play 0 · every app, every snap</p>
+            <h1 class="hero__title" id="hero-title">
+              <span class="wsu-sr-only">HELMET</span>
+              <span class="hero__letters" aria-hidden="true"><span style="--i:0">H</span><span style="--i:1">E</span><span style="--i:2">L</span><span style="--i:3">M</span><span style="--i:4">E</span><span style="--i:5">T</span></span>
+            </h1>
+
+            <!-- The acronym as a quarterback's wristband: six calls, every word
+                 the same weight and colour. The list reads whole to a screen
+                 reader; the numbers are only the wristband's call sheet. -->
+            <div class="wristband">
+              <p class="wsu-sr-only">HELMET stands for Headers, Errors, Logging, Monitoring, Environment, Trust.</p>
+              <ol class="wristband__calls" aria-hidden="true">
+                <li style="--i:0"><span class="wristband__no">1</span>Headers</li>
+                <li style="--i:1"><span class="wristband__no">2</span>Errors</li>
+                <li style="--i:2"><span class="wristband__no">3</span>Logging</li>
+                <li style="--i:3"><span class="wristband__no">4</span>Monitoring</li>
+                <li style="--i:4"><span class="wristband__no">5</span>Environment</li>
+                <li style="--i:5"><span class="wristband__no">6</span>Trust</li>
+              </ol>
+            </div>
+
+            <p class="hero__tagline">Put it on before you ship.</p>
+            <p class="hero__blurb">The stack's baseline runtime. One small, framework-free PHP core sends the security headers, hardens the session, checks the proxy, answers <code>/up</code> and writes structured logs, before your app serves a single page. Raw PHP, Laravel and PSR-15 all wear the same one.</p>
+            <div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div>
+            <p class="hero__cta">
+              <a class="wsu-btn wsu-btn--accent wsu-btn--lg" href="#playbook">Open the playbook</a>
+              <a class="hero__link" href="#quick-start">Three downs to kickoff</a>
+            </p>
+          </div>
+
+          <figure class="hero__play">
+            <div class="drill board" id="board">
+              <svg class="board__svg" viewBox="0 0 640 430" aria-hidden="true" focusable="false">
+<defs><filter id="chalk" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+<g filter="url(#chalk)">
+<g class="hash a-fade" style="--d:.05s">
+<line x1="14" y1="28" x2="28" y2="28"/><line x1="612" y1="28" x2="626" y2="28"/>
+<line x1="14" y1="56" x2="28" y2="56"/><line x1="612" y1="56" x2="626" y2="56"/>
+<line x1="14" y1="84" x2="28" y2="84"/><line x1="612" y1="84" x2="626" y2="84"/>
+<line x1="14" y1="112" x2="28" y2="112"/><line x1="612" y1="112" x2="626" y2="112"/>
+<line x1="14" y1="140" x2="28" y2="140"/><line x1="612" y1="140" x2="626" y2="140"/>
+<line x1="14" y1="168" x2="28" y2="168"/><line x1="612" y1="168" x2="626" y2="168"/>
+<line x1="14" y1="196" x2="28" y2="196"/><line x1="612" y1="196" x2="626" y2="196"/>
+<line x1="14" y1="224" x2="28" y2="224"/><line x1="612" y1="224" x2="626" y2="224"/>
+<line x1="14" y1="252" x2="28" y2="252"/><line x1="612" y1="252" x2="626" y2="252"/>
+<line x1="14" y1="280" x2="28" y2="280"/><line x1="612" y1="280" x2="626" y2="280"/>
+<line x1="14" y1="308" x2="28" y2="308"/><line x1="612" y1="308" x2="626" y2="308"/>
+<line x1="14" y1="336" x2="28" y2="336"/><line x1="612" y1="336" x2="626" y2="336"/>
+<line x1="14" y1="364" x2="28" y2="364"/><line x1="612" y1="364" x2="626" y2="364"/>
+<line x1="14" y1="392" x2="28" y2="392"/><line x1="612" y1="392" x2="626" y2="392"/>
+</g>
+<line class="los a-fade" style="--d:.2s" x1="36" y1="168" x2="604" y2="168"/>
+<text class="los__label a-fade" style="--d:.35s" x="36" y="160">LOS</text>
+<circle class="pocket a-draw" style="--d:1.35s;--t:.7s" pathLength="1" cx="320" cy="362" r="60"/>
+<g class="qb a-snap" style="--d:.9s"><image href="brand/helmet-avatar-256.png" x="274" y="316" width="92" height="92"/></g>
+<text class="clack a-pop" style="--d:1.45s" x="398" y="330">clack!</text>
+<path class="note-arrow a-draw" style="--d:1.6s;--t:.5s" pathLength="1" d="M520 386 Q470 400 392 376"/>
+<path class="note-arrow a-draw" style="--d:2.05s;--t:.2s" pathLength="1" d="M402 368 L390 376 L404 384"/>
+<text class="note a-fade" style="--d:1.7s" x="526" y="392">your app</text>
+<g class="pair" data-pair="0">
+<path class="ghost a-ghost" style="--d:1.90s" d="M116 178 Q116 280 286 304"/>
+<g class="rusher"><line class="a-draw" style="--d:0.40s;--t:.22s" pathLength="1" x1="67" y1="99" x2="93" y2="125"/><line class="a-draw" style="--d:0.52s;--t:.22s" pathLength="1" x1="93" y1="99" x2="67" y2="125"/></g>
+<text class="threat a-fade" style="--d:0.95s" x="80" y="82">XSS</text>
+<path class="route a-draw" style="--d:2.35s;--t:.55s" pathLength="1" d="M80 130 Q80 160 116 172"/>
+<g class="blocker a-step" style="--d:2.60s"><circle class="a-draw" style="--d:0.65s;--t:.4s" pathLength="1" cx="116" cy="204" r="17"/><text class="prot" x="116" y="248">CSP</text></g>
+<path class="bar a-draw" style="--d:2.95s;--t:.18s" pathLength="1" d="M99 180 H133 M116 180 V187"/>
+<g class="burst a-pop" style="--d:3.05s"><line x1="116" y1="167" x2="116" y2="159" transform="rotate(-70 116 176)"/><line x1="116" y1="166" x2="116" y2="157" transform="rotate(-35 116 176)"/><line x1="116" y1="166" x2="116" y2="156" transform="rotate(0 116 176)"/><line x1="116" y1="166" x2="116" y2="157" transform="rotate(35 116 176)"/><line x1="116" y1="167" x2="116" y2="159" transform="rotate(70 116 176)"/></g>
+</g>
+<g class="pair" data-pair="1">
+<path class="ghost a-ghost" style="--d:1.99s" d="M218 178 Q218 280 300 304"/>
+<g class="rusher"><line class="a-draw" style="--d:0.49s;--t:.22s" pathLength="1" x1="187" y1="99" x2="213" y2="125"/><line class="a-draw" style="--d:0.61s;--t:.22s" pathLength="1" x1="213" y1="99" x2="187" y2="125"/></g>
+<text class="threat a-fade" style="--d:1.04s" x="200" y="82">CLICKJACK</text>
+<path class="route a-draw" style="--d:2.44s;--t:.55s" pathLength="1" d="M200 130 Q200 160 218 172"/>
+<g class="blocker a-step" style="--d:2.69s"><circle class="a-draw" style="--d:0.74s;--t:.4s" pathLength="1" cx="218" cy="204" r="17"/><text class="prot" x="218" y="248">FRAMES</text></g>
+<path class="bar a-draw" style="--d:3.04s;--t:.18s" pathLength="1" d="M201 180 H235 M218 180 V187"/>
+<g class="burst a-pop" style="--d:3.14s"><line x1="218" y1="167" x2="218" y2="159" transform="rotate(-70 218 176)"/><line x1="218" y1="166" x2="218" y2="157" transform="rotate(-35 218 176)"/><line x1="218" y1="166" x2="218" y2="156" transform="rotate(0 218 176)"/><line x1="218" y1="166" x2="218" y2="157" transform="rotate(35 218 176)"/><line x1="218" y1="167" x2="218" y2="159" transform="rotate(70 218 176)"/></g>
+</g>
+<g class="pair" data-pair="2">
+<path class="ghost a-ghost" style="--d:2.08s" d="M320 178 Q320 280 320 300"/>
+<g class="rusher"><line class="a-draw" style="--d:0.58s;--t:.22s" pathLength="1" x1="307" y1="99" x2="333" y2="125"/><line class="a-draw" style="--d:0.70s;--t:.22s" pathLength="1" x1="333" y1="99" x2="307" y2="125"/></g>
+<text class="threat a-fade" style="--d:1.13s" x="320" y="82">FAKE HTTPS</text>
+<path class="route a-draw" style="--d:2.53s;--t:.55s" pathLength="1" d="M320 130 Q320 160 320 172"/>
+<g class="blocker a-step" style="--d:2.78s"><circle class="a-draw" style="--d:0.83s;--t:.4s" pathLength="1" cx="320" cy="204" r="17"/><text class="prot" x="320" y="248">PROXIES</text></g>
+<path class="bar a-draw" style="--d:3.13s;--t:.18s" pathLength="1" d="M303 180 H337 M320 180 V187"/>
+<g class="burst a-pop" style="--d:3.23s"><line x1="320" y1="167" x2="320" y2="159" transform="rotate(-70 320 176)"/><line x1="320" y1="166" x2="320" y2="157" transform="rotate(-35 320 176)"/><line x1="320" y1="166" x2="320" y2="156" transform="rotate(0 320 176)"/><line x1="320" y1="166" x2="320" y2="157" transform="rotate(35 320 176)"/><line x1="320" y1="167" x2="320" y2="159" transform="rotate(70 320 176)"/></g>
+</g>
+<g class="pair" data-pair="3">
+<path class="ghost a-ghost" style="--d:2.17s" d="M422 178 Q422 280 340 304"/>
+<g class="rusher"><line class="a-draw" style="--d:0.67s;--t:.22s" pathLength="1" x1="427" y1="99" x2="453" y2="125"/><line class="a-draw" style="--d:0.79s;--t:.22s" pathLength="1" x1="453" y1="99" x2="427" y2="125"/></g>
+<text class="threat a-fade" style="--d:1.22s" x="440" y="82">FIXATION</text>
+<path class="route a-draw" style="--d:2.62s;--t:.55s" pathLength="1" d="M440 130 Q440 160 422 172"/>
+<g class="blocker a-step" style="--d:2.87s"><circle class="a-draw" style="--d:0.92s;--t:.4s" pathLength="1" cx="422" cy="204" r="17"/><text class="prot" x="422" y="248">SESSION</text></g>
+<path class="bar a-draw" style="--d:3.22s;--t:.18s" pathLength="1" d="M405 180 H439 M422 180 V187"/>
+<g class="burst a-pop" style="--d:3.32s"><line x1="422" y1="167" x2="422" y2="159" transform="rotate(-70 422 176)"/><line x1="422" y1="166" x2="422" y2="157" transform="rotate(-35 422 176)"/><line x1="422" y1="166" x2="422" y2="156" transform="rotate(0 422 176)"/><line x1="422" y1="166" x2="422" y2="157" transform="rotate(35 422 176)"/><line x1="422" y1="167" x2="422" y2="159" transform="rotate(70 422 176)"/></g>
+</g>
+<g class="pair" data-pair="4">
+<path class="ghost a-ghost" style="--d:2.26s" d="M524 178 Q524 280 354 304"/>
+<g class="rusher"><line class="a-draw" style="--d:0.76s;--t:.22s" pathLength="1" x1="547" y1="99" x2="573" y2="125"/><line class="a-draw" style="--d:0.88s;--t:.22s" pathLength="1" x1="573" y1="99" x2="547" y2="125"/></g>
+<text class="threat a-fade" style="--d:1.31s" x="560" y="82">FALSE DOWN</text>
+<path class="route a-draw" style="--d:2.71s;--t:.55s" pathLength="1" d="M560 130 Q560 160 524 172"/>
+<g class="blocker a-step" style="--d:2.96s"><circle class="a-draw" style="--d:1.01s;--t:.4s" pathLength="1" cx="524" cy="204" r="17"/><text class="prot" x="524" y="248">/UP</text></g>
+<path class="bar a-draw" style="--d:3.31s;--t:.18s" pathLength="1" d="M507 180 H541 M524 180 V187"/>
+<g class="burst a-pop" style="--d:3.41s"><line x1="524" y1="167" x2="524" y2="159" transform="rotate(-70 524 176)"/><line x1="524" y1="166" x2="524" y2="157" transform="rotate(-35 524 176)"/><line x1="524" y1="166" x2="524" y2="156" transform="rotate(0 524 176)"/><line x1="524" y1="166" x2="524" y2="157" transform="rotate(35 524 176)"/><line x1="524" y1="167" x2="524" y2="159" transform="rotate(70 524 176)"/></g>
+</g>
+<text class="sacks a-fade" style="--d:3.7s" x="40" y="414">sacks allowed: 0</text>
+<ellipse class="sacks__ring a-draw" style="--d:4.1s;--t:.5s" pathLength="1" cx="203" cy="406" rx="20" ry="17" transform="rotate(-8 203 406)"/>
+</g></svg>
+            </div>
+            <figcaption class="board__foot">
+              <p class="board__caption" id="board-caption" aria-live="polite">Five rushers, five blockers, zero sacks. Point at a call to see who blocks whom.</p>
+              <ul class="calls" aria-label="The five blocks on the board"><li><button class="call" type="button" data-call="0" aria-describedby="board-caption"><span class="call__x">XSS</span> <span class="call__vs">vs</span> <span class="call__o">CSP</span></button></li><li><button class="call" type="button" data-call="1" aria-describedby="board-caption"><span class="call__x">CLICKJACK</span> <span class="call__vs">vs</span> <span class="call__o">FRAMES</span></button></li><li><button class="call" type="button" data-call="2" aria-describedby="board-caption"><span class="call__x">FAKE HTTPS</span> <span class="call__vs">vs</span> <span class="call__o">PROXIES</span></button></li><li><button class="call" type="button" data-call="3" aria-describedby="board-caption"><span class="call__x">FIXATION</span> <span class="call__vs">vs</span> <span class="call__o">SESSION</span></button></li><li><button class="call" type="button" data-call="4" aria-describedby="board-caption"><span class="call__x">FALSE DOWN</span> <span class="call__vs">vs</span> <span class="call__o">/UP</span></button></li></ul>
+              <template data-caption="0">CSP blocks injected script: a fresh nonce on every response plus strict-dynamic, and no &#x27;unsafe-inline&#x27; or &#x27;unsafe-eval&#x27; to slip through.</template><template data-caption="1">Frame headers block clickjacking: frame-ancestors &#x27;self&#x27; and X-Frame-Options: SAMEORIGIN, so a stranger&#x27;s page cannot wrap yours.</template><template data-caption="2">Trusted proxies block a forged X-Forwarded-Proto: only the proxy&#x27;s own address may say a request was https.</template><template data-caption="3">Session hardening blocks fixation and cookie theft: strict mode, cookies only, HttpOnly and SameSite=Lax, set before the session starts.</template><template data-caption="4">The /up check blocks a false alarm: 200 ok before your code runs, so a busy app is never taken for a dead one.</template>
+            </figcaption>
+          </figure>
+
+        </div>
+
+        <!-- The chalk tray. The eraser is the replay button. -->
+        <div class="tray">
+          <span class="tray__chalk tray__chalk--a" aria-hidden="true"></span>
+          <span class="tray__chalk tray__chalk--b" aria-hidden="true"></span>
+          <button class="eraser" type="button" data-erase>
+            <span class="eraser__felt" aria-hidden="true"></span>
+            <span class="eraser__label">Erase and run it again</span>
+          </button>
+          <p class="tray__hint" aria-hidden="true">or type <kbd>h</kbd><kbd>i</kbd><kbd>k</kbd><kbd>e</kbd></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== playbook -->
+  <section class="playbook" id="playbook" aria-labelledby="playbook-title">
+    <div class="wsu-container">
+      <div class="binder-head">
+        <p class="tab-label" aria-hidden="true">01</p>
+        <div>
+          <h2 class="section-title" id="playbook-title">The playbook</h2>
+          <p class="section-lede">Six plays, each one a protection that stops a named rusher. Laminated, because coffee happens on the sideline.</p>
+        </div>
+      </div>
+
+      <ol class="plays">
+<li class="play-card" style="--tilt:-1.2deg;--i:0">
+  <article class="play-card__inner" aria-labelledby="play-22">
+    <span class="play-card__holes" aria-hidden="true"></span>
+    <header class="play-card__head">
+      <p class="play-card__no" aria-hidden="true">22</p>
+      <h3 class="play-card__name" id="play-22"><span class="wsu-sr-only">Play 22: </span>Nonce Dive</h3>
+      <p class="play-card__pos">CSP</p>
+    </header>
+    <div class="drill drill--mini"><svg class="drill__svg" viewBox="0 0 260 128" aria-hidden="true" focusable="false">
+<line class="los" x1="10" y1="56" x2="250" y2="56"/>
+<path class="ghost a-ghost" style="--d:.55s" d="M94 66 Q94 96 130 101"/>
+<g class="rusher"><line class="a-draw" style="--d:.05s;--t:.16s" pathLength="1" x1="50" y1="22" x2="66" y2="38"/><line class="a-draw" style="--d:.15s;--t:.16s" pathLength="1" x1="66" y1="22" x2="50" y2="38"/></g>
+<text class="threat a-fade" style="--d:.2s" x="48" y="14" text-anchor="start">XSS</text>
+<path class="route a-draw" style="--d:.8s;--t:.5s" pathLength="1" d="M58 40 Q58 58 94 62"/>
+<g class="blocker a-step" style="--d:1s;--from:14px"><circle class="a-draw" style="--d:.25s;--t:.35s" pathLength="1" cx="94" cy="82" r="11"/><text class="prot" x="110" y="87">CSP</text></g>
+<path class="bar a-draw" style="--d:1.3s;--t:.15s" pathLength="1" d="M83 66 H105 M94 66 V71"/>
+<g class="burst a-pop" style="--d:1.38s"><line x1="94" y1="54" x2="94" y2="48" transform="rotate(-60 94 60)"/><line x1="94" y1="53" x2="94" y2="46" transform="rotate(0 94 60)"/><line x1="94" y1="54" x2="94" y2="48" transform="rotate(60 94 60)"/></g>
+<rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
+</svg></div>
+    <p class="play-card__blocks"><span class="stamp">Blocks</span> Injected script (XSS)</p>
+    <p class="play-card__body">A fresh nonce on every response, plus <code>strict-dynamic</code>. A script without the nonce does not run, and there is no <code>'unsafe-inline'</code> or <code>'unsafe-eval'</code> to sneak through.</p>
+    <p class="play-card__code"><code>script-src &#x27;self&#x27; &#x27;nonce-…&#x27; &#x27;strict-dynamic&#x27;</code></p>
+    <p class="play-card__foot"><span class="play-card__note">New nonce every snap.</span>
+      <button class="run-btn" type="button" data-run aria-label="Run play 22, Nonce Dive, again">Run it</button></p>
+  </article>
+</li>
+<li class="play-card" style="--tilt:.8deg;--i:1">
+  <article class="play-card__inner" aria-labelledby="play-34">
+    <span class="play-card__holes" aria-hidden="true"></span>
+    <header class="play-card__head">
+      <p class="play-card__no" aria-hidden="true">34</p>
+      <h3 class="play-card__name" id="play-34"><span class="wsu-sr-only">Play 34: </span>Frame Screen</h3>
+      <p class="play-card__pos">FRAMES</p>
+    </header>
+    <div class="drill drill--mini"><svg class="drill__svg" viewBox="0 0 260 128" aria-hidden="true" focusable="false">
+<line class="los" x1="10" y1="56" x2="250" y2="56"/>
+<path class="ghost a-ghost" style="--d:.55s" d="M171 66 Q171 96 130 101"/>
+<g class="rusher"><line class="a-draw" style="--d:.05s;--t:.16s" pathLength="1" x1="204" y1="22" x2="220" y2="38"/><line class="a-draw" style="--d:.15s;--t:.16s" pathLength="1" x1="220" y1="22" x2="204" y2="38"/></g>
+<text class="threat a-fade" style="--d:.2s" x="222" y="14" text-anchor="end">CLICKJACK</text>
+<path class="route a-draw" style="--d:.8s;--t:.5s" pathLength="1" d="M212 40 L194 47 L222 53 L171 62"/>
+<g class="blocker a-step" style="--d:1s;--from:14px"><circle class="a-draw" style="--d:.25s;--t:.35s" pathLength="1" cx="171" cy="82" r="11"/><text class="prot" x="187" y="87">FRAMES</text></g>
+<path class="bar a-draw" style="--d:1.3s;--t:.15s" pathLength="1" d="M160 66 H182 M171 66 V71"/>
+<g class="burst a-pop" style="--d:1.38s"><line x1="171" y1="54" x2="171" y2="48" transform="rotate(-60 171 60)"/><line x1="171" y1="53" x2="171" y2="46" transform="rotate(0 171 60)"/><line x1="171" y1="54" x2="171" y2="48" transform="rotate(60 171 60)"/></g>
+<rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
+</svg></div>
+    <p class="play-card__blocks"><span class="stamp">Blocks</span> Clickjacking</p>
+    <p class="play-card__body"><code>frame-ancestors 'self'</code> in the policy, and <code>X-Frame-Options</code> for older browsers. A stranger's page cannot frame yours and trick a click.</p>
+    <p class="play-card__code"><code>X-Frame-Options: SAMEORIGIN</code></p>
+    <p class="play-card__foot"><span class="play-card__note">No strangers in the frame.</span>
+      <button class="run-btn" type="button" data-run aria-label="Run play 34, Frame Screen, again">Run it</button></p>
+  </article>
+</li>
+<li class="play-card" style="--tilt:-.4deg;--i:2">
+  <article class="play-card__inner" aria-labelledby="play-47">
+    <span class="play-card__holes" aria-hidden="true"></span>
+    <header class="play-card__head">
+      <p class="play-card__no" aria-hidden="true">47</p>
+      <h3 class="play-card__name" id="play-47"><span class="wsu-sr-only">Play 47: </span>Long Snap</h3>
+      <p class="play-card__pos">HSTS</p>
+    </header>
+    <div class="drill drill--mini"><svg class="drill__svg" viewBox="0 0 260 128" aria-hidden="true" focusable="false">
+<line class="los" x1="10" y1="56" x2="250" y2="56"/>
+<path class="ghost a-ghost" style="--d:.55s" d="M130 66 Q130 96 130 101"/>
+<g class="rusher"><line class="a-draw" style="--d:.05s;--t:.16s" pathLength="1" x1="122" y1="22" x2="138" y2="38"/><line class="a-draw" style="--d:.15s;--t:.16s" pathLength="1" x1="138" y1="22" x2="122" y2="38"/></g>
+<text class="threat a-fade" style="--d:.2s" x="130" y="14" text-anchor="middle">HTTP</text>
+<path class="route a-draw" style="--d:.8s;--t:.5s" pathLength="1" d="M130 40 L116 50 L130 62"/>
+<g class="blocker a-step" style="--d:1s;--from:14px"><circle class="a-draw" style="--d:.25s;--t:.35s" pathLength="1" cx="130" cy="82" r="11"/><text class="prot" x="146" y="87">HSTS</text></g>
+<path class="bar a-draw" style="--d:1.3s;--t:.15s" pathLength="1" d="M119 66 H141 M130 66 V71"/>
+<g class="burst a-pop" style="--d:1.38s"><line x1="130" y1="54" x2="130" y2="48" transform="rotate(-60 130 60)"/><line x1="130" y1="53" x2="130" y2="46" transform="rotate(0 130 60)"/><line x1="130" y1="54" x2="130" y2="48" transform="rotate(60 130 60)"/></g>
+<rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
+</svg></div>
+    <p class="play-card__blocks"><span class="stamp">Blocks</span> A downgrade to plain HTTP</p>
+    <p class="play-card__body">One year, every subdomain, sent only when the request really was HTTPS. Roll it out in stages; <code>preload</code> is the domain owner's call, so HELMET never adds it.</p>
+    <p class="play-card__code"><code>Strict-Transport-Security: max-age=31536000; includeSubDomains</code></p>
+    <p class="play-card__foot"><span class="play-card__note">Start short, then go long.</span>
+      <button class="run-btn" type="button" data-run aria-label="Run play 47, Long Snap, again">Run it</button></p>
+  </article>
+</li>
+<li class="play-card" style="--tilt:1deg;--i:3">
+  <article class="play-card__inner" aria-labelledby="play-41">
+    <span class="play-card__holes" aria-hidden="true"></span>
+    <header class="play-card__head">
+      <p class="play-card__no" aria-hidden="true">41</p>
+      <h3 class="play-card__name" id="play-41"><span class="wsu-sr-only">Play 41: </span>Session Lock</h3>
+      <p class="play-card__pos">SESSION</p>
+    </header>
+    <div class="drill drill--mini"><svg class="drill__svg" viewBox="0 0 260 128" aria-hidden="true" focusable="false">
+<line class="los" x1="10" y1="56" x2="250" y2="56"/>
+<path class="ghost a-ghost" style="--d:.55s" d="M85 66 Q85 96 130 101"/>
+<g class="rusher"><line class="a-draw" style="--d:.05s;--t:.16s" pathLength="1" x1="32" y1="22" x2="48" y2="38"/><line class="a-draw" style="--d:.15s;--t:.16s" pathLength="1" x1="48" y1="22" x2="32" y2="38"/></g>
+<text class="threat a-fade" style="--d:.2s" x="30" y="14" text-anchor="start">FIXATION</text>
+<path class="route a-draw" style="--d:.8s;--t:.5s" pathLength="1" d="M40 40 C18 62 70 70 85 62"/>
+<g class="blocker a-step" style="--d:1s;--from:14px"><circle class="a-draw" style="--d:.25s;--t:.35s" pathLength="1" cx="85" cy="82" r="11"/><text class="prot" x="101" y="87">SESSION</text></g>
+<path class="bar a-draw" style="--d:1.3s;--t:.15s" pathLength="1" d="M74 66 H96 M85 66 V71"/>
+<g class="burst a-pop" style="--d:1.38s"><line x1="85" y1="54" x2="85" y2="48" transform="rotate(-60 85 60)"/><line x1="85" y1="53" x2="85" y2="46" transform="rotate(0 85 60)"/><line x1="85" y1="54" x2="85" y2="48" transform="rotate(60 85 60)"/></g>
+<rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
+</svg></div>
+    <p class="play-card__blocks"><span class="stamp">Blocks</span> Session fixation and cookie theft</p>
+    <p class="play-card__body">Strict mode, cookies only, <code>HttpOnly</code> and <code>SameSite=Lax</code>, set before the session starts. <code>Secure</code> follows the real scheme, and it refuses to run once a session is already active.</p>
+    <p class="play-card__code"><code>session.use_strict_mode=1  cookie_httponly=1  cookie_samesite=Lax</code></p>
+    <p class="play-card__foot"><span class="play-card__note">Strapped before kickoff.</span>
+      <button class="run-btn" type="button" data-run aria-label="Run play 41, Session Lock, again">Run it</button></p>
+  </article>
+</li>
+<li class="play-card" style="--tilt:-.9deg;--i:4">
+  <article class="play-card__inner" aria-labelledby="play-58">
+    <span class="play-card__holes" aria-hidden="true"></span>
+    <header class="play-card__head">
+      <p class="play-card__no" aria-hidden="true">58</p>
+      <h3 class="play-card__name" id="play-58"><span class="wsu-sr-only">Play 58: </span>Proxy Trap</h3>
+      <p class="play-card__pos">PROXIES</p>
+    </header>
+    <div class="drill drill--mini"><svg class="drill__svg" viewBox="0 0 260 128" aria-hidden="true" focusable="false">
+<line class="los" x1="10" y1="56" x2="250" y2="56"/>
+<path class="ghost a-ghost" style="--d:.55s" d="M178 66 Q178 96 130 101"/>
+<g class="rusher"><line class="a-draw" style="--d:.05s;--t:.16s" pathLength="1" x1="218" y1="22" x2="234" y2="38"/><line class="a-draw" style="--d:.15s;--t:.16s" pathLength="1" x1="234" y1="22" x2="218" y2="38"/></g>
+<text class="threat a-fade" style="--d:.2s" x="236" y="14" text-anchor="end">FORGED</text>
+<path class="route a-draw" style="--d:.8s;--t:.5s" pathLength="1" d="M226 40 Q242 66 178 62"/>
+<g class="blocker a-step" style="--d:1s;--from:14px"><circle class="a-draw" style="--d:.25s;--t:.35s" pathLength="1" cx="178" cy="82" r="11"/><text class="prot" x="194" y="87">PROXIES</text></g>
+<path class="bar a-draw" style="--d:1.3s;--t:.15s" pathLength="1" d="M167 66 H189 M178 66 V71"/>
+<g class="burst a-pop" style="--d:1.38s"><line x1="178" y1="54" x2="178" y2="48" transform="rotate(-60 178 60)"/><line x1="178" y1="53" x2="178" y2="46" transform="rotate(0 178 60)"/><line x1="178" y1="54" x2="178" y2="48" transform="rotate(60 178 60)"/></g>
+<rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
+</svg></div>
+    <p class="play-card__blocks"><span class="stamp">Blocks</span> A forged X-Forwarded-Proto</p>
+    <p class="play-card__body">Only a trusted proxy's address may say a request was https. A spoofed header from the internet is ignored, and no HSTS goes out on a request that was not really secure. Trust the proxy's address, never a whole private range.</p>
+    <p class="play-card__code"><code>helmet_boot([&#x27;preset&#x27; =&gt; &#x27;citadel&#x27;])</code></p>
+    <p class="play-card__foot"><span class="play-card__note">The Unsung hero of the line.</span>
+      <button class="run-btn" type="button" data-run aria-label="Run play 58, Proxy Trap, again">Run it</button></p>
+  </article>
+</li>
+<li class="play-card" style="--tilt:.5deg;--i:5">
+  <article class="play-card__inner" aria-labelledby="play-00">
+    <span class="play-card__holes" aria-hidden="true"></span>
+    <header class="play-card__head">
+      <p class="play-card__no" aria-hidden="true">00</p>
+      <h3 class="play-card__name" id="play-00"><span class="wsu-sr-only">Play 00: </span>Victory Formation</h3>
+      <p class="play-card__pos">/UP</p>
+    </header>
+    <div class="drill drill--mini"><svg class="drill__svg" viewBox="0 0 260 128" aria-hidden="true" focusable="false">
+<line class="los" x1="10" y1="56" x2="250" y2="56"/>
+<path class="ghost a-ghost" style="--d:.55s" d="M153 66 Q153 96 130 101"/>
+<g class="rusher"><line class="a-draw" style="--d:.05s;--t:.16s" pathLength="1" x1="168" y1="22" x2="184" y2="38"/><line class="a-draw" style="--d:.15s;--t:.16s" pathLength="1" x1="184" y1="22" x2="168" y2="38"/></g>
+<text class="threat a-fade" style="--d:.2s" x="176" y="14" text-anchor="middle">FALSE DOWN</text>
+<path class="route a-draw" style="--d:.8s;--t:.5s" pathLength="1" d="M176 40 Q150 48 153 62"/>
+<g class="blocker a-step" style="--d:1s;--from:14px"><circle class="a-draw" style="--d:.25s;--t:.35s" pathLength="1" cx="153" cy="82" r="11"/><text class="prot" x="169" y="87">/UP</text></g>
+<path class="bar a-draw" style="--d:1.3s;--t:.15s" pathLength="1" d="M142 66 H164 M153 66 V71"/>
+<g class="burst a-pop" style="--d:1.38s"><line x1="153" y1="54" x2="153" y2="48" transform="rotate(-60 153 60)"/><line x1="153" y1="53" x2="153" y2="46" transform="rotate(0 153 60)"/><line x1="153" y1="54" x2="153" y2="48" transform="rotate(60 153 60)"/></g>
+<rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
+</svg></div>
+    <p class="play-card__blocks"><span class="stamp">Blocks</span> A slow app called dead</p>
+    <p class="play-card__body"><code>GET</code> or <code>HEAD /up</code> answers <code>200 ok</code> with <code>Cache-Control: no-store</code> before your code runs, so the load balancer sees a live container even while the app is busy.</p>
+    <p class="play-card__code"><code>GET /up  →  200 ok</code></p>
+    <p class="play-card__foot"><span class="play-card__note">Take a knee. Still up.</span>
+      <button class="run-btn" type="button" data-run aria-label="Run play 00, Victory Formation, again">Run it</button></p>
+  </article>
+</li>
+      </ol>
+
+      <!-- The full header set, as an equipment check. Values are what
+           SecurityHeaders::build() sends by default. -->
+      <div class="kit" aria-labelledby="kit-title">
+        <div class="kit__head">
+          <h3 class="kit__title" id="kit-title">Equipment check: every response, the full kit</h3>
+          <p class="kit__sub">One shared function builds these, so raw PHP and Laravel send the same headers, name and value. A test pins it down.</p>
+        </div>
+        <ul class="kit__list">
+          <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Content-Security-Policy</code><span class="kit__val">the WayneUI default policy, a fresh nonce and <code>strict-dynamic</code></span></li>
+          <li><span class="tick" aria-hidden="true"></span><code class="kit__name">X-Content-Type-Options</code><span class="kit__val"><code>nosniff</code></span></li>
+          <li><span class="tick" aria-hidden="true"></span><code class="kit__name">X-Frame-Options</code><span class="kit__val"><code>SAMEORIGIN</code></span></li>
+          <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Referrer-Policy</code><span class="kit__val"><code>strict-origin-when-cross-origin</code></span></li>
+          <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Permissions-Policy</code><span class="kit__val"><code>camera=(), geolocation=(), microphone=(), payment=(), usb=()</code></span></li>
+          <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Strict-Transport-Security</code><span class="kit__val">one year with <code>includeSubDomains</code>, on HTTPS only</span></li>
+        </ul>
+        <p class="kit__fumble"><strong>Even on a fumble.</strong> The middleware sends the headers when the inner handler throws, and <code>X-Powered-By</code> is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== scoreboard -->
+  <section class="stadium" id="quick-start" aria-labelledby="qs-title">
+    <div class="wsu-container">
+      <div class="stadium__head">
+        <p class="tab-label tab-label--light" aria-hidden="true">02</p>
+        <div>
+          <h2 class="section-title" id="qs-title">Three downs to kickoff</h2>
+          <p class="section-lede">Pick your app's shape on the board. The same commands work in PowerShell, bash and zsh: Composer and Artisan don't care which shell snapped the ball.</p>
+        </div>
+      </div>
+
+      <div class="scoreboard">
+        <p class="wsu-sr-only">Scoreboard: HELMET 6, rushers 0. Six security headers sent, zero sacks allowed.</p>
+        <div class="sb-top" aria-hidden="true">
+          <div class="sb-team">
+            <p class="sb-team__name">HELMET</p>
+            <p class="sb-digits" data-count="6">6</p>
+            <p class="sb-team__sub">headers sent</p>
+          </div>
+          <div class="sb-mid">
+            <p class="sb-mid__label">QTR</p>
+            <p class="sb-digits sb-digits--small">1</p>
+            <p class="sb-mid__label">0.1 season</p>
+          </div>
+          <div class="sb-team">
+            <p class="sb-team__name">RUSHERS</p>
+            <p class="sb-digits">0</p>
+            <p class="sb-team__sub">sacks allowed</p>
+          </div>
+        </div>
+        <div class="sb-tabs" role="tablist" aria-label="Your app's shape"><button class="sb-tab" type="button" role="tab" id="tab-raw" aria-controls="panel-raw" aria-selected="true">Raw PHP</button><button class="sb-tab" type="button" role="tab" id="tab-laravel" aria-controls="panel-laravel" aria-selected="false" tabindex="-1">Laravel</button><button class="sb-tab" type="button" role="tab" id="tab-psr15" aria-controls="panel-psr15" aria-selected="false" tabindex="-1">PSR-15</button></div>
+        <div class="sb-panels"><div class="sb-panel" role="tabpanel" id="panel-raw" aria-labelledby="tab-raw" tabindex="0"><h3 class="sb-panel__title">Raw PHP</h3><ol class="downs">
+<li class="down"><span class="down__no" aria-hidden="true">1st</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">1st down: </span>Strap it on</p><p class="down__text">One package, no framework needed.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">2nd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">2nd down: </span>Call it once</p><p class="down__text">At the top of the front controller, before anything is echoed. Headers, session, proxy check and <code>/up</code> happen right here.</p><div class="cmd"><pre class="cmd__code"><code>use function Waynestate\Helmet\helmet_boot;
+
+$helmet = helmet_boot([&#x27;preset&#x27; =&gt; &#x27;citadel&#x27;]);</code></pre><button class="copy-btn" type="button" data-copy="use function Waynestate\Helmet\helmet_boot;
+
+$helmet = helmet_boot([&#x27;preset&#x27; =&gt; &#x27;citadel&#x27;]);"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">3rd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">3rd down: </span>Nonce your scripts</p><p class="down__text"><code>$helmet['nonce']</code> is this request's nonce. The meta tag lets Vite's runtime use it too.</p><div class="cmd"><pre class="cmd__code"><code>echo helmet_csp_nonce_meta($helmet[&#x27;nonce&#x27;]); // in &lt;head&gt;
+
+&lt;script nonce=&quot;&lt;?= $helmet[&#x27;nonce&#x27;] ?&gt;&quot;&gt;…&lt;/script&gt;</code></pre><button class="copy-btn" type="button" data-copy="echo helmet_csp_nonce_meta($helmet[&#x27;nonce&#x27;]); // in &lt;head&gt;
+
+&lt;script nonce=&quot;&lt;?= $helmet[&#x27;nonce&#x27;] ?&gt;&quot;&gt;…&lt;/script&gt;"><span class="copy-btn__label">Copy</span></button></div></div></li>
+</ol></div><div class="sb-panel" role="tabpanel" id="panel-laravel" aria-labelledby="tab-laravel" tabindex="0"><h3 class="sb-panel__title">Laravel</h3><ol class="downs">
+<li class="down"><span class="down__no" aria-hidden="true">1st</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">1st down: </span>Strap it on</p><p class="down__text">Package discovery registers the provider and both middlewares. Nothing to add to <code>bootstrap/providers.php</code>.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">2nd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">2nd down: </span>Publish the config</p><p class="down__text">The best place to change the CSP: a PHP array, not JSON squeezed into <code>.env</code>.</p><div class="cmd"><pre class="cmd__code"><code>php artisan vendor:publish --tag=helmet-config</code></pre><button class="copy-btn" type="button" data-copy="php artisan vendor:publish --tag=helmet-config"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">3rd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">3rd down: </span>Pick the platform</p><p class="down__text">In <code>.env</code>. Keep <code>health: '/up'</code> in <code>withRouting()</code>; <code>@vite</code> already carries the nonce.</p><div class="cmd"><pre class="cmd__code"><code>HELMET_PRESET=citadel</code></pre><button class="copy-btn" type="button" data-copy="HELMET_PRESET=citadel"><span class="copy-btn__label">Copy</span></button></div></div></li>
+</ol></div><div class="sb-panel" role="tabpanel" id="panel-psr15" aria-labelledby="tab-psr15" tabindex="0"><h3 class="sb-panel__title">PSR-15</h3><ol class="downs">
+<li class="down"><span class="down__no" aria-hidden="true">1st</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">1st down: </span>Strap it on</p><p class="down__text">The same core, mounted in a middleware pipeline.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">2nd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">2nd down: </span>Line up the middleware</p><p class="down__text"><code>/up</code> first, then the headers. Headers go out even when the inner handler throws.</p><div class="cmd"><pre class="cmd__code"><code>$factory = new Psr17Factory();
+$proxies = new TrustedProxies(Presets::proxies(&#x27;citadel&#x27;));
+
+$middleware = [
+    new HealthCheck($factory, $factory, &#x27;/up&#x27;),
+    new SecurityHeadersMiddleware($proxies),
+];</code></pre><button class="copy-btn" type="button" data-copy="$factory = new Psr17Factory();
+$proxies = new TrustedProxies(Presets::proxies(&#x27;citadel&#x27;));
+
+$middleware = [
+    new HealthCheck($factory, $factory, &#x27;/up&#x27;),
+    new SecurityHeadersMiddleware($proxies),
+];"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">3rd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">3rd down: </span>Read the nonce</p><p class="down__text">Downstream handlers get the same nonce the header carries.</p><div class="cmd"><pre class="cmd__code"><code>$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)</code></pre><button class="copy-btn" type="button" data-copy="$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)"><span class="copy-btn__label">Copy</span></button></div></div></li>
+</ol></div></div>
+      </div>
+
+      <p class="stadium__note"><strong>Off the WSU platform?</strong> Skip the preset and list the one address your front proxy connects from, for example <code>'trusted_proxies' =&gt; ['203.0.113.10']</code>. Never a whole private range: a broad range also trusts the other containers on the network. An unknown preset name throws at boot, so a typo fails loudly instead of trusting nothing.</p>
+    </div>
+  </section>
+
+  <!-- ====================================================== film room -->
+  <section class="film" aria-labelledby="film-title">
+    <div class="wsu-container">
+      <div class="film__head">
+        <p class="tab-label" aria-hidden="true">03</p>
+        <div>
+          <h2 class="section-title" id="film-title">The film room</h2>
+          <p class="section-lede">What HELMET writes down while the game is on, so you can watch the tape afterwards.</p>
+        </div>
+      </div>
+      <ol class="reel">
+        <li class="frame">
+          <p class="frame__no" aria-hidden="true">Reel 1</p>
+          <h3 class="frame__title">Logs, one line each</h3>
+          <pre class="frame__screen"><code>{"message":"login failed",
+ "context":{"user":"student42",
+  "password":"***"},
+ "level_name":"WARNING",
+ "channel":"app"}</code></pre>
+          <p class="frame__text">Monolog JSON, one event per line. Passwords, tokens and session IDs come out as <code>***</code>, and if the log file can't be written it falls back to stderr instead of taking the request down.</p>
+        </li>
+        <li class="frame">
+          <p class="frame__no" aria-hidden="true">Reel 2</p>
+          <h3 class="frame__title">Version warnings</h3>
+          <pre class="frame__screen"><code>Laravel 11 is end of life and
+no longer receives security
+updates. Upgrade to a
+supported version.</code></pre>
+          <p class="frame__text">Read from CREED's <code>policy.json</code>. A version in its security-only phase or past end of life gets a plain warning; an active or unknown one gets none. The date is injected, so the boundaries are testable.</p>
+        </li>
+        <li class="frame">
+          <p class="frame__no" aria-hidden="true">Reel 3</p>
+          <h3 class="frame__title">Metrics, off by default</h3>
+          <pre class="frame__screen"><code># HELP helmet_info HELMET is running.
+# TYPE helmet_info gauge
+helmet_info{php_version="8.4",
+ helmet_version="0.1.0"} 1</code></pre>
+          <p class="frame__text">A Prometheus endpoint you turn on with <code>HELMET_METRICS_ENABLED</code>, behind a bearer token or an IP allow list. With neither set it answers <code>404</code>, so nobody hands their metrics to the whole network.</p>
+        </li>
+        <li class="frame">
+          <p class="frame__no" aria-hidden="true">Reel 4</p>
+          <h3 class="frame__title">The ribbon</h3>
+          <div class="frame__screen frame__screen--page" aria-hidden="true"><span class="mini-ribbon">staging</span><span class="mini-line"></span><span class="mini-line mini-line--short"></span><span class="mini-line"></span></div>
+          <p class="frame__text">In local, testing and staging, Laravel apps get <code>&lt;div class="helmet-ribbon"&gt;</code> right after <code>&lt;body&gt;</code>, so nobody mistakes the scrimmage for the game. Never in production, never on JSON. No Aftertaste.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- ===================================================== locker room -->
+  <section class="locker" aria-labelledby="rules-title">
+    <div class="wsu-container locker__grid">
+      <div class="clipboard">
+        <span class="clipboard__clip" aria-hidden="true"></span>
+        <div class="clipboard__paper">
+          <h2 class="clipboard__title" id="rules-title">Coach's rules for Vite and Inertia</h2>
+          <p class="clipboard__sub">The CSP stays honest only if the bundle plays along.</p>
+          <ol class="rules">
+            <li><strong>Nonce every inline script.</strong> There is no <code>'unsafe-inline'</code> for scripts; <code>@vite</code> tags already carry the nonce.</li>
+            <li><strong>No <code>'unsafe-eval'</code>.</strong> If your bundle needs <code>eval</code>, fix the bundle.</li>
+            <li><strong>No scripts in Inertia's <code>&lt;Head&gt;</code>.</strong> They render after load without the nonce, and the browser blocks them. Put scripts in the layout.</li>
+            <li><strong>One nonce per request, from one package.</strong> A second <code>Vite::useCspNonce()</code> splits the header from the tags; HELMET logs a warning when it sees one.</li>
+            <li><strong>No shared caching of nonced HTML.</strong> A cached page carries yesterday's nonce. Repetition is a fine Helmet song and a terrible nonce.</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="whiteboard" aria-labelledby="squad-title">
+        <h2 class="whiteboard__title" id="squad-title">Practice squad</h2>
+        <p class="whiteboard__sub">On the backlog in HELMET's best practices, not in 0.1. They suit up when they're ready.</p>
+        <ul class="squad">
+          <li>A readiness check, separate from <code>/up</code></li>
+          <li><code>Cross-Origin-Opener-Policy</code> and <code>-Resource-Policy</code>, tested against WayneUI's assets</li>
+          <li>Trusted Types, in Report-Only first, for apps with a JS framework</li>
+          <li>A <code>Clear-Site-Data</code> helper for logout</li>
+          <li>A CSRF check for raw PHP, from <code>Origin</code> and <code>Sec-Fetch-Site</code></li>
+          <li>A global error handler: detail in the log, a generic page for the user</li>
+        </ul>
+        <p class="whiteboard__marker" aria-hidden="true">two-a-days &rarr;</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================== depth chart -->
+  <section class="depth" id="depth-chart" aria-labelledby="depth-title">
+    <div class="wsu-container">
+      <div class="poster">
+        <div class="poster__head">
+          <p class="poster__kicker">Wayne State app stack · 0.1 season</p>
+          <h2 class="poster__title" id="depth-title">WELD depth chart</h2>
+          <p class="poster__lede">HELMET plays on the line for every app in the stack. Here's who lines up beside it.</p>
+        </div>
+        <div class="units">
+<section class="unit" aria-labelledby="unit-0"><h3 class="unit__name" id="unit-0">On the field</h3><p class="unit__sub">What runs inside every app</p><ul class="roster">
+<li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">QB</span><span class="mark mark--tile"><img src="assets/marks/wayneui.svg" width="26" height="26" alt=""></span><span class="roster__text"><span class="roster__name">WayneUI</span><span class="roster__role">Renders every page: the design system, tokens and components.</span></span></li>
+<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">C</span><span class="mark"><img src="assets/marks/sesame.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">SESAME</span><span class="roster__role">Snaps the sign-in: CAS today, the gateway later.</span></span></li>
+<li class="roster__row roster__row--you" style="--j:2"><span class="roster__pos" aria-hidden="true">OL</span><span class="mark"><img src="brand/helmet-avatar-256.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">HELMET <span class="you-are-here">you are here</span></span><span class="roster__role">Protects every snap: headers, session, proxies, /up, logs.</span></span></li>
+<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">TEAM</span><span class="mark"><img src="assets/marks/weld.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">WELD</span><span class="roster__role">Every part already joined, in one Laravel + Inertia/Vue app.</span></span></li>
+</ul></section>
+<section class="unit" aria-labelledby="unit-1"><h3 class="unit__name" id="unit-1">Coaches and officials</h3><p class="unit__sub">What keeps the code honest</p><ul class="roster">
+<li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">HC</span><span class="mark"><img src="assets/marks/creed.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">CREED</span><span class="roster__role">The written standards, and the policy.json HELMET reads.</span></span></li>
+<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">REF</span><span class="mark"><img src="assets/marks/proctor.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">PROCTOR</span><span class="roster__role">One command that checks an app against the standards.</span></span></li>
+<li class="roster__row" style="--j:2"><span class="roster__pos" aria-hidden="true">LJ</span><span class="mark"><img src="assets/marks/pinstripe.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">Pinstripe</span><span class="roster__role">The coding standard: Pint, PHPStan, ESLint and Prettier.</span></span></li>
+<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">WARM</span><span class="mark"><img src="assets/marks/preflight.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">PREFLIGHT</span><span class="roster__role">Shared CI from GitLab CI/CD components.</span></span></li>
+<li class="roster__row" style="--j:4"><span class="roster__pos" aria-hidden="true">OC</span><span class="mark"><img src="assets/marks/advisor.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">ADVISOR <span class="chip">next</span></span><span class="roster__role">The voice in your headset: an MCP server that knows the stack.</span></span></li>
+</ul></section>
+<section class="unit" aria-labelledby="unit-2"><h3 class="unit__name" id="unit-2">Sideline and front office</h3><p class="unit__sub">How apps start, ship and grow</p><ul class="roster">
+<li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">CAMP</span><span class="mark"><img src="assets/marks/sourdough.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">Sourdough</span><span class="roster__role">Starters you shape yourself: raw PHP, Blade or Inertia/Vue.</span></span></li>
+<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">EQ</span><span class="mark"><img src="assets/marks/squire.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">SQUIRE <span class="chip">next</span></span><span class="roster__role">The equipment manager: release script and local parity for Citadel.</span></span></li>
+<li class="roster__row" style="--j:2"><span class="roster__pos" aria-hidden="true">GATE</span><span class="mark"><img src="assets/marks/drawbridge.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">DRAWBRIDGE <span class="chip">next</span></span><span class="roster__role">The Citadel sign-in gateway, lowered on request.</span></span></li>
+<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">CLUB</span><span class="mark"><img src="assets/marks/booster.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">BOOSTER <span class="chip">next</span></span><span class="roster__role">The booster club: upgrade recipes, PHP 7 to 8 and Laravel N to N+1.</span></span></li>
+<li class="roster__row" style="--j:4"><span class="roster__pos" aria-hidden="true">ROLL</span><span class="mark"><img src="assets/marks/rollcall.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">ROLLCALL <span class="chip">next</span></span><span class="roster__role">Every app answers “present”, with its PHP version.</span></span></li>
+</ul></section>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="endzone">
+  <div class="wsu-container endzone__inner">
+    <p class="endzone__paint" aria-hidden="true">HELMET</p>
+    <p class="endzone__joke">The core stays small enough to read in an afternoon. Size Matters.</p>
+    <p class="endzone__links">
+      <a href="https://github.com/waynestate/helmet">Source on GitHub</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120">Helmet, the band (a GIF, on Tenor)</a>
+    </p>
+    <p class="endzone__org">Wayne State University · Enterprise Applications</p>
+  </div>
+</footer>
+
+<div class="toast" role="status" aria-live="polite"></div>
+
+<script src="assets/helmet.js" defer></script>
+</body>
+</html>
