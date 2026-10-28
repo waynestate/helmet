@@ -18,7 +18,7 @@
 the first page is served.
 
 Checks: `composer ci` (the same command runs on GitLab and GitHub).
-Two mirrors, one command — the only thing in this repo that plays both sides is the CI.
+Two mirrors, one command: the only thing in this repo that plays both sides is the CI.
 Front page: [`site/index.html`](site/index.html), the playbook, as static files ([`site/README.md`](site/README.md)).
 
 HELMET is the Wayne State app stack's baseline runtime. One small
@@ -496,11 +496,11 @@ quote) throws at boot, so a typo fails loudly instead of pointing the browser
 at a destination it cannot reach.
 
 Laravel ships an opt-in endpoint that receives the reports and logs one line
-per violation — the violated directive, the blocked URI's host, and the
-document path — and nothing else. It accepts both report formats: the legacy
+per violation (the violated directive, the blocked URI's host, and the
+document path) and nothing else. It accepts both report formats: the legacy
 `application/csp-report` object, and the Reporting API's
 `application/reports+json` array, from which it logs the `csp-violation`
-entries (at most 20 per POST — browsers batch other report types into the
+entries (at most 20 per POST; browsers batch other report types into the
 same request, and those are ignored). The route is off until you register it:
 
 ```php
@@ -539,7 +539,7 @@ default, because a blanket `same-site` can break an app whose assets are read
 cross-origin. Set `corp` (raw PHP) or `HELMET_CORP` (Laravel) to `same-site`,
 `same-origin` or `cross-origin` to send it.
 
-`Permissions-Policy` defaults to a deny list — `camera`, `geolocation`,
+`Permissions-Policy` defaults to a deny list: `camera`, `geolocation`,
 `microphone`, `payment` and `usb` are all denied, so an injected script cannot
 use a feature the page has switched off. Set `permissions_policy` (raw PHP) or
 `HELMET_PERMISSIONS_POLICY` (Laravel) to a feature map to change it: each
