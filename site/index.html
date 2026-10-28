@@ -87,7 +87,7 @@
             <div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div>
             <p class="hero__cta">
               <a class="wsu-btn wsu-btn--accent wsu-btn--lg" href="#playbook">Open the playbook</a>
-              <a class="hero__link" href="#quick-start">Three downs to kickoff</a>
+              <a class="hero__link" href="#quick-start">Pregame: three steps to kickoff</a>
             </p>
           </div>
 
@@ -388,13 +388,13 @@
       <div class="stadium__head">
         <p class="tab-label tab-label--light" aria-hidden="true">02</p>
         <div>
-          <h2 class="section-title" id="qs-title">Three downs to kickoff</h2>
+          <h2 class="section-title" id="qs-title">Pregame: three steps to kickoff</h2>
           <p class="section-lede">Pick your app's shape on the board. The same commands work in PowerShell, bash and zsh: Composer and Artisan don't care which shell snapped the ball.</p>
         </div>
       </div>
 
       <div class="scoreboard">
-        <p class="wsu-sr-only">Scoreboard: HELMET 6, rushers 0. Six security headers sent, zero sacks allowed.</p>
+        <p class="wsu-sr-only">Scoreboard: pregame, three steps to kickoff. HELMET 6, rushers 0: six security headers sent, zero sacks allowed.</p>
         <div class="sb-top" aria-hidden="true">
           <div class="sb-team">
             <p class="sb-team__name">HELMET</p>
@@ -402,9 +402,9 @@
             <p class="sb-team__sub">headers sent</p>
           </div>
           <div class="sb-mid">
-            <p class="sb-mid__label">QTR</p>
-            <p class="sb-digits sb-digits--small">1</p>
-            <p class="sb-mid__label">0.1 season</p>
+            <p class="sb-mid__label">PREGAME</p>
+            <p class="sb-digits sb-digits--small">3</p>
+            <p class="sb-mid__label">steps to kickoff</p>
           </div>
           <div class="sb-team">
             <p class="sb-team__name">RUSHERS</p>
@@ -414,24 +414,24 @@
         </div>
         <div class="sb-tabs" role="tablist" aria-label="Your app's shape"><button class="sb-tab" type="button" role="tab" id="tab-raw" aria-controls="panel-raw" aria-selected="true">Raw PHP</button><button class="sb-tab" type="button" role="tab" id="tab-laravel" aria-controls="panel-laravel" aria-selected="false" tabindex="-1">Laravel</button><button class="sb-tab" type="button" role="tab" id="tab-psr15" aria-controls="panel-psr15" aria-selected="false" tabindex="-1">PSR-15</button></div>
         <div class="sb-panels"><div class="sb-panel" role="tabpanel" id="panel-raw" aria-labelledby="tab-raw" tabindex="0"><h3 class="sb-panel__title">Raw PHP</h3><ol class="downs">
-<li class="down"><span class="down__no" aria-hidden="true">1st</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">1st down: </span>Strap it on</p><p class="down__text">One package, no framework needed.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">2nd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">2nd down: </span>Call it once</p><p class="down__text">At the top of the front controller, before anything is echoed. Headers, session, proxy check and <code>/up</code> happen right here.</p><div class="cmd"><pre class="cmd__code"><code>use function Waynestate\Helmet\helmet_boot;
+<li class="down"><span class="down__no" aria-hidden="true">1</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 1: </span>Strap it on</p><p class="down__text">One package, no framework needed.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">2</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 2: </span>Call it once</p><p class="down__text">At the top of the front controller, before anything is echoed. Headers, session, proxy check and <code>/up</code> happen right here.</p><div class="cmd"><pre class="cmd__code"><code>use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([&#x27;preset&#x27; =&gt; &#x27;citadel&#x27;]);</code></pre><button class="copy-btn" type="button" data-copy="use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([&#x27;preset&#x27; =&gt; &#x27;citadel&#x27;]);"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">3rd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">3rd down: </span>Nonce your scripts</p><p class="down__text"><code>$helmet['nonce']</code> is this request's nonce. The meta tag lets Vite's runtime use it too.</p><div class="cmd"><pre class="cmd__code"><code>echo helmet_csp_nonce_meta($helmet[&#x27;nonce&#x27;]); // in &lt;head&gt;
+<li class="down"><span class="down__no" aria-hidden="true">3</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 3: </span>Nonce your scripts</p><p class="down__text"><code>$helmet['nonce']</code> is this request's nonce. The meta tag lets Vite's runtime use it too.</p><div class="cmd"><pre class="cmd__code"><code>echo helmet_csp_nonce_meta($helmet[&#x27;nonce&#x27;]); // in &lt;head&gt;
 
 &lt;script nonce=&quot;&lt;?= $helmet[&#x27;nonce&#x27;] ?&gt;&quot;&gt;…&lt;/script&gt;</code></pre><button class="copy-btn" type="button" data-copy="echo helmet_csp_nonce_meta($helmet[&#x27;nonce&#x27;]); // in &lt;head&gt;
 
 &lt;script nonce=&quot;&lt;?= $helmet[&#x27;nonce&#x27;] ?&gt;&quot;&gt;…&lt;/script&gt;"><span class="copy-btn__label">Copy</span></button></div></div></li>
 </ol></div><div class="sb-panel" role="tabpanel" id="panel-laravel" aria-labelledby="tab-laravel" tabindex="0"><h3 class="sb-panel__title">Laravel</h3><ol class="downs">
-<li class="down"><span class="down__no" aria-hidden="true">1st</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">1st down: </span>Strap it on</p><p class="down__text">Package discovery registers the provider and both middlewares. Nothing to add to <code>bootstrap/providers.php</code>.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">2nd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">2nd down: </span>Publish the config</p><p class="down__text">The best place to change the CSP: a PHP array, not JSON squeezed into <code>.env</code>.</p><div class="cmd"><pre class="cmd__code"><code>php artisan vendor:publish --tag=helmet-config</code></pre><button class="copy-btn" type="button" data-copy="php artisan vendor:publish --tag=helmet-config"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">3rd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">3rd down: </span>Pick the platform</p><p class="down__text">In <code>.env</code>. Keep <code>health: '/up'</code> in <code>withRouting()</code>; <code>@vite</code> already carries the nonce.</p><div class="cmd"><pre class="cmd__code"><code>HELMET_PRESET=citadel</code></pre><button class="copy-btn" type="button" data-copy="HELMET_PRESET=citadel"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">1</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 1: </span>Strap it on</p><p class="down__text">Package discovery registers the provider and both middlewares. Nothing to add to <code>bootstrap/providers.php</code>.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">2</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 2: </span>Publish the config</p><p class="down__text">The best place to change the CSP: a PHP array, not JSON squeezed into <code>.env</code>.</p><div class="cmd"><pre class="cmd__code"><code>php artisan vendor:publish --tag=helmet-config</code></pre><button class="copy-btn" type="button" data-copy="php artisan vendor:publish --tag=helmet-config"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">3</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 3: </span>Pick the platform</p><p class="down__text">In <code>.env</code>. Keep <code>health: '/up'</code> in <code>withRouting()</code>; <code>@vite</code> already carries the nonce.</p><div class="cmd"><pre class="cmd__code"><code>HELMET_PRESET=citadel</code></pre><button class="copy-btn" type="button" data-copy="HELMET_PRESET=citadel"><span class="copy-btn__label">Copy</span></button></div></div></li>
 </ol></div><div class="sb-panel" role="tabpanel" id="panel-psr15" aria-labelledby="tab-psr15" tabindex="0"><h3 class="sb-panel__title">PSR-15</h3><ol class="downs">
-<li class="down"><span class="down__no" aria-hidden="true">1st</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">1st down: </span>Strap it on</p><p class="down__text">The same core, mounted in a middleware pipeline.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">2nd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">2nd down: </span>Line up the middleware</p><p class="down__text"><code>/up</code> first, then the headers. Headers go out even when the inner handler throws.</p><div class="cmd"><pre class="cmd__code"><code>$factory = new Psr17Factory();
+<li class="down"><span class="down__no" aria-hidden="true">1</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 1: </span>Strap it on</p><p class="down__text">The same core, mounted in a middleware pipeline.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">2</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 2: </span>Line up the middleware</p><p class="down__text"><code>/up</code> first, then the headers. Headers go out even when the inner handler throws.</p><div class="cmd"><pre class="cmd__code"><code>$factory = new Psr17Factory();
 $proxies = new TrustedProxies(Presets::proxies(&#x27;citadel&#x27;));
 
 $middleware = [
@@ -444,7 +444,7 @@ $middleware = [
     new HealthCheck($factory, $factory, &#x27;/up&#x27;),
     new SecurityHeadersMiddleware($proxies),
 ];"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">3rd</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">3rd down: </span>Read the nonce</p><p class="down__text">Downstream handlers get the same nonce the header carries.</p><div class="cmd"><pre class="cmd__code"><code>$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)</code></pre><button class="copy-btn" type="button" data-copy="$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">3</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 3: </span>Read the nonce</p><p class="down__text">Downstream handlers get the same nonce the header carries.</p><div class="cmd"><pre class="cmd__code"><code>$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)</code></pre><button class="copy-btn" type="button" data-copy="$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)"><span class="copy-btn__label">Copy</span></button></div></div></li>
 </ol></div></div>
       </div>
 
