@@ -199,6 +199,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
 | `HELMET_HSTS_INCLUDE_SUBDOMAINS` | `helmet.hsts_include_subdomains` | `true` | Set `false` to omit the HSTS `includeSubDomains` directive. |
 | `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |
+| `HELMET_DEV_ORIGIN` | `helmet.dev_origin` | none | The Vite dev server origin, used in `local` only when the dev server is running. Must be `http` or `https` on `localhost`, `127.0.0.1` or `[::1]`. Overrides the hot file. |
 
 #### Customizing the CSP in Laravel
 
@@ -229,10 +230,14 @@ environment cannot loosen the CSP.
 #### The nonce in Blade
 
 The middleware puts the per-request nonce on the request as the attribute
-`helmet.csp_nonce`, the same name the PSR-15 middleware uses. In Blade:
+`helmet.csp_nonce`, the same name the PSR-15 middleware uses. It also hands
+the nonce to Laravel's Vite helper, so `@vite` needs nothing: the `script` and
+`style` tags it print already carry the nonce the CSP header sends.
+
+For an inline script, print the nonce from the Vite helper:
 
 ```blade
-<script nonce="{{ request()->attributes->get('helmet.csp_nonce') }}">
+<script nonce="{{ Vite::cspNonce() }}">
     // allowed by the nonce, and free to load more scripts (strict-dynamic)
 </script>
 ```
@@ -241,13 +246,45 @@ In a controller it is `$request->attributes->get('helmet.csp_nonce')`. A new
 nonce is made for every request. Repetition is a fine Helmet song and a
 terrible nonce.
 
-If you load your bundle with `@vite`, hand Laravel's Vite helper the same
-nonce before the tag, so the `script` tags it prints satisfy the CSP:
+#### Vite and Inertia
 
-```blade
-@php(\Illuminate\Support\Facades\Vite::useCspNonce(request()->attributes->get('helmet.csp_nonce')))
-@vite(['resources/js/app.js'])
+The middleware hands the per-request nonce to Laravel's Vite helper and
+injects a `csp-nonce` meta tag into `<head>`. `@vite` needs nothing. The meta
+tag lets Vite's dev runtime nonce the CSS and preload tags it adds after page
+load.
+
+A few rules keep the CSP honest:
+
+- **Nonce every inline script.** The CSP has no `'unsafe-inline'` for
+  scripts. Every `<script>` without a `src` needs
+  `nonce="{{ Vite::cspNonce() }}"`.
+- **No `'unsafe-eval'`.** The CSP never allows it. If your bundle needs
+  `eval`, fix the bundle.
+- **No scripts in Inertia's `<Head>`.** Inertia's `<Head>` renders into the
+  document head after the page loads. A `<script>` there would not carry the
+  nonce, and the browser would block it. Put scripts in your layout, where
+  `@vite` and the nonce reach them.
+- **No second nonce-producing package.** If another package calls
+  `Vite::useCspNonce()` after HELMET, the `@vite` tags carry a different nonce
+  than the CSP header, and the browser blocks the scripts. The middleware logs
+  a warning when it detects this.
+- **No shared caching of nonced HTML.** The nonce changes every request. A
+  cached page would carry a stale nonce, and the browser would block its
+  scripts. Do not cache HTML at a layer that shares it across requests.
+
+In raw PHP, print the meta tag in `<head>` with the nonce `helmet_boot()`
+returned:
+
+```php
+echo helmet_csp_nonce_meta($helmet['nonce']);
 ```
+
+The Vite dev server is allowed in the `local` environment only, and only when
+it is running (a hot file exists). The origin comes from `HELMET_DEV_ORIGIN`
+when set, otherwise from the hot file. It must be `http` or `https` on
+`localhost`, `127.0.0.1` or `[::1]`, with an optional port. An invalid origin
+is ignored and a warning is logged. In every other environment the dev server
+origin is never added.
 
 #### The ribbon
 
