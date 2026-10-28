@@ -46,7 +46,9 @@ final class SecurityHeaders
             'style-src-attr' => ["'unsafe-inline'"],
             'style-src-elem' => ["'self'", 'https://wayneui.apps.wayne.edu'],
             'script-src' => ["'self'", 'https://wayneui.apps.wayne.edu'],
-            'font-src' => ["'self'", 'https://wayneui.apps.wayne.edu'],
+            // data: is allowed for fonts: Vite and Vue inline small fonts as
+            // data: URIs, and the nonce does not cover font sources.
+            'font-src' => ["'self'", 'data:', 'https://wayneui.apps.wayne.edu'],
             'img-src' => ["'self'", 'data:', 'https://wayneui.apps.wayne.edu'],
             'connect-src' => ["'self'", 'https://wayneui.apps.wayne.edu'],
             'base-uri' => ["'self'"],
@@ -68,6 +70,12 @@ final class SecurityHeaders
      * Build the Content-Security-Policy header value for the given policy and
      * nonce.
      *
+     * The nonce is bound to script-src, and to style-src and style-src-elem
+     * when those directives are present in the merged policy. Vite and Vue
+     * inject <style> and <link> tags that carry the nonce, so the style
+     * directives need it too. An app may remove a directive with null, so the
+     * nonce is only added to the directives that are present.
+     *
      * @param array<string, list<string>> $policy
      */
     public static function buildCsp(array $policy, string $nonce): string
@@ -80,9 +88,16 @@ final class SecurityHeaders
             }
         }
 
-        // The nonce is bound to script-src. script-src is always present in the
-        // default policy, so the directive exists before the nonce is added.
-        $builder->nonce('script-src', $nonce);
+        // The nonce is bound to script-src, and to style-src and style-src-elem
+        // when those directives are present. Vite and Vue inject <style> and
+        // <link> tags that carry the nonce, so the style directives need it
+        // too. An app may remove a directive with null, so only nonce the
+        // directives that are present in the merged policy.
+        foreach (['script-src', 'style-src', 'style-src-elem'] as $directive) {
+            if (array_key_exists($directive, $policy)) {
+                $builder->nonce($directive, $nonce);
+            }
+        }
 
         // strict-dynamic lets a script that was loaded with the nonce load other
         // scripts dynamically, without opening script-src to 'unsafe-inline'.
@@ -197,6 +212,9 @@ final class SecurityHeaders
                 break;
             case 'data:':
                 $builder->setDataAllowed($directive, true);
+                break;
+            case 'blob:':
+                $builder->setBlobAllowed($directive, true);
                 break;
             case "'unsafe-inline'":
                 $builder->setAllowUnsafeInline($directive, true);

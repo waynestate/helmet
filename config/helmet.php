@@ -51,6 +51,14 @@ use Waynestate\Helmet\Platform\Presets;
 | "ribbon"      Whether the environment ribbon is injected into HTML
 |               responses in non-production environments. On by default.
 |
+| "dev_origin"  The Vite dev server origin, used only in the local
+|               environment when the dev server is running (a hot file
+|               exists). When set, it overrides the hot file contents. The
+|               origin must be http or https on localhost, 127.0.0.1 or
+|               [::1], with an optional port. An invalid origin is ignored
+|               and a warning is logged. Set with the HELMET_DEV_ORIGIN env
+|               var. null when not set.
+|
 */
 
 // HELMET_PROXIES wins over HELMET_PRESET, so an app can start from a preset
@@ -97,4 +105,5 @@ return [
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
     'hsts_include_subdomains' => $hstsIncludeSubDomains,
     'ribbon' => (bool) env('HELMET_RIBBON', true),
+    'dev_origin' => env('HELMET_DEV_ORIGIN'),
 ];

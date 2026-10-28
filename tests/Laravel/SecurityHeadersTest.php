@@ -4,6 +4,7 @@ namespace Waynestate\Helmet\Tests\Laravel;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Vite;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
@@ -180,8 +181,9 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
-     * The README tells Vite users to hand Laravel's Vite helper the same
-     * nonce, so the @vite script tags satisfy the CSP. This is that snippet.
+     * The middleware hands the nonce to Vite, so the @vite script tags carry
+     * the same nonce the CSP header sends. The app does not call
+     * Vite::useCspNonce() itself.
      */
     public function testViteTagsCarryTheNonce(): void
     {
@@ -193,8 +195,7 @@ final class SecurityHeadersTest extends TestCase
         try {
             $this->app['router']->get('/vite', static fn () => response(
                 Blade::render(
-                    "@php(\\Illuminate\\Support\\Facades\\Vite::useCspNonce(request()->attributes->get('helmet.csp_nonce')))\n"
-                    . "@vite(['resources/js/app.js'])"
+                    "@vite(['resources/js/app.js'])"
                 ),
                 200,
                 ['Content-Type' => 'text/html']
@@ -208,6 +209,256 @@ final class SecurityHeadersTest extends TestCase
         $nonceInHeader = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
         self::assertNotNull($nonceInHeader);
         self::assertStringContainsString('src="http://localhost:5173/resources/js/app.js" nonce="' . $nonceInHeader . '"', (string) $response->getContent());
+    }
+
+    /**
+     * The middleware hands the nonce to Vite, so Vite::cspNonce() inside a
+     * route returns the same nonce the CSP header carries.
+     */
+    public function testViteCspNonceMatchesTheCspHeader(): void
+    {
+        $this->app['router']->get('/vite-nonce', static fn () => response(
+            (string) Vite::cspNonce(),
+            200,
+            ['Content-Type' => 'text/plain']
+        ))->middleware('web');
+
+        $response = $this->get('/vite-nonce');
+        $body = (string) $response->getContent();
+
+        self::assertNotSame('', $body, 'The body should be the Vite nonce.');
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        self::assertStringContainsString("'nonce-{$body}'", $csp);
+    }
+
+    /**
+     * If a second package or the app changes the Vite nonce after HELMET set
+     * it, the middleware logs a warning.
+     */
+    public function testWarningIsLoggedWhenTheViteNonceChanges(): void
+    {
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(static function (string $message): bool {
+                return str_contains($message, 'HELMET') && str_contains($message, 'Vite::useCspNonce');
+            });
+
+        $this->app['router']->get('/vite-mismatch', static function (): string {
+            // A second package or the app changes the Vite nonce after HELMET
+            // set it.
+            Vite::useCspNonce('a-different-nonce');
+
+            return 'ok';
+        })->middleware('web');
+
+        $this->get('/vite-mismatch');
+    }
+
+    /**
+     * In the local environment with a hot file, the Vite dev server origin
+     * is added to the CSP so the dev server's scripts, styles, fonts,
+     * images and HMR websocket are allowed.
+     */
+    public function testDevOriginIsAddedInLocalWhenHot(): void
+    {
+        $this->app->detectEnvironment(static fn () => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString('http://localhost:5173', $csp);
+            self::assertStringContainsString('ws://localhost:5173', $csp);
+            self::assertStringContainsString('worker-src blob:', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * In the production environment, the Vite dev server origin is never
+     * added, even when a hot file exists.
+     */
+    public function testDevOriginIsNotAddedInProduction(): void
+    {
+        $this->app->detectEnvironment(static fn () => 'production');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://localhost:5173', $csp);
+            self::assertStringNotContainsString('ws://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * An invalid dev origin (a non-local host) is never added, even in the
+     * local environment.
+     */
+    public function testInvalidDevOriginIsNotAdded(): void
+    {
+        $this->app->detectEnvironment(static fn () => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://evil.example:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://evil.example:5173', $csp);
+            self::assertStringNotContainsString('ws://evil.example:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * config('helmet.dev_origin') takes precedence over the hot file
+     * contents.
+     */
+    public function testDevOriginConfigOverridesHotFile(): void
+    {
+        $this->app->detectEnvironment(static fn () => 'local');
+        config(['helmet.dev_origin' => 'http://127.0.0.1:3000']);
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString('http://127.0.0.1:3000', $csp);
+            self::assertStringNotContainsString('http://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * An invalid dev origin logs a warning.
+     */
+    public function testInvalidDevOriginLogsAWarning(): void
+    {
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(static function (string $message): bool {
+                return str_contains($message, 'HELMET') && str_contains($message, 'invalid Vite dev origin');
+            });
+
+        $this->app->detectEnvironment(static fn () => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://evil.example:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $this->get('/test');
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * The middleware injects the csp-nonce meta tag into HTML responses,
+     * right after the opening <head> tag. Vite's dev runtime reads that tag
+     * to nonce the CSS and preload tags it adds after page load.
+     */
+    public function testHtmlResponseGetsTheCspNonceMetaTag(): void
+    {
+        $this->app['router']->get('/meta', static fn () => response(
+            '<html><head><title>hi</title></head><body>hi</body></html>',
+            200,
+            ['Content-Type' => 'text/html']
+        ))->middleware('web');
+
+        $response = $this->get('/meta');
+        $nonceInHeader = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
+
+        self::assertNotNull($nonceInHeader);
+        $body = (string) $response->getContent();
+        self::assertStringContainsString(
+            '<head><meta property="csp-nonce" nonce="' . $nonceInHeader . '"><title>hi</title></head>',
+            $body
+        );
+    }
+
+    /**
+     * The meta tag is injected after a <head> tag that carries attributes,
+     * and the match is case-insensitive.
+     */
+    public function testCspNonceMetaTagHandlesHeadWithAttributesAndCase(): void
+    {
+        $this->app['router']->get('/meta-attrs', static fn () => response(
+            '<HTML><HEAD lang="en"><title>hi</title></HEAD><BODY>hi</BODY></HTML>',
+            200,
+            ['Content-Type' => 'text/html']
+        ))->middleware('web');
+
+        $response = $this->get('/meta-attrs');
+        $nonceInHeader = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
+
+        self::assertNotNull($nonceInHeader);
+        $body = (string) $response->getContent();
+        self::assertStringContainsString(
+            '<HEAD lang="en"><meta property="csp-nonce" nonce="' . $nonceInHeader . '"><title>hi</title></HEAD>',
+            $body
+        );
+    }
+
+    /**
+     * A JSON response is not HTML, so the middleware leaves its body
+     * unchanged.
+     */
+    public function testJsonResponseIsNotModified(): void
+    {
+        $this->app['router']->get('/json', static fn () => response(
+            '{"ok":true}',
+            200,
+            ['Content-Type' => 'application/json']
+        ))->middleware('web');
+
+        $response = $this->get('/json');
+
+        self::assertSame('{"ok":true}', (string) $response->getContent());
+    }
+
+    /**
+     * An HTML body without a <head> tag is left unchanged. The ribbon is
+     * disabled so the only middleware that could touch the body is the meta
+     * tag injection.
+     */
+    public function testHtmlWithoutHeadIsNotModified(): void
+    {
+        config(['helmet.ribbon' => false]);
+        $this->app['router']->get('/no-head', static fn () => response(
+            '<html><body>hi</body></html>',
+            200,
+            ['Content-Type' => 'text/html']
+        ))->middleware('web');
+
+        $response = $this->get('/no-head');
+
+        self::assertSame('<html><body>hi</body></html>', (string) $response->getContent());
     }
 
     /**

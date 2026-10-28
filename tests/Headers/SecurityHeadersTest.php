@@ -39,6 +39,54 @@ final class SecurityHeadersTest extends TestCase
         );
     }
 
+    /**
+     * Vite and Vue inject <style> and <link> tags that carry the nonce, so
+     * the style directives need it too.
+     */
+    public function testBuildCspNoncesTheStyleDirectives(): void
+    {
+        $csp = SecurityHeaders::buildCsp(SecurityHeaders::defaultCspPolicy(), 'testnonce');
+
+        self::assertMatchesRegularExpression(
+            "#(^|;) style-src [^;]*'nonce-testnonce';#",
+            $csp
+        );
+        self::assertMatchesRegularExpression(
+            "#(^|;) style-src-elem [^;]*'nonce-testnonce';#",
+            $csp
+        );
+    }
+
+    /**
+     * An app may remove a style directive with null. The nonce is only added
+     * to the directives that are present, and the CSP still builds.
+     */
+    public function testBuildCspStillBuildsWhenStyleSrcElemIsRemoved(): void
+    {
+        $policy = SecurityHeaders::mergePolicies(
+            SecurityHeaders::defaultCspPolicy(),
+            ['style-src-elem' => null]
+        );
+
+        $csp = SecurityHeaders::buildCsp($policy, 'testnonce');
+
+        // style-src-elem is removed, so it must not appear in the CSP.
+        self::assertStringNotContainsString('style-src-elem', $csp);
+        // The nonce is still added to the directives that are present.
+        self::assertStringContainsString("'nonce-testnonce'", $csp);
+    }
+
+    /**
+     * Vite and Vue inline small fonts as data: URIs, so the default policy
+     * allows data: for fonts.
+     */
+    public function testDefaultPolicyAllowsDataFonts(): void
+    {
+        $policy = SecurityHeaders::defaultCspPolicy();
+
+        self::assertContains('data:', $policy['font-src']);
+    }
+
     public function testMergePoliciesReplacesDirectiveAndKeepsTheRest(): void
     {
         $default = SecurityHeaders::defaultCspPolicy();

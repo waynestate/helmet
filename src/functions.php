@@ -114,3 +114,20 @@ if (!function_exists('helmet_boot')) {
         return ['nonce' => $nonce, 'logger' => $logger];
     }
 }
+
+if (!function_exists('helmet_csp_nonce_meta')) {
+    /**
+     * Build the csp-nonce meta tag for Vite's runtime.
+     *
+     * Vite's dev runtime reads <meta property="csp-nonce" nonce="..."> to
+     * nonce the CSS and preload tags it adds after page load. Print this in
+     * <head> of every page, with the same nonce helmet_boot() returned.
+     *
+     * The nonce is escaped, so a nonce with a quote cannot break out of the
+     * attribute.
+     */
+    function helmet_csp_nonce_meta(string $nonce): string
+    {
+        return '<meta property="csp-nonce" nonce="' . htmlspecialchars($nonce, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">';
+    }
+}

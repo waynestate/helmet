@@ -39,8 +39,10 @@ final class InjectRibbonTest extends TestCase
         $this->defineHtmlRoute('/test', self::HTML);
 
         $response = $this->get('/test');
+        $nonce = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
 
-        self::assertSame(self::HTML, $response->getContent());
+        $expected = '<html><head><meta property="csp-nonce" nonce="' . $nonce . '"><title>t</title></head><body><p>hello</p></body></html>';
+        self::assertSame($expected, $response->getContent());
     }
 
     public function testRibbonIsAbsentWhenConfigIsDisabled(): void
@@ -50,8 +52,10 @@ final class InjectRibbonTest extends TestCase
         $this->defineHtmlRoute('/test', self::HTML);
 
         $response = $this->get('/test');
+        $nonce = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
 
-        self::assertSame(self::HTML, $response->getContent());
+        $expected = '<html><head><meta property="csp-nonce" nonce="' . $nonce . '"><title>t</title></head><body><p>hello</p></body></html>';
+        self::assertSame($expected, $response->getContent());
     }
 
     public function testJsonResponseIsUnchanged(): void
@@ -73,8 +77,10 @@ final class InjectRibbonTest extends TestCase
         $this->defineHtmlRoute('/test', $html);
 
         $response = $this->get('/test');
+        $nonce = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
 
-        self::assertSame($html, $response->getContent());
+        $expected = '<html><head><meta property="csp-nonce" nonce="' . $nonce . '"><title>t</title></head></html>';
+        self::assertSame($expected, $response->getContent());
     }
 
     /**
@@ -84,5 +90,18 @@ final class InjectRibbonTest extends TestCase
     {
         $this->app['router']->get($uri, static fn () => response($html, 200, ['Content-Type' => 'text/html']))
             ->middleware('web');
+    }
+
+    /**
+     * Extract the nonce from a Content-Security-Policy header value, or null.
+     */
+    private function nonceFromCsp(string $csp): ?string
+    {
+        // '#' as the delimiter: a base64 nonce can contain '/'.
+        if (preg_match("#'nonce-([A-Za-z0-9+/=]+)'#", $csp, $m) === 1) {
+            return $m[1];
+        }
+
+        return null;
     }
 }

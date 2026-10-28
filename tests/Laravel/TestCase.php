@@ -3,6 +3,7 @@
 namespace Waynestate\Helmet\Tests\Laravel;
 
 use Illuminate\Foundation\Http\Kernel as FoundationKernel;
+use Illuminate\Foundation\Vite as ViteManager;
 use Illuminate\Http\Middleware\TrustProxies;
 use Orchestra\Testbench\TestCase as Orchestra;
 use ReflectionObject;
@@ -43,6 +44,12 @@ abstract class TestCase extends Orchestra
         // on TrustProxies. Reset it so one test's choice cannot leak into the
         // next (and so a test can observe the provider's own choice).
         TrustProxies::flushState();
+
+        // The Vite helper is a container singleton that HELMET's middleware
+        // and the tests both configure (hot file, nonce). Reset it so one
+        // test's choice cannot leak into the next.
+        $this->app->forgetInstance(ViteManager::class);
+        \Illuminate\Support\Facades\Vite::clearResolvedInstance();
 
         parent::tearDown();
     }
