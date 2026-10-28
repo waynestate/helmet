@@ -4,6 +4,7 @@ namespace Waynestate\Helmet\Tests\Laravel;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Vite;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpFoundation\Response;
@@ -180,8 +181,9 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
-     * The README tells Vite users to hand Laravel's Vite helper the same
-     * nonce, so the @vite script tags satisfy the CSP. This is that snippet.
+     * The middleware hands the nonce to Vite, so the @vite script tags carry
+     * the same nonce the CSP header sends. The app does not call
+     * Vite::useCspNonce() itself.
      */
     public function testViteTagsCarryTheNonce(): void
     {
@@ -193,8 +195,7 @@ final class SecurityHeadersTest extends TestCase
         try {
             $this->app['router']->get('/vite', static fn () => response(
                 Blade::render(
-                    "@php(\\Illuminate\\Support\\Facades\\Vite::useCspNonce(request()->attributes->get('helmet.csp_nonce')))\n"
-                    . "@vite(['resources/js/app.js'])"
+                    "@vite(['resources/js/app.js'])"
                 ),
                 200,
                 ['Content-Type' => 'text/html']
@@ -208,6 +209,49 @@ final class SecurityHeadersTest extends TestCase
         $nonceInHeader = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
         self::assertNotNull($nonceInHeader);
         self::assertStringContainsString('src="http://localhost:5173/resources/js/app.js" nonce="' . $nonceInHeader . '"', (string) $response->getContent());
+    }
+
+    /**
+     * The middleware hands the nonce to Vite, so Vite::cspNonce() inside a
+     * route returns the same nonce the CSP header carries.
+     */
+    public function testViteCspNonceMatchesTheCspHeader(): void
+    {
+        $this->app['router']->get('/vite-nonce', static fn () => response(
+            (string) Vite::cspNonce(),
+            200,
+            ['Content-Type' => 'text/plain']
+        ))->middleware('web');
+
+        $response = $this->get('/vite-nonce');
+        $body = (string) $response->getContent();
+
+        self::assertNotSame('', $body, 'The body should be the Vite nonce.');
+        $csp = (string) $response->headers->get('Content-Security-Policy');
+        self::assertStringContainsString("'nonce-{$body}'", $csp);
+    }
+
+    /**
+     * If a second package or the app changes the Vite nonce after HELMET set
+     * it, the middleware logs a warning.
+     */
+    public function testWarningIsLoggedWhenTheViteNonceChanges(): void
+    {
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(static function (string $message): bool {
+                return str_contains($message, 'HELMET') && str_contains($message, 'Vite::useCspNonce');
+            });
+
+        $this->app['router']->get('/vite-mismatch', static function (): string {
+            // A second package or the app changes the Vite nonce after HELMET
+            // set it.
+            Vite::useCspNonce('a-different-nonce');
+
+            return 'ok';
+        })->middleware('web');
+
+        $this->get('/vite-mismatch');
     }
 
     /**

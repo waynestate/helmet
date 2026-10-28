@@ -4,6 +4,8 @@ namespace Waynestate\Helmet\Laravel;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Vite;
 use Symfony\Component\HttpFoundation\Response;
 use Waynestate\Helmet\Headers\SecurityHeaders as CoreSecurityHeaders;
 use Waynestate\Helmet\Proxy\HttpsDetector;
@@ -24,6 +26,13 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * config('helmet.hsts'), and the HSTS includeSubDomains directive from
  * config('helmet.hsts_include_subdomains'); this middleware never reads env()
  * directly.
+ *
+ * It also hands the per-request nonce to Laravel's Vite helper, so the @vite
+ * script and style tags carry the same nonce the CSP header sends. The app no
+ * longer needs to call Vite::useCspNonce() itself. If a second package or the
+ * app changes the Vite nonce after HELMET set it, the middleware logs a
+ * warning, because the @vite tags would then carry a different nonce than the
+ * CSP header and the browser would block the scripts.
  */
 final class SecurityHeaders
 {
@@ -51,7 +60,19 @@ final class SecurityHeaders
 
         $request->attributes->set('helmet.csp_nonce', $nonce);
 
+        // Hand the nonce to Vite so the @vite tags carry the same nonce the
+        // CSP header sends. The app no longer needs to call
+        // Vite::useCspNonce() itself.
+        Vite::useCspNonce($nonce);
+
         $response = $next($request);
+
+        // Catch a second package or the app that changed the Vite nonce after
+        // HELMET set it. The @vite tags would then carry a different nonce
+        // than the CSP header, so the browser would block the scripts.
+        if (Vite::cspNonce() !== $nonce) {
+            Log::warning('HELMET set the CSP nonce via Vite::useCspNonce(), but a different nonce is now active. A second package or the app changed it; the @vite tags may not match the CSP header.');
+        }
 
         foreach ($headers as $name => $value) {
             $response->headers->set($name, $value);
