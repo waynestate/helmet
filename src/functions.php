@@ -40,7 +40,7 @@ if (!function_exists('helmet_boot')) {
      *     csp?: array<string, list<string>|null>,
      *     health_path?: string,
      *     hsts_max_age?: int,
-     *     hsts_include_subdomains?: bool,
+      *     hsts_include_subdomains?: bool,
       *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency'}
      * } $config
      *

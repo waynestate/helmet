@@ -381,6 +381,102 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
+     * A dev origin with port 0 is rejected: parse_url keeps the port and the
+     * port check (port < 1) fails.
+     */
+    public function testDevOriginWithPortZeroIsRejected(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:0');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://localhost:0', $csp);
+            self::assertStringNotContainsString('ws://localhost:0', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * A dev origin with port 65536 is rejected: parse_url returns false for
+     * an out-of-range port, so the origin is never added.
+     */
+    public function testDevOriginWithPort65536IsRejected(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:65536');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://localhost:65536', $csp);
+            self::assertStringNotContainsString('ws://localhost:65536', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * A dev origin with port 99999 is rejected: parse_url returns false for
+     * an out-of-range port, so the origin is never added.
+     */
+    public function testDevOriginWithPort99999IsRejected(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:99999');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('http://localhost:99999', $csp);
+            self::assertStringNotContainsString('ws://localhost:99999', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * A dev origin with a valid port (5173, Vite's default) is accepted and
+     * added to the CSP.
+     */
+    public function testDevOriginWithPort5173IsAccepted(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString('http://localhost:5173', $csp);
+            self::assertStringContainsString('ws://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
      * The middleware injects the csp-nonce meta tag into HTML responses,
      * right after the opening <head> tag. Vite's dev runtime reads that tag
      * to nonce the CSS and preload tags it adds after page load.

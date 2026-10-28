@@ -32,16 +32,20 @@ final class TrustedProxies
     private array $ranges = [];
 
     /**
-     * @param list<mixed> $proxies Exact IPv4/IPv6 addresses and/or IPv4/IPv6
-     *                              CIDR ranges. Every entry must be a
-     *                              non-empty string; anything else throws.
+     * @param list<string> $proxies Exact IPv4/IPv6 addresses and/or IPv4/IPv6
+     *                               CIDR ranges. Every entry must be a
+     *                               non-empty string; anything else throws.
      *
      * @throws \InvalidArgumentException If an entry is not a valid address or
      *                                   CIDR, is a /0 range, or is "*".
      */
     public function __construct(array $proxies = [])
     {
-        foreach ($proxies as $proxy) {
+        // The docblock promises list<string>, but a caller can still pass a
+        // non-string at runtime; validate each entry before trusting it.
+        /** @var list<mixed> $entries */
+        $entries = $proxies;
+        foreach ($entries as $proxy) {
             if (!is_string($proxy) || $proxy === '') {
                 throw new \InvalidArgumentException(
                     'Trusted proxy entries must be non-empty strings; got '
