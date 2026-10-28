@@ -19,7 +19,7 @@ Each practice ends with exactly one tag.
 | `Documented` | Written down in the README or a design note, with no code behind it. |
 | `Not yet` | A gap. |
 
-HELMET is at its first scaffold step. The Laravel adapter, the environment ribbon and the version warning are planned and not built.
+HELMET is at its first scaffold step. The Laravel adapter and the environment ribbon are built. The version warning class exists but is not yet wired into the runtime.
 
 ---
 
@@ -42,19 +42,19 @@ HELMET is at its first scaffold step. The Laravel adapter, the environment ribbo
 - **Why:** Host allowlists are hard to get right and are bypassed in most real configurations. The Google study "CSP Is Dead, Long Live CSP!" (2016) reported bypasses in 94.72% of the distinct policies it analyzed (read as a search summary, not the full paper). MDN notes the trade-off: `strict-dynamic` lets a trusted script load more scripts, so it protects less if your own scripts build `<script>` elements from untrusted input.
 - **Rollout detail:** web.dev says `strict-dynamic` needs `https:` as a fallback for older Safari, and `'unsafe-inline'` as a fallback for very old browsers. Recent browsers ignore `'unsafe-inline'` when a nonce or hash is present, so the fallbacks do not weaken the policy where `strict-dynamic` works.
 - **Sources:** [web.dev strict CSP](https://web.dev/articles/strict-csp), [OWASP CSP](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html), [MDN CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP), [Google Research, CSP Is Dead, Long Live CSP!](https://research.google/pubs/pub45542/)
-- **Stack:** `Not yet`. The default policy in `SecurityHeaders::defaultCspPolicy()` lists the WayneUI host in `script-src` and adds a nonce. It has no `strict-dynamic`. The `paragonie/csp-builder` README was re-read in the second pass and still does not mention `strict-dynamic`. `SecurityHeaders::addSource()` passes unknown keywords to the builder's generic `addSource()`, so it may work, but nobody has tested it.
+- **Stack:** `Enforced`. `SecurityHeaders::buildCsp()` calls `setStrictDynamic('script-src', true)`, so the policy sends `script-src 'nonce-...' 'strict-dynamic'` alongside the nonce. `testBuildCspAddsStrictDynamicAlongsideNonce` asserts the keyword is present next to the nonce.
 
 ### H4. Set the directives that do not fall back to `default-src`
 - **Practice:** Set `base-uri`, `form-action` and `object-src` explicitly. `frame-ancestors` also has no fallback.
 - **Why:** Without them, an injected `<base>` tag or form can redirect relative URLs or form posts to an attacker.
 - **Sources:** [OWASP CSP](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html), [MDN CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP)
-- **Stack:** `Not yet`. Only `frame-ancestors` is set. `base-uri`, `form-action` and `object-src` are missing from the default policy. The `csp-builder` README shows config keys for `base-uri` and `form-action`, so the library is not the blocker.
+- **Stack:** `Enforced`. `defaultCspPolicy()` sets `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` beside `frame-ancestors 'self'`. `testDefaultPolicyIncludesHardeningDirectives` covers all four.
 
 ### H5. Avoid `'unsafe-inline'`
 - **Practice:** Move inline scripts and styles to files, or allow them by nonce or hash.
 - **Why:** `'unsafe-inline'` lets any injected inline code run, which removes most of the policy's value for that directive.
 - **Sources:** [MDN CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP), [OWASP CSP](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)
-- **Stack:** `Not yet`. The default policy allows `'unsafe-inline'` in `style-src-attr` and `style-src-elem`. The scripts are covered, the styles are not. See the gap list.
+- **Stack:** `Not yet`. The default policy allows `'unsafe-inline'` in `style-src-attr` only; `style-src-elem` deliberately does not carry it. So inline `style` attributes are allowed, but `<style>` elements and stylesheets are not. See the gap list.
 
 ### H6. Use `frame-ancestors`, and keep `X-Frame-Options` for old browsers
 - **Practice:** Send `frame-ancestors 'self'` (or `'none'` if the app is never framed) and `X-Frame-Options` with a matching value.
@@ -78,13 +78,13 @@ HELMET is at its first scaffold step. The Laravel adapter, the environment ribbo
 - **Practice:** An app that needs one more source should add it to the default policy and keep the rest.
 - **Why:** A replacement policy silently drops protections such as `frame-ancestors`.
 - **Sources:** [OWASP CSP](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)
-- **Stack:** `Not yet`. The `csp` option in `helmet_boot()` and the second constructor argument of `SecurityHeadersMiddleware` replace the whole default. `testCustomCspPolicyIsUsed` shows a policy with only `default-src 'none'` being accepted.
+- **Stack:** `Enforced`. `SecurityHeaders::mergePolicies()` merges a custom policy over the default per directive: a directive present in the custom policy replaces the default's value, a directive set to `null` is removed, and directives the app does not mention keep the default. Both `helmet_boot()` and `SecurityHeadersMiddleware` call it. `testMergePoliciesReplacesDirectiveAndKeepsTheRest`, `testMergePoliciesRemovesDirectiveWhenNull` and the middleware's `testCustomCspPolicyMergesOverDefault` cover it.
 
 ### H51. Share one nonce between HELMET and the JavaScript bundler
 - **Practice:** When the page loads a bundled JS app (Vue with Vite), give the bundler HELMET's nonce for the current response. Do not let the bundler or the framework make a second one. In Laravel, call `Vite::useCspNonce($nonce)` from middleware (the Laravel docs show `useCspNonce` and `cspNonce()` for this). In a raw PHP page with a Vue SPA, set Vite's `html.cspNonce` to a placeholder and replace the placeholder on every request.
 - **Why:** The CSP header carries one nonce. Every script and style tag the bundler writes must carry the same value, or the browser blocks it. Vite's own guide warns that the placeholder must be replaced "with a unique value for each request", or the nonce stops protecting anything. A build-time constant is the failure case. Vite also inlines small assets as `data:` URIs by default, so `data:` must be allowed for `img-src` and `font-src` (and never for `script-src`), or inlining must be turned off with `build.assetsInlineLimit: 0`.
 - **Sources:** [Laravel Vite (CSP nonce)](https://laravel.com/docs/12.x/vite), [Vite features (CSP)](https://vite.dev/guide/features.html), [Vite shared options (html.cspNonce)](https://vite.dev/config/shared-options.html)
-- **Stack:** `Not yet`. The middleware exposes the nonce as the request attribute `helmet.csp_nonce` and `helmet_boot()` returns it, but nothing hands it to Vite and the Laravel adapter is not built. The default policy allows `data:` in `img-src` only, so a Vite build that inlines fonts would be blocked by `font-src`. The Inertia/Vue and raw PHP + Vue SPA paths both need this before they work under the nonce-based policy.
+- **Stack:** `Enforced`. The Laravel middleware hands the nonce to Vite via `Vite::useCspNonce()` and injects a `csp-nonce` meta tag into `<head>`, so `@vite` needs nothing; `testViteCspNonceMatchesTheCspHeader` and `testHtmlResponseGetsTheCspNonceMetaTag` cover it. In raw PHP, `helmet_boot()` returns the nonce and `helmet_csp_nonce_meta()` prints the meta tag for Vite's dev runtime; for a production build the app sets `html.cspNonce` to a placeholder and replaces it with the nonce. The default policy allows `data:` in `font-src` and `img-src` for inlined assets; `testDefaultPolicyAllowsDataFonts` covers the font case.
 
 ### H52. Add Trusted Types in Report-Only mode for apps with a JS framework
 - **Practice:** On pages that run Vue or other client code, try `Content-Security-Policy-Report-Only: require-trusted-types-for 'script'` and a `trusted-types` allowlist of policy names. Fix what the reports show before enforcing.
@@ -106,7 +106,7 @@ HELMET is at its first scaffold step. The Laravel adapter, the environment ribbo
 - **Practice:** Send a Permissions-Policy that disables camera, microphone, geolocation and any other feature the app never needs, such as `payment` and `usb`.
 - **Why:** An injected script cannot use a feature the page has disabled. Features you do not list keep their defaults.
 - **Sources:** [MDN Permissions-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy), [OWASP HTTP Headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html)
-- **Stack:** `Enforced`. `camera=(), geolocation=(), microphone=()` is sent. Only those three are covered.
+- **Stack:** `Enforced`. `camera=(), geolocation=(), microphone=(), payment=(), usb=()` is sent. `testBuildPermissionsPolicyCoversPaymentAndUsb` covers the full list.
 
 ### H12. Do not send `X-XSS-Protection`, and remove version banners HELMET can reach
 - **Practice:** Leave `X-XSS-Protection` unset (or `0`). Remove `X-Powered-By`.
@@ -116,7 +116,7 @@ HELMET is at its first scaffold step. The Laravel adapter, the environment ribbo
 
 ### H13. Consider cross-origin isolation headers
 - **Practice:** Send `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Resource-Policy: same-site` where the app does not need cross-origin embedding.
-- **Why:** They keep the page out of shared browsing contexts and limit who can read its responses. `Cross-Origin-Embedder-Policy: require-corp` breaks resources that do not opt in, so test before using it. Prior art: one US university web security baseline (UConn) lists COOP `same-origin` and CORP `same-origin` among its required headers, next to the same Referrer-Policy and Permissions-Policy values HELMET sends. OWASP's example CORP value is `same-site`. The choice between the two is open for Citadel, where many apps share parent domains.
+- **Why:** They keep the page out of shared browsing contexts and limit who can read its responses. `Cross-Origin-Embedder-Policy: require-corp` breaks resources that do not opt in, so test before using it. COOP also offers `same-origin-allow-popups` and `noopener-allow-popups`, which keep the page isolated but let a popup window (such as an OAuth login popup to the IdP) stay cross-origin; plain `same-origin` moves the popup into a separate browsing context group and can break the popup's `postMessage` round-trip. Prior art: one US university web security baseline (UConn) lists COOP `same-origin` and CORP `same-origin` among its required headers, next to the same Referrer-Policy and Permissions-Policy values HELMET sends. OWASP's example CORP value is `same-site`. The choice between the two is open for Citadel, where many apps share parent domains.
 - **Sources:** [OWASP HTTP Headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html), [UConn Web Security Baseline](https://security.uconn.edu/?p=4004)
 - **Stack:** `Not yet`. None of the three is sent. Adding them needs a test against WayneUI assets and any third-party embeds.
 
@@ -264,7 +264,7 @@ HELMET is at its first scaffold step. The Laravel adapter, the environment ribbo
 
 ### H54. Add real CSRF defence next to `SameSite`
 - **Practice:** Protect every state-changing request (POST, PUT, PATCH, DELETE) with a server-checked token, or with Fetch Metadata (`Sec-Fetch-Site`) plus an `Origin` check, or both. Treat `SameSite=Lax` as a second layer only.
-- **Why:** OWASP's CSRF sheet calls SameSite "useful as a defense-in-depth control" that does not replace a real defence in most deployments. `Lax` still sends cookies on top-level GET navigations, it works at the registrable-domain level (so sibling subdomains count as same-site), and it does not stop client-side CSRF. The same sheet calls `Sec-Fetch-Site` the primary signal for modern browsers and says an `Origin`/`Referer` check is a mandatory fallback. Laravel 13.x does both in `PreventRequestForgery` (in the `web` group by default): it checks `Sec-Fetch-Site` first and falls back to token validation. Its docs note browsers send that header only over HTTPS. The raw PHP paths have no equivalent unless the app writes one.
+- **Why:** OWASP's CSRF sheet calls SameSite "useful as a defense-in-depth control" that does not replace a real defence in most deployments. `Lax` still sends cookies on top-level GET navigations, it works at the registrable-domain level (so sibling subdomains count as same-site), and it does not stop client-side CSRF. The same sheet calls `Sec-Fetch-Site` the primary signal for modern browsers and says an `Origin`/`Referer` check is a mandatory fallback. Laravel 13.x does both in `PreventRequestForgery` (in the `web` group by default): it checks `Sec-Fetch-Site` first and falls back to token validation. Its docs note browsers send that header only over HTTPS, and the middleware exposes `originOnly` (check the `Origin` header instead of `Sec-Fetch-Site`) and `allowSameSite` (also trust `same-site` requests, not just `same-origin`) options. The raw PHP paths have no equivalent unless the app writes one.
 - **Sources:** [OWASP CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html), [Laravel 13.x CSRF](https://laravel.com/docs/13.x/csrf)
 - **Stack:** `Not yet`. HELMET sets `SameSite=Lax` (`Enforced`, see H26) and nothing else. For the raw PHP and raw PHP + Vue SPA paths, HELMET or the auth library should offer an Origin and `Sec-Fetch-Site` check, or the docs should say plainly that the app must add a token.
 
@@ -366,13 +366,13 @@ HELMET is at its first scaffold step. The Laravel adapter, the environment ribbo
 - **Practice:** Add a visible ribbon on dev and test, and treat an unknown environment as production.
 - **Why:** It prevents people from mistaking test data for live data, and a wrong guess must not reveal itself on a live site.
 - **Sources:** [Twelve-Factor config](https://12factor.net/config)
-- **Stack:** `Not yet`. It is a planned later step.
+- **Stack:** `Enforced`. The Laravel adapter's `InjectRibbon` middleware injects a `helmet-ribbon` div after the opening `<body>` tag in non-production environments (`local`, `development`, `dev`, `testing`, `test`, `staging`), never in production or for an unknown environment, and only when `helmet.ribbon` is enabled. `testRibbonIsInjectedAfterBodyInLocal`, `testRibbonIsAbsentInProduction` and `testRibbonIsAbsentWhenConfigIsDisabled` cover it.
 
 ### H47. Run on a supported PHP version, and warn when support is ending
 - **Practice:** Use a PHP version that still gets security fixes. PHP 8.2 reaches end of security support on 2026-12-31. 8.3 follows on 2027-12-31.
 - **Why:** An unsupported version gets no security patches. The dates were re-checked against php.net's supported-versions page (dated 2026-10-27), and they match: 8.2 active support ended 2024-12-31 and security support ends 2026-12-31; 8.3 active support ended 2025-12-31 and security ends 2027-12-31; 8.4 (released 2024-11-21) has active support to 2026-12-31 and security to 2028-12-31; 8.5 (released 2025-11-20) has active support to 2027-12-31 and security to 2029-12-31. So 8.3 is already in security-only support, and 8.4 enters it on 2027-01-01. 8.1 reached end of life on 2025-12-31 (from a secondary page, not php.net).
 - **Sources:** [endoflife.date PHP](https://endoflife.date/php), [php.net supported versions](https://www.php.net/supported-versions.php)
-- **Stack:** `Checked`. PROCTOR's `php-floor` check fails an app whose lowest allowed PHP version is past support, using the policy file. HELMET's own runtime version warning is `Not yet`. HELMET's `composer.json` requires `^8.2`, and the design moves the floor to 8.3 on 2027-01-01.
+- **Stack:** `Checked`. PROCTOR's `php-floor` check fails an app whose lowest allowed PHP version is past support, using the policy file. HELMET's own runtime version warning is `Not yet`: the `VersionWarning` class exists but is not wired into the runtime and has no test. HELMET's `composer.json` requires `^8.3` (platform `8.3.0`), so the floor is already at 8.3.
 
 ---
 
@@ -442,9 +442,9 @@ Each of these follows from the research above. Items marked "inferred" depend on
 8. Done: the README examples use the exact address `172.18.0.1` and warn against broad ranges such as `10.0.0.0/8`. That is the Docker bridge gateway the `citadel` preset trusts; on other hosts the address is a setting.
 9. `src/Proxy/HttpsDetector.php:47-50`: exact comparison of a possibly multi-value header. Take the last element.
 10. `src/functions.php:74` and `src/Headers/SecurityHeadersMiddleware.php:24-28`: a custom `csp` replaces the default. Offer merge-by-default.
-11. `composer.json:13` (was cited as `:9`; the file has changed): `akrabat/ip-address-middleware` is required and unused. Use it for the client-IP function, or remove it.
+11. Done: `akrabat/ip-address-middleware` is no longer in the `require` list, so there is nothing unused to remove.
 12. `src/Logging/Logging.php:27-37`: no redaction, no processors, no failure-safe handler.
-13. `composer.json:12` (was cited as `:6`): `php ^8.2` loses security support on 2026-12-31. The planned floor change on 2027-01-01 is about nine weeks away.
+13. Done: `composer.json` now requires `php: ^8.3` (platform `8.3.0`), so the floor is already at 8.3.
 
 ### Missing features
 
