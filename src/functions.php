@@ -7,9 +7,15 @@ namespace Waynestate\Helmet;
 use Psr\Log\LoggerInterface;
 use Waynestate\Helmet\Headers\SecurityHeaders;
 use Waynestate\Helmet\Logging\Logging;
+use Waynestate\Helmet\Metrics\BearerToken;
+use Waynestate\Helmet\Metrics\Metrics;
+use Waynestate\Helmet\Metrics\MetricsGate;
 use Waynestate\Helmet\Platform\Presets;
 use Waynestate\Helmet\Platform\UnknownPresetException;
+use Waynestate\Helmet\Policy\PolicySource;
+use Waynestate\Helmet\Proxy\ClientIp;
 use Waynestate\Helmet\Proxy\HttpsDetector;
+use Waynestate\Helmet\Proxy\IpAllowList;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 use Waynestate\Helmet\Session\SessionHardening;
 
@@ -141,5 +147,118 @@ if (!function_exists('helmet_csp_nonce_meta')) {
     function helmet_csp_nonce_meta(string $nonce): string
     {
         return '<meta property="csp-nonce" nonce="' . htmlspecialchars($nonce, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">';
+    }
+}
+
+if (!function_exists('helmet_metrics')) {
+    /**
+     * Build the /metrics response for a framework-free PHP app.
+     *
+     * Returns the status code, content type, and body for the metrics
+     * endpoint. It does not send headers or echo; the caller does. This keeps
+     * it testable and lets the caller decide how to serve it.
+     *
+     * The endpoint is fail-closed, exactly like the Laravel controller:
+     * disabled -> 404, enabled but unauthorized -> 403, enabled but
+     * misconfigured (no token and no allow list) -> 404 plus a warning.
+     *
+     * The trusted proxies come from, in order of precedence (the same rule
+     * helmet_boot() uses):
+     *  - "trusted_proxies": an explicit list of IPs or CIDR ranges.
+     *  - "preset": a platform preset name (see
+     *    Waynestate\Helmet\Platform\Presets), e.g. "citadel" or "docker".
+     *  - neither: an empty list, which trusts nothing.
+     *
+     * @param array{
+     *     enabled?: bool,
+     *     token?: string|null,
+     *     allow?: list<string>,
+     *     trusted_proxies?: list<string>,
+     *     preset?: string,
+     *     policy?: PolicySource|null,
+     *     version?: string|null,
+     *     logger?: LoggerInterface|null,
+     * } $config
+     *
+     * @return array{status: int, content_type: string, body: string}
+     *
+     * @throws UnknownPresetException If "preset" names a preset the package
+     *         does not know.
+     * @throws \InvalidArgumentException If "enabled", "trusted_proxies" or
+     *         "preset" is the wrong type, or an "allow" entry is invalid.
+     */
+    function helmet_metrics(array $config): array
+    {
+        $enabled = $config['enabled'] ?? false;
+        // @phpstan-ignore function.alreadyNarrowedType (the docblock says bool, but a caller may pass a non-bool at runtime)
+        if (!is_bool($enabled)) {
+            throw new \InvalidArgumentException('helmet_metrics() "enabled" must be a bool.');
+        }
+
+        if (!$enabled) {
+            return [
+                'status' => 404,
+                'content_type' => 'text/plain; charset=utf-8',
+                'body' => '',
+            ];
+        }
+
+        $proxyList = null;
+        if (isset($config['trusted_proxies'])) {
+            // @phpstan-ignore booleanNot.alwaysFalse (the docblock says list<string>, but a caller may pass a non-array at runtime)
+            if (!is_array($config['trusted_proxies'])) {
+                throw new \InvalidArgumentException('helmet_metrics() "trusted_proxies" must be a list.');
+            }
+            $proxyList = $config['trusted_proxies'];
+        } elseif (isset($config['preset'])) {
+            // @phpstan-ignore booleanNot.alwaysFalse (the docblock says string, but a caller may pass a non-string at runtime)
+            if (!is_string($config['preset']) || $config['preset'] === '') {
+                throw new \InvalidArgumentException('helmet_metrics() "preset" must be a non-empty string.');
+            }
+            $proxyList = Presets::proxies($config['preset']);
+        } else {
+            $proxyList = [];
+        }
+        $proxies = new TrustedProxies($proxyList);
+
+        $clientIp = ClientIp::resolve($_SERVER, $proxies);
+        $requestToken = BearerToken::from($_SERVER['HTTP_AUTHORIZATION'] ?? null);
+
+        $gate = new MetricsGate(
+            true,
+            $config['token'] ?? null,
+            new IpAllowList($config['allow'] ?? []),
+        );
+        $decision = $gate->decide($requestToken, $clientIp);
+
+        if ($decision->reason() === 'misconfigured') {
+            $logger = $config['logger'] ?? null;
+            if ($logger !== null) {
+                $logger->warning(
+                    'HELMET metrics endpoint is enabled but has neither a token nor an allow list; refusing to serve metrics.',
+                );
+            }
+        }
+
+        if (!$decision->isAllowed()) {
+            return [
+                'status' => $decision->status(),
+                'content_type' => 'text/plain; charset=utf-8',
+                'body' => '',
+            ];
+        }
+
+        $metrics = new Metrics(
+            null,
+            $config['policy'] ?? null,
+            null,
+            $config['version'] ?? null,
+        );
+
+        return [
+            'status' => 200,
+            'content_type' => Metrics::mimeType(),
+            'body' => $metrics->render(),
+        ];
     }
 }
