@@ -972,7 +972,9 @@ final class SecurityHeadersTest extends TestCase
 
         $response = $this->get('/test');
 
-        $response->assertHeaderMissing('Cache-Control');
+        // Laravel's default response carries no-cache, private; no-store must
+        // not replace it when the feature is off.
+        $response->assertHeader('Cache-Control', 'no-cache, private');
     }
 
     public function testNoStorePathMatchingSendsHeader(): void
@@ -990,7 +992,7 @@ final class SecurityHeadersTest extends TestCase
         $response->assertHeader('Cache-Control', 'no-store');
     }
 
-    public function testNoStorePathNonMatchingDoesNotSendHeader(): void
+    public function testNoStorePathNonMatchingKeepsDefaultCacheControl(): void
     {
         $this->defineHtmlRoute('/public');
 
@@ -1002,6 +1004,7 @@ final class SecurityHeadersTest extends TestCase
         ]);
         $response = $this->get('/public');
 
-        $response->assertHeaderMissing('Cache-Control');
+        // The path does not match, so the framework default stays.
+        $response->assertHeader('Cache-Control', 'no-cache, private');
     }
 }

@@ -132,8 +132,10 @@ final class SecurityHeaders
             $response->headers->set($name, $value);
         }
 
-        if (CoreSecurityHeaders::noStoreApplies($noStoreEnabled, $request->getPathInfo(), $noStorePaths)
-            && !$response->headers->has('Cache-Control')) {
+        // In Laravel the framework sets a default Cache-Control (no-cache,
+        // private), so no-store must override it rather than skip when the
+        // header is already present.
+        if (CoreSecurityHeaders::noStoreApplies($noStoreEnabled, $request->getPathInfo(), $noStorePaths)) {
             $response->headers->set('Cache-Control', 'no-store');
         }
 
