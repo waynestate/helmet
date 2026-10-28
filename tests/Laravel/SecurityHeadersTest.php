@@ -963,7 +963,9 @@ final class SecurityHeadersTest extends TestCase
         ]);
         $response = $this->get('/test');
 
-        $response->assertHeader('Cache-Control', 'no-store');
+        // Laravel appends its own "private" directive to the Cache-Control
+        // header during response preparation.
+        $response->assertHeader('Cache-Control', 'no-store, private');
     }
 
     public function testNoStoreDisabledByDefault(): void
@@ -989,7 +991,9 @@ final class SecurityHeadersTest extends TestCase
         ]);
         $response = $this->get('/api/data');
 
-        $response->assertHeader('Cache-Control', 'no-store');
+        // Laravel appends its own "private" directive to the Cache-Control
+        // header during response preparation.
+        $response->assertHeader('Cache-Control', 'no-store, private');
     }
 
     public function testNoStorePathNonMatchingKeepsDefaultCacheControl(): void
