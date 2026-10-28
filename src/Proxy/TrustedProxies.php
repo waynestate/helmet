@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Proxy;
 
+use Symfony\Component\HttpFoundation\IpUtils;
+
 /**
  * Matches a client or peer IP address against a list of trusted proxies.
  *
@@ -13,23 +15,19 @@ namespace Waynestate\Helmet\Proxy;
  * address of its family) is refused, and the wildcard "*" is refused. A
  * silently skipped entry would look like working config while trusting
  * nothing, or the wrong thing.
+ *
+ * The matching itself is delegated to Symfony's IpUtils (symfony/http-
+ * foundation), which is maintained security code; this class only validates
+ * the config so that bad config fails loudly at boot.
  */
 final class TrustedProxies
 {
     /**
-     * Exact trusted addresses, packed with inet_pton() (4 bytes for IPv4,
-     * 16 for IPv6).
+     * The validated proxy entries, exactly as configured.
      *
      * @var list<string>
      */
-    private array $exact = [];
-
-    /**
-     * Trusted CIDR ranges as [packed subnet, prefix length] pairs.
-     *
-     * @var list<array{0: string, 1: int}>
-     */
-    private array $ranges = [];
+    private array $proxies;
 
     /**
      * @param list<string> $proxies Exact IPv4/IPv6 addresses and/or IPv4/IPv6
@@ -45,6 +43,7 @@ final class TrustedProxies
         // non-string at runtime; validate each entry before trusting it.
         /** @var list<mixed> $entries */
         $entries = $proxies;
+        $this->proxies = [];
         foreach ($entries as $proxy) {
             if (!is_string($proxy) || $proxy === '') {
                 throw new \InvalidArgumentException(
@@ -60,16 +59,14 @@ final class TrustedProxies
             }
 
             if (str_contains($proxy, '/')) {
-                $this->ranges[] = $this->parseCidr($proxy);
-            } else {
-                $packed = @inet_pton($proxy);
-                if ($packed === false) {
-                    throw new \InvalidArgumentException(
-                        "Not a valid IPv4 or IPv6 address: \"$proxy\".",
-                    );
-                }
-                $this->exact[] = $packed;
+                $this->validateCidr($proxy);
+            } elseif (filter_var($proxy, FILTER_VALIDATE_IP) === false) {
+                throw new \InvalidArgumentException(
+                    "Not a valid IPv4 or IPv6 address: \"$proxy\".",
+                );
             }
+
+            $this->proxies[] = $proxy;
         }
     }
 
@@ -78,28 +75,11 @@ final class TrustedProxies
      */
     public function isTrusted(string $ip): bool
     {
-        $packedIp = @inet_pton($ip);
-        if ($packedIp === false) {
+        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
             return false;
         }
 
-        if (in_array($packedIp, $this->exact, true)) {
-            return true;
-        }
-
-        foreach ($this->ranges as [$packedSubnet, $prefixLen]) {
-            // An IPv4 address can never fall in an IPv6 range, or vice versa.
-            if (strlen($packedIp) !== strlen($packedSubnet)) {
-                continue;
-            }
-
-            $mask = self::buildMask($prefixLen, strlen($packedIp) * 8);
-            if (($packedIp & $mask) === ($packedSubnet & $mask)) {
-                return true;
-            }
-        }
-
-        return false;
+        return IpUtils::checkIp($ip, $this->proxies);
     }
 
     /**
@@ -107,37 +87,28 @@ final class TrustedProxies
      */
     public function isEmpty(): bool
     {
-        return $this->exact === [] && $this->ranges === [];
+        return $this->proxies === [];
     }
 
     /**
-     * Parse an IPv4 or IPv6 CIDR range into a [packed subnet, prefix length]
-     * pair.
-     *
-     * @return array{0: string, 1: int}
+     * Validate a CIDR entry: the subnet must be a valid address and the
+     * prefix an integer from 1 to 32 (IPv4) or 1 to 128 (IPv6).
      *
      * @throws \InvalidArgumentException If the subnet is not a valid address
      *                                   or the prefix length is out of range
      *                                   for the address family. A /0 prefix
      *                                   is refused: it trusts every address.
      */
-    private function parseCidr(string $cidr): array
+    private function validateCidr(string $cidr): void
     {
         [$subnet, $bits] = explode('/', $cidr, 2);
 
-        if (!ctype_digit($bits)) {
-            throw new \InvalidArgumentException("Invalid CIDR prefix length in \"$cidr\".");
-        }
-
-        $packedSubnet = @inet_pton($subnet);
-        if ($packedSubnet === false) {
+        if (filter_var($subnet, FILTER_VALIDATE_IP) === false) {
             throw new \InvalidArgumentException("Invalid subnet address in \"$cidr\".");
         }
 
-        $prefixLen = (int) $bits;
-        $familyBits = strlen($packedSubnet) * 8;
-
-        if ($prefixLen > $familyBits) {
+        $prefixLen = filter_var($bits, FILTER_VALIDATE_INT);
+        if ($prefixLen === false) {
             throw new \InvalidArgumentException("Invalid CIDR prefix length in \"$cidr\".");
         }
 
@@ -148,24 +119,9 @@ final class TrustedProxies
             );
         }
 
-        return [$packedSubnet, $prefixLen];
-    }
-
-    /**
-     * Build a binary netmask: $prefixLen one bits, then zero bits, for a
-     * family of $familyBits bits.
-     */
-    private static function buildMask(int $prefixLen, int $familyBits): string
-    {
-        $totalBytes = intdiv($familyBits, 8);
-        $fullBytes = intdiv($prefixLen, 8);
-        $remainingBits = $prefixLen % 8;
-
-        $mask = str_repeat("\xff", $fullBytes);
-        if ($remainingBits > 0) {
-            $mask .= chr(0xff << (8 - $remainingBits));
+        $maxPrefix = filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false ? 32 : 128;
+        if ($prefixLen < 1 || $prefixLen > $maxPrefix) {
+            throw new \InvalidArgumentException("Invalid CIDR prefix length in \"$cidr\".");
         }
-
-        return $mask . str_repeat("\x00", $totalBytes - strlen($mask));
     }
 }
