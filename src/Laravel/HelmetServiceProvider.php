@@ -4,7 +4,10 @@ namespace Waynestate\Helmet\Laravel;
 
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Http\Kernel as FoundationKernel;
+use Illuminate\Http\Middleware\TrustProxies;
+use Illuminate\Http\Request;
 use Illuminate\Support\ServiceProvider;
+use ReflectionProperty;
 
 /**
  * The Laravel adapter for HELMET.
@@ -48,6 +51,23 @@ final class HelmetServiceProvider extends ServiceProvider
         // explicit trustProxies(at: ...) call) wins.
         if (config('trustedproxy.proxies') === null) {
             config(['trustedproxy.proxies' => config('helmet.proxies')]);
+        }
+
+        // Laravel's default trusted-header set also includes X-Forwarded-Host
+        // and X-Forwarded-Prefix. A platform that rewrites the host (OpenShift
+        // appends the route host) would let a client pre-seed those headers, so
+        // HELMET narrows the set to the three a front proxy actually sets: For,
+        // Proto and Port - the same set as Presets::TRUSTED_HEADERS. An app that
+        // has already chosen its own headers (TrustProxies::withHeaders(), or
+        // trustProxies(..., headers: ...)) keeps them: the static is only null
+        // when nobody has set it yet.
+        $alwaysTrustHeaders = (new ReflectionProperty(TrustProxies::class, 'alwaysTrustHeaders'))->getValue();
+        if ($alwaysTrustHeaders === null) {
+            TrustProxies::withHeaders(
+                Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_PROTO
+                | Request::HEADER_X_FORWARDED_PORT
+            );
         }
 
         // Join the middleware through the HTTP kernel, not the router. The

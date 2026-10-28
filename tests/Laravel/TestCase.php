@@ -3,6 +3,7 @@
 namespace Waynestate\Helmet\Tests\Laravel;
 
 use Illuminate\Foundation\Http\Kernel as FoundationKernel;
+use Illuminate\Http\Middleware\TrustProxies;
 use Orchestra\Testbench\TestCase as Orchestra;
 use ReflectionObject;
 use Waynestate\Helmet\Laravel\HelmetServiceProvider;
@@ -34,6 +35,16 @@ abstract class TestCase extends Orchestra
         // application key. Testbench does not set one, so give the test app a
         // throwaway key (generated per run, never a real secret).
         $app['config']->set('app.key', 'base64:' . base64_encode(random_bytes(32)));
+    }
+
+    protected function tearDown(): void
+    {
+        // The provider narrows Laravel's trusted-header set through a static
+        // on TrustProxies. Reset it so one test's choice cannot leak into the
+        // next (and so a test can observe the provider's own choice).
+        TrustProxies::flushState();
+
+        parent::tearDown();
     }
 
     /**
