@@ -158,7 +158,7 @@ HELMET is at its first scaffold step. The Laravel adapter, the environment ribbo
 - **Why:** Any part of these headers not added by a proxy you control can be forged by the client.
 - **Failure story:** CVE-2026-55584 (phpSysInfo, up to 3.4.5, fixed in 3.4.6, published 2026-08-28, CVSS 7.5, CWE-290). Its IP allowlist trusted the client-sent `X-Forwarded-For` and `Client-IP` headers over `REMOTE_ADDR`, so a spoofed header naming an allowed address got in. The fix added a trusted-proxy setting, which is the pattern HELMET follows. The details came from a vulnerability database (Wiz); the NVD page did not load, so the primary advisory was not read. Laravel's own docs say IP addresses should be treated as untrusted, user-controlled input and used for information only.
 - **Sources:** [MDN X-Forwarded-For](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-For), [RFC 7239](https://www.rfc-editor.org/rfc/rfc7239), [Laravel requests](https://laravel.com/docs/12.x/requests), [CVE-2026-55584 (Wiz)](https://www.wiz.io/vulnerability-database/cve/cve-2026-55584)
-- **Stack:** `Enforced`. `HttpsDetector` checks `TrustedProxies::isTrusted($remoteAddr)` first. `testSpoofedForwardedProtoFromUntrustedPeerIsIgnored` covers the spoof case.
+- **Stack:** `Enforced`. `HttpsDetector` checks `TrustedProxies::isTrusted($remoteAddr)` first. The address matching is done by `IpUtils` from `symfony/http-foundation`. `testSpoofedForwardedProtoFromUntrustedPeerIsIgnored` covers the spoof case.
 
 ### H19. An empty list trusts nothing, and the list is required
 - **Practice:** Make the trusted proxy list required config. Never treat "not set" as "trust all".
