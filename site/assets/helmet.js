@@ -172,7 +172,7 @@
       var label = b.querySelector(".copy-btn__label");
       function ok() {
         if (label) { label.textContent = "Copied"; setTimeout(function () { label.textContent = "Copy"; }, 1800); }
-        toast("Copied. First down.");
+        toast("Copied. Ball teed up.");
       }
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(ok, function () { toast("Copy blocked: select the text instead."); });
