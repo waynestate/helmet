@@ -191,4 +191,13 @@ final class TrustedProxiesTest extends TestCase
         self::assertTrue($proxies->isTrusted('127.255.255.255'));
         self::assertFalse($proxies->isTrusted('128.0.0.0'));
     }
+
+    public function testMatchesAnyOfSeveralRangesNotOnlyTheFirst(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8', '192.168.1.0/24', '2001:db8::/32']);
+
+        self::assertTrue($proxies->isTrusted('192.168.1.7'));
+        self::assertTrue($proxies->isTrusted('2001:db8::5'));
+        self::assertFalse($proxies->isTrusted('172.16.0.1'));
+    }
 }
