@@ -371,7 +371,7 @@
       <div class="kit" aria-labelledby="kit-title">
         <div class="kit__head">
           <h3 class="kit__title" id="kit-title">Equipment check: every response, the full kit</h3>
-          <p class="kit__sub">One shared function builds these, so raw PHP and Laravel send the same headers, name and value. A test pins it down.</p>
+          <p class="kit__sub">One shared function builds these seven, so raw PHP and Laravel send the same headers, name and value. A test pins it down. <code>Cross-Origin-Resource-Policy</code> suits up only when you call for it.</p>
         </div>
         <ul class="kit__list">
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Content-Security-Policy</code><span class="kit__val">the WayneUI default policy, a fresh nonce and <code>strict-dynamic</code></span></li>
@@ -379,6 +379,7 @@
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">X-Frame-Options</code><span class="kit__val"><code>SAMEORIGIN</code></span></li>
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Referrer-Policy</code><span class="kit__val"><code>strict-origin-when-cross-origin</code></span></li>
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Permissions-Policy</code><span class="kit__val"><code>camera=(), geolocation=(), microphone=(), payment=(), usb=()</code></span></li>
+          <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Cross-Origin-Opener-Policy</code><span class="kit__val"><code>same-origin</code>, configurable</span></li>
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Strict-Transport-Security</code><span class="kit__val">one year with <code>includeSubDomains</code>, on HTTPS only</span></li>
         </ul>
         <p class="kit__fumble"><strong>Even on a fumble.</strong> The middleware sends the headers when the inner handler throws, and <code>X-Powered-By</code> is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.</p>
@@ -398,11 +399,11 @@
       </div>
 
       <div class="scoreboard">
-        <p class="wsu-sr-only">Scoreboard: pregame, three steps to kickoff. HELMET 6, rushers 0: six security headers sent, zero sacks allowed.</p>
+        <p class="wsu-sr-only">Scoreboard: pregame, three steps to kickoff. HELMET 7, rushers 0: seven security headers sent, zero sacks allowed.</p>
         <div class="sb-top" aria-hidden="true">
           <div class="sb-team">
             <p class="sb-team__name">HELMET</p>
-            <p class="sb-digits" data-count="6">6</p>
+            <p class="sb-digits" data-count="7">7</p>
             <p class="sb-team__sub">headers sent</p>
           </div>
           <div class="sb-mid">
