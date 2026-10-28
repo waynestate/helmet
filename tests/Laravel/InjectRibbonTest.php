@@ -94,7 +94,7 @@ final class InjectRibbonTest extends TestCase
             $content = (string) $response->getContent();
 
             self::assertStringContainsString(
-                '<div class="helmet-ribbon-warning">Php ' . $phpVersion . ' is end of life and no longer receives security updates. Upgrade to a supported version.</div>',
+                '<div class="helmet-ribbon-warning">PHP ' . $phpVersion . ' is end of life and no longer receives security updates. Upgrade to a supported version.</div>',
                 $content,
             );
         } finally {
