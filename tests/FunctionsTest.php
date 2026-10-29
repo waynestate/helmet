@@ -75,6 +75,54 @@ final class FunctionsTest extends TestCase
         self::assertNotSame('', $result['nonce']);
     }
 
+    public function testBootReturnsGeneratedRequestIdWhenNoLogIsSet(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+        ]);
+
+        self::assertArrayHasKey('request_id', $result);
+        self::assertMatchesRegularExpression('/^[0-9a-f]{16}$/', $result['request_id']);
+    }
+
+    public function testBootReturnsSuppliedRequestIdWhenItLooksLikeOne(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $result = \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'log' => [
+                'stream' => 'php://stderr',
+                'request_id' => 'req-20261029-abcd',
+            ],
+        ]);
+
+        self::assertSame('req-20261029-abcd', $result['request_id']);
+    }
+
+    public function testBootThrowsWhenLogRequestIdIsNotAString(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('helmet_boot() "log.request_id" must be a string.');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'log' => [
+                'request_id' => 42,
+            ],
+        ]);
+    }
+
     public function testPresetCitadelResolvesTrustedProxyAndDetectsHttps(): void
     {
         // The citadel preset trusts the Docker bridge gateway 172.18.0.1, so
