@@ -6,6 +6,7 @@ All notable changes to this project are documented in this file.
 
 - Changed: the proof page moves to a private site that needs a Wayne State sign-in.
 - Changed: project names written as words except acronyms.
+- Fixed: stale capability claims in the site and docs.
 
 ## 0.2.4 (2026-10-29)
 
