@@ -310,7 +310,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Never log passwords, tokens, session IDs, keys or connection strings. Redact known keys in the formatter.
 - **Why:** Logs are read by more people and kept longer than the secrets they would expose.
 - **Sources:** [OWASP Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html), [Monolog handlers and formatters](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md)
-- **Stack:** `Not yet`. `Logging::create()` has no redaction. Monolog's `RedactingFormatter` is the described tool.
+- **Stack:** `Enforced`. `Logging::create()` pushes a redact processor that masks known sensitive keys (passwords, tokens, session IDs, keys, connection strings) in a record's context and extra, at any depth, before anything is written.
 
 ### H39. Add a request ID and request context
 - **Practice:** Give each request a unique ID and include it, with the method, path and a trusted client address, in every event.
@@ -322,7 +322,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Wrap handlers so that a full disk or an unwritable file is reported and swallowed.
 - **Why:** Logging should never be the reason an app is unavailable.
 - **Sources:** [OWASP Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html), [Monolog handlers and formatters](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md)
-- **Stack:** `Not yet`. `Logging::create()` uses a bare `StreamHandler`. Monolog's `WhatFailureGroupHandler` is the documented answer.
+- **Stack:** `Enforced`. `Logging::create()` wraps the configured stream in Monolog's `FallbackGroupHandler`: when the stream cannot be written (unwritable file, full disk), the record goes to `php://stderr` instead and the request carries on.
 
 ### H41. Log security-relevant events
 - **Practice:** Log authentication and authorization failures, session failures, validation failures and trust-decision surprises, in proportion to risk.
