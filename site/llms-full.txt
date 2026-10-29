@@ -1,6 +1,6 @@
 # HELMET: everything in one file
 
-> HELMET is the Wayne State app stack's baseline runtime: security headers and CSP, session hardening, trusted proxies, a /up health check, structured logs and version warnings, in one small PHP core.
+> HELMET is a small PHP package that sends the security headers and a nonce-based CSP, hardens the session, checks the proxy, answers /up and writes JSON logs. Raw PHP, Laravel and PSR-15 apps all use the same core.
 
 The README and the Markdown twin of every page, joined. The index is https://helmet.apps.wayne.edu/llms.txt. Written by Squire's agent-ready kit; do not edit.
 
@@ -893,13 +893,13 @@ HELMET stands for Headers, Errors, Logging, Monitoring, Environment, Trust.
 
 Put it on before you ship.
 
-The stack's baseline runtime. One small, framework-free PHP core sends the security headers, hardens the session, checks the proxy, answers `/up` and writes structured logs, before your app serves a single page. Raw PHP, Laravel and PSR-15 all wear the same one.
+HELMET is one small PHP package with no framework underneath. Before your app serves its first page, it sends the security headers, hardens the session, checks that the request really came over HTTPS, answers `/up` and sets up JSON logs. Raw PHP, Laravel and PSR-15 apps all wear the same one, so they send the same headers.
 
 ```
 composer require waynestate/helmet
 ```
 
-Already included in [WELD](https://weld.apps.wayne.edu/) and in every [Sourdough](https://sourdough.apps.wayne.edu/) app. Use HELMET on its own to put security headers and a hardened session on an app you already have.
+Already included in [WELD](https://weld.apps.wayne.edu/) and in every [Sourdough](https://sourdough.apps.wayne.edu/) app. Use HELMET on its own to add the security headers and a hardened session to an app you already have.
 
 [Open the playbook](https://helmet.apps.wayne.edu/#playbook) [Pregame: three steps to kickoff](https://helmet.apps.wayne.edu/#quick-start)
 
@@ -907,7 +907,7 @@ Five rushers, five blockers, zero sacks. Point at a call to see who blocks whom.
 
 ### The playbook
 
-Six plays, each one a protection that stops a named rusher. Laminated, because coffee happens on the sideline.
+Each play is one protection and the attack it stops. Laminated, because coffee happens on the sideline.
 
 1. ### Play 22: Nonce Dive
    CSP
@@ -924,19 +924,19 @@ Six plays, each one a protection that stops a named rusher. Laminated, because c
 3. ### Play 47: Long Snap
    HSTS
    Blocks A downgrade to plain HTTP
-   One year, every subdomain, sent only when the request really was HTTPS. Roll it out in stages; `preload` is the domain owner's call, so HELMET never adds it.
+   The default is one year and covers subdomains, and HELMET sends it only when the request really was HTTPS. Start with a short `max-age` and raise it once nothing breaks. `preload` is the domain owner's call, so HELMET never adds it.
    `Strict-Transport-Security: max-age=31536000; includeSubDomains`
    Start short, then go long.
 4. ### Play 41: Session Lock
    SESSION
    Blocks Session fixation and cookie theft
-   Strict mode, cookies only, `HttpOnly` and `SameSite=Lax`, set before the session starts. `Secure` follows the real scheme, and it refuses to run once a session is already active.
+   HELMET turns on strict mode, cookie-only session IDs, `HttpOnly` and `SameSite=Lax` before the session starts. `Secure` follows the request; on Citadel, where TLS ends at the proxy, set `HELMET_SESSION_SECURE=always`. It won't run once a session is already active, because changing these mid-session does nothing.
    `session.use_strict_mode=1 cookie_httponly=1 cookie_samesite=Lax`
    Strapped before kickoff.
 5. ### Play 58: Proxy Trap
    PROXIES
    Blocks A forged X-Forwarded-Proto
-   Only a trusted proxy's address may say a request was https. A spoofed header from the internet is ignored, and no HSTS goes out on a request that was not really secure. Trust the proxy's address, never a whole private range.
+   HELMET believes `X-Forwarded-Proto` only when it comes from a trusted proxy's address. A spoofed one from the internet is ignored, and no HSTS goes out on a request that wasn't really secure. List the proxy's own address, never a whole private range.
    `helmet_boot(['preset' => 'citadel'])`
    The Unsung hero of the line.
 6. ### Play 00: Victory Formation
@@ -946,9 +946,9 @@ Six plays, each one a protection that stops a named rusher. Laminated, because c
    `GET /up → 200 ok`
    Take a knee. Still up.
 
-#### Equipment check: every response, the full kit
+#### Equipment check: the headers on every response
 
-One shared function builds these seven, so raw PHP and Laravel send the same headers, name and value. A test pins it down. `Cross-Origin-Resource-Policy` suits up only when you call for it.
+`SecurityHeaders::build()` makes these seven for raw PHP and Laravel alike, and a test checks that both send the same names and values. `Cross-Origin-Resource-Policy` stays on the bench until you turn it on.
 
 - `Content-Security-Policy`the WayneUI default policy, a fresh nonce and `strict-dynamic`
 - `X-Content-Type-Options``nosniff`
@@ -958,11 +958,11 @@ One shared function builds these seven, so raw PHP and Laravel send the same hea
 - `Cross-Origin-Opener-Policy``same-origin`, configurable
 - `Strict-Transport-Security`one year with `includeSubDomains`, on HTTPS only
 
-**Even on a fumble.** The middleware sends the headers when the inner handler throws, and `X-Powered-By` is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.
+**Even on a fumble.** The middleware still sends the headers when the inner handler throws, and `X-Powered-By` is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.
 
 ### Pregame: three steps to kickoff
 
-Pick your app's shape on the board. The same commands work in PowerShell, bash and zsh: Composer and Artisan don't care which shell snapped the ball.
+Pick your app's shape below. The commands are the same in PowerShell, bash and zsh, because Composer and Artisan don't care which shell snapped the ball.
 
 Scoreboard: pregame, three steps to kickoff. HELMET 7, rushers 0: seven security headers sent, zero sacks allowed.
 
@@ -971,19 +971,19 @@ Scoreboard: pregame, three steps to kickoff. HELMET 7, rushers 0: seven security
 #### Raw PHP
 
 1. Step 1: Strap it on
-   One package, no framework needed.
+   It's one Composer package, and it doesn't need a framework.
    ```
    composer require waynestate/helmet
    ```
-2. Step 2: Call it once
-   At the top of the front controller, before anything is echoed. Headers, session, proxy check and `/up` happen right here.
+2. Step 2: Call helmet_boot() at the top
+   Put it first in your front controller, before anything is echoed. This one call sends the headers, hardens the session, checks the proxy and answers `/up`.
    ```
    use function Waynestate\Helmet\helmet_boot;
    
    $helmet = helmet_boot(['preset' => 'citadel']);
    ```
-3. Step 3: Nonce your scripts
-   `$helmet['nonce']` is this request's nonce. The meta tag lets Vite's runtime use it too.
+3. Step 3: Nonce your inline scripts
+   `$helmet['nonce']` is this request's nonce. If you use Vite, the meta tag lets its runtime use the nonce too.
    ```
    echo helmet_csp_nonce_meta($helmet['nonce']); // in <head>
    
@@ -999,13 +999,13 @@ Scoreboard: pregame, three steps to kickoff. HELMET 7, rushers 0: seven security
    ```
    composer require waynestate/helmet
    ```
-2. Step 2: Publish the config
-   The best place to change the CSP: a PHP array, not JSON squeezed into `.env`.
+2. Step 2: Publish config/helmet.php
+   Change the CSP there, where it's a PHP array. In `.env` it would have to be escaped JSON.
    ```
    php artisan vendor:publish --tag=helmet-config
    ```
-3. Step 3: Pick the platform
-   In `.env`. Keep `health: '/up'` in `withRouting()`; `@vite` already carries the nonce.
+3. Step 3: Set the platform in .env
+   Keep `health: '/up'` in `withRouting()`, because the adapter adds no route of its own. `@vite` already carries the nonce.
    ```
    HELMET_PRESET=citadel
    ```
@@ -1019,8 +1019,8 @@ Scoreboard: pregame, three steps to kickoff. HELMET 7, rushers 0: seven security
    ```
    composer require waynestate/helmet
    ```
-2. Step 2: Line up the middleware
-   `/up` first, then the headers. Headers go out even when the inner handler throws.
+2. Step 2: Line up the middleware, /up first
+   The health check goes first, then the headers. The headers still go out when the inner handler throws.
    ```
    $factory = new Psr17Factory();
    $proxies = new TrustedProxies(Presets::proxies('citadel'));
@@ -1030,8 +1030,8 @@ Scoreboard: pregame, three steps to kickoff. HELMET 7, rushers 0: seven security
        new SecurityHeadersMiddleware($proxies),
    ];
    ```
-3. Step 3: Read the nonce
-   Downstream handlers get the same nonce the header carries.
+3. Step 3: Read the nonce downstream
+   Your handlers get the same nonce the CSP header carries, from a request attribute.
    ```
    $request->getAttribute('helmet.csp_nonce')
    ```
@@ -1040,11 +1040,11 @@ Scoreboard: pregame, three steps to kickoff. HELMET 7, rushers 0: seven security
 
 ### The huddle
 
-Five play calls for the coding agent you already use. Copy one, or run it straight in OpenCode, Claude Code, Codex or ChatGPT. Each says which formation the app is in, what the agent may not touch, and to ask the coach before it guesses.
+Five prompts for the coding agent you already use. Copy one, or run it straight in OpenCode, Claude Code, Codex or ChatGPT. Each one has the agent work out your app's shape first and ask you before it guesses, and lists what it must not change.
 
 #### Get started with HELMET
 
-Which formation the app is in, which platform sits in front of it, and the smallest plan to put the helmet on before the first page is served.
+The agent works out your app's shape and where it runs, then writes the smallest plan to add HELMET. It changes nothing yet.
 
 A prompt for your coding agent. Copy it as it stands:
 
@@ -1076,7 +1076,7 @@ Output: the formation, the platform and its proxy setting, a table of what the C
 
 #### HELMET in a raw PHP app
 
-One call at the top of the front controller, the nonce on every inline script, and a health check that still answers when there is no front controller.
+Adds `helmet_boot()` to the front controller and the nonce to each inline script. If some pages skip the front controller, it adds `public/up.php` too.
 
 A prompt for your coding agent. Copy it as it stands:
 
@@ -1107,7 +1107,7 @@ Output: the changes as a diff per file, then how to check the headers locally (f
 
 #### HELMET in a Laravel app with Blade
 
-The adapter discovers itself; publish the config, pick the platform, keep Laravel's own /up, and nonce the inline scripts in Blade.
+Publishes the config, sets the platform and puts the nonce on inline scripts in Blade. Laravel keeps its own `/up` and its own session settings.
 
 A prompt for your coding agent. Copy it as it stands:
 
@@ -1138,7 +1138,7 @@ Output: the changes as a diff per file, the environment variables in a table, th
 
 #### HELMET in a Laravel app with Inertia and Vue
 
-The Laravel adapter plus the coach's rules: scripts in the layout, never in Inertia's Head, one nonce from one package, no shared caching of nonced HTML.
+The Laravel setup, then a search for what the CSP will break: scripts in Inertia's Head, a second package that makes nonces, and HTML cached across requests.
 
 A prompt for your coding agent. Copy it as it stands:
 
@@ -1167,7 +1167,7 @@ Output: what breaks today and the fix for each, the changes as a diff per file, 
 
 #### HELMET in a PSR-15 middleware pipeline
 
-The same core as middleware: the health check first, then the headers, and the nonce read from the request attribute downstream.
+Adds `HealthCheck` and `SecurityHeadersMiddleware` to your pipeline. Your handlers read the nonce from the `helmet.csp_nonce` attribute.
 
 A prompt for your coding agent. Copy it as it stands:
 
@@ -1194,7 +1194,7 @@ Constraints:
 Output: the changes as a diff per file, then how to check the headers locally, then your questions.
 ```
 
-The prompts are part of the page: an agent that reads [this page as Markdown](https://helmet.apps.wayne.edu/index.md) or [llms.txt](https://helmet.apps.wayne.edu/llms.txt) gets every call without the buttons. Nobody runs the ball without a helmet.
+The prompts are plain text in the page, so an agent that reads [this page as Markdown](https://helmet.apps.wayne.edu/index.md) or [llms.txt](https://helmet.apps.wayne.edu/llms.txt) gets all five without the buttons. Nobody runs the ball without a helmet.
 
 ### The film room
 
@@ -1208,7 +1208,7 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
     "level_name":"WARNING",
     "channel":"app"}
    ```
-   Monolog JSON, one event per line. Passwords, tokens and session IDs come out as `***`, and if the log file can't be written it falls back to stderr instead of taking the request down.
+   Monolog JSON, one event per line, each with a request ID. Passwords, tokens and session IDs come out as `***`. If the log file can't be written, HELMET writes to stderr and the request carries on.
 2. ### Version warnings
    ```
    Laravel 11 is end of life and
@@ -1216,7 +1216,7 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
    updates. Upgrade to a
    supported version.
    ```
-   Read from CREED's `policy.json`. A version in its security-only phase or past end of life gets a plain warning; an active or unknown one gets none. The date is injected, so the boundaries are testable.
+   Point `HELMET_POLICY_PATH` at CREED's `policy.json` and the ribbon warns about a PHP or Laravel version in its security-only phase or past end of life. An active or unknown version gets no warning, and a missing file never breaks the page.
 3. ### Metrics, off by default
    ```
    # HELP helmet_info HELMET is running.
@@ -1224,9 +1224,9 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
    helmet_info{php_version="8.4",
     helmet_version="0.2.5"} 1
    ```
-   A Prometheus endpoint you turn on with `HELMET_METRICS_ENABLED`, behind a bearer token or an IP allow list. With neither set it answers `404`, so nobody hands their metrics to the whole network.
+   A Prometheus endpoint you turn on with `HELMET_METRICS_ENABLED`. It needs a bearer token or an IP allow list; with neither, it answers `404` and logs a warning. Nothing scrapes it yet.
 4. ### The ribbon
-   In local, testing and staging, Laravel apps get `<div class="helmet-ribbon">` right after `<body>`, so nobody mistakes the scrimmage for the game. Never in production, never on JSON. No Aftertaste.
+   In local, dev, testing and staging, Laravel apps get `<div class="helmet-ribbon">` right after `<body>`, so nobody mistakes the scrimmage for the game. It never shows in production or on JSON responses. No Aftertaste.
 
 ### Coach's rules for Vite and Inertia
 
@@ -1240,7 +1240,7 @@ The CSP stays honest only if the bundle plays along.
 
 ### Practice squad
 
-On the backlog in HELMET's best practices, not in 0.2. They suit up when they're ready.
+These are on HELMET's backlog and aren't in 0.2. They suit up when they're ready.
 
 - A readiness check, separate from `/up`
 - A `Clear-Site-Data` helper for logout
@@ -1250,33 +1250,33 @@ Wayne State app stack · 0.1 season
 
 ### WELD depth chart
 
-HELMET plays on the line for every app in the stack. Here's who lines up beside it.
+HELMET plays on the line for every app in the stack. Here's who lines up beside it, and what each one does.
 
 #### On the field
 
 What runs inside every app
 
-- [WayneUI](https://wayneui.apps.wayne.edu/) Renders every page: the design system, tokens and components.
-- [SESAME](https://sesame.apps.wayne.edu/) Snaps the sign-in: CAS, the gateway, bearer tokens and Entra, behind one config switch.
-- HELMET you are here Protects every snap: headers, session, proxies, /up, logs.
-- [WELD](https://weld.apps.wayne.edu/) Every part already joined, in one Laravel + Inertia/Vue app.
+- [WayneUI](https://wayneui.apps.wayne.edu/) Wayne State's design system, for static HTML, raw PHP, Blade and Vue.
+- [SESAME](https://sesame.apps.wayne.edu/) Sign-in through CAS, Entra ID, Drawbridge or bearer tokens. One setting picks the driver.
+- HELMET you are here Headers, the session, the proxy check, /up and logs.
+- [WELD](https://weld.apps.wayne.edu/) A Laravel app with Inertia and Vue, with every part already installed.
 
 #### Coaches and officials
 
 What keeps the code honest
 
 - [CREED](https://creed.apps.wayne.edu/) The written standards, and the policy.json HELMET reads.
-- [PROCTOR](https://proctor.apps.wayne.edu/) One command that checks an app against the standards.
-- [Pinstripe](https://pinstripe.apps.wayne.edu/) The coding standard: Pint, PHPStan, ESLint and Prettier.
-- [Preflight](https://preflight.apps.wayne.edu/) Shared CI from GitLab CI/CD components.
-- [ADVISOR](https://advisor.apps.wayne.edu/) The voice in your headset: an MCP server that knows the stack.
+- [PROCTOR](https://proctor.apps.wayne.edu/) Checks your composer.json and lock file against CREED.
+- [Pinstripe](https://pinstripe.apps.wayne.edu/) Shared presets for Pint, PHPStan, Rector, ESLint and Prettier.
+- [Preflight](https://preflight.apps.wayne.edu/) GitLab CI/CD components that run the checks on every push.
+- [ADVISOR](https://advisor.apps.wayne.edu/) The voice in your headset: an MCP server that answers from CREED's policy file.
 
 #### Sideline and front office
 
-How apps start, ship and grow
+Starters, deploys, sign-in and upgrades
 
-- [Sourdough](https://sourdough.apps.wayne.edu/) Starters you shape yourself: raw PHP, Blade or Inertia/Vue.
-- [Squire](https://squire.apps.wayne.edu/) The equipment manager: release script and local parity for Citadel.
-- [Drawbridge](https://drawbridge.apps.wayne.edu/) next The Citadel sign-in gateway, lowered on request.
-- [Booster](https://booster.apps.wayne.edu/) The booster club: upgrade recipes, PHP 7 to 8 and Laravel N to N+1.
+- [Sourdough](https://sourdough.apps.wayne.edu/) Starts a new app. Raw PHP today; Blade and Inertia/Vue come later.
+- [Squire](https://squire.apps.wayne.edu/) The deploy kit for Citadel: build.sh, a release script and local runs on the same images.
+- [Drawbridge](https://drawbridge.apps.wayne.edu/) next Signs people in through Entra ID before they reach a Citadel app.
+- [Booster](https://booster.apps.wayne.edu/) Upgrades PHP 7 to 8 and Laravel one version at a time.
 - [Rollcall](https://rollcall.apps.wayne.edu/) Every app answers “present”, with its PHP version.

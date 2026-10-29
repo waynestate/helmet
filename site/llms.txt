@@ -1,6 +1,6 @@
 # HELMET
 
-> HELMET is the Wayne State app stack's baseline runtime: security headers and CSP, session hardening, trusted proxies, a /up health check, structured logs and version warnings, in one small PHP core.
+> HELMET is a small PHP package that sends the security headers and a nonce-based CSP, hardens the session, checks the proxy, answers /up and writes JSON logs. Raw PHP, Laravel and PSR-15 apps all use the same core.
 
 GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120)
 
@@ -31,15 +31,15 @@ Every page below is Markdown. The HTML pages send the same Markdown to a client 
 
 ## Pages
 
-- [HELMET: Put it on before you ship.](https://helmet.apps.wayne.edu/index.md): HELMET is the Wayne State app stack's baseline runtime: security headers and CSP, session hardening, trusted proxies, a /up health check, structured logs and version warnings, in one small PHP core.
+- [HELMET: Put it on before you ship.](https://helmet.apps.wayne.edu/index.md): HELMET is a small PHP package that sends the security headers and a nonce-based CSP, hardens the session, checks the proxy, answers /up and writes JSON logs. Raw PHP, Laravel and PSR-15 apps all use the same core.
 
 ## Prompts
 
-- [Get started with HELMET](https://helmet.apps.wayne.edu/#prompt-get-started): Which formation the app is in, which platform sits in front of it, and the smallest plan to put the helmet on before the first page is served. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
-- [HELMET in a raw PHP app](https://helmet.apps.wayne.edu/#prompt-raw-php): One call at the top of the front controller, the nonce on every inline script, and a health check that still answers when there is no front controller. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
-- [HELMET in a Laravel app with Blade](https://helmet.apps.wayne.edu/#prompt-laravel-blade): The adapter discovers itself; publish the config, pick the platform, keep Laravel's own /up, and nonce the inline scripts in Blade. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
-- [HELMET in a Laravel app with Inertia and Vue](https://helmet.apps.wayne.edu/#prompt-laravel-inertia): The Laravel adapter plus the coach's rules: scripts in the layout, never in Inertia's Head, one nonce from one package, no shared caching of nonced HTML. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
-- [HELMET in a PSR-15 middleware pipeline](https://helmet.apps.wayne.edu/#prompt-psr15): The same core as middleware: the health check first, then the headers, and the nonce read from the request attribute downstream. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
+- [Get started with HELMET](https://helmet.apps.wayne.edu/#prompt-get-started): The agent works out your app's shape and where it runs, then writes the smallest plan to add HELMET. It changes nothing yet. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
+- [HELMET in a raw PHP app](https://helmet.apps.wayne.edu/#prompt-raw-php): Adds helmet_boot() to the front controller and the nonce to each inline script. If some pages skip the front controller, it adds public/up.php too. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
+- [HELMET in a Laravel app with Blade](https://helmet.apps.wayne.edu/#prompt-laravel-blade): Publishes the config, sets the platform and puts the nonce on inline scripts in Blade. Laravel keeps its own /up and its own session settings. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
+- [HELMET in a Laravel app with Inertia and Vue](https://helmet.apps.wayne.edu/#prompt-laravel-inertia): The Laravel setup, then a search for what the CSP will break: scripts in Inertia's Head, a second package that makes nonces, and HTML cached across requests. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
+- [HELMET in a PSR-15 middleware pipeline](https://helmet.apps.wayne.edu/#prompt-psr15): Adds HealthCheck and SecurityHeadersMiddleware to your pipeline. Your handlers read the nonce from the helmet.csp_nonce attribute. The prompt itself is in https://helmet.apps.wayne.edu/index.md.
 
 ## Source
 
