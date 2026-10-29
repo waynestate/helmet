@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 0.2.0 (2026-10-29)
+
 - Fixed the `<head>` match when injecting the csp-nonce meta tag into HTML
   responses: the old pattern also matched `<header>` and `<headline>` and
   injected the tag after the wrong element. Responses that carry a
