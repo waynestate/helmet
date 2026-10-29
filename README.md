@@ -97,8 +97,8 @@ address of whatever stands in front of the app container:
 | Raw Docker behind a compose proxy | your proxy service | the compose network's subnet | `php://stderr` |
 
 An explicit `HELMET_PROXIES` overrides the preset on every platform. With
-neither a preset nor a list, no address is trusted: `X-Forwarded-Proto` is
-honored only by direct connections. Off Citadel, log to `php://stderr` and
+neither a preset nor a list, no address is trusted, so forwarded headers
+such as `X-Forwarded-Proto` are ignored and the request is read as it arrived. Off Citadel, log to `php://stderr` and
 let the container runtime collect the lines.
 
 The helmet comes off the platform, not the app.
