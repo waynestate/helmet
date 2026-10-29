@@ -341,7 +341,7 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
    # HELP helmet_info HELMET is running.
    # TYPE helmet_info gauge
    helmet_info{php_version="8.4",
-    helmet_version="0.2.4"} 1
+    helmet_version="0.2.5"} 1
    ```
    A Prometheus endpoint you turn on with `HELMET_METRICS_ENABLED`, behind a bearer token or an IP allow list. With neither set it answers `404`, so nobody hands their metrics to the whole network.
 4. ### The ribbon
