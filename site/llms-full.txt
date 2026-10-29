@@ -1,0 +1,1269 @@
+# HELMET: everything in one file
+
+> HELMET is the Wayne State app stack's baseline runtime: security headers and CSP, session hardening, trusted proxies, a /up health check, structured logs and version warnings, in one small PHP core.
+
+The README and the Markdown twin of every page, joined. The index is https://helmet.apps.wayne.edu/llms.txt. Written by Squire's agent-ready kit; do not edit.
+
+---
+
+## README
+
+Source: https://github.com/waynestate/helmet/blob/HEAD/README.md
+
+## HELMET
+
+GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120)
+
+**Put it on before you ship.** Security headers, a hardened session and an honest proxy check, snapped on before
+the first page is served.
+
+Checks: `composer ci` (the same command runs on GitLab and GitHub).
+Two mirrors, one command: the only thing in this repo that plays both sides is the CI.
+Front page: [`site/index.html`](https://github.com/waynestate/helmet/blob/HEAD/site/index.html), the playbook, as static files ([`site/README.md`](https://github.com/waynestate/helmet/blob/HEAD/site/README.md)).
+On Citadel it is served by the raw-PHP deploy layer in [`deploy/`](https://github.com/waynestate/helmet/blob/HEAD/deploy/): a Squire kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
+
+HELMET is the Wayne State app stack's baseline runtime. One small
+framework-free PHP core, `Waynestate\Helmet`, does the five things every app on
+Citadel needs before it serves a single page: it sends the security headers,
+hardens the session, decides whether the request really arrived over HTTPS,
+answers the load balancer's `/up` ping, and writes structured logs.
+
+This repository is published from Wayne State University's internal
+GitLab and mirrored here. Changes land there first; Wayne State
+developers open issues and merge requests on the internal project.
+
+It is the floor, not the ceiling. An app on raw PHP calls `helmet_boot()` once
+at the top of its front controller and is done. An app on Laravel or a PSR-15
+stack mounts the same core as middleware and gets the identical headers. The
+rules live in one place, and every consumer path agrees.
+
+### Install
+
+```
+composer require waynestate/helmet
+```
+
+### Platform presets
+
+A preset names a platform's trusted-proxy list, so an app does not hard-code
+an address that belongs to the platform, not the app. The presets live in
+`Waynestate\Helmet\Platform\Presets`:
+
+| Preset | Trusted proxies |
+| --- | --- |
+| `citadel` | the Docker bridge gateway to the HA-Proxy front (see "Running off Citadel") |
+| `docker` | none: a plain Docker network with no front proxy |
+
+Raw PHP passes the preset name:
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+]);
+```
+
+Laravel reads it from `HELMET_PRESET` (see the environment table below;
+Playbook supplies it when the environment has none); an explicit
+`HELMET_PROXIES` always wins over the preset.
+
+Off the WSU platform, skip the preset and pass your own list of the addresses
+your front proxy connects from:
+
+```php
+$helmet = helmet_boot([
+    'trusted_proxies' => ['203.0.113.10'],
+]);
+```
+
+An unknown preset name throws at boot, so a typo fails loudly instead of
+silently trusting nothing.
+
+### WSU values (Playbook)
+
+The Laravel config reads `HELMET_PRESET` from the environment first and from
+the private `waynestate/playbook` package (Playbook) second, when the
+environment has no value. The raw PHP path takes the preset as an option to
+`helmet_boot()` and reads no environment at all.
+
+| Setting | What it is |
+| --- | --- |
+| `HELMET_PRESET` | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. |
+
+Get Playbook with your own GitLab token, three ways.
+
+Composer: add the repository to your app's `composer.json`, put the token in
+`auth.json` (Composer's credential store, never in the repo), then require
+the package:
+
+```json
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://git.wayne.edu/enterprise-apps/playbook.git"
+        }
+    ]
+}
+```
+
+```
+composer require waynestate/playbook
+```
+
+Or fetch the values file directly.
+
+curl (Linux, macOS):
+
+```
+curl --fail -H "PRIVATE-TOKEN: $GITLAB_TOKEN" "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" -o .env.playbook
+```
+
+PowerShell (Windows):
+
+```
+Invoke-WebRequest -Headers @{ 'PRIVATE-TOKEN' = $env:GITLAB_TOKEN } -Uri "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" -OutFile .env.playbook
+```
+
+Clone:
+
+```
+git clone https://git.wayne.edu/enterprise-apps/playbook.git
+```
+
+A fetched `.env.playbook` is plain `KEY=value` lines: copy the ones you need
+into your app's `.env` (or your Citadel environment).
+
+The token is your own: `read_api` for curl, `read_repository` for clone and
+Composer.
+
+Playbook is private on git.wayne.edu. If you get a 404, ask the Enterprise
+Applications team for read access.
+
+### Running off Citadel
+
+HELMET ships one package for every platform, so running off Citadel means
+changing configuration, not code. The only platform fact it needs is the
+address of whatever stands in front of the app container:
+
+| Platform | What sits in front | `HELMET_PROXIES` | Where logs go |
+| --- | --- | --- | --- |
+| Citadel | HA-Proxy | use the `citadel` preset (`172.18.0.1`) | `/var/log/app/helmet.log`, the preset's file path |
+| OpenShift | the OpenShift router | the router's pod network CIDR, from your cluster admin | `php://stderr` |
+| Coolify | Traefik or Caddy | the Docker network of the proxy | `php://stderr` |
+| Raw Docker behind a compose proxy | your proxy service | the compose network's subnet | `php://stderr` |
+
+An explicit `HELMET_PROXIES` overrides the preset on every platform. With
+neither a preset nor a list, no address is trusted, so forwarded headers
+such as `X-Forwarded-Proto` are ignored and the request is read as it arrived. Off Citadel, log to `php://stderr` and
+let the container runtime collect the lines.
+
+The helmet comes off the platform, not the app.
+
+### Usage
+
+#### Raw PHP
+
+At the top of the front controller, before anything is echoed:
+
+```php
+use function Waynestate\Helmet\helmet_boot;
+
+$helmet = helmet_boot([
+    // The platform preset that supplies the trusted proxies. An explicit
+    // 'trusted_proxies' list wins over the preset.
+    'preset' => 'citadel',
+
+    // Optional. A Monolog JSON logger, one line per record. "stream" may be a
+    // stream or a file path. Off Citadel, lead with php://stderr; the
+    // Citadel preset's value is /var/log/app/helmet.log. Every record carries
+    // a request ID in extra.request_id, generated by HELMET; an inbound
+    // header is never trusted for it. Set "request_id" to reuse an ID you
+    // already have (8 to 64 letters, digits, dots, underscores or dashes).
+    'log' => [
+        'channel' => 'app',
+        'stream'  => 'php://stderr',
+        'level'   => 'info',
+        // 'request_id' => 'req-20261029-abcd',
+    ],
+]);
+
+// $helmet['nonce'] is the per-request CSP nonce. Put it in your <script> tags.
+// $helmet['logger'] is a Psr\Log\LoggerInterface, or null when no log is set.
+// $helmet['request_id'] is the ID stamped on this process's log records.
+```
+
+Each record is one JSON line:
+
+```json
+{"message":"login","context":{"user":"alice"},"level":200,"level_name":"INFO","channel":"app","datetime":"2026-10-29T12:00:00.000000+00:00","extra":{"request_id":"9f2c1ab04d5e6f70"}}
+```
+
+Use a platform preset (for example `citadel`, which trusts the Docker bridge
+gateway), or list only the address the front proxy connects from, never a
+whole private range. A broad range such as `10.0.0.0/8` also trusts other
+containers on the same network, and any of them could then set
+`X-Forwarded-Proto`.
+
+`helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up`
+with `200 ok` before your code runs. It returns the nonce, the logger and
+the request ID so the rest of the app can use them.
+
+##### Health check without a front controller
+
+A raw PHP app with no front controller (or an Apache setup with no rewrite)
+never reaches `helmet_boot()` for `/up`. Ship a two-line `public/up.php`
+that calls HELMET directly:
+
+```php
+<?php // public/up.php
+use function Waynestate\Helmet\helmet_up;
+
+require __DIR__ . '/../vendor/autoload.php';
+helmet_up();
+```
+
+Squire's raw template ships this file. The probe only checks that the ball
+is in the air; it does not grade the play.
+
+#### PSR-15 middleware
+
+The same core, mounted in a middleware pipeline:
+
+```php
+use Nyholm\Psr7\Factory\Psr17Factory;
+use Waynestate\Helmet\Csrf\RequestForgeryGuard;
+use Waynestate\Helmet\Headers\SecurityHeadersMiddleware;
+use Waynestate\Helmet\Health\HealthCheck;
+use Waynestate\Helmet\Platform\Presets;
+use Waynestate\Helmet\Proxy\TrustedProxies;
+
+$factory = new Psr17Factory();
+$proxies = new TrustedProxies(Presets::proxies('citadel'));
+
+$middleware = [
+    new HealthCheck($factory, $factory, '/up'),
+    new RequestForgeryGuard($proxies, $factory, $factory, except: ['/api/webhooks/*']),
+    new SecurityHeadersMiddleware($proxies),
+];
+```
+
+`SecurityHeadersMiddleware` sets the request attribute `helmet.csp_nonce` so a
+downstream handler can read the same nonce the CSP header carries.
+
+`RequestForgeryGuard` is opt-in: mounting it turns the check on for that
+pipeline. Its options are described in
+[The request-forgery guard](#the-request-forgery-guard).
+
+The headers are sent even when the inner handler throws. By default the
+middleware rethrows, so the framework's error handler still runs and produces
+the error page; pass `rethrow: false` (and a PSR-17 `ResponseFactory`) to make
+the middleware itself return a `500` carrying the same headers. The raw PHP
+path needs no such flag: `helmet_boot()` sends the headers before your code
+runs, so they are already on the wire by the time an exception can happen.
+
+#### Laravel
+
+The Laravel adapter is a service provider, two always-on middlewares, an
+optional request-forgery guard, and a config file.
+It only wires and configures. Every rule (what the headers say, how a nonce is
+made, how a CSP is merged, and how a request-forgery check is applied) lives in
+the core, so Laravel and raw PHP cannot drift apart. The suite runs against
+Laravel 13 with Orchestra Testbench.
+
+##### Install the adapter
+
+Strap It On:
+
+```
+composer require waynestate/helmet
+```
+
+Package discovery registers `Waynestate\Helmet\Laravel\HelmetServiceProvider`,
+so there is nothing to add to `bootstrap/providers.php`. The provider merges
+the `helmet` config and joins the HTTP kernel's middleware:
+
+- `SecurityHeaders` sends the headers in [The headers](#the-headers) and strips
+  `X-Powered-By`. By default it is global, so 404s and JSON routes carry them
+  too.
+- `InjectRibbon` adds the environment ribbon (below). It always stays in the
+  `web` group, because it edits HTML.
+- `RequestForgeryGuard` is opt-in. When `helmet.csrf.enabled` is true, it joins
+  the `web` group after `InjectRibbon` and applies the check in
+  [The request-forgery guard](#the-request-forgery-guard).
+
+They are added through the HTTP kernel, so they survive another package adding
+to the same group. Set `HELMET_SCOPE=web` to keep `SecurityHeaders` in the
+`web` group only; then routes outside `web` and unmatched 404s do not carry
+its headers.
+
+##### Publish the config
+
+```
+php artisan vendor:publish --tag=helmet-config
+```
+
+This copies `config/helmet.php` into your app. Do it: it is the best place to
+change the CSP, because the policy is a PHP array there, not JSON squeezed into
+`.env`. The config file is also the one place HELMET reads the environment
+(`env()`, plus `HELMET_PRESET` through `Setting`, which also checks Playbook),
+so `php artisan config:cache` keeps working.
+
+##### Trust the proxy
+
+HELMET decides on its own whether a request was really HTTPS, from
+`HELMET_PROXIES`. Laravel has a separate trusted-proxy setting that drives
+`url()`, secure cookies and `$request->isSecure()`. The provider follows the
+same list: when the app has not set `trustedproxy.proxies` itself, it copies
+`helmet.proxies` over, so `HELMET_PROXIES` drives both. An app that sets
+`trustedproxy.proxies` keeps its own value, and an explicit
+`trustProxies(at: ...)` call in `bootstrap/app.php` still wins, because
+Laravel applies it before the config fallback.
+
+The provider also narrows which forwarded headers Laravel believes from those
+proxies: `X-Forwarded-For` and `X-Forwarded-Proto`, and nothing else.
+Laravel's own default also trusts `X-Forwarded-Host`, `X-Forwarded-Prefix`
+and `X-Forwarded-Port`, and a client can pre-seed any of them on a platform
+whose proxy does not overwrite them, which poisons `url()`, redirects and
+password-reset links. Port is out for the same reason: Citadel's HA-Proxy
+never sends it at all, so a client-sent value would pass through untouched
+and change the port Laravel reports and the URLs it generates. If your app
+needs one of them, choose the set yourself with
+`trustProxies(at: ..., headers: ...)` in `bootstrap/app.php` (or
+`TrustProxies::withHeaders()`); HELMET then leaves your choice alone.
+
+Citadel's HA-Proxy *appends* `X-Forwarded-Proto` instead of replacing it, so
+a client can arrive with two values, `https, http`. Symfony reads the first
+value of such a list (the client's), while HELMET reads the last (the one
+the closest proxy appended). To keep Laravel in agreement, the provider
+prepends a small middleware to the global chain that rewrites the header to
+its last value when the request comes from a trusted proxy. A single value
+is left alone, and requests from untrusted peers are ignored as before.
+
+As in the raw PHP section, use a preset or list only the address your front
+proxy connects from, never a whole private range.
+
+The `/up` health route is Laravel's own: keep `health: '/up'` in
+`withRouting()`. The adapter registers no route.
+
+##### Environment variables
+
+| Variable | Config key | Default | What it does |
+| --- | --- | --- | --- |
+| `HELMET_SCOPE` | `helmet.scope` | `global` | `global` puts `SecurityHeaders` in the kernel's global middleware; `web` keeps it in the `web` group only. `InjectRibbon` always stays in `web`. |
+| `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. Read from the environment, else from Playbook (see [WSU values (Playbook)](#wsu-values-playbook)). `HELMET_PROXIES` wins when both are set. An unknown name throws, even when `HELMET_PROXIES` is set. |
+| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Wins over `HELMET_PRESET`. Also copied to `trustedproxy.proxies` when the app has not set it. Empty trusts nothing. |
+| `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
+| `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
+| `HELMET_HSTS_INCLUDE_SUBDOMAINS` | `helmet.hsts_include_subdomains` | `true` | Set `false` to omit the HSTS `includeSubDomains` directive. |
+| `HELMET_HSTS_PRELOAD` | `helmet.hsts_preload` | `false` | Set `true` to append the `preload` directive to HSTS. Requires `max-age` of at least one year and `includeSubDomains`. Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed. |
+| `HELMET_CSP_TRUSTED_TYPES_ENABLED` | `helmet.csp_trusted_types.enabled` | `false` | Set `true` to append Trusted Types directives to the report-only CSP header. |
+| `HELMET_CSP_TRUSTED_TYPES_POLICIES` | `helmet.csp_trusted_types.policies` | `["default"]` | Comma-separated Trusted Types policy names. |
+| `HELMET_NO_STORE_ENABLED` | `helmet.no_store.enabled` | `false` | Set `true` to send `Cache-Control: no-store` on matching responses. |
+| `HELMET_NO_STORE_PATHS` | `helmet.no_store.paths` | none | Comma-separated path prefixes that carry no-store. Empty means every response. |
+| `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |
+| `HELMET_POLICY_PATH` | `helmet.policy_path` | none | Path to a CREED `policy.json`. When set, the ribbon shows a version warning for the running PHP (and, in Laravel, the framework) version. A missing or invalid file shows no warning and never breaks the page. |
+| `HELMET_DEV_ORIGIN` | `helmet.dev_origin` | none | The Vite dev server origin, used in `local` only when the dev server is running. Must be `http` or `https` on `localhost`, `127.0.0.1` or `[::1]`. Overrides the hot file. |
+| `HELMET_CSP_REPORT_URI` | `helmet.csp_report_uri` | none | The URL browsers POST CSP violation reports to. Adds `report-uri` and `report-to` to the policy and a `Reporting-Endpoints` header. Must be `https`. |
+| `HELMET_CSP_REPORT_ONLY` | `helmet.csp_report_only` | `false` | Set `true` to send the policy as `Content-Security-Policy-Report-Only` (observe violations without blocking them). |
+| `HELMET_CSRF_ENABLED` | `helmet.csrf.enabled` | `false` | Set `true` to turn on the request-forgery guard for state-changing requests. |
+| `HELMET_CSRF_ALLOW_SAME_SITE` | `helmet.csrf.allow_same_site` | `false` | Set `true` to let `Sec-Fetch-Site: same-site` pass. Off by default because sibling subdomains are still same-site. |
+| `HELMET_CSRF_TRUSTED_ORIGINS` | `helmet.csrf.trusted_origins` | none | Comma-separated origins allowed to make state-changing requests when the `Origin` fallback is used. |
+| `HELMET_CSRF_EXCEPT` | `helmet.csrf.except` | none | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. |
+
+##### Customizing the CSP in Laravel
+
+`helmet.csp` takes the same shape as the raw PHP `csp` option and follows the
+same rule: it is merged over the default, per directive. A directive you set
+replaces the default's, a directive you leave out keeps it, and `null` removes
+one. Open the published `config/helmet.php` and replace the
+`$csp = SecurityHeaders::defaultCspPolicy();` line:
+
+```php
+$csp = [
+    'img-src' => ["'self'", 'data:', 'https://images.example.edu'],
+    'form-action' => null,
+];
+```
+
+If you would rather use the environment, `HELMET_CSP` takes the same array as
+JSON. In a `.env` file it needs double quotes and escaped inner quotes, which
+is the reason to publish the config instead:
+
+```
+HELMET_CSP="{\"img-src\":[\"'self'\",\"data:\"],\"form-action\":null}"
+```
+
+Invalid JSON is ignored and the default policy stays, so a typo in the
+environment cannot loosen the CSP.
+
+One gotcha when overriding: the policy adds the per-request nonce to
+`style-src` and `style-src-elem`. A browser ignores `'unsafe-inline'` once a
+nonce is present, so setting `style-src` to `["'unsafe-inline'"]` does not
+restore inline styles; it removes them.
+
+##### The nonce in Blade
+
+The middleware puts the per-request nonce on the request as the attribute
+`helmet.csp_nonce`, the same name the PSR-15 middleware uses. It also hands
+the nonce to Laravel's Vite helper, so `@vite` needs nothing: the `script` and
+`style` tags it print already carry the nonce the CSP header sends.
+
+For an inline script, print the nonce from the Vite helper:
+
+```blade
+<script nonce="{{ Vite::cspNonce() }}">
+    // allowed by the nonce, and free to load more scripts (strict-dynamic)
+</script>
+```
+
+In a controller it is `$request->attributes->get('helmet.csp_nonce')`. A new
+nonce is made for every request. Repetition is a fine Helmet song and a
+terrible nonce.
+
+##### Vite and Inertia
+
+The middleware hands the per-request nonce to Laravel's Vite helper and
+injects a `csp-nonce` meta tag into ``. `@vite` needs nothing. The meta
+tag lets Vite's dev runtime nonce the CSS and preload tags it adds after page
+load.
+
+A few rules keep the CSP honest:
+
+- **Nonce every inline script.** The CSP has no `'unsafe-inline'` for
+  scripts. Every `` without a `src` needs
+  `nonce="{{ Vite::cspNonce() }}"`.
+- **No `'unsafe-eval'`.** The CSP never allows it. If your bundle needs
+  `eval`, fix the bundle.
+- **No scripts in Inertia's ``.** Inertia's `` renders into the
+  document head after the page loads. A `` there would not carry the
+  nonce, and the browser would block it. Put scripts in your layout, where
+  `@vite` and the nonce reach them.
+- **No second nonce-producing package.** If another package calls
+  `Vite::useCspNonce()` after HELMET, the `@vite` tags carry a different nonce
+  than the CSP header, and the browser blocks the scripts. The middleware logs
+  a warning when it detects this.
+- **No shared caching of nonced HTML.** The nonce changes every request. A
+  cached page would carry a stale nonce, and the browser would block its
+  scripts. Do not cache HTML at a layer that shares it across requests.
+- **Do not replace `style-src` with `'unsafe-inline'`.** The policy adds the
+  per-request nonce to `style-src` and `style-src-elem`, and a browser
+  ignores `'unsafe-inline'` once a nonce is present. An override that relies
+  on it loses every inline style silently. Keep the nonce, move the styles
+  into files, or give the inline styles a nonce.
+
+In raw PHP, print the meta tag in `` with the nonce `helmet_boot()`
+returned:
+
+```php
+echo helmet_csp_nonce_meta($helmet['nonce']);
+```
+
+The Vite dev server is allowed in the `local` environment only, and only when
+it is running (a hot file exists). The origin comes from `HELMET_DEV_ORIGIN`
+when set, otherwise from the hot file. It must be `http` or `https` on
+`localhost`, `127.0.0.1` or `[::1]`, with an optional port. An invalid origin
+is ignored and a warning is logged. In every other environment the dev server
+origin is never added.
+
+##### The ribbon
+
+In `local`, `development`, `dev`, `testing`, `test` and `staging`, `InjectRibbon`
+adds `staging`
+right after the opening `` tag of an HTML response, so nobody mistakes a
+test site for the real one. It never appears in `production`, on JSON or other
+non-HTML responses, or on HTML with no ``. The package ships no
+stylesheet; style `.helmet-ribbon` in your own CSS. Even with
+`HELMET_RIBBON=true`, production never gets it, so there is no Aftertaste.
+
+**Version warnings.** Point `HELMET_POLICY_PATH` at a CREED `policy.json` and
+the ribbon gains a warning line for each component version that is in its
+security-only phase or end of life. The raw PHP path checks the running PHP
+version; the Laravel adapter also checks the framework's major version. With
+no policy path there is no warning and no file read, and a missing, unreadable
+or invalid file shows no warning and never breaks the page. Style
+`.helmet-ribbon-warning` in your own CSS.
+
+##### Raw PHP and Laravel agree
+
+Both paths call `SecurityHeaders::build()`, so for the same request and
+settings they send the same headers. A test pins that down: it compares what
+the Laravel middleware sends, name and value, with `build()`. The settings map
+like this:
+
+| Setting | Raw PHP (`helmet_boot()`) | Laravel |
+| --- | --- | --- |
+| Trusted proxies | `trusted_proxies` | `HELMET_PROXIES` / `helmet.proxies` |
+| CSP overrides | `csp` | `HELMET_CSP` / `helmet.csp`, same merge, `null` removes |
+| HSTS max-age | `hsts_max_age` | `HELMET_HSTS_MAX_AGE` / `helmet.hsts` |
+| HSTS subdomains | `hsts_include_subdomains` | `HELMET_HSTS_INCLUDE_SUBDOMAINS` / `helmet.hsts_include_subdomains`, default `true` |
+| HSTS preload | `hsts_preload` | `HELMET_HSTS_PRELOAD` / `helmet.hsts_preload`, default `false` |
+| Trusted Types | `csp_trusted_types` | `HELMET_CSP_TRUSTED_TYPES_*` / `helmet.csp_trusted_types.*`, default off |
+| no-store | `no_store` | `HELMET_NO_STORE_*` / `helmet.no_store.*`, default off |
+| CSP report URI | `csp_report_uri` | `HELMET_CSP_REPORT_URI` / `helmet.csp_report_uri` |
+| CSP report-only | `csp_report_only` | `HELMET_CSP_REPORT_ONLY` / `helmet.csp_report_only`, default `false` |
+| COOP | `coop` | `HELMET_COOP` / `helmet.coop`, default `same-origin`, `null` sends no header |
+| CORP | `corp` | `HELMET_CORP` / `helmet.corp`, default `null` (no header) |
+| Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
+| Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
+| Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
+| Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
+| Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
+
+For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger.
+
+### The headers
+
+Every response gets the same set, built by one shared function:
+
+| Header | Value |
+| --- | --- |
+| `Content-Security-Policy` | the WayneUI default policy, plus a per-request nonce and `strict-dynamic` |
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `SAMEORIGIN` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), geolocation=(), microphone=(), payment=(), usb=()` by default, configurable |
+| `Cross-Origin-Opener-Policy` | `same-origin` by default, configurable, `null` sends no header |
+| `Cross-Origin-Resource-Policy` | not sent by default, opt-in |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` by default, HTTPS only, configurable |
+
+The default CSP is the union of the WayneUI recipes, with `frame-ancestors
+'self'`, `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` added
+so an app can never be framed by a stranger, have its base tag hijacked, load
+plugins, or post its forms to an attacker. `script-src` carries a per-request
+nonce plus `strict-dynamic`, so a script loaded with the nonce can load other
+scripts without opening the door to `'unsafe-inline'`.
+
+Milquetoast is a Helmet song. It is not a Content-Security-Policy.
+
+#### Customizing the CSP
+
+Pass a `csp` policy (raw PHP) or a second constructor argument (middleware).
+It is merged over the default, per directive: a directive you set replaces the
+default's value for that directive, and a directive you leave out keeps the
+default. To remove a directive the default sets, set it to `null`:
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'csp' => [
+        // Replace the default img-src.
+        'img-src' => ["'self'", 'data:'],
+        // Remove form-action entirely.
+        'form-action' => null,
+    ],
+]);
+```
+
+#### Configuring HSTS
+
+The default is `max-age=31536000; includeSubDomains` (one year, all
+subdomains), sent on HTTPS responses only. Roll it out in stages: start with a
+short `max-age`, raise it once nothing breaks, and keep `includeSubDomains`
+only when every subdomain serves HTTPS. `preload` is a decision for the domain
+owner, not for one app, so HELMET never adds it.
+
+Set `hsts_max_age` (seconds) and `hsts_include_subdomains` (raw PHP), or pass
+the last two constructor arguments (middleware):
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'hsts_max_age' => 600,
+    'hsts_include_subdomains' => false,
+]);
+```
+
+#### CSP reports
+
+By default the policy is enforced: a violation is blocked. To see what would
+be blocked before you enforce it, or to keep collecting reports after you do,
+point the policy at a report endpoint.
+
+Set `csp_report_uri` (raw PHP) or `HELMET_CSP_REPORT_URI` (Laravel) to the URL
+browsers POST reports to. It must be `https`. HELMET then adds `report-uri` and
+`report-to` to the policy and sends a `Reporting-Endpoints` header naming the
+endpoint. Set `csp_report_only` (or `HELMET_CSP_REPORT_ONLY`) to `true` to send
+the policy as `Content-Security-Policy-Report-Only`, which observes violations
+without blocking them.
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'csp_report_uri' => 'https://app.example.edu/csp-report',
+    'csp_report_only' => true,
+]);
+```
+
+An invalid URI (not `https`, no host, or a value carrying whitespace or a
+quote) throws at boot, so a typo fails loudly instead of pointing the browser
+at a destination it cannot reach.
+
+Laravel ships an opt-in endpoint that receives the reports and logs one line
+per violation (the violated directive, the blocked URI's host, and the
+document path) and nothing else. It accepts both report formats: the legacy
+`application/csp-report` object, and the Reporting API's
+`application/reports+json` array, from which it logs the `csp-violation`
+entries (at most 20 per POST; browsers batch other report types into the
+same request, and those are ignored). The route is off until you register it:
+
+```php
+// routes/web.php
+Route::cspReport();                 // POST /csp-report
+Route::cspReport('/reports/csp');   // or your own path
+```
+
+The endpoint caps the body at 16 KiB, returns `204`, and carries no
+authentication of its own; wrap it in your own middleware if you want to keep
+it private. Browsers POST reports without a CSRF token, so the route excludes
+the `web` group's CSRF middleware. Because the endpoint is public and its
+input is attacker-influenced, it is throttled by default to 60 reports a
+minute per IP (`throttle:60,1`); pass a second argument to use a different
+throttle, or `null` to disable it:
+
+```php
+Route::cspReport('/reports/csp', 'throttle:120,1'); // your own limit
+Route::cspReport('/reports/csp', null);             // no throttle
+```
+
+#### Cross-origin isolation and feature policy
+
+Three more headers round out the baseline: two are on by default, one is
+opt-in.
+
+`Cross-Origin-Opener-Policy` defaults to `same-origin`, which puts the page in
+its own browsing-context group so an opener or parent page cannot read it. Set
+`coop` (raw PHP) or `HELMET_COOP` (Laravel) to `same-origin-allow-popups` or
+`noopener-allow-popups` to keep the isolation but let a popup window (such as
+an OAuth login popup to the IdP) stay cross-origin, or to `unsafe-none` to
+turn the header off. Set it to `null` to send no COOP header at all.
+
+`Cross-Origin-Resource-Policy` is opt-in: HELMET sends no CORP header by
+default, because a blanket `same-site` can break an app whose assets are read
+cross-origin. Set `corp` (raw PHP) or `HELMET_CORP` (Laravel) to `same-site`,
+`same-origin` or `cross-origin` to send it.
+
+`Permissions-Policy` defaults to a deny list: `camera`, `geolocation`,
+`microphone`, `payment` and `usb` are all denied, so an injected script cannot
+use a feature the page has switched off. Set `permissions_policy` (raw PHP) or
+`HELMET_PERMISSIONS_POLICY` (Laravel) to a feature map to change it: each
+feature maps to an allowlist of `self` and https origins, and an empty
+allowlist denies the feature. An empty map sends no Permissions-Policy header.
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'coop' => 'same-origin-allow-popups',
+    'corp' => 'same-site',
+    'permissions_policy' => [
+        'camera' => ['self'],
+        'geolocation' => [],
+    ],
+]);
+```
+
+An invalid COOP or CORP value, or a Permissions-Policy feature name or
+allowlist entry that is not `self` or an https origin, throws, so a typo fails
+loudly instead of sending a header the browser will ignore.
+
+### HTTPS, and why the proxy list matters
+
+Citadel sits behind HA-Proxy, so the PHP process sees the proxy's address, not
+the client's, and the real scheme arrives in `X-Forwarded-Proto`. HELMET only
+honors that header when the connection came from a trusted proxy. A spoofed
+`X-Forwarded-Proto: https` from the public internet is ignored, and no HSTS
+header is sent for a request that was not really secure.
+
+The proxy check is the Unsung hero of the headers. Nobody notices it until a
+forged `X-Forwarded-Proto` walks in and gets nowhere.
+
+### The session
+
+`SessionHardening::apply()` sets these `ini` values before the session
+starts. It refuses to run once a session is active, because changing them
+mid-session does nothing.
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| `session.use_strict_mode` | `1` | Rejects session IDs the server did not issue, which blocks fixation. |
+| `session.use_only_cookies` | `1` | The session ID travels only in the cookie, never in a URL. |
+| `session.cookie_httponly` | `1` | JavaScript cannot read the session cookie. |
+| `session.cookie_samesite` | `Lax` | Cuts cross-site session reuse. |
+| `session.cookie_secure` | `1` on HTTPS, unset otherwise | The cookie is sent only over TLS, and plain-HTTP setups keep working. |
+| `session.cookie_lifetime` | `0` | A browser-session cookie: it ends when the browser closes. |
+| `session.cache_limiter` | `nocache` | Pages cannot be cached and replayed with the session attached. |
+| `session.cookie_path` | `/` | The usual scope, and required by the `__Host-` prefix. |
+| `session.cookie_domain` | empty | Host-only: the cookie is not sent to sibling subdomains. |
+| `session.name` | `__Host-WSUSESSID` on HTTPS, `WSUSESSID` on HTTP | A generic name reveals less, and the `__Host-` prefix makes the browser reject the cookie unless it is `Secure`, `Path=/` and has no `Domain`. |
+
+The name rule applies only while the name is still PHP's default
+`PHPSESSID`. An app that chose its own name keeps it, and SESAME reads
+whatever `session_name()` returns, so a changed name is safe for it. When an
+app first runs this version, existing sessions under the old name end: the
+next request still carries the old cookie, the app finds no session under
+the new name and starts a fresh one.
+
+### The request-forgery guard
+
+`SameSite=Lax` is a layer, not a wall. HELMET can also check state-changing
+requests before they reach the app. The guard is off by default; when it is on,
+it is the same rule on every consumer path.
+
+For `GET`, `HEAD` and `OPTIONS` the request passes. For anything else:
+
+1. `Sec-Fetch-Site` is the primary signal when the browser sends it.
+   `same-origin` and `none` pass, `same-site` passes only when
+   `allow_same_site` is true, and `cross-site` or an unknown value is
+   rejected.
+2. When `Sec-Fetch-Site` is absent, the `Origin` header is checked against the
+   request's own origin and `trusted_origins`. `Origin: null` is rejected, an
+   unparseable origin is rejected, and an absent origin passes, because a
+   non-browser client authenticates some other way.
+3. A path in `except` skips the guard. A pattern is an exact path, a prefix
+   ending in `*`, or `*` for every path.
+
+A rejected request receives `403`, `Content-Type: text/plain; charset=utf-8`,
+`Cache-Control: no-store` and the body `Forbidden`. The answer never echoes
+request headers.
+
+#### Raw PHP
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'csrf' => [
+        'enabled' => true,
+        'allow_same_site' => false,
+        'trusted_origins' => ['https://forms.example.edu'],
+        'except' => ['/api/webhooks/*'],
+    ],
+]);
+```
+
+`helmet_boot()` runs the check after the health path and before the security
+headers. A rejected request stops there.
+
+#### PSR-15
+
+```php
+use Waynestate\Helmet\Csrf\RequestForgeryGuard;
+
+$guard = new RequestForgeryGuard(
+    $proxies,
+    $factory,
+    $factory,
+    false,
+    ['https://forms.example.edu'],
+    ['/api/webhooks/*'],
+);
+```
+
+The guard needs the PSR-17 response and stream factories only when it rejects
+a request.
+
+#### Laravel
+
+Set the config or the environment:
+
+```
+HELMET_CSRF_ENABLED=true
+HELMET_CSRF_TRUSTED_ORIGINS=https://forms.example.edu
+HELMET_CSRF_EXCEPT=/api/webhooks/*
+```
+
+The provider registers the `RequestForgeryGuard` middleware in the `web` group
+only when `helmet.csrf.enabled` is true. It calls the same core rule, so a
+Laravel app and a raw PHP app with the same settings make the same decision.
+
+### Metrics
+
+HELMET can expose a Prometheus metrics endpoint. It is off by default and
+stays off until you turn it on. No Prometheus scraper is wired yet; the
+endpoint is there for when one is.
+
+#### Enable it
+
+Set `HELMET_METRICS_ENABLED=true` and choose at least one way to prove who is
+asking:
+
+| Variable | What it does |
+| --- | --- |
+| `HELMET_METRICS_TOKEN` | A bearer token. The scraper sends `Authorization: Bearer `. Compared with `hash_equals`. |
+| `HELMET_METRICS_ALLOW` | Comma-separated IPs or CIDR ranges allowed to scrape without a token. |
+
+With neither set the endpoint returns `404` and logs a warning, so a
+misconfigured app does not hand its metrics to the whole network.
+
+#### Laravel
+
+The provider registers a `Route::helmetMetrics()` macro. The route is not
+created until you call it:
+
+```php
+// routes/web.php
+Route::helmetMetrics();                          // GET /metrics, throttle:60,1
+Route::helmetMetrics('/metrics', 'throttle:120,1'); // your own throttle
+Route::helmetMetrics('/metrics', null);           // no throttle
+```
+
+The controller reads `helmet.metrics` from the published config, resolves the
+client IP through the same trusted-proxy list the headers use, and renders
+`text/plain; version=0.0.4`.
+
+#### Raw PHP
+
+```php
+use function Waynestate\Helmet\helmet_metrics;
+
+$result = helmet_metrics([
+    'enabled' => true,
+    'token'   => 's3cret',
+    'allow'   => ['10.0.0.0/8'],
+    'preset'  => 'citadel',
+]);
+
+http_response_code($result['status']);
+header('Content-Type: ' . $result['content_type']);
+echo $result['body'];
+```
+
+The response carries a `helmet_info` gauge with the PHP and HELMET versions,
+and a `helmet_php_version_status` gauge when a `PolicySource` is available.
+No personal data in labels; labels stay low-cardinality.
+
+The endpoint is the only place in HELMET that says "I am still here" without
+saying "here is your page". A lullaby, in a way.
+
+### Proof
+
+Proof runs against real Wayne State applications are on a private site, [proof.apps.wayne.edu/helmet](https://proof.apps.wayne.edu/helmet/), behind a Wayne State employee sign-in.
+
+### Tests
+
+Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://github.com/waynestate/helmet/blob/HEAD/MAINTAINING.md).
+
+No PHP on the machine? Fine. Docker runs the suite:
+
+```
+docker run --rm -v "${PWD}:/app" -w /app composer:2 composer install --no-interaction
+docker run --rm -v "${PWD}:/app" -w /app php:8.5-cli vendor/bin/phpunit
+docker run --rm -v "${PWD}:/app" -w /app php:8.4-cli vendor/bin/phpunit
+docker run --rm -v "${PWD}:/app" -w /app php:8.3-cli vendor/bin/phpunit
+```
+
+Style and static analysis come from [Pinstripe](https://github.com/waynestate/pinstripe),
+the stack's coding standard: `phpstan.neon` includes
+`vendor/waynestate/pinstripe/phpstan/raw.neon`, and `pint.json` uses the same
+`per` preset Pinstripe ships.
+
+### Strongly recommended: a git.wayne.edu instance runner
+
+git.wayne.edu has no runners today, so CI for this repo runs on the test
+GitLab instance. Every product in the stack strongly recommends a
+git.wayne.edu instance runner.
+
+GIF via [Tenor](https://tenor.com/view/wilmas-rainbow-helmet-wilmas-wilma-rainbow-gif-18685087)
+
+HELMET, the band, built their sound on precision: short songs, no filler,
+every part earning its place. That is the whole point of a baseline runtime.
+The floor is tight, the headers are exact, and nothing here is decoration.
+
+Call `helmet_boot()` once and the rest is Exactly What You Wanted. Size
+Matters too, which is why the core stays small enough to read in an afternoon.
+
+---
+
+Source: https://helmet.apps.wayne.edu/
+
+Play 0 · every app, every snap
+
+## HELMET
+
+HELMET stands for Headers, Errors, Logging, Monitoring, Environment, Trust.
+
+Put it on before you ship.
+
+The stack's baseline runtime. One small, framework-free PHP core sends the security headers, hardens the session, checks the proxy, answers `/up` and writes structured logs, before your app serves a single page. Raw PHP, Laravel and PSR-15 all wear the same one.
+
+```
+composer require waynestate/helmet
+```
+
+[Open the playbook](https://helmet.apps.wayne.edu/#playbook) [Pregame: three steps to kickoff](https://helmet.apps.wayne.edu/#quick-start)
+
+Five rushers, five blockers, zero sacks. Point at a call to see who blocks whom.
+
+### The playbook
+
+Six plays, each one a protection that stops a named rusher. Laminated, because coffee happens on the sideline.
+
+1. ### Play 22: Nonce Dive
+   CSP
+   Blocks Injected script (XSS)
+   A fresh nonce on every response, plus `strict-dynamic`. A script without the nonce does not run, and there is no `'unsafe-inline'` or `'unsafe-eval'` to sneak through.
+   `script-src 'self' 'nonce-…' 'strict-dynamic'`
+   New nonce every snap.
+2. ### Play 34: Frame Screen
+   FRAMES
+   Blocks Clickjacking
+   `frame-ancestors 'self'` in the policy, and `X-Frame-Options` for older browsers. A stranger's page cannot frame yours and trick a click.
+   `X-Frame-Options: SAMEORIGIN`
+   No strangers in the frame.
+3. ### Play 47: Long Snap
+   HSTS
+   Blocks A downgrade to plain HTTP
+   One year, every subdomain, sent only when the request really was HTTPS. Roll it out in stages; `preload` is the domain owner's call, so HELMET never adds it.
+   `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+   Start short, then go long.
+4. ### Play 41: Session Lock
+   SESSION
+   Blocks Session fixation and cookie theft
+   Strict mode, cookies only, `HttpOnly` and `SameSite=Lax`, set before the session starts. `Secure` follows the real scheme, and it refuses to run once a session is already active.
+   `session.use_strict_mode=1 cookie_httponly=1 cookie_samesite=Lax`
+   Strapped before kickoff.
+5. ### Play 58: Proxy Trap
+   PROXIES
+   Blocks A forged X-Forwarded-Proto
+   Only a trusted proxy's address may say a request was https. A spoofed header from the internet is ignored, and no HSTS goes out on a request that was not really secure. Trust the proxy's address, never a whole private range.
+   `helmet_boot(['preset' => 'citadel'])`
+   The Unsung hero of the line.
+6. ### Play 00: Victory Formation
+   /UP
+   Blocks A slow app called dead
+   `GET` or `HEAD /up` answers `200 ok` with `Cache-Control: no-store` before your code runs, so the load balancer sees a live container even while the app is busy.
+   `GET /up → 200 ok`
+   Take a knee. Still up.
+
+#### Equipment check: every response, the full kit
+
+One shared function builds these seven, so raw PHP and Laravel send the same headers, name and value. A test pins it down. `Cross-Origin-Resource-Policy` suits up only when you call for it.
+
+- `Content-Security-Policy`the WayneUI default policy, a fresh nonce and `strict-dynamic`
+- `X-Content-Type-Options``nosniff`
+- `X-Frame-Options``SAMEORIGIN`
+- `Referrer-Policy``strict-origin-when-cross-origin`
+- `Permissions-Policy``camera=(), geolocation=(), microphone=(), payment=(), usb=()`
+- `Cross-Origin-Opener-Policy``same-origin`, configurable
+- `Strict-Transport-Security`one year with `includeSubDomains`, on HTTPS only
+
+**Even on a fumble.** The middleware sends the headers when the inner handler throws, and `X-Powered-By` is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.
+
+### Pregame: three steps to kickoff
+
+Pick your app's shape on the board. The same commands work in PowerShell, bash and zsh: Composer and Artisan don't care which shell snapped the ball.
+
+Scoreboard: pregame, three steps to kickoff. HELMET 7, rushers 0: seven security headers sent, zero sacks allowed.
+
+**Raw PHP**
+
+#### Raw PHP
+
+1. Step 1: Strap it on
+   One package, no framework needed.
+   ```
+   composer require waynestate/helmet
+   ```
+2. Step 2: Call it once
+   At the top of the front controller, before anything is echoed. Headers, session, proxy check and `/up` happen right here.
+   ```
+   use function Waynestate\Helmet\helmet_boot;
+   
+   $helmet = helmet_boot(['preset' => 'citadel']);
+   ```
+3. Step 3: Nonce your scripts
+   `$helmet['nonce']` is this request's nonce. The meta tag lets Vite's runtime use it too.
+   ```
+   echo helmet_csp_nonce_meta($helmet['nonce']); // in <head>
+   
+   <script nonce="<?= $helmet['nonce'] ?>">…</script>
+   ```
+
+**Laravel**
+
+#### Laravel
+
+1. Step 1: Strap it on
+   Package discovery registers the provider and both middlewares. Nothing to add to `bootstrap/providers.php`.
+   ```
+   composer require waynestate/helmet
+   ```
+2. Step 2: Publish the config
+   The best place to change the CSP: a PHP array, not JSON squeezed into `.env`.
+   ```
+   php artisan vendor:publish --tag=helmet-config
+   ```
+3. Step 3: Pick the platform
+   In `.env`. Keep `health: '/up'` in `withRouting()`; `@vite` already carries the nonce.
+   ```
+   HELMET_PRESET=citadel
+   ```
+
+**PSR-15**
+
+#### PSR-15
+
+1. Step 1: Strap it on
+   The same core, mounted in a middleware pipeline.
+   ```
+   composer require waynestate/helmet
+   ```
+2. Step 2: Line up the middleware
+   `/up` first, then the headers. Headers go out even when the inner handler throws.
+   ```
+   $factory = new Psr17Factory();
+   $proxies = new TrustedProxies(Presets::proxies('citadel'));
+   
+   $middleware = [
+       new HealthCheck($factory, $factory, '/up'),
+       new SecurityHeadersMiddleware($proxies),
+   ];
+   ```
+3. Step 3: Read the nonce
+   Downstream handlers get the same nonce the header carries.
+   ```
+   $request->getAttribute('helmet.csp_nonce')
+   ```
+
+**Off the WSU platform?** Skip the preset and list the one address your front proxy connects from, for example `'trusted_proxies' => ['203.0.113.10']`. Never a whole private range: a broad range also trusts the other containers on the network. An unknown preset name throws at boot, so a typo fails loudly instead of trusting nothing.
+
+### The huddle
+
+Five play calls for the coding agent you already use. Copy one, or run it straight in OpenCode, Claude Code, Codex or ChatGPT. Each says which formation the app is in, what the agent may not touch, and to ask the coach before it guesses.
+
+#### Get started with HELMET
+
+Which formation the app is in, which platform sits in front of it, and the smallest plan to put the helmet on before the first page is served.
+
+A prompt for your coding agent. Copy it as it stands:
+
+```text
+You are a coding agent helping a Wayne State University developer add HELMET to the PHP app in this folder. HELMET is the baseline runtime of WELD, the Wayne State application stack: one small PHP core that sends the security headers and a nonce-based CSP, hardens the session, decides whether a request really arrived over HTTPS from a trusted proxy, answers the /up health check, and writes JSON logs. Raw PHP, Laravel and PSR-15 all mount the same core, so they send the same headers.
+
+Read first:
+- https://helmet.apps.wayne.edu/llms.txt, the index of HELMET's pages, each one as Markdown. Fetch the pages you need; do not work from memory.
+- This app's composer.json and composer.lock, its front controller or bootstrap/app.php, and every inline script, inline style and third-party origin its pages load.
+- ADVISOR, the stack's MCP server, if it is connected: read_project_docs for helmet, and list_stack_rules for the runtime chapter. If it is not connected, say so and work from the pages. How to add it: https://advisor.apps.wayne.edu/llms.txt
+
+Task:
+1. Say which formation this app is: raw PHP, Laravel with Blade, Laravel with Inertia and Vue, or a PSR-15 pipeline.
+2. Say where it runs: on Citadel (the citadel preset) or elsewhere, and if elsewhere, which single proxy address HELMET_PROXIES should trust.
+3. List what the default CSP would block in this app today (inline scripts without a nonce, eval, outside origins), and how to fix each one.
+4. Write the plan as numbered steps, starting with `composer require waynestate/helmet`. Change nothing yet.
+
+Constraints:
+- Trust only the address the front proxy connects from, never a whole private range such as 10.0.0.0/8.
+- Never loosen the CSP to make a page work: no unsafe-eval, and no unsafe-inline for scripts. Nonce the script, or move it into a file.
+- Playbook is private on git.wayne.edu. If you get a 404, ask the Enterprise Applications team for read access. HELMET runs without it, from the environment alone.
+- Never put a secret, a token or a key in a committed file.
+- Ask me before you guess, and before you touch anything that deploys.
+
+Output: the formation, the platform and its proxy setting, a table of what the CSP blocks today and the fix for each, the plan, then your questions.
+```
+
+#### Or call your formation
+
+#### HELMET in a raw PHP app
+
+One call at the top of the front controller, the nonce on every inline script, and a health check that still answers when there is no front controller.
+
+A prompt for your coding agent. Copy it as it stands:
+
+```text
+You are a coding agent adding HELMET to a raw PHP app (no framework) at Wayne State University. HELMET is the baseline runtime of WELD, the Wayne State application stack.
+
+Read first:
+- https://helmet.apps.wayne.edu/llms.txt, then the README's Raw PHP section, The headers and The session.
+- This app's composer.json, its front controller or entry scripts, every page template, and where it calls session_start().
+- ADVISOR, the stack's MCP server, if it is connected: read_project_docs for helmet, and list_stack_rules with permutation raw-php. If it is not connected, say so and work from the pages.
+
+Task:
+1. Install with `composer require waynestate/helmet`.
+2. Call helmet_boot() once at the very top of the front controller, before anything is echoed, with the citadel preset on Citadel (or trusted_proxies set to the one proxy address elsewhere) and a log stream of php://stderr off Citadel.
+3. Put the nonce helmet_boot() returns on every inline script tag, and print helmet_csp_nonce_meta() in the head when the pages use Vite.
+4. If some entry points never reach the front controller, add the two-line public/up.php that calls helmet_up(), as the README shows.
+5. Show me each file you would change before you write it.
+
+Constraints:
+- Do not start the session before helmet_boot(); HELMET hardens it.
+- HELMET renames a session still called PHPSESSID, so existing sessions end once on the first deploy. Say so in your output.
+- Never loosen the CSP to make a page work: no unsafe-eval, and no unsafe-inline for scripts.
+- Trust only the address the front proxy connects from, never a whole private range.
+- Ask me before you guess, and before you touch anything that deploys.
+
+Output: the changes as a diff per file, then how to check the headers locally (for example with curl -I), then your questions.
+```
+
+#### HELMET in a Laravel app with Blade
+
+The adapter discovers itself; publish the config, pick the platform, keep Laravel's own /up, and nonce the inline scripts in Blade.
+
+A prompt for your coding agent. Copy it as it stands:
+
+```text
+You are a coding agent adding HELMET to a Laravel app with Blade views at Wayne State University. HELMET is the baseline runtime of WELD, the Wayne State application stack; its Laravel adapter only wires the core, so Laravel and raw PHP send the same headers.
+
+Read first:
+- https://helmet.apps.wayne.edu/llms.txt, then the README's Laravel section: Install the adapter, Publish the config, Trust the proxy, Environment variables and The nonce in Blade.
+- This app's composer.json, bootstrap/app.php, config/session.php, its layouts and every Blade view with an inline script.
+- ADVISOR, the stack's MCP server, if it is connected: read_project_docs for helmet, and list_stack_rules with permutation laravel-blade. If it is not connected, say so and work from the pages.
+
+Task:
+1. Install with `composer require waynestate/helmet`. Package discovery registers the provider; add nothing to bootstrap/providers.php.
+2. Publish the config with `php artisan vendor:publish --tag=helmet-config` and make any CSP change there, as a PHP array.
+3. Set HELMET_PRESET=citadel on Citadel, or HELMET_PROXIES to the one proxy address elsewhere, in .env.example (never in .env).
+4. Keep health: '/up' in withRouting(). Give every inline script nonce set to Vite::cspNonce(); @vite needs nothing.
+5. Set secure, http_only and same_site in config/session.php: the adapter leaves the session to Laravel.
+6. Show me each file you would change before you write it.
+
+Constraints:
+- Do not add your own trustProxies call unless I ask; HELMET copies its proxy list to Laravel when the app has none.
+- Never loosen the CSP to make a page work: no unsafe-eval, and no unsafe-inline for scripts.
+- The request-forgery guard is opt-in. Leave HELMET_CSRF_ENABLED off unless I ask.
+- Ask me before you guess, and before you touch anything that deploys.
+
+Output: the changes as a diff per file, the environment variables in a table, then your questions.
+```
+
+#### HELMET in a Laravel app with Inertia and Vue
+
+The Laravel adapter plus the coach's rules: scripts in the layout, never in Inertia's Head, one nonce from one package, no shared caching of nonced HTML.
+
+A prompt for your coding agent. Copy it as it stands:
+
+```text
+You are a coding agent adding HELMET to a Laravel app that renders its pages with Inertia and Vue at Wayne State University. HELMET is the baseline runtime of WELD, the Wayne State application stack.
+
+Read first:
+- https://helmet.apps.wayne.edu/llms.txt, then the README's Laravel section, especially Vite and Inertia.
+- This app's composer.json, package.json, vite.config, bootstrap/app.php, the root Blade layout, and every Vue page that uses Inertia's Head.
+- ADVISOR, the stack's MCP server, if it is connected: read_project_docs for helmet, and list_stack_rules with permutation laravel-inertia-vue. If it is not connected, say so and work from the pages.
+
+Task:
+1. Install with `composer require waynestate/helmet`, publish the config with `php artisan vendor:publish --tag=helmet-config`, and set HELMET_PRESET or HELMET_PROXIES as for any Laravel app.
+2. Find every script that will break under the CSP: inline scripts without a nonce, scripts placed through Inertia's Head, anything that needs eval. Move each into the layout or into the bundle.
+3. Check that no other package calls Vite::useCspNonce(); if one does, tell me which.
+4. Check for any layer that caches HTML across requests, and tell me where it is.
+5. Show me each file you would change before you write it.
+
+Constraints:
+- Never loosen the CSP to make a page work: no unsafe-eval, no unsafe-inline for scripts, and no unsafe-inline in style-src (a nonce makes the browser ignore it).
+- The Vite dev server is allowed only in local, and only while it runs. Do not add its origin by hand anywhere else.
+- Ask me before you guess, and before you touch anything that deploys.
+
+Output: what breaks today and the fix for each, the changes as a diff per file, then your questions.
+```
+
+#### HELMET in a PSR-15 middleware pipeline
+
+The same core as middleware: the health check first, then the headers, and the nonce read from the request attribute downstream.
+
+A prompt for your coding agent. Copy it as it stands:
+
+```text
+You are a coding agent adding HELMET to a PHP app built on a PSR-15 middleware pipeline at Wayne State University. HELMET is the baseline runtime of WELD, the Wayne State application stack.
+
+Read first:
+- https://helmet.apps.wayne.edu/llms.txt, then the README's PSR-15 middleware section and The headers.
+- This app's composer.json, where it builds its middleware pipeline, and the handlers that render HTML.
+- ADVISOR, the stack's MCP server, if it is connected: read_project_docs for helmet, and list_stack_rules with permutation raw-php. If it is not connected, say so and work from the pages.
+
+Task:
+1. Install with `composer require waynestate/helmet`.
+2. Build TrustedProxies from the citadel preset on Citadel (or from the one proxy address elsewhere), and add HealthCheck for /up, then SecurityHeadersMiddleware, to the pipeline as the README shows.
+3. Read the nonce in handlers from the helmet.csp_nonce request attribute and put it on every inline script tag.
+4. Show me each file you would change before you write it.
+
+Constraints:
+- Keep the default rethrow, so the framework's error handler still runs, unless I ask for the middleware's own 500.
+- The request-forgery guard is opt-in. Do not mount RequestForgeryGuard unless I ask.
+- Never loosen the CSP to make a page work: no unsafe-eval, and no unsafe-inline for scripts.
+- Ask me before you guess, and before you touch anything that deploys.
+
+Output: the changes as a diff per file, then how to check the headers locally, then your questions.
+```
+
+The prompts are part of the page: an agent that reads [this page as Markdown](https://helmet.apps.wayne.edu/index.md) or [llms.txt](https://helmet.apps.wayne.edu/llms.txt) gets every call without the buttons. Nobody runs the ball without a helmet.
+
+### The film room
+
+What HELMET writes down while the game is on, so you can watch the tape afterwards.
+
+1. ### Logs, one line each
+   ```
+   {"message":"login failed",
+    "context":{"user":"student42",
+     "password":"***"},
+    "level_name":"WARNING",
+    "channel":"app"}
+   ```
+   Monolog JSON, one event per line. Passwords, tokens and session IDs come out as `***`, and if the log file can't be written it falls back to stderr instead of taking the request down.
+2. ### Version warnings
+   ```
+   Laravel 11 is end of life and
+   no longer receives security
+   updates. Upgrade to a
+   supported version.
+   ```
+   Read from CREED's `policy.json`. A version in its security-only phase or past end of life gets a plain warning; an active or unknown one gets none. The date is injected, so the boundaries are testable.
+3. ### Metrics, off by default
+   ```
+   # HELP helmet_info HELMET is running.
+   # TYPE helmet_info gauge
+   helmet_info{php_version="8.4",
+    helmet_version="0.2.4"} 1
+   ```
+   A Prometheus endpoint you turn on with `HELMET_METRICS_ENABLED`, behind a bearer token or an IP allow list. With neither set it answers `404`, so nobody hands their metrics to the whole network.
+4. ### The ribbon
+   In local, testing and staging, Laravel apps get `<div class="helmet-ribbon">` right after `<body>`, so nobody mistakes the scrimmage for the game. Never in production, never on JSON. No Aftertaste.
+
+### Coach's rules for Vite and Inertia
+
+The CSP stays honest only if the bundle plays along.
+
+1. **Nonce every inline script.** There is no `'unsafe-inline'` for scripts; `@vite` tags already carry the nonce.
+2. **No `'unsafe-eval'`.** If your bundle needs `eval`, fix the bundle.
+3. **No scripts in Inertia's `<Head>`.** They render after load without the nonce, and the browser blocks them. Put scripts in the layout.
+4. **One nonce per request, from one package.** A second `Vite::useCspNonce()` splits the header from the tags; HELMET logs a warning when it sees one.
+5. **No shared caching of nonced HTML.** A cached page carries yesterday's nonce. Repetition is a fine Helmet song and a terrible nonce.
+
+### Practice squad
+
+On the backlog in HELMET's best practices, not in 0.2. They suit up when they're ready.
+
+- A readiness check, separate from `/up`
+- A `Clear-Site-Data` helper for logout
+- A global error handler: detail in the log, a generic page for the user
+
+Wayne State app stack · 0.1 season
+
+### WELD depth chart
+
+HELMET plays on the line for every app in the stack. Here's who lines up beside it.
+
+#### On the field
+
+What runs inside every app
+
+- [WayneUI](https://wayneui.apps.wayne.edu/) Renders every page: the design system, tokens and components.
+- [SESAME](https://sesame.apps.wayne.edu/) Snaps the sign-in: CAS, the gateway, bearer tokens and Entra, behind one config switch.
+- HELMET you are here Protects every snap: headers, session, proxies, /up, logs.
+- [WELD](https://weld.apps.wayne.edu/) Every part already joined, in one Laravel + Inertia/Vue app.
+
+#### Coaches and officials
+
+What keeps the code honest
+
+- [CREED](https://creed.apps.wayne.edu/) The written standards, and the policy.json HELMET reads.
+- [PROCTOR](https://proctor.apps.wayne.edu/) One command that checks an app against the standards.
+- [Pinstripe](https://pinstripe.apps.wayne.edu/) The coding standard: Pint, PHPStan, ESLint and Prettier.
+- [Preflight](https://preflight.apps.wayne.edu/) Shared CI from GitLab CI/CD components.
+- [ADVISOR](https://advisor.apps.wayne.edu/) The voice in your headset: an MCP server that knows the stack.
+
+#### Sideline and front office
+
+How apps start, ship and grow
+
+- [Sourdough](https://sourdough.apps.wayne.edu/) Starters you shape yourself: raw PHP, Blade or Inertia/Vue.
+- [Squire](https://squire.apps.wayne.edu/) The equipment manager: release script and local parity for Citadel.
+- [Drawbridge](https://drawbridge.apps.wayne.edu/) next The Citadel sign-in gateway, lowered on request.
+- [Booster](https://booster.apps.wayne.edu/) The booster club: upgrade recipes, PHP 7 to 8 and Laravel N to N+1.
+- [Rollcall](https://rollcall.apps.wayne.edu/) Every app answers “present”, with its PHP version.
