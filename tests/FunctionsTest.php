@@ -336,7 +336,7 @@ final class FunctionsTest extends TestCase
             // ...and X-Powered-By is gone.
             $leaked = array_filter(
                 $headers,
-                static fn (string $line): bool => stripos($line, 'X-Powered-By:') === 0,
+                static fn(string $line): bool => stripos($line, 'X-Powered-By:') === 0,
             );
             self::assertSame([], $leaked, "X-Powered-By survived the health answer:\n" . implode("\n", $headers));
         } finally {
