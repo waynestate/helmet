@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Docs: added a "Running off Citadel" section to the README with a table for
+  Citadel, OpenShift, Coolify and raw Docker behind a compose proxy: what
+  sits in front, what to put in `HELMET_PROXIES`, and where logs go. The
+  README log example now leads with `php://stderr`, and the hard-coded
+  `172.18.0.1` now lives only in that table, with the other references
+  pointing at the `citadel` preset.
+
 ## 0.2.0 (2026-10-29)
 
 - Fixed the `<head>` match when injecting the csp-nonce meta tag into HTML
