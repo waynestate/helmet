@@ -60,17 +60,17 @@ if (!function_exists('helmet_boot')) {
        *     hsts_preload?: bool,
        *     no_store?: array{enabled?: bool, paths?: list<string>},
        *     csrf?: array{enabled?: bool, allow_same_site?: bool, trusted_origins?: list<string>, except?: list<string>},
-       *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency'}
-       * } $config
-     *
-     * @return array{nonce: string, logger: LoggerInterface|null}
+        *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency', request_id?: string}
+        * } $config
+      *
+      * @return array{nonce: string, logger: LoggerInterface|null, request_id: string}
      *
      * @throws UnknownPresetException If "preset" names a preset the package
      *         does not know.
-       * @throws \InvalidArgumentException If "trusted_proxies" or "preset" is
-       *         the wrong type, "csrf" is the wrong type, or "coop", "corp",
-       *         "permissions_policy", "csp_trusted_types", "no_store" or a
-       *         "csrf" value is invalid.
+        * @throws \InvalidArgumentException If "trusted_proxies" or "preset" is
+        *         the wrong type, "csrf" is the wrong type, or "coop", "corp",
+        *         "permissions_policy", "csp_trusted_types", "no_store" or a
+        *         "csrf" value is invalid, or "log.request_id" is not a string.
      * @throws \Waynestate\Helmet\Headers\InvalidCspReportUriException If
      *         "csp_report_uri" is not a valid report destination.
      * @throws \LogicException If a session is already active.
@@ -100,13 +100,26 @@ if (!function_exists('helmet_boot')) {
         SessionHardening::apply($isHttps);
 
         $logger = null;
+        $requestId = Logging::requestId();
         $log = $config['log'] ?? null;
         if (is_array($log)) {
+            $suppliedRequestId = null;
+            if (isset($log['request_id'])) {
+                // @phpstan-ignore booleanNot.alwaysFalse (the docblock says string, but a caller may pass a non-string at runtime)
+                if (!is_string($log['request_id'])) {
+                    throw new \InvalidArgumentException('helmet_boot() "log.request_id" must be a string.');
+                }
+                $suppliedRequestId = $log['request_id'];
+            }
             $logger = Logging::create(
                 $log['channel'] ?? 'helmet',
                 $log['stream'] ?? 'php://stderr',
                 $log['level'] ?? 'info',
+                $suppliedRequestId,
             );
+            if ($suppliedRequestId !== null && Logging::isValidRequestId($suppliedRequestId)) {
+                $requestId = $suppliedRequestId;
+            }
         }
 
         $healthPath = $config['health_path'] ?? '/up';
@@ -246,7 +259,7 @@ if (!function_exists('helmet_boot')) {
             }
         }
 
-        return ['nonce' => $nonce, 'logger' => $logger];
+        return ['nonce' => $nonce, 'logger' => $logger, 'request_id' => $requestId];
     }
 }
 
