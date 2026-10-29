@@ -100,6 +100,17 @@ final class HelmetServiceProvider extends ServiceProvider
                 return;
             }
 
+            // X-Forwarded-Proto is normalized at the very start of the global
+            // chain, ahead of TrustProxies. Citadel's HA-Proxy appends the
+            // header instead of replacing it, so a client can produce
+            // "https, http", and Symfony would read the first (client's)
+            // value from isSecure(). The normalizer only rewrites the raw
+            // header and server bags, and Symfony applies its trusted-proxy
+            // rewrites lazily on read, so running before TrustProxies is
+            // safe and earliest. Running it twice is a no-op: after the
+            // first pass the header carries a single value.
+            $kernel->prependMiddleware(ForwardedProtoNormalizer::class);
+
             // SecurityHeaders runs in the global middleware when scope is
             // "global" (the default), so every response - including 404s and
             // JSON routes - carries the baseline headers. When scope is "web",
