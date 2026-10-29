@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Fixed: `helmet_boot()` removed `X-Powered-By` only after it had already
+  answered the health check path, so a GET or HEAD to `/up` (the default
+  `health_path`) still sent the header. The removal now runs before the
+  health answer and the request-forgery rejection, so both early exits leave
+  the response clean.
+
 ## 0.2.2 (2026-10-29)
 
 - Every JSON log record now carries a request ID in `extra.request_id`: 16
