@@ -31,7 +31,8 @@
         "waynestate/pinstripe": "^0.1"
     },
     "suggest": {
-        "laravel/framework": "For the Laravel adapter (step 2)"
+        "laravel/framework": "For the Laravel adapter (step 2)",
+        "waynestate/playbook": "WSU's shared values (CAS, Entra, gateway); private, git.wayne.edu"
     },
     "extra": {
         "laravel": {
