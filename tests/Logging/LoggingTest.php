@@ -80,7 +80,7 @@ final class LoggingTest extends TestCase
 
         $content = (string) file_get_contents($file);
         unlink($file);
-        $lines = array_values(array_filter(explode("\n", $content), static fn (string $line): bool => $line !== ''));
+        $lines = array_values(array_filter(explode("\n", $content), static fn(string $line): bool => $line !== ''));
         self::assertCount(2, $lines);
 
         $ids = [];

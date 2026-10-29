@@ -82,8 +82,7 @@ final class Logging
         string $streamOrPath,
         string $level = 'info',
         ?string $requestId = null,
-    ): LoggerInterface
-    {
+    ): LoggerInterface {
         $logger = new Logger($channel);
 
         $formatter = new JsonFormatter();
@@ -104,7 +103,7 @@ final class Logging
         // in the same record.
         if ($requestId !== null && self::isValidRequestId($requestId)) {
             $id = $requestId;
-            $logger->pushProcessor(static fn (LogRecord $record): LogRecord => $record->with(extra: $record->extra + ['request_id' => $id]));
+            $logger->pushProcessor(static fn(LogRecord $record): LogRecord => $record->with(extra: $record->extra + ['request_id' => $id]));
         } else {
             $logger->pushProcessor([self::class, 'addRequestId']);
         }
