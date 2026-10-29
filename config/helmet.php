@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Waynestate\Helmet\Headers\SecurityHeaders;
 use Waynestate\Helmet\Platform\Presets;
+use Waynestate\Helmet\Support\Setting;
 
 /*
 |--------------------------------------------------------------------------
@@ -11,12 +12,17 @@ use Waynestate\Helmet\Platform\Presets;
 |--------------------------------------------------------------------------
 |
 | The configuration for the HELMET baseline runtime. This file is the only
-| place in the package that reads env(); every other part of the package
-| reads these values through config().
+| place in the package that reads the environment: every setting goes
+| through env(), except HELMET_PRESET, which goes through
+| Waynestate\Helmet\Support\Setting and also asks the private
+| waynestate/playbook package when the environment has no value. Every other
+| part of the package reads these values through config().
 |
 | "preset"      The platform preset that fills "proxies" (see
 |               Waynestate\Helmet\Platform\Presets). Set with the
-|               HELMET_PRESET env var. null when no preset is named.
+|               HELMET_PRESET env var, or by the private
+|               waynestate/playbook package when the environment has no
+|               value. null when no preset is named.
 |
 | "proxies"     The trusted proxies (a list of IPs or CIDR ranges) that may
 |               set the X-Forwarded-Proto header. Filled from HELMET_PROXIES
@@ -225,8 +231,11 @@ if (is_string($helmetProxies) && $helmetProxies !== '') {
     }
 }
 
-$helmetPreset = env('HELMET_PRESET');
-$helmetPreset = is_string($helmetPreset) && $helmetPreset !== '' ? $helmetPreset : null;
+// The preset comes from the environment first, then from the private
+// waynestate/playbook package when it is installed (Setting checks both).
+// A missing preset is not an error: with no preset and no list, nothing
+// is trusted.
+$helmetPreset = Setting::get('HELMET_PRESET');
 
 // An unknown preset throws even when HELMET_PROXIES already filled the
 // list: a typo in HELMET_PRESET should fail loudly at boot instead of
