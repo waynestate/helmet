@@ -233,14 +233,14 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
 .board__svg line, .board__svg path, .board__svg circle, .board__svg ellipse { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .board .hash line { stroke: rgba(238, 240, 230, 0.28); stroke-width: 2; }
 .board .los { stroke: rgba(238, 240, 230, 0.55); stroke-width: 2.5; stroke-dasharray: 12 9; }
-.board .los__label { fill: rgba(238, 240, 230, 0.55); font-family: var(--h-marker); font-size: 13px; }
+.board .los__label { fill: var(--h-chalk-dim); font-family: var(--h-marker); font-size: 17px; }
 .board .pocket { stroke: rgba(255, 204, 51, 0.55); stroke-width: 2.5; }
 .board .rusher line { stroke: var(--h-berry-chalk); stroke-width: 4.5; }
 .board .threat { fill: var(--h-berry-chalk); font-family: var(--h-marker); font-size: 17px; text-anchor: middle; }
 .board .route { stroke: var(--h-berry-chalk); stroke-width: 3; }
 .board .ghost { stroke: rgba(245, 154, 185, 0.7); stroke-width: 2.5; stroke-dasharray: 2 8; opacity: 0; }
 .board .blocker circle { stroke: var(--h-chalk); stroke-width: 4; }
-.board .prot { fill: var(--h-chalk); font-family: var(--h-display); font-size: 14px; text-anchor: middle; letter-spacing: 0.04em; }
+.board .prot { fill: var(--h-chalk); font-family: var(--h-display); font-size: 16px; text-anchor: middle; letter-spacing: 0.04em; }
 .board .bar { stroke: var(--h-chalk); stroke-width: 4.5; }
 .board .burst line { stroke: var(--h-gold); stroke-width: 3; }
 .board .note, .board .clack { fill: var(--h-chalk-dim); font-family: var(--h-marker); font-size: 19px; }
@@ -293,7 +293,7 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
 .eraser:hover { transform: translateY(-2px) rotate(-2deg); }
 .eraser:active { transform: translateY(1px); }
 .eraser__felt { width: 2.6rem; height: 1.3rem; border-radius: 4px; background: linear-gradient(#5b3a22 0 45%, #d8d3c8 45%); }
-.tray__hint { display: none; margin: 0 0 0 auto; color: var(--h-ink); font-size: 0.8rem; font-weight: 700; }
+.tray__hint { display: none; margin: 0 0 0 auto; color: var(--h-ink); font-size: 0.875rem; font-weight: 700; }
 .tray__hint kbd { font-family: var(--h-mono); background: var(--h-paper); color: var(--h-ink); border-radius: 4px; padding: 0 0.3rem; margin-left: 2px; box-shadow: 0 2px 0 rgba(0, 0, 0, 0.25); }
 .motion .eraser { display: inline-flex; }
 .motion .tray__hint { display: block; }
