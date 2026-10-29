@@ -14,7 +14,7 @@ Each practice ends with exactly one tag.
 
 | Tag | Meaning |
 | --- | --- |
-| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository now has a `.gitlab-ci.yml` that includes the PREFLIGHT `php-test` and `composer-audit` components, pinned to one commit. The README says git.wayne.edu has no runners today, so whether that pipeline has ever run was not verified. Treat the tests as run by hand until a pipeline run is on record. |
+| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository now has a `.gitlab-ci.yml` that includes the Preflight `php-test` and `composer-audit` components, pinned to one commit. The README says git.wayne.edu has no runners today, so whether that pipeline has ever run was not verified. Treat the tests as run by hand until a pipeline run is on record. |
 | `Checked` | PROCTOR or CI warns or fails. |
 | `Documented` | Written down in the README or a design note, with no code behind it. |
 | `Not yet` | A gap. |
@@ -130,7 +130,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Set `expose_php=Off` in `php.ini` and `ServerTokens Prod` and `TraceEnable Off` in the Apache config.
 - **Why:** These settings cannot be changed from app code. `expose_php` is a `php.ini`-only directive, so `header_remove` only hides one of its effects.
 - **Sources:** [PHP ini list](https://www.php.net/manual/en/ini.list.php), [OWASP HTTP Headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html)
-- **Stack:** `Not yet`. It needs a Citadel change, planned as an upstream request by SQUIRE.
+- **Stack:** `Not yet`. It needs a Citadel change, planned as an upstream request by Squire.
 
 ---
 
@@ -394,13 +394,13 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Commit `composer.lock`, bound every runtime constraint, and run `composer audit --locked` in CI and at release.
 - **Why:** A lock file is what makes a release repeatable, and an audit finds known advisories.
 - **Sources:** [Composer CLI](https://getcomposer.org/doc/03-cli.md)
-- **Stack:** `Checked`. PROCTOR's `lock-committed`, `unbounded-constraints` and `composer-audit` checks do this for any app that runs PROCTOR. HELMET's own repository commits `composer.lock` and its `.gitlab-ci.yml` includes the PREFLIGHT `composer-audit` component, pinned to a commit. The pipeline run itself was not seen. The second pass searched for Monolog advisories from 2025 and 2026 and found none, but that search returned only generic vulnerability-database pages, so treat "none found" as weak. Run the audit and do not rely on this line.
+- **Stack:** `Checked`. PROCTOR's `lock-committed`, `unbounded-constraints` and `composer-audit` checks do this for any app that runs PROCTOR. HELMET's own repository commits `composer.lock` and its `.gitlab-ci.yml` includes the Preflight `composer-audit` component, pinned to a commit. The pipeline run itself was not seen. The second pass searched for Monolog advisories from 2025 and 2026 and found none, but that search returned only generic vulnerability-database pages, so treat "none found" as weak. Run the audit and do not rely on this line.
 
 ### H56. Set the Composer audit policy on purpose
 - **Practice:** Decide in `composer.json` how `composer audit` treats known advisories and abandoned packages, and keep the same settings in CI. Know the defaults: the current Composer config docs show `block-insecure` defaulting to `true` (updates to versions with known advisories are blocked), `block-abandoned` to `false`, and `abandoned` to `fail` since Composer 2.7. Those `audit` keys are now marked deprecated in favour of a new `config.policy` block (advisories, malware, abandoned packages), and the old keys are read only as a fallback.
 - **Why:** An audit that passes on one machine and fails on another is a policy nobody chose. A package that is abandoned stops getting fixes, which matters most for a baseline library every app installs. Composer's config docs are the source here. The version that introduced `config.policy` was not found in what was read, so check the Composer version in the Citadel build image before writing the policy.
 - **Sources:** [Composer config (audit, policy)](https://getcomposer.org/doc/06-config.md)
-- **Stack:** `Not yet`. HELMET's `composer.json` sets no `audit` or `policy` config. The PREFLIGHT component's flags were not read.
+- **Stack:** `Not yet`. HELMET's `composer.json` sets no `audit` or `policy` config. The Preflight component's flags were not read.
 
 ### H57. Run the tests on every supported PHP version, and no unsupported one
 - **Practice:** Test on each PHP branch the stack supports and drop a branch the day it loses security support. Today that is 8.3, 8.4 and 8.5, with 8.2 only until 2026-12-31.
@@ -412,7 +412,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Run secret detection on every pipeline for every project in the stack, in addition to the dependency audit.
 - **Why:** H45 says to keep secrets out of git. A scanner is how you find the ones that got in anyway. GitLab's secret detection docs list it for the Free, Premium and Ultimate tiers. The same docs say Dependency Scanning is Ultimate-tier, so on a lower tier `composer audit` is the dependency check. WSU's GitLab tier was not checked.
 - **Sources:** [GitLab Secret Detection](https://docs.gitlab.com/user/application_security/secret_detection/), [GitLab Dependency Scanning](https://docs.gitlab.com/user/application_security/dependency_scanning/)
-- **Stack:** `Not yet`. HELMET's pipeline includes `php-test` and `composer-audit` only. Whether PREFLIGHT offers a secret-detection component was not checked.
+- **Stack:** `Not yet`. HELMET's pipeline includes `php-test` and `composer-audit` only. Whether Preflight offers a secret-detection component was not checked.
 
 ---
 
@@ -458,11 +458,11 @@ Each of these follows from the research above. Items marked "inferred" depend on
 21. Request ID and context processors, and a redacting formatter.
 22. A test for `Logging::create()` and for `helmet_boot()` itself.
 23. Done. The version warning is wired into the environment ribbon: when a policy file is configured (`helmet.policy_path` / `HELMET_POLICY_PATH`, or `helmet_ribbon()`'s third argument), the ribbon shows a warning line for each component version that is in its security-only phase or end of life (`src/Ribbon/Ribbon.php`, `src/Policy/VersionWarning.php`). `RibbonTest` covers the active, security-only, end-of-life, no-policy-path and broken-file cases, and `InjectRibbonTest` covers the Laravel wiring.
-24. A proven CI run. The `.gitlab-ci.yml` exists (PREFLIGHT `php-test` and `composer-audit`, pinned to a commit), but git.wayne.edu has no runners today. Get one pipeline run on record, add PHP 8.5 and 8.3 to the test matrix, and add secret detection.
+24. A proven CI run. The `.gitlab-ci.yml` exists (Preflight `php-test` and `composer-audit`, pinned to a commit), but git.wayne.edu has no runners today. Get one pipeline run on record, add PHP 8.5 and 8.3 to the test matrix, and add secret detection.
 
 ### Needs Citadel
 
-25. `expose_php=Off`, `ServerTokens Prod` and `TraceEnable Off` (SQUIRE upstream work).
+25. `expose_php=Off`, `ServerTokens Prod` and `TraceEnable Off` (Squire upstream work).
 26. A network fix so app containers are reachable only through the proxy.
 27. Written rules in the handbook for runtime and headers, which today states none.
 
@@ -553,7 +553,7 @@ A second reviewer re-checked the first pass against primary sources and the code
 
 ### Corrected
 
-- **CI status.** The front matter said the repository had no CI configuration. It has a `.gitlab-ci.yml` with the PREFLIGHT `php-test` and `composer-audit` components. Whether it has run is not verified, so the claim now says that.
+- **CI status.** The front matter said the repository had no CI configuration. It has a `.gitlab-ci.yml` with the Preflight `php-test` and `composer-audit` components. Whether it has run is not verified, so the claim now says that.
 - **Nonce size source (H1).** The 128-bit figure was credited to MDN, web.dev and OWASP. The pages read do not state it. The W3C CSP Level 3 spec does (SHOULD be at least 128 bits, MUST be unique per policy sent). The code's 144-bit nonce still meets it.
 - **Reporting (H7).** The practice said `report-to` with `report-uri` as a fallback, without the `Reporting-Endpoints` header that `report-to` needs. That header is now in the practice. Also, the `csp-builder` README does show `report-only`, `report-uri`, `report-to`, `base-uri` and `form-action` config keys, so the library is not the blocker the first pass implied.
 - **Session ini note (H26).** The PHP 8.4 manual says "changing" `session.use_only_cookies` is deprecated. The php-src source shows the notice fires only when the setting is disabled. HELMET sets `1`, so it is not affected. The doc now says so.
@@ -569,6 +569,6 @@ The nonce quote from MDN, the PHP 8.4 `sid_length` and `sid_bits_per_character` 
 - Whether `csp-builder` can emit `strict-dynamic`, or the `Reporting-Endpoints` header, was not tested.
 - No Monolog or `paragonie/csp-builder` advisory was found, but the search was weak, so that is not a clean bill.
 - The primary advisories for CVE-2026-55584 and CVE-2026-33492 were not opened. The CVE-2026-11335 detail is from a search summary only.
-- Which PHP versions the PREFLIGHT `php-test` component runs, and whether PREFLIGHT has a secret-detection component, were not read.
+- Which PHP versions the Preflight `php-test` component runs, and whether Preflight has a secret-detection component, were not read.
 - The 2016 Google CSP study figure (94.72%) came from a search summary of the paper.
 - No code was run. PHP is not installed here, and the tests were not executed on 8.4 or 8.5.

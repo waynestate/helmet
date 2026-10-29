@@ -20,7 +20,7 @@ the first page is served.
 Checks: `composer ci` (the same command runs on GitLab and GitHub).
 Two mirrors, one command: the only thing in this repo that plays both sides is the CI.
 Front page: [`site/index.html`](site/index.html), the playbook, as static files ([`site/README.md`](site/README.md)).
-On Citadel it is served by the raw-PHP deploy layer in [`deploy/`](deploy/): a SQUIRE kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
+On Citadel it is served by the raw-PHP deploy layer in [`deploy/`](deploy/): a Squire kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
 
 HELMET is the Wayne State app stack's baseline runtime. One small
 framework-free PHP core, `Waynestate\Helmet`, does the five things every app on
@@ -69,7 +69,7 @@ $helmet = helmet_boot([
 ```
 
 Laravel reads it from `HELMET_PRESET` (see the environment table below;
-PLAYBOOK supplies it when the environment has none); an explicit
+Playbook supplies it when the environment has none); an explicit
 `HELMET_PROXIES` always wins over the preset.
 
 Off the WSU platform, skip the preset and pass your own list of the addresses
@@ -84,10 +84,10 @@ $helmet = helmet_boot([
 An unknown preset name throws at boot, so a typo fails loudly instead of
 silently trusting nothing.
 
-## WSU values (PLAYBOOK)
+## WSU values (Playbook)
 
 The Laravel config reads `HELMET_PRESET` from the environment first and from
-the private `waynestate/playbook` package (PLAYBOOK) second, when the
+the private `waynestate/playbook` package (Playbook) second, when the
 environment has no value. The raw PHP path takes the preset as an option to
 `helmet_boot()` and reads no environment at all.
 
@@ -95,7 +95,7 @@ environment has no value. The raw PHP path takes the preset as an option to
 | --- | --- |
 | `HELMET_PRESET` | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. |
 
-Get PLAYBOOK with your own GitLab token, three ways.
+Get Playbook with your own GitLab token, three ways.
 
 Composer: add the repository to your app's `composer.json`, put the token in
 `auth.json` (Composer's credential store, never in the repo), then require
@@ -142,7 +142,7 @@ into your app's `.env` (or your Citadel environment).
 The token is your own: `read_api` for curl, `read_repository` for clone and
 Composer.
 
-PLAYBOOK is private on git.wayne.edu. If you get a 404, ask the Enterprise
+Playbook is private on git.wayne.edu. If you get a 404, ask the Enterprise
 Applications team for read access.
 
 ## Running off Citadel
@@ -228,7 +228,7 @@ require __DIR__ . '/../vendor/autoload.php';
 helmet_up();
 ```
 
-SQUIRE's raw template ships this file. The probe only checks that the ball
+Squire's raw template ships this file. The probe only checks that the ball
 is in the air; it does not grade the play.
 
 ### PSR-15 middleware
@@ -311,7 +311,7 @@ php artisan vendor:publish --tag=helmet-config
 This copies `config/helmet.php` into your app. Do it: it is the best place to
 change the CSP, because the policy is a PHP array there, not JSON squeezed into
 `.env`. The config file is also the one place HELMET reads the environment
-(`env()`, plus `HELMET_PRESET` through `Setting`, which also checks PLAYBOOK),
+(`env()`, plus `HELMET_PRESET` through `Setting`, which also checks Playbook),
 so `php artisan config:cache` keeps working.
 
 #### Trust the proxy
@@ -356,7 +356,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | Variable | Config key | Default | What it does |
 | --- | --- | --- | --- |
 | `HELMET_SCOPE` | `helmet.scope` | `global` | `global` puts `SecurityHeaders` in the kernel's global middleware; `web` keeps it in the `web` group only. `InjectRibbon` always stays in `web`. |
-| `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. Read from the environment, else from PLAYBOOK (see [WSU values (PLAYBOOK)](#wsu-values-playbook)). `HELMET_PROXIES` wins when both are set. An unknown name throws, even when `HELMET_PROXIES` is set. |
+| `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. Read from the environment, else from Playbook (see [WSU values (Playbook)](#wsu-values-playbook)). `HELMET_PROXIES` wins when both are set. An unknown name throws, even when `HELMET_PROXIES` is set. |
 | `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Wins over `HELMET_PRESET`. Also copied to `trustedproxy.proxies` when the app has not set it. Empty trusts nothing. |
 | `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
@@ -899,12 +899,12 @@ Matters too, which is why the core stays small enough to read in an afternoon.
   <a href="https://github.com/waynestate/sesame" title="SESAME"><img src="docs/readme/cast/sesame.png" width="40" alt="SESAME"></a>
   <a href="https://github.com/waynestate/helmet" title="HELMET"><img src="docs/readme/cast/helmet.png" width="40" alt="HELMET"></a>
   <a href="https://github.com/waynestate/sourdough" title="Sourdough"><img src="docs/readme/cast/sourdough.png" width="40" alt="Sourdough"></a>
-  <a href="https://github.com/waynestate/squire" title="SQUIRE"><img src="docs/readme/cast/squire.png" width="40" alt="SQUIRE"></a>
-  <a href="https://github.com/waynestate/preflight" title="PREFLIGHT"><img src="docs/readme/cast/preflight.png" width="40" alt="PREFLIGHT"></a>
+  <a href="https://github.com/waynestate/squire" title="Squire"><img src="docs/readme/cast/squire.png" width="40" alt="Squire"></a>
+  <a href="https://github.com/waynestate/preflight" title="Preflight"><img src="docs/readme/cast/preflight.png" width="40" alt="Preflight"></a>
   <a href="https://github.com/waynestate/pinstripe" title="Pinstripe"><img src="docs/readme/cast/pinstripe.png" width="40" alt="Pinstripe"></a>
-  <a href="https://github.com/waynestate/booster" title="BOOSTER"><img src="docs/readme/cast/booster.png" width="40" alt="BOOSTER"></a>
-  <a href="https://github.com/waynestate/rollcall" title="ROLLCALL"><img src="docs/readme/cast/rollcall.png" width="40" alt="ROLLCALL"></a>
-  <a href="https://github.com/waynestate/drawbridge" title="DRAWBRIDGE"><img src="docs/readme/cast/drawbridge.png" width="40" alt="DRAWBRIDGE"></a>
+  <a href="https://github.com/waynestate/booster" title="Booster"><img src="docs/readme/cast/booster.png" width="40" alt="Booster"></a>
+  <a href="https://github.com/waynestate/rollcall" title="Rollcall"><img src="docs/readme/cast/rollcall.png" width="40" alt="Rollcall"></a>
+  <a href="https://github.com/waynestate/drawbridge" title="Drawbridge"><img src="docs/readme/cast/drawbridge.png" width="40" alt="Drawbridge"></a>
   <a href="https://github.com/waynestate/advisor" title="ADVISOR"><img src="docs/readme/cast/advisor.png" width="40" alt="ADVISOR"></a>
   <a href="https://github.com/waynestate/weld" title="WELD"><img src="docs/readme/cast/weld.png" width="40" alt="WELD"></a>
 </div>
