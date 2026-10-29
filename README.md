@@ -83,6 +83,26 @@ $helmet = helmet_boot([
 An unknown preset name throws at boot, so a typo fails loudly instead of
 silently trusting nothing.
 
+## Running off Citadel
+
+HELMET ships one package for every platform, so running off Citadel means
+changing configuration, not code. The only platform fact it needs is the
+address of whatever stands in front of the app container:
+
+| Platform | What sits in front | `HELMET_PROXIES` | Where logs go |
+| --- | --- | --- | --- |
+| Citadel | HA-Proxy | use the `citadel` preset (`172.18.0.1`) | `/var/log/app/helmet.log`, the preset's file path |
+| OpenShift | the OpenShift router | the router's pod network CIDR, from your cluster admin | `php://stderr` |
+| Coolify | Traefik or Caddy | the Docker network of the proxy | `php://stderr` |
+| Raw Docker behind a compose proxy | your proxy service | the compose network's subnet | `php://stderr` |
+
+An explicit `HELMET_PROXIES` overrides the preset on every platform. With
+neither a preset nor a list, no address is trusted: `X-Forwarded-Proto` is
+honored only by direct connections. Off Citadel, log to `php://stderr` and
+let the container runtime collect the lines.
+
+The helmet comes off the platform, not the app.
+
 ## Usage
 
 ### Raw PHP
