@@ -20,6 +20,8 @@ The stack's baseline runtime. One small, framework-free PHP core sends the secur
 composer require waynestate/helmet
 ```
 
+Already included in [WELD](https://weld.apps.wayne.edu/) and in every [Sourdough](https://sourdough.apps.wayne.edu/) app. Use HELMET on its own to put security headers and a hardened session on an app you already have.
+
 [Open the playbook](https://helmet.apps.wayne.edu/#playbook) [Pregame: three steps to kickoff](https://helmet.apps.wayne.edu/#quick-start)
 
 Five rushers, five blockers, zero sacks. Point at a call to see who blocks whom.
