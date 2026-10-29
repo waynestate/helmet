@@ -68,8 +68,9 @@ $helmet = helmet_boot([
 ]);
 ```
 
-Laravel reads it from `HELMET_PRESET` (see the environment table below); an
-explicit `HELMET_PROXIES` always wins over the preset.
+Laravel reads it from `HELMET_PRESET` (see the environment table below;
+PLAYBOOK supplies it when the environment has none); an explicit
+`HELMET_PROXIES` always wins over the preset.
 
 Off the WSU platform, skip the preset and pass your own list of the addresses
 your front proxy connects from:
@@ -82,6 +83,67 @@ $helmet = helmet_boot([
 
 An unknown preset name throws at boot, so a typo fails loudly instead of
 silently trusting nothing.
+
+## WSU values (PLAYBOOK)
+
+The Laravel config reads `HELMET_PRESET` from the environment first and from
+the private `waynestate/playbook` package (PLAYBOOK) second, when the
+environment has no value. The raw PHP path takes the preset as an option to
+`helmet_boot()` and reads no environment at all.
+
+| Setting | What it is |
+| --- | --- |
+| `HELMET_PRESET` | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. |
+
+Get PLAYBOOK with your own GitLab token, three ways.
+
+Composer: add the repository to your app's `composer.json`, put the token in
+`auth.json` (Composer's credential store, never in the repo), then require
+the package:
+
+```json
+{
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://git.wayne.edu/enterprise-apps/playbook.git"
+        }
+    ]
+}
+```
+
+```
+composer require waynestate/playbook
+```
+
+Or fetch the values file directly.
+
+curl (Linux, macOS):
+
+```
+curl --fail -H "PRIVATE-TOKEN: $GITLAB_TOKEN" "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" -o .env.playbook
+```
+
+PowerShell (Windows):
+
+```
+Invoke-WebRequest -Headers @{ 'PRIVATE-TOKEN' = $env:GITLAB_TOKEN } -Uri "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" -OutFile .env.playbook
+```
+
+Clone:
+
+```
+git clone https://git.wayne.edu/enterprise-apps/playbook.git
+```
+
+A fetched `.env.playbook` is plain `KEY=value` lines: copy the ones you need
+into your app's `.env` (or your Citadel environment).
+
+The token is your own: `read_api` for curl, `read_repository` for clone and
+Composer.
+
+PLAYBOOK is private on git.wayne.edu. If you get a 404, ask the Enterprise
+Applications team for read access.
 
 ## Running off Citadel
 
@@ -248,8 +310,9 @@ php artisan vendor:publish --tag=helmet-config
 
 This copies `config/helmet.php` into your app. Do it: it is the best place to
 change the CSP, because the policy is a PHP array there, not JSON squeezed into
-`.env`. The config file is also the one place HELMET reads `env()`, so
-`php artisan config:cache` keeps working.
+`.env`. The config file is also the one place HELMET reads the environment
+(`env()`, plus `HELMET_PRESET` through `Setting`, which also checks PLAYBOOK),
+so `php artisan config:cache` keeps working.
 
 #### Trust the proxy
 
@@ -293,7 +356,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | Variable | Config key | Default | What it does |
 | --- | --- | --- | --- |
 | `HELMET_SCOPE` | `helmet.scope` | `global` | `global` puts `SecurityHeaders` in the kernel's global middleware; `web` keeps it in the `web` group only. `InjectRibbon` always stays in `web`. |
-| `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. `HELMET_PROXIES` wins when both are set. An unknown name throws, even when `HELMET_PROXIES` is set. |
+| `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. Read from the environment, else from PLAYBOOK (see [WSU values (PLAYBOOK)](#wsu-values-playbook)). `HELMET_PROXIES` wins when both are set. An unknown name throws, even when `HELMET_PROXIES` is set. |
 | `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Wins over `HELMET_PRESET`. Also copied to `trustedproxy.proxies` when the app has not set it. Empty trusts nothing. |
 | `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |

@@ -4,6 +4,13 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- `HELMET_PRESET` (Laravel) now also comes from the private
+  `waynestate/playbook` package when the environment has no value: the config
+  reads it through `Waynestate\Helmet\Support\Setting`, which checks the
+  environment first, then PLAYBOOK, then gives up. A missing preset is still
+  not an error, and `waynestate/playbook` is suggested, never required. The
+  README gains a "WSU values (PLAYBOOK)" section with the fetch commands.
+
 ## 0.2.3 (2026-10-29)
 
 - Fixed: `helmet_boot()` removed `X-Powered-By` only after it had already
