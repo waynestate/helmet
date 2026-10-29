@@ -93,8 +93,8 @@ final class ForwardedProtoTest extends TestCase
         $request = Request::create('/', 'GET', [], [], [], [
             'REMOTE_ADDR' => '10.0.0.1',
         ]);
-        $request->headers->set('X-Forwarded-Proto', 'https');
-        $request->headers->add('X-Forwarded-Proto', 'http');
+        // Repeated header lines are stored as an array of values.
+        $request->headers->add(['X-Forwarded-Proto' => ['https', 'http']]);
         $request->server->set('HTTP_X_FORWARDED_PROTO', 'https, http');
 
         config(['helmet.proxies' => ['10.0.0.1']]);

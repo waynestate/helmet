@@ -62,9 +62,6 @@ final class ForwardedProtoNormalizer
 
         $values = [];
         foreach ($lines as $line) {
-            if (!is_string($line)) {
-                continue;
-            }
             foreach (explode(',', $line) as $value) {
                 $value = trim($value);
                 if ($value !== '') {

@@ -181,9 +181,9 @@ final class SecurityHeaders
 
         $meta = '<meta property="csp-nonce" nonce="' . htmlspecialchars($nonce, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">';
 
-        // <head(\s[^>]*)?> matches <head> and <head attr="..."> but not
-        // <header> or <headline>, which the looser /<head[^>]*>/i would also
-        // match and inject after.
+        // The pattern matches the opening head tag, with or without
+        // attributes, but not <header> or <headline>, which the looser
+        // head-prefix match would also hit and inject after.
         $modified = preg_replace_callback(
             '/<head(\s[^>]*)?>/i',
             static function (array $matches) use ($meta): string {
