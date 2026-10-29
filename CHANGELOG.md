@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 0.2.5 (2026-10-29)
+
 - Added: agent-ready site (prompt blocks, Markdown twins, llms.txt), from Squire's kit.
 - Added: HELMET_SESSION_SECURE=always keeps the session cookie Secure even when HTTPS is not detected.
 - Changed: the proof page moves to a private site that needs a Wayne State sign-in.
