@@ -721,6 +721,11 @@ docker run --rm -v "${PWD}:/app" -w /app php:8.4-cli vendor/bin/phpunit
 docker run --rm -v "${PWD}:/app" -w /app php:8.3-cli vendor/bin/phpunit
 ```
 
+Style and static analysis come from [Pinstripe](https://github.com/waynestate/pinstripe),
+the stack's coding standard: `phpstan.neon` includes
+`vendor/waynestate/pinstripe/phpstan/raw.neon`, and `pint.json` uses the same
+`per` preset Pinstripe ships.
+
 ## Strongly recommended: a git.wayne.edu instance runner
 
 git.wayne.edu has no runners today, so CI for this repo runs on the test

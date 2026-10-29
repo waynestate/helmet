@@ -59,3 +59,11 @@ All notable changes to this project are documented in this file.
 
 - BEST_PRACTICES tags brought up to date. The Stack lines are now picture
   perfect.
+
+- PHPStan and Pint now run from Pinstripe, the stack's coding standard,
+  instead of a hand copy. `composer.json` requires `waynestate/pinstripe`
+  (dev-main, until 0.1.0 is tagged) as a dev dependency, `phpstan.neon`
+  includes `vendor/waynestate/pinstripe/phpstan/raw.neon` (keeping this
+  repo's paths, PHP version range and three commented exceptions), and
+  `pint.json` keeps the `per` preset Pinstripe ships. No behaviour change;
+  the code is just cut from the same cloth now.
