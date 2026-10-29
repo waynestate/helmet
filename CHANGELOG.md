@@ -9,7 +9,7 @@ All notable changes to this project are documented in this file.
   sits in front, what to put in `HELMET_PROXIES`, and where logs go. The
   README log example now leads with `php://stderr`, and the hard-coded
   `172.18.0.1` now lives only in that table, with the other references
-   pointing at the `citadel` preset.
+  pointing at the `citadel` preset.
 
 - `SessionHardening::apply()` now also sets the session cookie name,
   lifetime, path, domain and cache limiter: `cookie_lifetime=0` (a
