@@ -1,10 +1,26 @@
-# Same settings as Pinstripe's phpstan/raw.neon. Swap for an include once waynestate/pinstripe is on Packagist.
+includes:
+    - vendor/waynestate/pinstripe/phpstan/raw.neon
+
 parameters:
-    level: 8
     paths:
         - src
-    reportIgnoresWithoutComments: true
-    reportUnmatchedIgnoredErrors: true
     phpVersion:
         min: 80300
         max: 80599
+    ignoreErrors:
+        # The report route excludes the web group's CSRF middleware under
+        # every name the framework has used for it, so it references the
+        # retired ValidateCsrfToken and VerifyCsrfToken classes on purpose;
+        # they are deprecated on newer Laravel versions.
+        -
+            identifier: classConstant.deprecatedClass
+            path: src/Laravel/CspReportRoute.php
+        # Both constructors deliberately re-type their documented list<string>
+        # parameter as list<mixed> so the per-entry is_string() guard stays
+        # live code; the widening is intentional, not a typo.
+        -
+            identifier: varTag.type
+            path: src/Proxy/IpAllowList.php
+        -
+            identifier: varTag.type
+            path: src/Proxy/TrustedProxies.php
