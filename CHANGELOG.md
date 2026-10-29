@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 0.2.3 (2026-10-29)
+
 - Fixed: `helmet_boot()` removed `X-Powered-By` only after it had already
   answered the health check path, so a GET or HEAD to `/up` (the default
   `health_path`) still sent the header. The removal now runs before the
