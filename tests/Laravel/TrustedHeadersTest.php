@@ -9,11 +9,11 @@ use Illuminate\Http\Request;
 use ReflectionProperty;
 
 /**
- * Laravel's default trusted-header set includes X-Forwarded-Host and
- * X-Forwarded-Prefix, which a platform that rewrites the host (OpenShift
- * appends the route host) would let a client pre-seed. The provider narrows
- * the set to the three headers a front proxy actually sets: For, Proto and
- * Port.
+ * Laravel's default trusted-header set includes X-Forwarded-Host,
+ * X-Forwarded-Prefix and X-Forwarded-Port, which a platform that rewrites
+ * the host (OpenShift appends the route host) or never sets the port
+ * (Citadel's HA-Proxy) would let a client pre-seed. The provider narrows
+ * the set to the two headers a front proxy actually sets: For and Proto.
  */
 final class TrustedHeadersTest extends TestCase
 {
@@ -39,10 +39,31 @@ final class TrustedHeadersTest extends TestCase
 
         self::assertSame(
             Request::HEADER_X_FORWARDED_FOR
-            | Request::HEADER_X_FORWARDED_PROTO
-            | Request::HEADER_X_FORWARDED_PORT,
+            | Request::HEADER_X_FORWARDED_PROTO,
             $headers,
         );
+    }
+
+    public function testForwardedPortIsNotTrusted(): void
+    {
+        // A client-sent X-Forwarded-Port must not change the port Laravel
+        // reports or the URLs it generates, even when the request comes from
+        // the trusted proxy: Citadel's HA-Proxy never sets the header, so any
+        // value is the client's own. (A full URL is used because
+        // SymfonyRequest::create() takes the host from the URL, not from a
+        // server variable.)
+        $this->app['router']->get('/port', static fn() => response()->json([
+            'port' => request()->getPort(),
+            'url' => url('/port'),
+        ]));
+
+        $response = $this->withServerVariables([
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_PORT' => '1337',
+        ])->get('http://app.example/port');
+
+        $response->assertStatus(200);
+        $response->assertJson(['port' => 80, 'url' => 'http://app.example/port']);
     }
 
     public function testForwardedHostIsNotTrusted(): void

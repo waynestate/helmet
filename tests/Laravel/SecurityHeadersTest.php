@@ -716,6 +716,57 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
+     * <header> and <headline> are not <head>. The old pattern /<head[^>]*>/i
+     * matched them and would have injected the meta tag after the wrong tag.
+     * An HTML document whose first tag is <header> and that has no <head>
+     * must come back byte for byte unchanged. The ribbon is disabled so the
+     * only middleware that could touch the body is the meta tag injection.
+     */
+    public function testHeaderAndHeadlineTagsAreNotMistakenForHead(): void
+    {
+        config(['helmet.ribbon' => false]);
+
+        $headerBody = '<html><body><header class="top">nav</header><p>hi</p></body></html>';
+        $this->app['router']->get('/header', static fn() => response(
+            $headerBody,
+            200,
+            ['Content-Type' => 'text/html'],
+        ))->middleware('web');
+
+        $headlineBody = '<html><body><headline>hi</headline></body></html>';
+        $this->app['router']->get('/headline', static fn() => response(
+            $headlineBody,
+            200,
+            ['Content-Type' => 'text/html'],
+        ))->middleware('web');
+
+        self::assertSame($headerBody, (string) $this->get('/header')->getContent());
+        self::assertSame($headlineBody, (string) $this->get('/headline')->getContent());
+    }
+
+    /**
+     * Injecting the meta tag grows the body. A response that carries a
+     * Content-Length header must have it refreshed to the new length, or the
+     * client would cut the page off mid-tag.
+     */
+    public function testContentLengthIsRefreshedAfterMetaInjection(): void
+    {
+        config(['helmet.ribbon' => false]);
+
+        $html = '<html><head><title>hi</title></head><body>hi</body></html>';
+        $this->app['router']->get('/cl', static fn() => response($html, 200, [
+            'Content-Type' => 'text/html',
+            'Content-Length' => (string) strlen($html),
+        ]))->middleware('web');
+
+        $response = $this->get('/cl');
+        $body = (string) $response->getContent();
+
+        self::assertStringContainsString('<meta property="csp-nonce"', $body);
+        self::assertSame(strlen($body), (int) $response->headers->get('Content-Length'));
+    }
+
+    /**
      * @param array<string, list<string>|null>|null $cspConfig
      * @param array<string, list<string>>|null $permissionsPolicy
      */

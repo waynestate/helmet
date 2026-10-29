@@ -181,8 +181,11 @@ final class SecurityHeaders
 
         $meta = '<meta property="csp-nonce" nonce="' . htmlspecialchars($nonce, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">';
 
+        // The pattern matches the opening head tag, with or without
+        // attributes, but not <header> or <headline>, which the looser
+        // head-prefix match would also hit and inject after.
         $modified = preg_replace_callback(
-            '/<head[^>]*>/i',
+            '/<head(\s[^>]*)?>/i',
             static function (array $matches) use ($meta): string {
                 return $matches[0] . $meta;
             },
@@ -192,6 +195,13 @@ final class SecurityHeaders
 
         if (is_string($modified) && $modified !== $content) {
             $response->setContent($modified);
+
+            // The body grew by the length of the meta tag. A stale
+            // Content-Length would cut the page off mid-tag, so refresh it
+            // when the response carries one.
+            if ($response->headers->has('Content-Length')) {
+                $response->headers->set('Content-Length', (string) strlen($modified));
+            }
         }
     }
 

@@ -22,10 +22,12 @@ namespace Waynestate\Helmet\Platform;
  *    connection only.
  *
  * The headers a trusted front proxy may set are the same for every preset:
- * X-Forwarded-For, X-Forwarded-Proto and X-Forwarded-Port. X-Forwarded-Host
- * and X-Forwarded-Prefix are deliberately not in the set: a platform that
+ * X-Forwarded-For and X-Forwarded-Proto. X-Forwarded-Host and
+ * X-Forwarded-Prefix are deliberately not in the set: a platform that
  * rewrites the host (for example OpenShift, which appends the route host)
- * would let a client pre-seed those headers.
+ * would let a client pre-seed those headers. X-Forwarded-Port is out too,
+ * because Citadel's HA-Proxy never sends it, so a client-sent value would
+ * pass through untouched and change the port the app reports.
  */
 final class Presets
 {
@@ -37,7 +39,6 @@ final class Presets
     public const TRUSTED_HEADERS = [
         'X-Forwarded-For',
         'X-Forwarded-Proto',
-        'X-Forwarded-Port',
     ];
 
     /**

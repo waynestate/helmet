@@ -231,13 +231,24 @@ same list: when the app has not set `trustedproxy.proxies` itself, it copies
 Laravel applies it before the config fallback.
 
 The provider also narrows which forwarded headers Laravel believes from those
-proxies: `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Port`, and
-nothing else. Laravel's own default also trusts `X-Forwarded-Host` and
-`X-Forwarded-Prefix`, and a client can pre-seed those on a platform whose proxy
-does not overwrite them, which poisons `url()`, redirects and password-reset
-links. If your app needs one of them, choose the set yourself with
-`trustProxies(at: ..., headers: ...)` in `bootstrap/app.php`; HELMET then
-leaves your choice alone.
+proxies: `X-Forwarded-For` and `X-Forwarded-Proto`, and nothing else.
+Laravel's own default also trusts `X-Forwarded-Host`, `X-Forwarded-Prefix`
+and `X-Forwarded-Port`, and a client can pre-seed any of them on a platform
+whose proxy does not overwrite them, which poisons `url()`, redirects and
+password-reset links. Port is out for the same reason: Citadel's HA-Proxy
+never sends it at all, so a client-sent value would pass through untouched
+and change the port Laravel reports and the URLs it generates. If your app
+needs one of them, choose the set yourself with
+`trustProxies(at: ..., headers: ...)` in `bootstrap/app.php` (or
+`TrustProxies::withHeaders()`); HELMET then leaves your choice alone.
+
+Citadel's HA-Proxy *appends* `X-Forwarded-Proto` instead of replacing it, so
+a client can arrive with two values, `https, http`. Symfony reads the first
+value of such a list (the client's), while HELMET reads the last (the one
+the closest proxy appended). To keep Laravel in agreement, the provider
+prepends a small middleware to the global chain that rewrites the header to
+its last value when the request comes from a trusted proxy. A single value
+is left alone, and requests from untrusted peers are ignored as before.
 
 As in the raw PHP section, use a preset or list only the address your front
 proxy connects from, never a whole private range.
@@ -250,7 +261,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | Variable | Config key | Default | What it does |
 | --- | --- | --- | --- |
 | `HELMET_SCOPE` | `helmet.scope` | `global` | `global` puts `SecurityHeaders` in the kernel's global middleware; `web` keeps it in the `web` group only. `InjectRibbon` always stays in `web`. |
-| `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. `HELMET_PROXIES` wins when both are set. |
+| `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. `HELMET_PROXIES` wins when both are set. An unknown name throws, even when `HELMET_PROXIES` is set. |
 | `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Wins over `HELMET_PRESET`. Also copied to `trustedproxy.proxies` when the app has not set it. Empty trusts nothing. |
 | `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
@@ -296,6 +307,11 @@ HELMET_CSP="{\"img-src\":[\"'self'\",\"data:\"],\"form-action\":null}"
 Invalid JSON is ignored and the default policy stays, so a typo in the
 environment cannot loosen the CSP.
 
+One gotcha when overriding: the policy adds the per-request nonce to
+`style-src` and `style-src-elem`. A browser ignores `'unsafe-inline'` once a
+nonce is present, so setting `style-src` to `["'unsafe-inline'"]` does not
+restore inline styles; it removes them.
+
 #### The nonce in Blade
 
 The middleware puts the per-request nonce on the request as the attribute
@@ -340,6 +356,11 @@ A few rules keep the CSP honest:
 - **No shared caching of nonced HTML.** The nonce changes every request. A
   cached page would carry a stale nonce, and the browser would block its
   scripts. Do not cache HTML at a layer that shares it across requests.
+- **Do not replace `style-src` with `'unsafe-inline'`.** The policy adds the
+  per-request nonce to `style-src` and `style-src-elem`, and a browser
+  ignores `'unsafe-inline'` once a nonce is present. An override that relies
+  on it loses every inline style silently. Keep the nonce, move the styles
+  into files, or give the inline styles a nonce.
 
 In raw PHP, print the meta tag in `<head>` with the nonce `helmet_boot()`
 returned:

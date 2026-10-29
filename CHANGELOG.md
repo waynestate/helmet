@@ -4,6 +4,38 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Fixed the `<head>` match when injecting the csp-nonce meta tag into HTML
+  responses: the old pattern also matched `<header>` and `<headline>` and
+  injected the tag after the wrong element. Responses that carry a
+  `Content-Length` header now have it refreshed to the new body length after
+  injection, so a stale length cannot cut the page off mid-tag.
+
+- Narrowed the trusted-header set in the Laravel adapter. `X-Forwarded-Host`,
+  `X-Forwarded-Prefix` and now `X-Forwarded-Port` are no longer trusted by
+  default. Port is out because Citadel's HA-Proxy never sends it, so a
+  client-sent value would pass through untouched and change the port Laravel
+  reports and the URLs it generates. Apps that need any of them choose the
+  set themselves with `trustProxies(at: ..., headers: ...)` or
+  `TrustProxies::withHeaders()`.
+
+- Laravel now agrees with HELMET on multi-value `X-Forwarded-Proto`.
+  Citadel's HA-Proxy appends the header instead of replacing it, so a client
+  can produce `https, http`. Symfony reads the first value of such a list
+  (the client's), while HELMET reads the last (the one the closest proxy
+  appended). A new middleware prepended to the global chain rewrites the
+  header to its last value when the request comes from a trusted proxy; a
+  single value is left alone, and requests from untrusted peers are ignored
+  as before.
+
+- An unknown `HELMET_PRESET` now throws even when `HELMET_PROXIES` is set.
+  A typo in the preset name fails loudly at boot instead of going silently
+  unused.
+
+- Docs: noted that the CSP nonce is added to `style-src` and
+  `style-src-elem`. A browser ignores `'unsafe-inline'` once a nonce is
+  present, so overriding `style-src` with `["'unsafe-inline'"]` loses inline
+  styles instead of restoring them.
+
 - Added HSTS `preload` support. Set `hsts_preload` / `HELMET_HSTS_PRELOAD` to
   `true` to append the `preload` directive to the
   `Strict-Transport-Security` header. Preload requires a `max-age` of at
