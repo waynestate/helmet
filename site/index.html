@@ -8,7 +8,7 @@
 <meta name="stack-env" content="auto">
 <script src="assets/stack-env.js" defer></script>
 <title>HELMET: Put it on before you ship.</title>
-<meta name="description" content="HELMET is the Wayne State app stack's baseline runtime: security headers and CSP, session hardening, trusted proxies, a /up health check, structured logs and version warnings, in one small PHP core.">
+<meta name="description" content="HELMET is a small PHP package that sends the security headers and a nonce-based CSP, hardens the session, checks the proxy, answers /up and writes JSON logs. Raw PHP, Laravel and PSR-15 apps all use the same core.">
 <meta name="theme-color" content="#13261f">
 <link rel="canonical" href="https://helmet.apps.wayne.edu/">
 <!-- For agents (ADR-0019): this page as Markdown, beside it. bin/agent-ready.php writes it from
@@ -94,9 +94,9 @@
             </div>
 
             <p class="hero__tagline">Put it on before you ship.</p>
-            <p class="hero__blurb">The stack's baseline runtime. One small, framework-free PHP core sends the security headers, hardens the session, checks the proxy, answers <code>/up</code> and writes structured logs, before your app serves a single page. Raw PHP, Laravel and PSR-15 all wear the same one.</p>
+            <p class="hero__blurb">HELMET is one small PHP package with no framework underneath. Before your app serves its first page, it sends the security headers, hardens the session, checks that the request really came over HTTPS, answers <code>/up</code> and sets up JSON logs. Raw PHP, Laravel and PSR-15 apps all wear the same one, so they send the same headers.</p>
             <div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div>
-            <p class="stack-note"><span class="stack-note__lead">Already included in <a href="https://weld.apps.wayne.edu/">WELD</a> and in every <a href="https://sourdough.apps.wayne.edu/">Sourdough</a> app.</span> Use HELMET on its own to put security headers and a hardened session on an app you already have.</p>
+            <p class="stack-note"><span class="stack-note__lead">Already included in <a href="https://weld.apps.wayne.edu/">WELD</a> and in every <a href="https://sourdough.apps.wayne.edu/">Sourdough</a> app.</span> Use HELMET on its own to add the security headers and a hardened session to an app you already have.</p>
             <p class="hero__cta">
               <a class="wsu-btn wsu-btn--accent wsu-btn--lg" href="#playbook">Open the playbook</a>
               <a class="hero__link" href="#quick-start">Pregame: three steps to kickoff</a>
@@ -222,7 +222,7 @@
         <p class="tab-label" aria-hidden="true">01</p>
         <div>
           <h2 class="section-title" id="playbook-title">The playbook</h2>
-          <p class="section-lede">Six plays, each one a protection that stops a named rusher. Laminated, because coffee happens on the sideline.</p>
+          <p class="section-lede">Each play is one protection and the attack it stops. Laminated, because coffee happens on the sideline.</p>
         </div>
       </div>
 
@@ -299,7 +299,7 @@
 <rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
 </svg></div>
     <p class="play-card__blocks"><span class="stamp">Blocks</span> A downgrade to plain HTTP</p>
-    <p class="play-card__body">One year, every subdomain, sent only when the request really was HTTPS. Roll it out in stages; <code>preload</code> is the domain owner's call, so HELMET never adds it.</p>
+    <p class="play-card__body">The default is one year and covers subdomains, and HELMET sends it only when the request really was HTTPS. Start with a short <code>max-age</code> and raise it once nothing breaks. <code>preload</code> is the domain owner's call, so HELMET never adds it.</p>
     <p class="play-card__code"><code>Strict-Transport-Security: max-age=31536000; includeSubDomains</code></p>
     <p class="play-card__foot"><span class="play-card__note">Start short, then go long.</span>
       <button class="run-btn" type="button" data-run aria-label="Run play 47, Long Snap, again">Run it</button></p>
@@ -325,7 +325,7 @@
 <rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
 </svg></div>
     <p class="play-card__blocks"><span class="stamp">Blocks</span> Session fixation and cookie theft</p>
-    <p class="play-card__body">Strict mode, cookies only, <code>HttpOnly</code> and <code>SameSite=Lax</code>, set before the session starts. <code>Secure</code> follows the real scheme, and it refuses to run once a session is already active.</p>
+    <p class="play-card__body">HELMET turns on strict mode, cookie-only session IDs, <code>HttpOnly</code> and <code>SameSite=Lax</code> before the session starts. <code>Secure</code> follows the request; on Citadel, where TLS ends at the proxy, set <code>HELMET_SESSION_SECURE=always</code>. It won't run once a session is already active, because changing these mid-session does nothing.</p>
     <p class="play-card__code"><code>session.use_strict_mode=1  cookie_httponly=1  cookie_samesite=Lax</code></p>
     <p class="play-card__foot"><span class="play-card__note">Strapped before kickoff.</span>
       <button class="run-btn" type="button" data-run aria-label="Run play 41, Session Lock, again">Run it</button></p>
@@ -351,7 +351,7 @@
 <rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
 </svg></div>
     <p class="play-card__blocks"><span class="stamp">Blocks</span> A forged X-Forwarded-Proto</p>
-    <p class="play-card__body">Only a trusted proxy's address may say a request was https. A spoofed header from the internet is ignored, and no HSTS goes out on a request that was not really secure. Trust the proxy's address, never a whole private range.</p>
+    <p class="play-card__body">HELMET believes <code>X-Forwarded-Proto</code> only when it comes from a trusted proxy's address. A spoofed one from the internet is ignored, and no HSTS goes out on a request that wasn't really secure. List the proxy's own address, never a whole private range.</p>
     <p class="play-card__code"><code>helmet_boot([&#x27;preset&#x27; =&gt; &#x27;citadel&#x27;])</code></p>
     <p class="play-card__foot"><span class="play-card__note">The Unsung hero of the line.</span>
       <button class="run-btn" type="button" data-run aria-label="Run play 58, Proxy Trap, again">Run it</button></p>
@@ -389,8 +389,8 @@
            SecurityHeaders::build() sends by default. -->
       <div class="kit" aria-labelledby="kit-title">
         <div class="kit__head">
-          <h3 class="kit__title" id="kit-title">Equipment check: every response, the full kit</h3>
-          <p class="kit__sub">One shared function builds these seven, so raw PHP and Laravel send the same headers, name and value. A test pins it down. <code>Cross-Origin-Resource-Policy</code> suits up only when you call for it.</p>
+          <h3 class="kit__title" id="kit-title">Equipment check: the headers on every response</h3>
+          <p class="kit__sub"><code>SecurityHeaders::build()</code> makes these seven for raw PHP and Laravel alike, and a test checks that both send the same names and values. <code>Cross-Origin-Resource-Policy</code> stays on the bench until you turn it on.</p>
         </div>
         <ul class="kit__list">
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Content-Security-Policy</code><span class="kit__val">the WayneUI default policy, a fresh nonce and <code>strict-dynamic</code></span></li>
@@ -401,7 +401,7 @@
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Cross-Origin-Opener-Policy</code><span class="kit__val"><code>same-origin</code>, configurable</span></li>
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Strict-Transport-Security</code><span class="kit__val">one year with <code>includeSubDomains</code>, on HTTPS only</span></li>
         </ul>
-        <p class="kit__fumble"><strong>Even on a fumble.</strong> The middleware sends the headers when the inner handler throws, and <code>X-Powered-By</code> is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.</p>
+        <p class="kit__fumble"><strong>Even on a fumble.</strong> The middleware still sends the headers when the inner handler throws, and <code>X-Powered-By</code> is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.</p>
       </div>
     </div>
   </section>
@@ -413,7 +413,7 @@
         <p class="tab-label tab-label--light" aria-hidden="true">02</p>
         <div>
           <h2 class="section-title" id="qs-title">Pregame: three steps to kickoff</h2>
-          <p class="section-lede">Pick your app's shape on the board. The same commands work in PowerShell, bash and zsh: Composer and Artisan don't care which shell snapped the ball.</p>
+          <p class="section-lede">Pick your app's shape below. The commands are the same in PowerShell, bash and zsh, because Composer and Artisan don't care which shell snapped the ball.</p>
         </div>
       </div>
 
@@ -438,24 +438,24 @@
         </div>
         <div class="sb-tabs" role="tablist" aria-label="Your app's shape"><button class="sb-tab" type="button" role="tab" id="tab-raw" aria-controls="panel-raw" aria-selected="true">Raw PHP</button><button class="sb-tab" type="button" role="tab" id="tab-laravel" aria-controls="panel-laravel" aria-selected="false" tabindex="-1">Laravel</button><button class="sb-tab" type="button" role="tab" id="tab-psr15" aria-controls="panel-psr15" aria-selected="false" tabindex="-1">PSR-15</button></div>
         <div class="sb-panels"><div class="sb-panel" role="tabpanel" id="panel-raw" aria-labelledby="tab-raw" tabindex="0"><h3 class="sb-panel__title">Raw PHP</h3><ol class="downs">
-<li class="down"><span class="down__no" aria-hidden="true">1</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 1: </span>Strap it on</p><p class="down__text">One package, no framework needed.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">2</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 2: </span>Call it once</p><p class="down__text">At the top of the front controller, before anything is echoed. Headers, session, proxy check and <code>/up</code> happen right here.</p><div class="cmd"><pre class="cmd__code"><code>use function Waynestate\Helmet\helmet_boot;
+<li class="down"><span class="down__no" aria-hidden="true">1</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 1: </span>Strap it on</p><p class="down__text">It's one Composer package, and it doesn't need a framework.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">2</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 2: </span>Call helmet_boot() at the top</p><p class="down__text">Put it first in your front controller, before anything is echoed. This one call sends the headers, hardens the session, checks the proxy and answers <code>/up</code>.</p><div class="cmd"><pre class="cmd__code"><code>use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([&#x27;preset&#x27; =&gt; &#x27;citadel&#x27;]);</code></pre><button class="copy-btn" type="button" data-copy="use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([&#x27;preset&#x27; =&gt; &#x27;citadel&#x27;]);"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">3</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 3: </span>Nonce your scripts</p><p class="down__text"><code>$helmet['nonce']</code> is this request's nonce. The meta tag lets Vite's runtime use it too.</p><div class="cmd"><pre class="cmd__code"><code>echo helmet_csp_nonce_meta($helmet[&#x27;nonce&#x27;]); // in &lt;head&gt;
+<li class="down"><span class="down__no" aria-hidden="true">3</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 3: </span>Nonce your inline scripts</p><p class="down__text"><code>$helmet['nonce']</code> is this request's nonce. If you use Vite, the meta tag lets its runtime use the nonce too.</p><div class="cmd"><pre class="cmd__code"><code>echo helmet_csp_nonce_meta($helmet[&#x27;nonce&#x27;]); // in &lt;head&gt;
 
 &lt;script nonce=&quot;&lt;?= $helmet[&#x27;nonce&#x27;] ?&gt;&quot;&gt;…&lt;/script&gt;</code></pre><button class="copy-btn" type="button" data-copy="echo helmet_csp_nonce_meta($helmet[&#x27;nonce&#x27;]); // in &lt;head&gt;
 
 &lt;script nonce=&quot;&lt;?= $helmet[&#x27;nonce&#x27;] ?&gt;&quot;&gt;…&lt;/script&gt;"><span class="copy-btn__label">Copy</span></button></div></div></li>
 </ol></div><div class="sb-panel" role="tabpanel" id="panel-laravel" aria-labelledby="tab-laravel" tabindex="0"><h3 class="sb-panel__title">Laravel</h3><ol class="downs">
 <li class="down"><span class="down__no" aria-hidden="true">1</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 1: </span>Strap it on</p><p class="down__text">Package discovery registers the provider and both middlewares. Nothing to add to <code>bootstrap/providers.php</code>.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">2</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 2: </span>Publish the config</p><p class="down__text">The best place to change the CSP: a PHP array, not JSON squeezed into <code>.env</code>.</p><div class="cmd"><pre class="cmd__code"><code>php artisan vendor:publish --tag=helmet-config</code></pre><button class="copy-btn" type="button" data-copy="php artisan vendor:publish --tag=helmet-config"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">3</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 3: </span>Pick the platform</p><p class="down__text">In <code>.env</code>. Keep <code>health: '/up'</code> in <code>withRouting()</code>; <code>@vite</code> already carries the nonce.</p><div class="cmd"><pre class="cmd__code"><code>HELMET_PRESET=citadel</code></pre><button class="copy-btn" type="button" data-copy="HELMET_PRESET=citadel"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">2</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 2: </span>Publish config/helmet.php</p><p class="down__text">Change the CSP there, where it's a PHP array. In <code>.env</code> it would have to be escaped JSON.</p><div class="cmd"><pre class="cmd__code"><code>php artisan vendor:publish --tag=helmet-config</code></pre><button class="copy-btn" type="button" data-copy="php artisan vendor:publish --tag=helmet-config"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">3</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 3: </span>Set the platform in .env</p><p class="down__text">Keep <code>health: '/up'</code> in <code>withRouting()</code>, because the adapter adds no route of its own. <code>@vite</code> already carries the nonce.</p><div class="cmd"><pre class="cmd__code"><code>HELMET_PRESET=citadel</code></pre><button class="copy-btn" type="button" data-copy="HELMET_PRESET=citadel"><span class="copy-btn__label">Copy</span></button></div></div></li>
 </ol></div><div class="sb-panel" role="tabpanel" id="panel-psr15" aria-labelledby="tab-psr15" tabindex="0"><h3 class="sb-panel__title">PSR-15</h3><ol class="downs">
 <li class="down"><span class="down__no" aria-hidden="true">1</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 1: </span>Strap it on</p><p class="down__text">The same core, mounted in a middleware pipeline.</p><div class="cmd"><pre class="cmd__code"><code>composer require waynestate/helmet</code></pre><button class="copy-btn" type="button" data-copy="composer require waynestate/helmet"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">2</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 2: </span>Line up the middleware</p><p class="down__text"><code>/up</code> first, then the headers. Headers go out even when the inner handler throws.</p><div class="cmd"><pre class="cmd__code"><code>$factory = new Psr17Factory();
+<li class="down"><span class="down__no" aria-hidden="true">2</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 2: </span>Line up the middleware, /up first</p><p class="down__text">The health check goes first, then the headers. The headers still go out when the inner handler throws.</p><div class="cmd"><pre class="cmd__code"><code>$factory = new Psr17Factory();
 $proxies = new TrustedProxies(Presets::proxies(&#x27;citadel&#x27;));
 
 $middleware = [
@@ -468,7 +468,7 @@ $middleware = [
     new HealthCheck($factory, $factory, &#x27;/up&#x27;),
     new SecurityHeadersMiddleware($proxies),
 ];"><span class="copy-btn__label">Copy</span></button></div></div></li>
-<li class="down"><span class="down__no" aria-hidden="true">3</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 3: </span>Read the nonce</p><p class="down__text">Downstream handlers get the same nonce the header carries.</p><div class="cmd"><pre class="cmd__code"><code>$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)</code></pre><button class="copy-btn" type="button" data-copy="$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)"><span class="copy-btn__label">Copy</span></button></div></div></li>
+<li class="down"><span class="down__no" aria-hidden="true">3</span><div class="down__body"><p class="down__title"><span class="wsu-sr-only">Step 3: </span>Read the nonce downstream</p><p class="down__text">Your handlers get the same nonce the CSP header carries, from a request attribute.</p><div class="cmd"><pre class="cmd__code"><code>$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)</code></pre><button class="copy-btn" type="button" data-copy="$request-&gt;getAttribute(&#x27;helmet.csp_nonce&#x27;)"><span class="copy-btn__label">Copy</span></button></div></div></li>
 </ol></div></div>
       </div>
 
@@ -488,7 +488,7 @@ $middleware = [
         <p class="tab-label" aria-hidden="true">03</p>
         <div>
           <h2 class="section-title" id="huddle-title">The huddle</h2>
-          <p class="section-lede">Five play calls for the coding agent you already use. Copy one, or run it straight in OpenCode, Claude Code, Codex or ChatGPT. Each says which formation the app is in, what the agent may not touch, and to ask the coach before it guesses.</p>
+          <p class="section-lede">Five prompts for the coding agent you already use. Copy one, or run it straight in OpenCode, Claude Code, Codex or ChatGPT. Each one has the agent work out your app's shape first and ask you before it guesses, and lists what it must not change.</p>
         </div>
       </div>
 
@@ -499,7 +499,7 @@ $middleware = [
             <div>
               <p class="ar-prompt__kicker">Call 00 · Any PHP app</p>
               <h3 class="ar-prompt__title" id="prompt-get-started-title">Get started with HELMET</h3>
-              <p class="ar-prompt__desc">Which formation the app is in, which platform sits in front of it, and the smallest plan to put the helmet on before the first page is served.</p>
+              <p class="ar-prompt__desc">The agent works out your app's shape and where it runs, then writes the smallest plan to add HELMET. It changes nothing yet.</p>
             </div>
           </header>
           <pre class="ar-prompt__text"><code>You are a coding agent helping a Wayne State University developer add HELMET to the PHP app in this folder. HELMET is the baseline runtime of WELD, the Wayne State application stack: one small PHP core that sends the security headers and a nonce-based CSP, hardens the session, decides whether a request really arrived over HTTPS from a trusted proxy, answers the /up health check, and writes JSON logs. Raw PHP, Laravel and PSR-15 all mount the same core, so they send the same headers.
@@ -532,7 +532,7 @@ Output: the formation, the platform and its proxy setting, a table of what the C
             <div>
               <p class="ar-prompt__kicker">Call 01 · Raw PHP</p>
               <h3 class="ar-prompt__title" id="prompt-raw-php-title">HELMET in a raw PHP app</h3>
-              <p class="ar-prompt__desc">One call at the top of the front controller, the nonce on every inline script, and a health check that still answers when there is no front controller.</p>
+              <p class="ar-prompt__desc">Adds <code>helmet_boot()</code> to the front controller and the nonce to each inline script. If some pages skip the front controller, it adds <code>public/up.php</code> too.</p>
             </div>
           </header>
           <pre class="ar-prompt__text"><code>You are a coding agent adding HELMET to a raw PHP app (no framework) at Wayne State University. HELMET is the baseline runtime of WELD, the Wayne State application stack.
@@ -565,7 +565,7 @@ Output: the changes as a diff per file, then how to check the headers locally (f
             <div>
               <p class="ar-prompt__kicker">Call 02 · Laravel with Blade</p>
               <h3 class="ar-prompt__title" id="prompt-laravel-blade-title">HELMET in a Laravel app with Blade</h3>
-              <p class="ar-prompt__desc">The adapter discovers itself; publish the config, pick the platform, keep Laravel's own /up, and nonce the inline scripts in Blade.</p>
+              <p class="ar-prompt__desc">Publishes the config, sets the platform and puts the nonce on inline scripts in Blade. Laravel keeps its own <code>/up</code> and its own session settings.</p>
             </div>
           </header>
           <pre class="ar-prompt__text"><code>You are a coding agent adding HELMET to a Laravel app with Blade views at Wayne State University. HELMET is the baseline runtime of WELD, the Wayne State application stack; its Laravel adapter only wires the core, so Laravel and raw PHP send the same headers.
@@ -598,7 +598,7 @@ Output: the changes as a diff per file, the environment variables in a table, th
             <div>
               <p class="ar-prompt__kicker">Call 03 · Laravel with Inertia and Vue</p>
               <h3 class="ar-prompt__title" id="prompt-laravel-inertia-title">HELMET in a Laravel app with Inertia and Vue</h3>
-              <p class="ar-prompt__desc">The Laravel adapter plus the coach's rules: scripts in the layout, never in Inertia's Head, one nonce from one package, no shared caching of nonced HTML.</p>
+              <p class="ar-prompt__desc">The Laravel setup, then a search for what the CSP will break: scripts in Inertia's Head, a second package that makes nonces, and HTML cached across requests.</p>
             </div>
           </header>
           <pre class="ar-prompt__text"><code>You are a coding agent adding HELMET to a Laravel app that renders its pages with Inertia and Vue at Wayne State University. HELMET is the baseline runtime of WELD, the Wayne State application stack.
@@ -629,7 +629,7 @@ Output: what breaks today and the fix for each, the changes as a diff per file, 
             <div>
               <p class="ar-prompt__kicker">Call 04 · PSR-15</p>
               <h3 class="ar-prompt__title" id="prompt-psr15-title">HELMET in a PSR-15 middleware pipeline</h3>
-              <p class="ar-prompt__desc">The same core as middleware: the health check first, then the headers, and the nonce read from the request attribute downstream.</p>
+              <p class="ar-prompt__desc">Adds <code>HealthCheck</code> and <code>SecurityHeadersMiddleware</code> to your pipeline. Your handlers read the nonce from the <code>helmet.csp_nonce</code> attribute.</p>
             </div>
           </header>
           <pre class="ar-prompt__text"><code>You are a coding agent adding HELMET to a PHP app built on a PSR-15 middleware pipeline at Wayne State University. HELMET is the baseline runtime of WELD, the Wayne State application stack.
@@ -654,7 +654,7 @@ Constraints:
 Output: the changes as a diff per file, then how to check the headers locally, then your questions.</code></pre>
         </section>
 
-        <p class="calls__fine">The prompts are part of the page: an agent that reads <a href="index.md">this page as Markdown</a> or <a href="llms.txt">llms.txt</a> gets every call without the buttons. Nobody runs the ball without a helmet.</p>
+        <p class="calls__fine">The prompts are plain text in the page, so an agent that reads <a href="index.md">this page as Markdown</a> or <a href="llms.txt">llms.txt</a> gets all five without the buttons. Nobody runs the ball without a helmet.</p>
       </div>
     </div>
   </section>
@@ -678,7 +678,7 @@ Output: the changes as a diff per file, then how to check the headers locally, t
   "password":"***"},
  "level_name":"WARNING",
  "channel":"app"}</code></pre>
-          <p class="frame__text">Monolog JSON, one event per line. Passwords, tokens and session IDs come out as <code>***</code>, and if the log file can't be written it falls back to stderr instead of taking the request down.</p>
+          <p class="frame__text">Monolog JSON, one event per line, each with a request ID. Passwords, tokens and session IDs come out as <code>***</code>. If the log file can't be written, HELMET writes to stderr and the request carries on.</p>
         </li>
         <li class="frame">
           <p class="frame__no" aria-hidden="true">Reel 2</p>
@@ -687,7 +687,7 @@ Output: the changes as a diff per file, then how to check the headers locally, t
 no longer receives security
 updates. Upgrade to a
 supported version.</code></pre>
-          <p class="frame__text">Read from CREED's <code>policy.json</code>. A version in its security-only phase or past end of life gets a plain warning; an active or unknown one gets none. The date is injected, so the boundaries are testable.</p>
+          <p class="frame__text">Point <code>HELMET_POLICY_PATH</code> at CREED's <code>policy.json</code> and the ribbon warns about a PHP or Laravel version in its security-only phase or past end of life. An active or unknown version gets no warning, and a missing file never breaks the page.</p>
         </li>
         <li class="frame">
           <p class="frame__no" aria-hidden="true">Reel 3</p>
@@ -696,13 +696,13 @@ supported version.</code></pre>
 # TYPE helmet_info gauge
 helmet_info{php_version="8.4",
  helmet_version="0.2.5"} 1</code></pre>
-          <p class="frame__text">A Prometheus endpoint you turn on with <code>HELMET_METRICS_ENABLED</code>, behind a bearer token or an IP allow list. With neither set it answers <code>404</code>, so nobody hands their metrics to the whole network.</p>
+          <p class="frame__text">A Prometheus endpoint you turn on with <code>HELMET_METRICS_ENABLED</code>. It needs a bearer token or an IP allow list; with neither, it answers <code>404</code> and logs a warning. Nothing scrapes it yet.</p>
         </li>
         <li class="frame">
           <p class="frame__no" aria-hidden="true">Reel 4</p>
           <h3 class="frame__title">The ribbon</h3>
           <div class="frame__screen frame__screen--page" aria-hidden="true"><span class="mini-ribbon">staging</span><span class="mini-line"></span><span class="mini-line mini-line--short"></span><span class="mini-line"></span></div>
-          <p class="frame__text">In local, testing and staging, Laravel apps get <code>&lt;div class="helmet-ribbon"&gt;</code> right after <code>&lt;body&gt;</code>, so nobody mistakes the scrimmage for the game. Never in production, never on JSON. No Aftertaste.</p>
+          <p class="frame__text">In local, dev, testing and staging, Laravel apps get <code>&lt;div class="helmet-ribbon"&gt;</code> right after <code>&lt;body&gt;</code>, so nobody mistakes the scrimmage for the game. It never shows in production or on JSON responses. No Aftertaste.</p>
         </li>
       </ol>
     </div>
@@ -728,7 +728,7 @@ helmet_info{php_version="8.4",
 
       <div class="whiteboard" aria-labelledby="squad-title">
         <h2 class="whiteboard__title" id="squad-title">Practice squad</h2>
-        <p class="whiteboard__sub">On the backlog in HELMET's best practices, not in 0.2. They suit up when they're ready.</p>
+        <p class="whiteboard__sub">These are on HELMET's backlog and aren't in 0.2. They suit up when they're ready.</p>
         <ul class="squad">
           <li>A readiness check, separate from <code>/up</code></li>
           <li>A <code>Clear-Site-Data</code> helper for logout</li>
@@ -746,27 +746,27 @@ helmet_info{php_version="8.4",
         <div class="poster__head">
           <p class="poster__kicker">Wayne State app stack · 0.1 season</p>
           <h2 class="poster__title" id="depth-title">WELD depth chart</h2>
-          <p class="poster__lede">HELMET plays on the line for every app in the stack. Here's who lines up beside it.</p>
+          <p class="poster__lede">HELMET plays on the line for every app in the stack. Here's who lines up beside it, and what each one does.</p>
         </div>
         <div class="units">
 <section class="unit" aria-labelledby="unit-0"><h3 class="unit__name" id="unit-0">On the field</h3><p class="unit__sub">What runs inside every app</p><ul class="roster">
-<li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">QB</span><span class="mark mark--tile"><img src="assets/marks/wayneui.svg" width="26" height="26" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://wayneui.apps.wayne.edu/">WayneUI</a></span><span class="roster__role">Renders every page: the design system, tokens and components.</span></span></li>
-<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">C</span><span class="mark"><img src="assets/marks/sesame.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://sesame.apps.wayne.edu/">SESAME</a></span><span class="roster__role">Snaps the sign-in: CAS, the gateway, bearer tokens and Entra, behind one config switch.</span></span></li>
-<li class="roster__row roster__row--you" style="--j:2"><span class="roster__pos" aria-hidden="true">OL</span><span class="mark"><img src="brand/helmet-avatar-256.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">HELMET <span class="you-are-here">you are here</span></span><span class="roster__role">Protects every snap: headers, session, proxies, /up, logs.</span></span></li>
-<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">TEAM</span><span class="mark"><img src="assets/marks/weld.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://weld.apps.wayne.edu/">WELD</a></span><span class="roster__role">Every part already joined, in one Laravel + Inertia/Vue app.</span></span></li>
+<li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">QB</span><span class="mark mark--tile"><img src="assets/marks/wayneui.svg" width="26" height="26" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://wayneui.apps.wayne.edu/">WayneUI</a></span><span class="roster__role">Wayne State's design system, for static HTML, raw PHP, Blade and Vue.</span></span></li>
+<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">C</span><span class="mark"><img src="assets/marks/sesame.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://sesame.apps.wayne.edu/">SESAME</a></span><span class="roster__role">Sign-in through CAS, Entra ID, Drawbridge or bearer tokens. One setting picks the driver.</span></span></li>
+<li class="roster__row roster__row--you" style="--j:2"><span class="roster__pos" aria-hidden="true">OL</span><span class="mark"><img src="brand/helmet-avatar-256.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">HELMET <span class="you-are-here">you are here</span></span><span class="roster__role">Headers, the session, the proxy check, /up and logs.</span></span></li>
+<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">TEAM</span><span class="mark"><img src="assets/marks/weld.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://weld.apps.wayne.edu/">WELD</a></span><span class="roster__role">A Laravel app with Inertia and Vue, with every part already installed.</span></span></li>
 </ul></section>
 <section class="unit" aria-labelledby="unit-1"><h3 class="unit__name" id="unit-1">Coaches and officials</h3><p class="unit__sub">What keeps the code honest</p><ul class="roster">
 <li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">HC</span><span class="mark"><img src="assets/marks/creed.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://creed.apps.wayne.edu/">CREED</a></span><span class="roster__role">The written standards, and the policy.json HELMET reads.</span></span></li>
-<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">REF</span><span class="mark"><img src="assets/marks/proctor.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://proctor.apps.wayne.edu/">PROCTOR</a></span><span class="roster__role">One command that checks an app against the standards.</span></span></li>
-<li class="roster__row" style="--j:2"><span class="roster__pos" aria-hidden="true">LJ</span><span class="mark"><img src="assets/marks/pinstripe.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://pinstripe.apps.wayne.edu/">Pinstripe</a></span><span class="roster__role">The coding standard: Pint, PHPStan, ESLint and Prettier.</span></span></li>
-<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">WARM</span><span class="mark"><img src="assets/marks/preflight.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://preflight.apps.wayne.edu/">Preflight</a></span><span class="roster__role">Shared CI from GitLab CI/CD components.</span></span></li>
-<li class="roster__row" style="--j:4"><span class="roster__pos" aria-hidden="true">OC</span><span class="mark"><img src="assets/marks/advisor.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://advisor.apps.wayne.edu/">ADVISOR</a></span><span class="roster__role">The voice in your headset: an MCP server that knows the stack.</span></span></li>
+<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">REF</span><span class="mark"><img src="assets/marks/proctor.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://proctor.apps.wayne.edu/">PROCTOR</a></span><span class="roster__role">Checks your composer.json and lock file against CREED.</span></span></li>
+<li class="roster__row" style="--j:2"><span class="roster__pos" aria-hidden="true">LJ</span><span class="mark"><img src="assets/marks/pinstripe.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://pinstripe.apps.wayne.edu/">Pinstripe</a></span><span class="roster__role">Shared presets for Pint, PHPStan, Rector, ESLint and Prettier.</span></span></li>
+<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">WARM</span><span class="mark"><img src="assets/marks/preflight.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://preflight.apps.wayne.edu/">Preflight</a></span><span class="roster__role">GitLab CI/CD components that run the checks on every push.</span></span></li>
+<li class="roster__row" style="--j:4"><span class="roster__pos" aria-hidden="true">OC</span><span class="mark"><img src="assets/marks/advisor.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://advisor.apps.wayne.edu/">ADVISOR</a></span><span class="roster__role">The voice in your headset: an MCP server that answers from CREED's policy file.</span></span></li>
 </ul></section>
-<section class="unit" aria-labelledby="unit-2"><h3 class="unit__name" id="unit-2">Sideline and front office</h3><p class="unit__sub">How apps start, ship and grow</p><ul class="roster">
-<li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">CAMP</span><span class="mark"><img src="assets/marks/sourdough.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://sourdough.apps.wayne.edu/">Sourdough</a></span><span class="roster__role">Starters you shape yourself: raw PHP, Blade or Inertia/Vue.</span></span></li>
-<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">EQ</span><span class="mark"><img src="assets/marks/squire.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://squire.apps.wayne.edu/">Squire</a></span><span class="roster__role">The equipment manager: release script and local parity for Citadel.</span></span></li>
-<li class="roster__row" style="--j:2"><span class="roster__pos" aria-hidden="true">GATE</span><span class="mark"><img src="assets/marks/drawbridge.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://drawbridge.apps.wayne.edu/">Drawbridge</a> <span class="chip">next</span></span><span class="roster__role">The Citadel sign-in gateway, lowered on request.</span></span></li>
-<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">CLUB</span><span class="mark"><img src="assets/marks/booster.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://booster.apps.wayne.edu/">Booster</a></span><span class="roster__role">The booster club: upgrade recipes, PHP 7 to 8 and Laravel N to N+1.</span></span></li>
+<section class="unit" aria-labelledby="unit-2"><h3 class="unit__name" id="unit-2">Sideline and front office</h3><p class="unit__sub">Starters, deploys, sign-in and upgrades</p><ul class="roster">
+<li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">CAMP</span><span class="mark"><img src="assets/marks/sourdough.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://sourdough.apps.wayne.edu/">Sourdough</a></span><span class="roster__role">Starts a new app. Raw PHP today; Blade and Inertia/Vue come later.</span></span></li>
+<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">EQ</span><span class="mark"><img src="assets/marks/squire.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://squire.apps.wayne.edu/">Squire</a></span><span class="roster__role">The deploy kit for Citadel: build.sh, a release script and local runs on the same images.</span></span></li>
+<li class="roster__row" style="--j:2"><span class="roster__pos" aria-hidden="true">GATE</span><span class="mark"><img src="assets/marks/drawbridge.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://drawbridge.apps.wayne.edu/">Drawbridge</a> <span class="chip">next</span></span><span class="roster__role">Signs people in through Entra ID before they reach a Citadel app.</span></span></li>
+<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">CLUB</span><span class="mark"><img src="assets/marks/booster.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://booster.apps.wayne.edu/">Booster</a></span><span class="roster__role">Upgrades PHP 7 to 8 and Laravel one version at a time.</span></span></li>
 <li class="roster__row" style="--j:4"><span class="roster__pos" aria-hidden="true">ROLL</span><span class="mark"><img src="assets/marks/rollcall.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://rollcall.apps.wayne.edu/">Rollcall</a></span><span class="roster__role">Every app answers “present”, with its PHP version.</span></span></li>
 </ul></section>
         </div>
