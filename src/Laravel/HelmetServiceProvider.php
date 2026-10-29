@@ -66,20 +66,22 @@ final class HelmetServiceProvider extends ServiceProvider
             config(['trustedproxy.proxies' => config('helmet.proxies')]);
         }
 
-        // Laravel's default trusted-header set also includes X-Forwarded-Host
-        // and X-Forwarded-Prefix. A platform that rewrites the host (OpenShift
-        // appends the route host) would let a client pre-seed those headers, so
-        // HELMET narrows the set to the three a front proxy actually sets: For,
-        // Proto and Port - the same set as Presets::TRUSTED_HEADERS. An app that
-        // has already chosen its own headers (TrustProxies::withHeaders(), or
-        // trustProxies(..., headers: ...)) keeps them: the static is only null
-        // when nobody has set it yet.
+        // Laravel's default trusted-header set also includes X-Forwarded-Host,
+        // X-Forwarded-Prefix and X-Forwarded-Port. A platform that rewrites
+        // the host (OpenShift appends the route host) would let a client
+        // pre-seed those headers, so HELMET narrows the set to the two a
+        // front proxy actually sets: For and Proto - the same set as
+        // Presets::TRUSTED_HEADERS. X-Forwarded-Port is out because Citadel's
+        // HA-Proxy never sends it at all, so a client-sent value would pass
+        // through untouched and change the port Laravel reports and the URLs
+        // it generates. An app that has already chosen its own headers
+        // (TrustProxies::withHeaders(), or trustProxies(..., headers: ...))
+        // keeps them: the static is only null when nobody has set it yet.
         $alwaysTrustHeaders = (new ReflectionProperty(TrustProxies::class, 'alwaysTrustHeaders'))->getValue();
         if ($alwaysTrustHeaders === null) {
             TrustProxies::withHeaders(
                 Request::HEADER_X_FORWARDED_FOR
-                | Request::HEADER_X_FORWARDED_PROTO
-                | Request::HEADER_X_FORWARDED_PORT,
+                | Request::HEADER_X_FORWARDED_PROTO,
             );
         }
 

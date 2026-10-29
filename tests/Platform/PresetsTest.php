@@ -41,17 +41,20 @@ final class PresetsTest extends TestCase
     public function testTrustedHeadersAreTheSameForEveryPreset(): void
     {
         self::assertSame(
-            ['X-Forwarded-For', 'X-Forwarded-Proto', 'X-Forwarded-Port'],
+            ['X-Forwarded-For', 'X-Forwarded-Proto'],
             Presets::TRUSTED_HEADERS,
         );
     }
 
-    public function testTrustedHeadersNeverIncludeHostOrPrefix(): void
+    public function testTrustedHeadersNeverIncludeHostPrefixOrPort(): void
     {
         // A platform that rewrites the host (OpenShift appends the route
-        // host) would let a client pre-seed these, so they stay out.
+        // host) would let a client pre-seed Host and Prefix, and Citadel's
+        // HA-Proxy never sets Port at all, so a client value would pass
+        // through untouched. All three stay out.
         self::assertNotContains('X-Forwarded-Host', Presets::TRUSTED_HEADERS);
         self::assertNotContains('X-Forwarded-Prefix', Presets::TRUSTED_HEADERS);
+        self::assertNotContains('X-Forwarded-Port', Presets::TRUSTED_HEADERS);
     }
 
     public function testUnknownPresetThrowsNamingThePresetAndTheKnownNames(): void
