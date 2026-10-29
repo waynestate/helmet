@@ -435,15 +435,15 @@ Each of these follows from the research above. Items marked "inferred" depend on
 1. Done. `'unsafe-inline'` was narrowed to `style-src-attr` only (not `style-src-elem`), and the exception is documented in `defaultCspPolicy()`: WayneUI's static path inlines a few style attributes, which `style-src-attr` governs, while `<style>` tags (`style-src-elem`) do not need it.
 2. Done. `defaultCspPolicy()` now sets `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` (`src/Headers/SecurityHeaders.php:56-58`); `testDefaultPolicyIncludesHardeningDirectives` covers it.
 3. Done. `buildCsp()` calls `setStrictDynamic('script-src', true)` (`src/Headers/SecurityHeaders.php:113`), so the nonce is paired with `strict-dynamic`; `testBuildCspAddsStrictDynamicAlongsideNonce` covers it.
-4. `src/functions.php:47-49`: `helmet_boot()` silently skips session hardening when a session is already active, which contradicts the README line "It refuses to run once a session is active" (`README.md:104`). Log it or throw.
-5. `src/Session/SessionHardening.php:36-44`: `ini_set` results are not checked, so a refused setting goes unnoticed.
-6. `src/Proxy/TrustedProxies.php:92-94`: a `/0` range is accepted and trusts every IPv4 address. Reject prefixes shorter than a chosen minimum.
-7. `src/Proxy/TrustedProxies.php:34` and `:41`: invalid exact entries (`*`, IPv6, typos) are stored or skipped without error. Validate them with `filter_var` and throw.
+4. Done in 0.1.0: src/functions.php:100, test FunctionsTest::testBootThrowsWhenSessionAlreadyActive. `src/functions.php:47-49`: `helmet_boot()` silently skips session hardening when a session is already active, which contradicts the README line "It refuses to run once a session is active" (`README.md:104`). Log it or throw.
+5. Done in 0.1.0: src/Session/SessionHardening.php:100, test SessionHardeningTest::testThrowsNamingTheFailedSetting. `src/Session/SessionHardening.php:36-44`: `ini_set` results are not checked, so a refused setting goes unnoticed.
+6. Done in 0.1.0: src/Proxy/TrustedProxies.php:116, test TrustedProxiesTest::testIpv4ZeroPrefixThrows. `src/Proxy/TrustedProxies.php:92-94`: a `/0` range is accepted and trusts every IPv4 address. Reject prefixes shorter than a chosen minimum.
+7. Done in 0.1.0: src/Proxy/TrustedProxies.php:63, test TrustedProxiesTest::testInvalidExactEntryThrowsNamingTheEntry. `src/Proxy/TrustedProxies.php:34` and `:41`: invalid exact entries (`*`, IPv6, typos) are stored or skipped without error. Validate them with `filter_var` and throw.
 8. Done: the README examples use the exact address `172.18.0.1` and warn against broad ranges such as `10.0.0.0/8`. That is the Docker bridge gateway the `citadel` preset trusts; on other hosts the address is a setting.
-9. `src/Proxy/HttpsDetector.php:47-50`: exact comparison of a possibly multi-value header. Take the last element.
+9. Done in 0.1.0: src/Proxy/HttpsDetector.php:60, test HttpsDetectorTest::testMultiValueForwardedProtoUsesLastValueHttps. `src/Proxy/HttpsDetector.php:47-50`: exact comparison of a possibly multi-value header. Take the last element.
 10. Done. Both `helmet_boot()` (`src/functions.php:112`) and the `SecurityHeadersMiddleware` constructor (`src/Headers/SecurityHeadersMiddleware.php:64`) call `SecurityHeaders::mergePolicies()`, so a custom `csp` is merged over the default rather than replacing it; `testMergePoliciesReplacesDirectiveAndKeepsTheRest` and `testMergePoliciesRemovesDirectiveWhenNull` cover it.
 11. Done: `akrabat/ip-address-middleware` is no longer in the `require` list, so there is nothing unused to remove.
-12. `src/Logging/Logging.php:27-37`: no redaction, no processors, no failure-safe handler.
+12. Done in 0.1.0: src/Logging/Logging.php:112, test LoggingTest::testRedactsSensitiveKeys. `src/Logging/Logging.php:27-37`: no redaction, no processors, no failure-safe handler.
 13. Done: `composer.json` now requires `php: ^8.3` (platform `8.3.0`), so the floor is already at 8.3.
 
 ### Missing features
@@ -456,7 +456,7 @@ Each of these follows from the research above. Items marked "inferred" depend on
 19. A readiness endpoint, separate from `/up`.
 20. A global error handler that logs details and shows a generic page.
 21. Done. Request ID and context processors, and a redacting formatter.
-22. A test for `Logging::create()` and for `helmet_boot()` itself.
+22. Done in 0.1.0: tests/FunctionsTest.php:62, test FunctionsTest::testBootReturnsNonceWhenNoSessionActive. A test for `Logging::create()` and for `helmet_boot()` itself.
 23. Done. The version warning is wired into the environment ribbon: when a policy file is configured (`helmet.policy_path` / `HELMET_POLICY_PATH`, or `helmet_ribbon()`'s third argument), the ribbon shows a warning line for each component version that is in its security-only phase or end of life (`src/Ribbon/Ribbon.php`, `src/Policy/VersionWarning.php`). `RibbonTest` covers the active, security-only, end-of-life, no-policy-path and broken-file cases, and `InjectRibbonTest` covers the Laravel wiring.
 24. A proven CI run. The `.gitlab-ci.yml` exists (Preflight `php-test` and `composer-audit`, pinned to a commit), but git.wayne.edu has no runners today. Get one pipeline run on record, add PHP 8.5 and 8.3 to the test matrix, and add secret detection.
 
@@ -479,7 +479,7 @@ Items 28 to 37 continue the numbering above.
 34. Explicit Composer audit and policy settings in `composer.json` and CI (H56).
 35. Done. `csp-builder` support is confirmed: `buildCsp()` calls `setStrictDynamic('script-src', true)` (`src/Headers/SecurityHeaders.php:113`), and `testBuildCspAddsStrictDynamicAlongsideNonce` covers it.
 36. `Cache-Control: no-store` (or `private`) on pages that carry a nonce and on authenticated pages (H8, H31).
-37. `src/Proxy/TrustedProxies.php` is IPv4 only by design (its docblock). An IPv6 range throws at boot. An exact IPv6 address is stored as a plain string and matches only by identical text, with no normalisation (`::1` and `0:0:0:0:0:0:0:1` differ). If the Citadel proxy ever reached an app over IPv6, requests could silently read as plain HTTP: no HSTS and no `Secure` flag. Add IPv6 support, or reject IPv6 entries with a clear message (see item 7).
+37. Done in 0.1.0: src/Proxy/TrustedProxies.php:122, test TrustedProxiesTest::testIpv6ExactIsTrusted. `src/Proxy/TrustedProxies.php` is IPv4 only by design (its docblock). An IPv6 range throws at boot. An exact IPv6 address is stored as a plain string and matches only by identical text, with no normalisation (`::1` and `0:0:0:0:0:0:0:1` differ). If the Citadel proxy ever reached an app over IPv6, requests could silently read as plain HTTP: no HSTS and no `Secure` flag. Add IPv6 support, or reject IPv6 entries with a clear message (see item 7).
 
 ---
 
