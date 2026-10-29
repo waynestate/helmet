@@ -857,3 +857,9 @@ li.roster__row:has(.part-link:hover) img { transform: translateY(-2px); }
   .ar-prompt__actions, .ar-cmd, .ar-prompt__more, .sideline-card { display: none; }
   .ar-prompt.is-collapsed .ar-prompt__text { max-height: none; -webkit-mask-image: none; mask-image: none; }
 }
+
+/* Stack note: fine print under the install command, in chalk on the board. */
+.stack-note { margin: 0.75rem 0 0; max-width: 34rem; font-size: 0.88rem; line-height: 1.55; color: var(--h-chalk-dim); }
+.stack-note__lead { color: var(--h-chalk); font-weight: 700; }
+.stack-note a { color: var(--h-gold-soft); text-underline-offset: 3px; text-decoration-color: var(--h-gold); }
+.stack-note a:hover { text-decoration-thickness: 2px; }
