@@ -618,10 +618,29 @@ forged `X-Forwarded-Proto` walks in and gets nowhere.
 
 ## The session
 
-`SessionHardening::apply()` sets the four `ini` values before the session
-starts: strict mode, cookies only, `HttpOnly`, and `SameSite=Lax`. It turns on
-`Secure` when the request is HTTPS. It refuses to run once a session is
-active, because changing those values mid-session does nothing.
+`SessionHardening::apply()` sets these `ini` values before the session
+starts. It refuses to run once a session is active, because changing them
+mid-session does nothing.
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| `session.use_strict_mode` | `1` | Rejects session IDs the server did not issue, which blocks fixation. |
+| `session.use_only_cookies` | `1` | The session ID travels only in the cookie, never in a URL. |
+| `session.cookie_httponly` | `1` | JavaScript cannot read the session cookie. |
+| `session.cookie_samesite` | `Lax` | Cuts cross-site session reuse. |
+| `session.cookie_secure` | `1` on HTTPS, unset otherwise | The cookie is sent only over TLS, and plain-HTTP setups keep working. |
+| `session.cookie_lifetime` | `0` | A browser-session cookie: it ends when the browser closes. |
+| `session.cache_limiter` | `nocache` | Pages cannot be cached and replayed with the session attached. |
+| `session.cookie_path` | `/` | The usual scope, and required by the `__Host-` prefix. |
+| `session.cookie_domain` | empty | Host-only: the cookie is not sent to sibling subdomains. |
+| `session.name` | `__Host-WSUSESSID` on HTTPS, `WSUSESSID` on HTTP | A generic name reveals less, and the `__Host-` prefix makes the browser reject the cookie unless it is `Secure`, `Path=/` and has no `Domain`. |
+
+The name rule applies only while the name is still PHP's default
+`PHPSESSID`. An app that chose its own name keeps it, and SESAME reads
+whatever `session_name()` returns, so a changed name is safe for it. When an
+app first runs this version, existing sessions under the old name end: the
+next request still carries the old cookie, the app finds no session under
+the new name and starts a fresh one.
 
 ## The request-forgery guard
 

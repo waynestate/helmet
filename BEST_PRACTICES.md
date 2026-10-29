@@ -242,13 +242,13 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Do not set a cookie `Domain`. Prefer the `__Host-` prefix (needs `Secure`, `Path=/`, no `Domain`). Avoid a framework-revealing name such as `PHPSESSID`.
 - **Why:** A host-only cookie is not sent to sibling subdomains. A generic name reveals less. NIST SP 800-63B-4 now says session cookies SHALL be limited to the minimum practical hostnames and paths, and SHOULD be HttpOnly, use the `__Host-` prefix with `Path=/`, and set SameSite to Lax or Strict. The `__Host-` prefix needs `Secure`, which on Citadel depends on the real scheme (H27), so the prefix fits only requests that arrive as HTTPS.
 - **Sources:** [OWASP Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [NIST SP 800-63B-4 session management](https://pages.nist.gov/800-63-4/sp800-63b/session/)
-- **Stack:** `Not yet`. HELMET does not touch the session name or cookie path and domain.
+- **Stack:** `Enforced`. `SessionHardening::apply()` sets an empty `cookie_domain`, `cookie_path=/` and the name `__Host-WSUSESSID` on HTTPS or `WSUSESSID` on HTTP, but only while the name is still the PHP default `PHPSESSID`; an app-chosen name is left alone. Covered by the name tests in `tests/Session/SessionHardeningTest.php`.
 
 ### H31. Set session lifetime, URL IDs and caching explicitly
 - **Practice:** Use `session.cookie_lifetime=0`, keep session IDs out of URLs, and use `session.cache_limiter=nocache` for authenticated pages. Track session lifetime in your own code, since `gc_maxlifetime` is not reliable for expiry.
 - **Why:** Each one closes a way for a session ID or an authenticated page to outlive its use. NIST SP 800-63B-4 backs the last point: expiry settings SHALL NOT be relied on to enforce session timeouts.
 - **Sources:** [PHP session security ini](https://www.php.net/manual/en/session.security.ini.php), [OWASP Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [NIST SP 800-63B-4 session management](https://pages.nist.gov/800-63-4/sp800-63b/session/)
-- **Stack:** `Not yet`. `use_only_cookies=1` already blocks URL IDs. The others are not set by HELMET and the Citadel `php.ini` values for them were not audited.
+- **Stack:** `Enforced`. `SessionHardening::apply()` sets `cookie_lifetime=0` and `cache_limiter=nocache` (on every page, which covers the authenticated ones), and `use_only_cookies=1` keeps session IDs out of URLs. Tracking session lifetime in app code remains the app's own job.
 
 ### H32. Leave `session.sid_length` alone
 - **Practice:** Do not change `session.sid_length` or `session.sid_bits_per_character`.
