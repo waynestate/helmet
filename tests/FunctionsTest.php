@@ -255,6 +255,98 @@ final class FunctionsTest extends TestCase
     }
 
     /**
+     * A GET to the health path must leave no X-Powered-By on the response.
+     *
+     * The proof run caught this on 17 apps: helmet_boot() answered /up and
+     * exited before it stripped X-Powered-By, so the engine-stamped header
+     * went out with the answer. Like mod_php, PHP's built-in web server
+     * stamps X-Powered-By before userland code runs, so the child serves a
+     * one-line router that boots HELMET; the parent probes /up over real
+     * HTTP and asserts the response carries the health answer's own headers
+     * and no X-Powered-By. With the old order, where
+     * header_remove('X-Powered-By') ran after helmet_up(), this test fails
+     * because the probe still sees the header.
+     */
+    public function testBootHealthPathSendsNoPoweredByHeader(): void
+    {
+        $autoload = dirname(__DIR__) . '/vendor/autoload.php';
+        $router = tempnam(sys_get_temp_dir(), 'helmet-up-router-');
+
+        $script = '<?php' . "\n"
+            . 'require ' . var_export($autoload, true) . ";\n"
+            . "\Waynestate\Helmet\helmet_boot(['trusted_proxies' => ['127.0.0.1']]);\n"
+            . "echo 'REACHED_PAST_HEALTH_PATH';\n";
+
+        file_put_contents($router, $script);
+
+        $server = proc_open(
+            [PHP_BINARY, '-S', '127.0.0.1:0', $router],
+            [
+                0 => ['pipe', 'r'],
+                1 => ['pipe', 'w'],
+                2 => ['pipe', 'w'],
+            ],
+            $pipes,
+        );
+
+        self::assertIsResource($server);
+
+        // The server announces its bound port on stderr before it accepts;
+        // read non-blocking until that line shows up.
+        stream_set_blocking($pipes[2], false);
+        $port = null;
+        $log = '';
+        $deadline = microtime(true) + 10.0;
+        while ($port === null && microtime(true) < $deadline) {
+            $chunk = fread($pipes[2], 8192);
+            if ($chunk === false) {
+                break;
+            }
+            $log .= $chunk;
+            if (preg_match('#Development Server \(http://127\.0\.0\.1:(\d+)\) started#', $log, $matches)) {
+                $port = (int) $matches[1];
+            }
+            if ($port === null) {
+                usleep(50_000);
+            }
+        }
+
+        try {
+            self::assertNotNull($port, "server never announced a port; log: $log");
+
+            $context = stream_context_create(['http' => ['ignore_errors' => true, 'timeout' => 5]]);
+            $body = @file_get_contents("http://127.0.0.1:$port/up", false, $context);
+
+            self::assertSame('ok', $body);
+
+            // http_get_last_response_headers() is the PHP 8.5 name for the
+            // $http_response_header magic variable, which 8.5 deprecates.
+            if (\function_exists('http_get_last_response_headers')) {
+                $headers = \http_get_last_response_headers();
+            } else {
+                $headers = $http_response_header ?? [];
+            }
+            self::assertIsArray($headers);
+
+            // The health answer itself went out...
+            $lower = array_map('strtolower', $headers);
+            self::assertContains('content-type: text/plain; charset=utf-8', $lower);
+            self::assertContains('cache-control: no-store', $lower);
+
+            // ...and X-Powered-By is gone.
+            $leaked = array_filter(
+                $headers,
+                static fn (string $line): bool => stripos($line, 'X-Powered-By:') === 0,
+            );
+            self::assertSame([], $leaked, "X-Powered-By survived the health answer:\n" . implode("\n", $headers));
+        } finally {
+            proc_terminate($server);
+            proc_close($server);
+            @unlink($router);
+        }
+    }
+
+    /**
      * helmet_up_response() is the single definition of the health answer:
      * 200, the two headers, and the body "ok". helmet_up() and
      * helmet_boot() both send it, so pinning the data pins both paths.
