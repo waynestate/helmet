@@ -23,7 +23,9 @@ use Waynestate\Helmet\Platform\Presets;
 |               (comma-separated) when it is set, otherwise from the
 |               HELMET_PRESET preset, otherwise empty. Empty means the app
 |               trusts no proxy and HTTPS is detected from the direct
-|               connection only. HELMET_PROXIES wins over HELMET_PRESET.
+|               connection only. HELMET_PROXIES wins over HELMET_PRESET. An
+|               unknown HELMET_PRESET throws, even when HELMET_PROXIES is
+|               set.
 |
 | "scope"       Where the SecurityHeaders middleware runs. "global" (the
 |               default) adds it to the kernel's global middleware, so every
@@ -226,8 +228,13 @@ if (is_string($helmetProxies) && $helmetProxies !== '') {
 $helmetPreset = env('HELMET_PRESET');
 $helmetPreset = is_string($helmetPreset) && $helmetPreset !== '' ? $helmetPreset : null;
 
-if ($proxies === [] && $helmetPreset !== null) {
-    $proxies = Presets::proxies($helmetPreset);
+// An unknown preset throws even when HELMET_PROXIES already filled the
+// list: a typo in HELMET_PRESET should fail loudly at boot instead of
+// going silently unused.
+$presetProxies = $helmetPreset !== null ? Presets::proxies($helmetPreset) : null;
+
+if ($proxies === [] && $presetProxies !== null) {
+    $proxies = $presetProxies;
 }
 
 $scope = env('HELMET_SCOPE', 'global');

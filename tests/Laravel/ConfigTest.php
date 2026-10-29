@@ -77,6 +77,18 @@ final class ConfigTest extends TestCase
         $this->reloadPackageConfig();
     }
 
+    public function testUnknownPresetThrowsEvenWhenProxiesAreSet(): void
+    {
+        // HELMET_PROXIES wins over HELMET_PRESET for the proxy list, but a
+        // typo in the preset name still has to fail loudly at boot instead
+        // of going silently unused.
+        $this->putEnv('HELMET_PRESET', 'openshift');
+        $this->putEnv('HELMET_PROXIES', '10.0.0.1');
+
+        $this->expectException(\Waynestate\Helmet\Platform\UnknownPresetException::class);
+        $this->reloadPackageConfig();
+    }
+
     public function testScopeEnvVarIsReadWithGlobalAsTheDefault(): void
     {
         self::assertSame('global', config('helmet.scope'));
