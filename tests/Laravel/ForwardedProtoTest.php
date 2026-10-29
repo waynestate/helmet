@@ -85,6 +85,36 @@ final class ForwardedProtoTest extends TestCase
         $response->assertJson(['secure' => false]);
     }
 
+    public function testUntrustedPeerCannotClaimHttpsThroughAProtoList(): void
+    {
+        $this->app['router']->get('/secure', static fn() => response()->json([
+            'secure' => request()->isSecure(),
+        ]));
+
+        // The peer is not in helmet.proxies, so a proxy-looking list ending
+        // in https must not flip the request to secure.
+        $response = $this->withServerVariables([
+            'REMOTE_ADDR' => '203.0.113.50',
+            'HTTP_X_FORWARDED_PROTO' => 'http, https',
+        ])->get('/secure');
+
+        $response->assertStatus(200);
+        $response->assertJson(['secure' => false]);
+
+        // Directly: the normalizer rewrites nothing for an untrusted peer,
+        // so the header and server values stay exactly as sent.
+        $request = Request::create('/', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '203.0.113.50',
+            'HTTP_X_FORWARDED_PROTO' => 'http, https',
+        ]);
+
+        config(['helmet.proxies' => ['10.0.0.1']]);
+        (new ForwardedProtoNormalizer())->handle($request, static fn() => new Response('ok'));
+
+        self::assertSame('http, https', $request->headers->get('X-Forwarded-Proto'));
+        self::assertSame('http, https', $request->server->get('HTTP_X_FORWARDED_PROTO'));
+    }
+
     public function testMultiLineHeaderFromTrustedProxyKeepsTheLastLine(): void
     {
         // PHP merges repeated header lines into a comma list in $_SERVER,
