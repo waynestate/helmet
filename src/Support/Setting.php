@@ -12,17 +12,17 @@ namespace Waynestate\Helmet\Support;
  * package supplies it, if it is installed. When neither has it, null comes
  * back and the caller applies its own default.
  *
- * PLAYBOOK is optional by design: the package never requires it, it only
+ * Playbook is optional by design: the package never requires it, it only
  * looks for the class. That is how a WSU value can arrive at an app without
  * this public repo naming a single one of them.
  */
 final class Setting
 {
     /**
-     * The value of $key: the environment first, then PLAYBOOK, then null.
+     * The value of $key: the environment first, then Playbook, then null.
      *
      * An empty string counts as "not set" (the same as an empty .env line),
-     * so a blank value in the environment falls through to PLAYBOOK.
+     * so a blank value in the environment falls through to Playbook.
      */
     public static function get(string $key): ?string
     {

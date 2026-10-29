@@ -44,8 +44,8 @@ fail oddly after a Docker install, delete `vendor/` and install again.
 
 ## CI
 
-- **GitLab:** PREFLIGHT's `php-test` (PHP 8.3, 8.4, 8.5) and `composer-audit` components, plus a `composer-ci` job.
-- **GitHub:** `.github/workflows/ci.yml` calls PREFLIGHT's reusable workflow with `composer ci`.
+- **GitLab:** Preflight's `php-test` (PHP 8.3, 8.4, 8.5) and `composer-audit` components, plus a `composer-ci` job.
+- **GitHub:** `.github/workflows/ci.yml` calls Preflight's reusable workflow with `composer ci`.
 - Green means `composer ci` passed on all three PHP versions on both.
 
 ## Changing it safely
@@ -71,7 +71,7 @@ fail oddly after a Docker install, delete `vendor/` and install again.
 ## The front page
 
 `site/` is the static front page, for `https://helmet.apps.wayne.edu/` on Citadel, served (fittingly) behind HELMET by
-a small raw-PHP `deploy/` layer generated with SQUIRE.
+a small raw-PHP `deploy/` layer generated with Squire.
 
 ## Who maintains it
 
