@@ -17,6 +17,16 @@ namespace Waynestate\Helmet\Session;
  *  - cookie_samesite: Lax, to reduce cross-site session reuse.
  *  - cookie_secure: only when the request is HTTPS, so the cookie is only
  *    sent over TLS.
+ *  - cookie_lifetime: 0, a browser-session cookie that ends when the
+ *    browser closes.
+ *  - cache_limiter: nocache, so pages cannot be cached and replayed with
+ *    the session attached.
+ *  - cookie_path and cookie_domain: / and empty, so the cookie is host-only
+ *    and the __Host- prefix below can be used.
+ *  - name: __Host-WSUSESSID on HTTPS or WSUSESSID on HTTP, but only while
+ *    the name is still PHP's default PHPSESSID. An app-chosen name is left
+ *    alone; SESAME reads whatever session_name() returns, so a changed
+ *    name is safe for it.
  *
  * session.sid_length is deliberately not touched: it is deprecated as of
  * PHP 8.4 and the platform image sets it to 26. Changing it here would fight
@@ -45,7 +55,8 @@ final class SessionHardening
     }
 
     /**
-     * The standard session settings, with cookie_secure only for HTTPS.
+     * The standard session settings. cookie_secure applies only for HTTPS,
+     * and the name is renamed only from PHP's default.
      *
      * @return array<string, string>
      */
@@ -56,10 +67,21 @@ final class SessionHardening
             'session.use_only_cookies' => '1',
             'session.cookie_httponly' => '1',
             'session.cookie_samesite' => 'Lax',
+            'session.cookie_lifetime' => '0',
+            'session.cache_limiter' => 'nocache',
+            'session.cookie_path' => '/',
+            'session.cookie_domain' => '',
         ];
 
         if ($https) {
             $settings['session.cookie_secure'] = '1';
+        }
+
+        // Rename the cookie only while it still has PHP's default name, so
+        // an app that chose its own name keeps it. The __Host- prefix needs
+        // Secure, Path=/ and no Domain, all of which this method sets.
+        if (ini_get('session.name') === 'PHPSESSID') {
+            $settings['session.name'] = $https ? '__Host-WSUSESSID' : 'WSUSESSID';
         }
 
         return $settings;
