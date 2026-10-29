@@ -257,7 +257,7 @@ final class FunctionsTest extends TestCase
     /**
      * A GET to the health path must leave no X-Powered-By on the response.
      *
-     * The proof run caught this on 17 apps: helmet_boot() answered /up and
+     * Real apps hit this case: helmet_boot() answered /up and
      * exited before it stripped X-Powered-By, so the engine-stamped header
      * went out with the answer. Like mod_php, PHP's built-in web server
      * stamps X-Powered-By before userland code runs, so the child serves a
