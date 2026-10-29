@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 0.2.4 (2026-10-29)
+
 - `HELMET_PRESET` (Laravel) now also comes from the private
   `waynestate/playbook` package when the environment has no value: the config
   reads it through `Waynestate\Helmet\Support\Setting`, which checks the
