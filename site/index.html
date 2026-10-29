@@ -44,7 +44,7 @@
     <a class="brand" href="#main">
       <img src="brand/helmet-avatar-256.png" width="34" height="34" alt="">
       <span class="brand__name">HELMET</span>
-      <span class="brand__version">0.1</span>
+      <span class="brand__version">0.2</span>
     </a>
     <nav class="site-nav" aria-label="Page">
       <a href="#playbook">Playbook</a>
@@ -527,13 +527,10 @@ helmet_info{php_version="8.4",
 
       <div class="whiteboard" aria-labelledby="squad-title">
         <h2 class="whiteboard__title" id="squad-title">Practice squad</h2>
-        <p class="whiteboard__sub">On the backlog in HELMET's best practices, not in 0.1. They suit up when they're ready.</p>
+        <p class="whiteboard__sub">On the backlog in HELMET's best practices, not in 0.2. They suit up when they're ready.</p>
         <ul class="squad">
           <li>A readiness check, separate from <code>/up</code></li>
-          <li><code>Cross-Origin-Opener-Policy</code> and <code>-Resource-Policy</code>, tested against WayneUI's assets</li>
-          <li>Trusted Types, in Report-Only first, for apps with a JS framework</li>
           <li>A <code>Clear-Site-Data</code> helper for logout</li>
-          <li>A CSRF check for raw PHP, from <code>Origin</code> and <code>Sec-Fetch-Site</code></li>
           <li>A global error handler: detail in the log, a generic page for the user</li>
         </ul>
         <p class="whiteboard__marker" aria-hidden="true">two-a-days &rarr;</p>
@@ -553,7 +550,7 @@ helmet_info{php_version="8.4",
         <div class="units">
 <section class="unit" aria-labelledby="unit-0"><h3 class="unit__name" id="unit-0">On the field</h3><p class="unit__sub">What runs inside every app</p><ul class="roster">
 <li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">QB</span><span class="mark mark--tile"><img src="assets/marks/wayneui.svg" width="26" height="26" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://wayneui.apps.wayne.edu/">WayneUI</a></span><span class="roster__role">Renders every page: the design system, tokens and components.</span></span></li>
-<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">C</span><span class="mark"><img src="assets/marks/sesame.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://sesame.apps.wayne.edu/">SESAME</a></span><span class="roster__role">Snaps the sign-in: CAS today, the gateway later.</span></span></li>
+<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">C</span><span class="mark"><img src="assets/marks/sesame.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://sesame.apps.wayne.edu/">SESAME</a></span><span class="roster__role">Snaps the sign-in: CAS, the gateway, bearer tokens and Entra, behind one config switch.</span></span></li>
 <li class="roster__row roster__row--you" style="--j:2"><span class="roster__pos" aria-hidden="true">OL</span><span class="mark"><img src="brand/helmet-avatar-256.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name">HELMET <span class="you-are-here">you are here</span></span><span class="roster__role">Protects every snap: headers, session, proxies, /up, logs.</span></span></li>
 <li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">TEAM</span><span class="mark"><img src="assets/marks/weld.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://weld.apps.wayne.edu/">WELD</a></span><span class="roster__role">Every part already joined, in one Laravel + Inertia/Vue app.</span></span></li>
 </ul></section>
@@ -562,14 +559,14 @@ helmet_info{php_version="8.4",
 <li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">REF</span><span class="mark"><img src="assets/marks/proctor.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://proctor.apps.wayne.edu/">PROCTOR</a></span><span class="roster__role">One command that checks an app against the standards.</span></span></li>
 <li class="roster__row" style="--j:2"><span class="roster__pos" aria-hidden="true">LJ</span><span class="mark"><img src="assets/marks/pinstripe.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://pinstripe.apps.wayne.edu/">Pinstripe</a></span><span class="roster__role">The coding standard: Pint, PHPStan, ESLint and Prettier.</span></span></li>
 <li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">WARM</span><span class="mark"><img src="assets/marks/preflight.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://preflight.apps.wayne.edu/">Preflight</a></span><span class="roster__role">Shared CI from GitLab CI/CD components.</span></span></li>
-<li class="roster__row" style="--j:4"><span class="roster__pos" aria-hidden="true">OC</span><span class="mark"><img src="assets/marks/advisor.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://advisor.apps.wayne.edu/">ADVISOR</a> <span class="chip">next</span></span><span class="roster__role">The voice in your headset: an MCP server that knows the stack.</span></span></li>
+<li class="roster__row" style="--j:4"><span class="roster__pos" aria-hidden="true">OC</span><span class="mark"><img src="assets/marks/advisor.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://advisor.apps.wayne.edu/">ADVISOR</a></span><span class="roster__role">The voice in your headset: an MCP server that knows the stack.</span></span></li>
 </ul></section>
 <section class="unit" aria-labelledby="unit-2"><h3 class="unit__name" id="unit-2">Sideline and front office</h3><p class="unit__sub">How apps start, ship and grow</p><ul class="roster">
 <li class="roster__row" style="--j:0"><span class="roster__pos" aria-hidden="true">CAMP</span><span class="mark"><img src="assets/marks/sourdough.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://sourdough.apps.wayne.edu/">Sourdough</a></span><span class="roster__role">Starters you shape yourself: raw PHP, Blade or Inertia/Vue.</span></span></li>
-<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">EQ</span><span class="mark"><img src="assets/marks/squire.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://squire.apps.wayne.edu/">Squire</a> <span class="chip">next</span></span><span class="roster__role">The equipment manager: release script and local parity for Citadel.</span></span></li>
+<li class="roster__row" style="--j:1"><span class="roster__pos" aria-hidden="true">EQ</span><span class="mark"><img src="assets/marks/squire.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://squire.apps.wayne.edu/">Squire</a></span><span class="roster__role">The equipment manager: release script and local parity for Citadel.</span></span></li>
 <li class="roster__row" style="--j:2"><span class="roster__pos" aria-hidden="true">GATE</span><span class="mark"><img src="assets/marks/drawbridge.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://drawbridge.apps.wayne.edu/">Drawbridge</a> <span class="chip">next</span></span><span class="roster__role">The Citadel sign-in gateway, lowered on request.</span></span></li>
-<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">CLUB</span><span class="mark"><img src="assets/marks/booster.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://booster.apps.wayne.edu/">Booster</a> <span class="chip">next</span></span><span class="roster__role">The booster club: upgrade recipes, PHP 7 to 8 and Laravel N to N+1.</span></span></li>
-<li class="roster__row" style="--j:4"><span class="roster__pos" aria-hidden="true">ROLL</span><span class="mark"><img src="assets/marks/rollcall.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://rollcall.apps.wayne.edu/">Rollcall</a> <span class="chip">next</span></span><span class="roster__role">Every app answers “present”, with its PHP version.</span></span></li>
+<li class="roster__row" style="--j:3"><span class="roster__pos" aria-hidden="true">CLUB</span><span class="mark"><img src="assets/marks/booster.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://booster.apps.wayne.edu/">Booster</a></span><span class="roster__role">The booster club: upgrade recipes, PHP 7 to 8 and Laravel N to N+1.</span></span></li>
+<li class="roster__row" style="--j:4"><span class="roster__pos" aria-hidden="true">ROLL</span><span class="mark"><img src="assets/marks/rollcall.png" width="40" height="40" alt=""></span><span class="roster__text"><span class="roster__name"><a class="part-link" href="https://rollcall.apps.wayne.edu/">Rollcall</a></span><span class="roster__role">Every app answers “present”, with its PHP version.</span></span></li>
 </ul></section>
         </div>
       </div>

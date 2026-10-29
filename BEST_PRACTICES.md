@@ -19,7 +19,7 @@ Each practice ends with exactly one tag.
 | `Documented` | Written down in the README or a design note, with no code behind it. |
 | `Not yet` | A gap. |
 
-HELMET is at its first scaffold step. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life.
+HELMET is at 0.2.4. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life.
 
 ---
 
@@ -188,7 +188,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Get a client IP by walking the list from the right, skipping trusted proxies. Do not use the leftmost value for rate limits, allow lists or audit identity.
 - **Why:** The leftmost value is whatever the client wrote.
 - **Sources:** [MDN X-Forwarded-For](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Forwarded-For), [Laravel requests](https://laravel.com/docs/12.x/requests)
-- **Stack:** `Not yet`. HELMET offers no client-IP function. The design says it would reuse `akrabat/ip-address-middleware`. That package is in `composer.json` and nothing calls it.
+- **Stack:** `Enforced`. `ClientIp::resolve()` (`src/Proxy/ClientIp.php`) walks the forwarded list from the right and trusts only `TrustedProxies`. `testTrustedProxyUnwrapsForwardedHeader`, `testUntrustedProxyForwardedHeaderIsIgnored` and `testSkipsTrustedHopsUntilAnUntrustedOne` cover it.
 
 ### H24. Validate the proxy list strictly
 - **Practice:** Reject bad entries at boot with a clear error instead of skipping them.
@@ -206,7 +206,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** In Laravel, pass the `headers:` argument to `trustProxies` and list only what the proxy sets (`Request::HEADER_X_FORWARDED_FOR | Request::HEADER_X_FORWARDED_PROTO`). Leave out `HEADER_X_FORWARDED_HOST` and `HEADER_X_FORWARDED_PORT`, and do not enable the standard `Forwarded` header unless the proxy sends it.
 - **Why:** The Laravel 13.x docs show `trustProxies(headers: ...)` with all of FOR, HOST, PORT, PROTO and the AWS ELB constant as the example, which is wider than a single HA-Proxy needs. Symfony's proxy docs (Symfony's request class is the base of Laravel's) warn: "Enabling the `Request::HEADER_X_FORWARDED_HOST` option exposes the application to HTTP Host header attacks. Make sure the proxy really sends an `x-forwarded-host` header." This is H20 applied to the framework.
 - **Sources:** [Laravel requests 13.x](https://laravel.com/docs/13.x/requests), [Symfony: How to Configure Symfony to Work behind a Load Balancer or a Reverse Proxy](https://symfony.com/doc/current/deployment/proxies.html)
-- **Stack:** `Not yet`. The Laravel adapter is not built. When it is, it should set both `at:` and `headers:` from HELMET's own config, so the two paths agree.
+- **Stack:** `Enforced`. The Laravel adapter's `HelmetServiceProvider` copies `helmet.proxies` to `trustedproxy.proxies` when the app has not set it, and narrows the trusted headers to `X-Forwarded-For` and `X-Forwarded-Proto` only, through `TrustProxies::withHeaders()`, so `HEADER_X_FORWARDED_HOST` and `HEADER_X_FORWARDED_PORT` stay out. `testProviderNarrowsTheTrustedHeaderSet`, `testForwardedPortIsNotTrusted` and `testForwardedHostIsNotTrusted` cover it.
 
 ---
 
@@ -236,7 +236,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Issue a new ID after login or any privilege change and destroy the old one. Enforce idle and absolute timeouts on the server. Invalidate the server-side session on logout.
 - **Why:** This is what stops fixation and limits a stolen ID. OWASP gives example timeouts: idle 2 to 5 minutes for high-value apps and 15 to 30 minutes for low-risk ones, and an absolute limit of roughly 4 to 8 hours for an office-day session. NIST SP 800-63B-4 (the session management page) says a session ends when either the overall or the inactivity timeout expires, that the relying party must reauthenticate periodically, and that secrets are erased or invalidated at logout. Its exact limits depend on the assurance level and sit in other sections that were not read. Vendor blogs disagree with each other on the numbers (12 hours or 24 hours, 30 minutes or 1 hour), so do not copy a figure from one until the NIST section is read.
 - **Sources:** [OWASP Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [NIST SP 800-63B-4 session management](https://pages.nist.gov/800-63-4/sp800-63b/session/)
-- **Stack:** `Documented`. The auth library's design (SESAME) says it always regenerates the ID on login and invalidates first on logout. That library is not built. HELMET does none of it.
+- **Stack:** `Documented`. SESAME regenerates the session ID on login and invalidates first on logout (see SESAME). HELMET does none of it.
 
 ### H30. Use a host-only cookie with a generic name
 - **Practice:** Do not set a cookie `Domain`. Prefer the `__Host-` prefix (needs `Secure`, `Path=/`, no `Domain`). Avoid a framework-revealing name such as `PHPSESSID`.
@@ -282,7 +282,7 @@ HELMET is at its first scaffold step. The Laravel adapter and the environment ri
 - **Practice:** Put dependency checks, such as the database or a cache, on a different endpoint from the liveness check.
 - **Why:** A failed dependency should take an app out of rotation, not kill it.
 - **Sources:** [Kubernetes probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/), [Laravel deployment](https://laravel.com/docs/12.x/deployment)
-- **Stack:** `Not yet`. HELMET has only the liveness endpoint. Laravel's `DiagnosingHealth` event is the hook for readiness work in the Laravel adapter, which is not built.
+- **Stack:** `Not yet`. HELMET has only the liveness endpoint. Laravel's `DiagnosingHealth` event is the hook for readiness work in the Laravel adapter.
 
 ### H35. Keep the response tiny, uncached and free of detail
 - **Practice:** Return a short body, `Cache-Control: no-store`, and no version or configuration detail.
@@ -448,14 +448,14 @@ Each of these follows from the research above. Items marked "inferred" depend on
 
 ### Missing features
 
-14. Report-Only mode and a CSP report endpoint.
-15. Configurable HSTS `max-age` and `includeSubDomains`, with a staged rollout note.
+14. Done. Report-Only mode and a CSP report endpoint.
+15. Done. Configurable HSTS `max-age` and `includeSubDomains`, with a staged rollout note.
 16. Done. `build()` sends `Permissions-Policy` with `payment=()` and `usb=()` (`src/Headers/SecurityHeaders.php:239`); `testBuildPermissionsPolicyCoversPaymentAndUsb` covers it.
-17. COOP and CORP headers, tested against WayneUI assets.
-18. A client-IP function that walks the forwarded list from the right.
+17. Done. COOP and CORP headers, tested against WayneUI assets.
+18. Done. A client-IP function that walks the forwarded list from the right.
 19. A readiness endpoint, separate from `/up`.
 20. A global error handler that logs details and shows a generic page.
-21. Request ID and context processors, and a redacting formatter.
+21. Done. Request ID and context processors, and a redacting formatter.
 22. A test for `Logging::create()` and for `helmet_boot()` itself.
 23. Done. The version warning is wired into the environment ribbon: when a policy file is configured (`helmet.policy_path` / `HELMET_POLICY_PATH`, or `helmet_ribbon()`'s third argument), the ribbon shows a warning line for each component version that is in its security-only phase or end of life (`src/Ribbon/Ribbon.php`, `src/Policy/VersionWarning.php`). `RibbonTest` covers the active, security-only, end-of-life, no-policy-path and broken-file cases, and `InjectRibbonTest` covers the Laravel wiring.
 24. A proven CI run. The `.gitlab-ci.yml` exists (Preflight `php-test` and `composer-audit`, pinned to a commit), but git.wayne.edu has no runners today. Get one pipeline run on record, add PHP 8.5 and 8.3 to the test matrix, and add secret detection.
@@ -471,8 +471,8 @@ Each of these follows from the research above. Items marked "inferred" depend on
 Items 28 to 37 continue the numbering above.
 
 28. Done. The Laravel middleware passes the nonce to Vite via `Vite::useCspNonce()` (`src/Laravel/SecurityHeaders.php:86`) and sets the `helmet.csp_nonce` request attribute; the default policy allows `data:` in `font-src` and `img-src` (`src/Headers/SecurityHeaders.php:53-54`); the raw PHP path prints the `csp-nonce` meta tag via `helmet_csp_nonce_meta()` (`src/functions.php:147`), and H51 documents the `html.cspNonce` placeholder swap.
-29. Trusted Types in Report-Only mode for JS-framework apps (H52), after Report-Only mode exists (item 14).
-30. CSP reporting through `Reporting-Endpoints` plus `report-to`, with `report-uri` as the fallback, and a report endpoint that accepts `application/reports+json` (H7, item 14).
+29. Done. Trusted Types in Report-Only mode for JS-framework apps (H52), after Report-Only mode exists (item 14).
+30. Done. CSP reporting through `Reporting-Endpoints` plus `report-to`, with `report-uri` as the fallback, and a report endpoint that accepts `application/reports+json` (H7, item 14).
 31. A `Clear-Site-Data` logout helper, or a note for the auth library (H53).
 32. Done. The opt-in request-forgery guard gives the raw PHP, PSR-15 and Laravel paths an `Origin` and `Sec-Fetch-Site` check (H54): `helmet_boot()` accepts a `csrf` option, `RequestForgeryGuard` is the PSR-15 middleware, and the Laravel adapter registers it when `helmet.csrf.enabled` is true.
 33. Laravel adapter: set `trustProxies(headers: ...)` to FOR and PROTO only, from HELMET's config (H55).
