@@ -72,6 +72,17 @@ final class SessionHardeningTest extends TestCase
         self::assertNotSame('1', ini_get('session.cookie_secure'));
     }
 
+    public function testAlwaysModeSetsCookieSecureWhenNotHttps(): void
+    {
+        ini_set('session.cookie_secure', '0');
+        SessionHardening::apply(false, null, SessionHardening::SECURE_ALWAYS);
+
+        self::assertSame('1', ini_get('session.cookie_secure'));
+        // The name still follows the request, so a plain HTTP request never
+        // gets a __Host- name the browser would reject.
+        self::assertNotSame('__Host-WSUSESSID', ini_get('session.name'));
+    }
+
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
     public function testSetsNameLifetimePathAndDomainWhenHttps(): void

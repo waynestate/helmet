@@ -15,8 +15,8 @@ namespace Waynestate\Helmet\Session;
  *  - use_only_cookies: only send the session ID in a cookie.
  *  - cookie_httponly: never expose the session cookie to JavaScript.
  *  - cookie_samesite: Lax, to reduce cross-site session reuse.
- *  - cookie_secure: only when the request is HTTPS, so the cookie is only
- *    sent over TLS.
+ *  - cookie_secure: when the request is HTTPS (auto mode) or always
+ *    (always mode), so the cookie is only sent over TLS.
  *  - cookie_lifetime: 0, a browser-session cookie that ends when the
  *    browser closes.
  *  - cache_limiter: nocache, so pages cannot be cached and replayed with
@@ -34,33 +34,47 @@ namespace Waynestate\Helmet\Session;
  */
 final class SessionHardening
 {
+    /** cookie_secure follows the request: set only when it is HTTPS. */
+    public const SECURE_AUTO = 'auto';
+
+    /** cookie_secure is set even when the request is not HTTPS. */
+    public const SECURE_ALWAYS = 'always';
+
     /**
      * Apply the hardened session settings.
      *
-     * @param bool $https Whether the request is HTTPS; controls cookie_secure.
+     * @param bool $https Whether the request is HTTPS; in auto mode it
+     *        controls cookie_secure, and it always controls the cookie name.
      * @param array<string, string>|null $settings Settings to apply. null
-     *        (the default) applies the standard session settings for $https.
-     *        An explicit list is accepted so the failure path can be tested.
+     *        (the default) applies the standard session settings for $https
+     *        and $secureMode. An explicit list is accepted so the failure
+     *        path can be tested.
+     * @param string $secureMode SECURE_AUTO (the default): cookie_secure
+     *        follows $https. SECURE_ALWAYS: cookie_secure is set whether or
+     *        not the request is HTTPS, for apps whose TLS always terminates
+     *        in front of the app. The cookie name still follows $https, so
+     *        a __Host- name never appears on a plain HTTP request.
      *
      * @throws \LogicException If a session is already active.
      * @throws \RuntimeException If a setting could not be changed.
      */
-    public static function apply(bool $https, ?array $settings = null): void
+    public static function apply(bool $https, ?array $settings = null, string $secureMode = self::SECURE_AUTO): void
     {
         if (session_status() === PHP_SESSION_ACTIVE) {
             throw new \LogicException('Session hardening must be applied before the session starts.');
         }
 
-        self::applySettings($settings ?? self::defaultSettings($https));
+        self::applySettings($settings ?? self::defaultSettings($https, $secureMode));
     }
 
     /**
-     * The standard session settings. cookie_secure applies only for HTTPS,
-     * and the name is renamed only from PHP's default.
+     * The standard session settings. In auto mode cookie_secure applies only
+     * for HTTPS; in always mode it applies either way. The name is renamed
+     * only from PHP's default, and only follows $https.
      *
      * @return array<string, string>
      */
-    private static function defaultSettings(bool $https): array
+    private static function defaultSettings(bool $https, string $secureMode): array
     {
         $settings = [
             'session.use_strict_mode' => '1',
@@ -73,7 +87,7 @@ final class SessionHardening
             'session.cookie_domain' => '',
         ];
 
-        if ($https) {
+        if ($https || $secureMode === self::SECURE_ALWAYS) {
             $settings['session.cookie_secure'] = '1';
         }
 

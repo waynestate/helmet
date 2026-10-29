@@ -27,6 +27,7 @@ final class ConfigTest extends TestCase
         $this->clearEnv('HELMET_CSRF_ALLOW_SAME_SITE');
         $this->clearEnv('HELMET_CSRF_TRUSTED_ORIGINS');
         $this->clearEnv('HELMET_CSRF_EXCEPT');
+        $this->clearEnv('HELMET_SESSION_SECURE');
 
         parent::tearDown();
     }
@@ -289,5 +290,28 @@ final class ConfigTest extends TestCase
         self::assertFalse(config('helmet.csrf.allow_same_site'));
         self::assertSame([], config('helmet.csrf.trusted_origins'));
         self::assertSame([], config('helmet.csrf.except'));
+    }
+
+    public function testSessionSecureEnvVarIsReadWithAutoAsTheDefault(): void
+    {
+        self::assertSame('auto', config('helmet.session.secure'));
+
+        $this->putEnv('HELMET_SESSION_SECURE', 'always');
+        $this->reloadPackageConfig();
+        self::assertSame('always', config('helmet.session.secure'));
+    }
+
+    /**
+     * Unlike HELMET_SCOPE (an unknown value falls back to the default), an
+     * invalid secure mode is a typo that would silently change cookie
+     * behavior, so it fails loudly at boot instead.
+     */
+    public function testInvalidSessionSecureThrowsAtConfigLoad(): void
+    {
+        $this->putEnv('HELMET_SESSION_SECURE', 'bogus');
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('HELMET_SESSION_SECURE must be "auto" or "always".');
+        $this->reloadPackageConfig();
     }
 }
