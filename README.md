@@ -733,6 +733,28 @@ No personal data in labels; labels stay low-cardinality.
 The endpoint is the only place in HELMET that says "I am still here" without
 saying "here is your page". A lullaby, in a way.
 
+## Proof
+
+**82 Wayne State applications suited up with HELMET on 2026-10-28: 81 passed, 0 tool errors, 1 not applicable.**
+
+Each app was copied and booted in `php:8.4-apache` with no network, with `helmet_boot()` called before the app's
+first line (through `auto_prepend_file`, so no app file changed) and `public/up.php` calling `helmet_up()`. A probe
+asked for `/up` and the front page through a trusted loopback proxy as HTTPS, and read every header.
+
+| Check | Apps |
+|---|---:|
+| `/up` answered `ok` (64 through `public/up.php`, 17 through the app's own rewrite) | 81 |
+| CSP with nonce, frame-ancestors, `nosniff`, Referrer-Policy, Permissions-Policy, COOP, HSTS, no `X-Powered-By` | 81 |
+| App front page (`index.php`) answered with every header | 55 |
+| Session cookies on the front page with `Secure`, `HttpOnly`, `SameSite` | 3 of 3 |
+| Not applicable: the app's `.htaccess` redirects to HTTPS before PHP runs | 1 |
+
+The run found one thing to fix: when an app's own rewrite sends `/up` into `helmet_boot()`, the health answer goes
+out before `X-Powered-By` is stripped (17 apps). The fix is queued with a test. The apps are counted, never named.
+The breakdown, the command and what the run does not prove: [`site/proof.html`](site/proof.html).
+
+81 snaps, 0 concussions.
+
 ## Tests
 
 Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](MAINTAINING.md).

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en" data-theme="wsu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="stack-env" content="auto">
+<script src="assets/stack-env.js" defer></script>
+<title>HELMET proof: 82 Wayne State apps, suited up</title>
+<meta name="description" content="HELMET's proof of work: 82 Wayne State application repositories booted with HELMET in php:8.4-apache on 2026-10-28, with the headers each one sent and the command to repeat it.">
+<meta name="theme-color" content="#0c5449">
+<meta property="og:title" content="HELMET proof: 82 Wayne State apps, suited up">
+<meta property="og:image" content="brand/helmet-avatar-512.png">
+<link rel="icon" href="brand/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="brand/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="brand/favicon-16.png">
+<link rel="apple-touch-icon" href="brand/helmet-avatar-256.png">
+<link rel="stylesheet" href="assets/wayne-ui/wayne-ui.css">
+<link rel="stylesheet" href="assets/helmet.css">
+<link rel="stylesheet" href="assets/proof.css">
+<script>
+  /* Motion only for people who are fine with it. Everyone else gets the
+     finished record: every square filled, every number already counted. */
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: no-preference)").matches) {
+    document.documentElement.classList.add("motion");
+  }
+</script>
+</head>
+<body>
+<a class="wsu-skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wsu-container site-header__row">
+    <a class="brand" href="index.html">
+      <img src="brand/helmet-avatar-256.png" width="34" height="34" alt="">
+      <span class="brand__name">HELMET</span>
+      <span class="brand__version">0.1</span>
+    </a>
+    <nav class="site-nav" aria-label="Page">
+      <a href="index.html">Front page</a>
+      <a href="#tally">Tally</a>
+      <a href="#film">Game film</a>
+      <a href="#run">Run it</a>
+      <a href="#limits">Limits</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="proof">
+
+  <section class="proof-hero" aria-labelledby="proof-title">
+    <div class="proof-wrap">
+      <p class="proof-kicker">Game film · 2026-10-28 · 82 snaps</p>
+      <h1 class="proof-hero__line" id="proof-title"><span class="n">82</span> Wayne State applications suited up with HELMET on 2026-10-28: <span class="n">81</span> passed, <span class="n">0</span> tool errors.</h1>
+      <p class="proof-hero__sub">Each app was copied, booted in <code>php:8.4-apache</code> with no network, and HELMET called before the app's first line, the way the README says to. Then the probe asked for <code>/up</code> and the front page over a simulated HTTPS proxy and read every header that came back. One app never let HELMET onto the field, and the film says why.</p>
+      <ul class="proof-meta" aria-label="This run"><li>HELMET <b>0.1.0</b></li><li>commit <b>87c83d2</b></li><li>image <b>php:8.4-apache</b></li><li>network <b>none</b></li><li>median boot and probe <b>13.9 s</b></li></ul>
+    </div>
+  </section>
+
+  <section class="proof-sec" id="tally" aria-labelledby="tally-title" data-arrive>
+    <div class="proof-wrap">
+      <p class="proof-kicker">First quarter · The tally</p>
+      <h2 class="proof-h2" id="tally-title">Eighty-two snaps, one call each</h2>
+      <p class="proof-lede">An app passes when <code>/up</code> answers <code>ok</code> and every response that runs through HELMET carries the full set: a CSP with a fresh nonce, frame-ancestors, <code>nosniff</code>, Referrer-Policy, Permissions-Policy, COOP, HSTS on trusted HTTPS, and no <code>X-Powered-By</code>. The app itself is not on trial; a page that errors still has to wear the helmet.</p>
+      <ul class="proof-tally"><li class="proof-tile proof-tile--pass"><span class="proof-tile__n" data-count="81">81</span><span class="proof-tile__k">Passed</span><span class="proof-tile__d">/up answered, every header present</span></li><li class="proof-tile proof-tile--flag"><span class="proof-tile__n" data-count="0">0</span><span class="proof-tile__k">Flagged</span><span class="proof-tile__d">no app crashed out from under HELMET</span></li><li class="proof-tile proof-tile--err"><span class="proof-tile__n" data-count="0">0</span><span class="proof-tile__k">Tool errors</span><span class="proof-tile__d">no missing header, no failed /up</span></li><li class="proof-tile proof-tile--na"><span class="proof-tile__n" data-count="1">1</span><span class="proof-tile__k">Not applicable</span><span class="proof-tile__d">its .htaccess redirects to HTTPS before PHP runs</span></li></ul>
+      <p class="sr-only proof-sr">82 applications, one square each: 81 passed, 0 flagged, 0 tool errors, 1 not applicable.</p><ol class="units" aria-hidden="true"><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--na"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li><li class="units__u units__u--pass"></li></ol>
+      <ul class="legend" aria-hidden="true"><li class="l-pass">Passed</li><li class="l-flag">Flagged</li><li class="l-err">Tool error</li><li class="l-na">Not applicable</li></ul>
+      <p class="proof-note">One mark per application, in the order of its anonymous id. This repository is public, so the apps are counted and never named.</p>
+    </div>
+  </section>
+
+  <section class="proof-sec" id="film" aria-labelledby="film-title" data-arrive>
+    <div class="proof-wrap">
+      <p class="proof-kicker">Second quarter · Game film</p>
+      <h2 class="proof-h2" id="film-title">What came back over the wire</h2>
+      <p class="proof-lede">Every response was read header by header. These are counts across the 81 apps HELMET ran on; the per-app film stays in the stack's internal record.</p>
+      <div class="proof-tablewrap"><table class="proof-table"><caption>Headers on the response that ran through helmet_boot()</caption><thead><tr><th scope="col">Protection</th><th scope="col" class="num">Apps</th><th scope="col">Note</th></tr></thead><tbody><tr><th scope="row">CSP with a per-request nonce</th><td class="num">81</td><td><code>strict-dynamic</code>, <code>object-src 'none'</code>, <code>base-uri 'self'</code></td></tr><tr><th scope="row">frame-ancestors and X-Frame-Options</th><td class="num">81</td><td><code>'self'</code> and <code>SAMEORIGIN</code></td></tr><tr><th scope="row">X-Content-Type-Options</th><td class="num">81</td><td><code>nosniff</code></td></tr><tr><th scope="row">Referrer-Policy</th><td class="num">81</td><td><code>strict-origin-when-cross-origin</code></td></tr><tr><th scope="row">Permissions-Policy</th><td class="num">81</td><td>camera, geolocation, microphone, payment and usb off</td></tr><tr><th scope="row">Cross-Origin-Opener-Policy</th><td class="num">81</td><td><code>same-origin</code></td></tr><tr><th scope="row">Strict-Transport-Security</th><td class="num">81</td><td>only because the request came through a trusted proxy as HTTPS</td></tr><tr><th scope="row">X-Powered-By removed</th><td class="num">81</td><td>on every page HELMET serves after boot</td></tr></tbody></table></div><div class="proof-grid2"><div><h3 class="proof-h3">How /up was reached</h3><ul class="bars" aria-label="How /up was reached"><li><span class="bars__k"><code>public/up.php</code> calling <code>helmet_up()</code></span><span class="bars__track" aria-hidden="true"><span class="bars__fill" style="--w:79%"></span></span><span class="bars__n">64</span></li><li><span class="bars__k"><code>/up</code> through the app's own rewrite</span><span class="bars__track" aria-hidden="true"><span class="bars__fill" style="--w:21%"></span></span><span class="bars__n">17</span></li></ul><h3 class="proof-h3">The app's own front page</h3><ul class="bars" aria-label="Front page outcome"><li><span class="bars__k"><code>index.php</code> answered, headers on</span><span class="bars__track" aria-hidden="true"><span class="bars__fill" style="--w:67.9%"></span></span><span class="bars__n">55</span></li><li><span class="bars__k">no PHP front door (403)</span><span class="bars__track" aria-hidden="true"><span class="bars__fill" style="--w:30.9%"></span></span><span class="bars__n">25</span></li><li><span class="bars__k">static <code>index.html</code></span><span class="bars__track" aria-hidden="true"><span class="bars__fill" style="--w:1.2%"></span></span><span class="bars__n">1</span></li></ul></div><div><h3 class="proof-h3">What the film caught</h3><p class="proof-note">On the 17 apps whose own rewrite sends <code>/up</code> into <code>helmet_boot()</code>, the health answer goes out before <code>X-Powered-By</code> is stripped, so <code>/up</code> still says which PHP it runs. That is a one-line fix, queued for the next tag with a test. Three apps set a session cookie on their front page, and all three got <code>Secure</code>, <code>HttpOnly</code> and <code>SameSite</code> from HELMET's session settings. The libraries (6), the starter template and Citadel's six PHP test pages ran too: all passed, and two test pages that need their own config to render still wore every header.</p></div></div>
+    </div>
+  </section>
+
+  <section class="proof-sec" id="run" aria-labelledby="run-title" data-arrive>
+    <div class="proof-wrap">
+      <p class="proof-kicker">Third quarter · Run the play</p>
+      <h2 class="proof-h2" id="run-title">Run it on your own app</h2>
+      <p class="proof-lede">Install HELMET, call <code>helmet_boot()</code> at the top of the front controller, and read your own headers.</p>
+      <p class="proof-cmd__label">Install</p><div class="proof-cmd"><code>composer require waynestate/helmet</code><button class="proof-copy" type="button" data-copy="composer require waynestate/helmet"><span class="proof-copy__label">Copy</span></button></div><p class="proof-cmd__label">First lines of public/index.php</p><div class="proof-cmd"><code>&lt;?php
+require __DIR__ . &apos;/../vendor/autoload.php&apos;;
+$helmet = Waynestate\Helmet\helmet_boot([&apos;preset&apos; =&gt; &apos;citadel&apos;]);</code><button class="proof-copy" type="button" data-copy="&lt;?php
+require __DIR__ . &apos;/../vendor/autoload.php&apos;;
+$helmet = Waynestate\Helmet\helmet_boot([&apos;preset&apos; =&gt; &apos;citadel&apos;]);"><span class="proof-copy__label">Copy</span></button></div><p class="proof-cmd__label">Read the headers (behind your HTTPS proxy)</p><div class="proof-cmd"><code>curl -sI https://your-app.example/ &amp;&amp; curl -s https://your-app.example/up</code><button class="proof-copy" type="button" data-copy="curl -sI https://your-app.example/ &amp;&amp; curl -s https://your-app.example/up"><span class="proof-copy__label">Copy</span></button></div><p class="proof-note">The proof rig did the same with <code>auto_prepend_file</code> so no app file had to change, trusted only the loopback proxy, and sent <code>X-Forwarded-Proto: https</code> the way a platform proxy does. Each boot is logged as one line (tool commit, anonymous unit id, app commit, command, exit code, duration, outcome) in the stack's internal record.</p>
+    </div>
+  </section>
+
+  <section class="proof-sec" id="limits" aria-labelledby="limits-title" data-arrive>
+    <div class="proof-wrap">
+      <p class="proof-kicker">Fourth quarter · The fine print</p>
+      <h2 class="proof-h2" id="limits-title">What this does not prove</h2>
+      <ul class="proof-limits"><li>It proves the headers go out, not that each app's pages work under the CSP. An app with inline scripts needs their nonces before the policy stops blocking them; that is the app's work, and the CSP report endpoint is how to find it.</li><li>No app reached a real database, Oracle, CAS or any Wayne State service. Most front pages rendered without one; deeper pages that need one were not visited.</li><li>It ran on PHP 8.4 only, the platform's current image. An app whose code would not parse on 8.4 still gets HELMET's answer at <code>/up</code> and its headers, because HELMET runs before the app does; whether the app itself works on 8.4 is BOOSTER's question.</li><li>HTTPS was simulated through a trusted proxy header over loopback. The one app that redirects to HTTPS in its own <code>.htaccess</code> never let PHP run, so it counts as not applicable, not as a pass.</li><li>It covers the raw PHP path. The Laravel middleware has its own tests; a Laravel boot proof waits for apps whose dependencies install without Wayne State's private registries.</li></ul><p class="proof-joke">81 snaps, 0 concussions. Size Matters, and so do headers.</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="endzone">
+  <div class="wsu-container endzone__inner">
+    <p class="endzone__paint" aria-hidden="true">HELMET</p>
+    <p class="endzone__joke">The core stays small enough to read in an afternoon. Size Matters.</p>
+    <p class="endzone__links">
+      <a href="https://github.com/waynestate/helmet">Source on GitHub</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120">Helmet, the band (a GIF, on Tenor)</a>
+    </p>
+    <p class="endzone__org">Wayne State University · Enterprise Applications</p>
+  </div>
+</footer>
+
+<script src="assets/proof.js" defer></script>
+</body>
+</html>
