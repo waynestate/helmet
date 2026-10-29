@@ -57,7 +57,7 @@ an address that belongs to the platform, not the app. The presets live in
 
 | Preset | Trusted proxies |
 | --- | --- |
-| `citadel` | `172.18.0.1`, the Docker bridge gateway to the HA-Proxy front |
+| `citadel` | the Docker bridge gateway to the HA-Proxy front (see "Running off Citadel") |
 | `docker` | none: a plain Docker network with no front proxy |
 
 Raw PHP passes the preset name:
@@ -118,10 +118,11 @@ $helmet = helmet_boot([
     'preset' => 'citadel',
 
     // Optional. A Monolog JSON logger, one line per record. "stream" may be a
-    // stream (php://stderr) or a file path.
+    // stream or a file path. Off Citadel, lead with php://stderr; the
+    // Citadel preset's value is /var/log/app/helmet.log.
     'log' => [
         'channel' => 'app',
-        'stream'  => '/var/log/app/helmet.log',
+        'stream'  => 'php://stderr',
         'level'   => 'info',
     ],
 ]);
@@ -735,10 +736,10 @@ client IP through the same trusted-proxy list the headers use, and renders
 use function Waynestate\Helmet\helmet_metrics;
 
 $result = helmet_metrics([
-    'enabled'         => true,
-    'token'           => 's3cret',
-    'allow'           => ['10.0.0.0/8'],
-    'trusted_proxies' => ['172.18.0.1'],
+    'enabled' => true,
+    'token'   => 's3cret',
+    'allow'   => ['10.0.0.0/8'],
+    'preset'  => 'citadel',
 ]);
 
 http_response_code($result['status']);
