@@ -55,4 +55,7 @@ All notable changes to this project are documented in this file.
   `same-site`, `same-origin` or `cross-origin`). Permissions-Policy defaults
   to a deny list for `camera`, `geolocation`, `microphone`, `payment` and
   `usb` (set `permissions_policy` / `HELMET_PERMISSIONS_POLICY` to a feature
-  map; an empty map sends no header). Invalid values throw.
+   map; an empty map sends no header). Invalid values throw.
+
+- BEST_PRACTICES tags brought up to date. The Stack lines are now picture
+  perfect.
