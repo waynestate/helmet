@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 0.2.1 (2026-10-29)
+
+- Upgrade note: a raw-PHP app that still used the default `PHPSESSID` cookie gets the new `WSUSESSID` name (`__Host-WSUSESSID` on HTTPS), so signed-in users sign in once more after deploying. Laravel apps are unaffected (Laravel names its own cookie).
+
 - Docs: added a "Running off Citadel" section to the README with a table for
   Citadel, OpenShift, Coolify and raw Docker behind a compose proxy: what
   sits in front, what to put in `HELMET_PROXIES`, and where logs go. The
