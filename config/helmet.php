@@ -144,8 +144,24 @@ use Waynestate\Helmet\Support\Setting;
 |                       default) means every response. Filled from
 |                       HELMET_NO_STORE_PATHS (comma-separated).
 |
-| "ribbon"      Whether the environment ribbon is injected into HTML
-|               responses in non-production environments. On by default.
+ | "session"     The session cookie settings that helmet_boot() applies when
+ |               a raw PHP app boots through it (the Laravel adapter does not
+ |               apply session hardening; it leaves the framework's session
+ |               configuration alone).
+ |
+ |               "session.secure"
+ |                       Whether the session cookie carries the Secure flag.
+ |                       "auto" (the default) sets it only when the request
+ |                       is HTTPS. "always" sets it even when the request is
+ |                       not HTTPS, for apps whose TLS always terminates in
+ |                       front of the app (as on Citadel, where HA-Proxy ends
+ |                       TLS); plain HTTP development then needs "auto".
+ |                       Set with the HELMET_SESSION_SECURE env var. An
+ |                       invalid value throws \InvalidArgumentException when
+ |                       the config loads.
+ |
+ | "ribbon"      Whether the environment ribbon is injected into HTML
+ |               responses in non-production environments. On by default.
 |
 | "policy_path" The path to a CREED policy.json that the environment ribbon
 |               reads to show a version warning for the running PHP (and, in
@@ -369,6 +385,14 @@ if (is_string($noStorePaths) && $noStorePaths !== '') {
     }
 }
 
+// The session cookie Secure flag: "auto" (the default) follows the request's
+// HTTPS detection, "always" forces the flag for apps whose TLS terminates in
+// front of the app. An invalid value fails loudly at boot.
+$sessionSecure = env('HELMET_SESSION_SECURE', 'auto');
+if ($sessionSecure !== 'auto' && $sessionSecure !== 'always') {
+    throw new \InvalidArgumentException('HELMET_SESSION_SECURE must be "auto" or "always".');
+}
+
 return [
     'preset' => $helmetPreset,
     'proxies' => $proxies,
@@ -389,6 +413,9 @@ return [
     'no_store' => [
         'enabled' => $noStoreEnabled,
         'paths' => $noStorePathsList,
+    ],
+    'session' => [
+        'secure' => $sessionSecure,
     ],
     'ribbon' => (bool) env('HELMET_RIBBON', true),
     'policy_path' => $policyPath,

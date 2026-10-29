@@ -688,7 +688,7 @@ mid-session does nothing.
 | `session.use_only_cookies` | `1` | The session ID travels only in the cookie, never in a URL. |
 | `session.cookie_httponly` | `1` | JavaScript cannot read the session cookie. |
 | `session.cookie_samesite` | `Lax` | Cuts cross-site session reuse. |
-| `session.cookie_secure` | `1` on HTTPS, unset otherwise | The cookie is sent only over TLS, and plain-HTTP setups keep working. |
+| `session.cookie_secure` | `1` on HTTPS, or always in `always` mode, unset otherwise | The cookie is sent only over TLS, and plain-HTTP setups keep working. |
 | `session.cookie_lifetime` | `0` | A browser-session cookie: it ends when the browser closes. |
 | `session.cache_limiter` | `nocache` | Pages cannot be cached and replayed with the session attached. |
 | `session.cookie_path` | `/` | The usual scope, and required by the `__Host-` prefix. |
@@ -701,6 +701,17 @@ whatever `session_name()` returns, so a changed name is safe for it. When an
 app first runs this version, existing sessions under the old name end: the
 next request still carries the old cookie, the app finds no session under
 the new name and starts a fresh one.
+
+**Secure mode.** By default (`auto`) the Secure flag follows the request. On
+Citadel, HA-Proxy ends TLS before the request reaches PHP, so the request
+looks plain even though the client connected over HTTPS; there, set
+`HELMET_SESSION_SECURE=always` so the cookie keeps its `Secure` flag. In
+Laravel the value lands in `helmet.session.secure`; in raw PHP pass
+`'session' => ['secure' => 'always']` to `helmet_boot()`, and a Laravel app
+that boots through `helmet_boot()` can hand it
+`config('helmet.session.secure')`. The cookie name still follows the request,
+so it never takes the `__Host-` prefix on a plain-HTTP request, and plain
+HTTP development keeps `auto`.
 
 ### The request-forgery guard
 

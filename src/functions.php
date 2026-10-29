@@ -45,8 +45,9 @@ if (!function_exists('helmet_boot')) {
      *  - neither: an empty list, which trusts nothing.
      *
        * @param array{
-       *     trusted_proxies?: list<string>,
-       *     preset?: string,
+        *     trusted_proxies?: list<string>,
+        *     preset?: string,
+        *     session?: array{secure?: 'auto'|'always'},
        *     csp?: array<string, list<string>|null>,
        *     csp_report_uri?: string,
        *     csp_report_only?: bool,
@@ -67,10 +68,11 @@ if (!function_exists('helmet_boot')) {
      *
      * @throws UnknownPresetException If "preset" names a preset the package
      *         does not know.
-        * @throws \InvalidArgumentException If "trusted_proxies" or "preset" is
-        *         the wrong type, "csrf" is the wrong type, or "coop", "corp",
-        *         "permissions_policy", "csp_trusted_types", "no_store" or a
-        *         "csrf" value is invalid, or "log.request_id" is not a string.
+      * @throws \InvalidArgumentException If "trusted_proxies", "preset" or
+      *         "session" is the wrong type, "csrf" is the wrong type, or
+      *         "coop", "corp", "permissions_policy", "csp_trusted_types",
+      *         "no_store", "session.secure" or a "csrf" value is invalid, or
+      *         "log.request_id" is not a string.
      * @throws \Waynestate\Helmet\Headers\InvalidCspReportUriException If
      *         "csp_report_uri" is not a valid report destination.
      * @throws \LogicException If a session is already active.
@@ -97,7 +99,21 @@ if (!function_exists('helmet_boot')) {
         $proxies = new TrustedProxies($proxyList);
         $isHttps = HttpsDetector::isHttps($_SERVER, $proxies);
 
-        SessionHardening::apply($isHttps);
+        $secureMode = SessionHardening::SECURE_AUTO;
+        $session = $config['session'] ?? null;
+        if ($session !== null) {
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
+            if (!is_array($session)) {
+                throw new \InvalidArgumentException('helmet_boot() "session" must be an array.');
+            }
+            $secureMode = $session['secure'] ?? SessionHardening::SECURE_AUTO;
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says 'auto'|'always', but a caller may pass anything at runtime),booleanAnd.alwaysFalse (same reason; the value check stays live code),booleanOr.alwaysFalse (same reason; the value check stays live code),notIdentical.alwaysFalse (same reason; the value check stays live code)
+            if (!is_string($secureMode) || $secureMode !== SessionHardening::SECURE_AUTO && $secureMode !== SessionHardening::SECURE_ALWAYS) {
+                throw new \InvalidArgumentException('helmet_boot() "session.secure" must be "auto" or "always".');
+            }
+        }
+
+        SessionHardening::apply($isHttps, null, $secureMode);
 
         // Strip the server signature before any early answer below (the
         // health check and the forgery rejection both exit), so no response

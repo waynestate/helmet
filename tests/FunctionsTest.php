@@ -889,4 +889,57 @@ final class FunctionsTest extends TestCase
             ],
         ]);
     }
+
+    // ── session.secure ────────────────────────────────────────────────────
+
+    /**
+     * session.secure "always" forces the Secure flag even when the request
+     * is not HTTPS, for apps whose TLS terminates in front of the app (as
+     * on Citadel, where HA-Proxy ends TLS). The cookie name still follows
+     * the request, so it stays plain on HTTP.
+     */
+    public function testBootSessionSecureAlwaysSetsCookieSecureOnHttp(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'session' => ['secure' => 'always'],
+        ]);
+
+        self::assertSame('1', ini_get('session.cookie_secure'));
+        self::assertNotSame('__Host-WSUSESSID', ini_get('session.name'));
+    }
+
+    public function testBootThrowsOnInvalidSessionConfig(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('session" must be an array');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'session' => 'not-an-array',
+        ]);
+    }
+
+    public function testBootThrowsOnInvalidSessionSecure(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('session.secure" must be "auto" or "always"');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'session' => ['secure' => 'bogus'],
+        ]);
+    }
 }
