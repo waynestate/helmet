@@ -101,3 +101,7 @@ All notable changes to this project are documented in this file.
   repo's paths, PHP version range and three commented exceptions), and
   `pint.json` keeps the `per` preset Pinstripe ships. No behaviour change;
   the code is just cut from the same cloth now.
+
+## 0.1.0 (2026-10-27)
+
+- First tagged release.
