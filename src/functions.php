@@ -25,15 +25,15 @@ if (!function_exists('helmet_boot')) {
      * Boot HELMET in a framework-free PHP app.
      *
      * Call this at the very top of the entry point, before any output. It:
-      *  - decides whether the request is HTTPS from the trusted-proxy list,
-      *  - hardens the session settings (throws if a session is already active),
-      *  - answers the health check path with "ok" and stops,
-      *  - rejects a state-changing request when the request-forgery guard is
-      *    enabled and the request is not same-origin (or from a trusted
-      *    origin),
-      *  - sends the security headers (including a per-request CSP nonce),
-     *  - removes the X-Powered-By header,
-     *  - sets up a JSON logger (if configured).
+       *  - decides whether the request is HTTPS from the trusted-proxy list,
+       *  - hardens the session settings (throws if a session is already active),
+       *  - removes the X-Powered-By header,
+       *  - answers the health check path with "ok" and stops,
+       *  - rejects a state-changing request when the request-forgery guard is
+       *    enabled and the request is not same-origin (or from a trusted
+       *    origin),
+       *  - sends the security headers (including a per-request CSP nonce),
+      *  - sets up a JSON logger (if configured).
      *
      * It reads $_SERVER directly rather than building a PSR-7 request, so it
      * works in plain PHP without a server-request factory.
@@ -98,6 +98,11 @@ if (!function_exists('helmet_boot')) {
         $isHttps = HttpsDetector::isHttps($_SERVER, $proxies);
 
         SessionHardening::apply($isHttps);
+
+        // Strip the server signature before any early answer below (the
+        // health check and the forgery rejection both exit), so no response
+        // leaves the door still wearing X-Powered-By.
+        header_remove('X-Powered-By');
 
         $logger = null;
         $requestId = Logging::requestId();
@@ -244,7 +249,6 @@ if (!function_exists('helmet_boot')) {
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value, true);
         }
-        header_remove('X-Powered-By');
 
         if (SecurityHeaders::noStoreApplies($noStoreEnabled, $path, $noStorePaths)) {
             $hasCacheControl = false;
