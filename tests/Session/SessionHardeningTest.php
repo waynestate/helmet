@@ -13,13 +13,19 @@ final class SessionHardeningTest extends TestCase
 {
     /**
      * Reset the settings apply() touches so tests do not leak into each
-     * other.
+     * other. use_only_cookies is left alone: turning it back off is
+     * deprecated as of PHP 8.4, and no test needs it off.
      */
     protected function tearDown(): void
     {
+        // A test may have started a session; end it so the session ini
+        // values can be changed again.
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+
         ini_set('session.name', 'PHPSESSID');
         ini_set('session.use_strict_mode', '0');
-        ini_set('session.use_only_cookies', '0');
         ini_set('session.cookie_httponly', '');
         ini_set('session.cookie_samesite', '');
         ini_set('session.cookie_secure', '0');
