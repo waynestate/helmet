@@ -39,6 +39,9 @@
             "providers": [
                 "Waynestate\\Helmet\\Laravel\\HelmetServiceProvider"
             ]
+        },
+        "proctor": {
+            "wayneui.copies": "fail"
         }
     },
     "autoload": {
