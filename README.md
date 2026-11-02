@@ -208,7 +208,14 @@ Use a platform preset (for example `citadel`, which trusts the Docker bridge
 gateway), or list only the address the front proxy connects from, never a
 whole private range. A broad range such as `10.0.0.0/8` also trusts other
 containers on the same network, and any of them could then set
-`X-Forwarded-Proto`.
+`X-Forwarded-Proto`. An explicitly empty `HELMET_PROXIES` means trust
+nobody, even when a preset is set; only an unset variable falls back to the
+preset.
+
+The `citadel` preset trusts the container bridge gateway address, which is
+only correct while the app's port is not published to the host network,
+because a published port can make a direct client appear to come from the
+gateway.
 
 `helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up`
 with `200 ok` before your code runs. It returns the nonce, the logger and
@@ -358,7 +365,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | --- | --- | --- | --- |
 | `HELMET_SCOPE` | `helmet.scope` | `global` | `global` puts `SecurityHeaders` in the kernel's global middleware; `web` keeps it in the `web` group only. `InjectRibbon` always stays in `web`. |
 | `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. Read from the environment, else from Playbook (see [WSU values (Playbook)](#wsu-values-playbook)). `HELMET_PROXIES` wins when both are set. An unknown name throws, even when `HELMET_PROXIES` is set. |
-| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Wins over `HELMET_PRESET`. Also copied to `trustedproxy.proxies` when the app has not set it. Empty trusts nothing. |
+| `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Wins over `HELMET_PRESET`. Also copied to `trustedproxy.proxies` when the app has not set it. An explicitly empty value (`HELMET_PROXIES=`) trusts nobody, even when `HELMET_PRESET` is set; only an unset variable falls back to the preset. |
 | `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
 | `HELMET_HSTS_INCLUDE_SUBDOMAINS` | `helmet.hsts_include_subdomains` | `true` | Set `false` to omit the HSTS `includeSubDomains` directive. |
