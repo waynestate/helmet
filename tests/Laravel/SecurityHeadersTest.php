@@ -767,6 +767,135 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
+     * A literal "<head>" inside a script attribute is not a head tag. The
+     * first <head> match sits inside an unclosed start tag, so the body is
+     * left byte for byte unchanged. The ribbon is disabled so the only
+     * middleware that could touch the body is the meta tag injection.
+     */
+    public function testNonceMetaSkipsAHeadInsideAScriptAttribute(): void
+    {
+        config(['helmet.ribbon' => false]);
+
+        $body = '<html><body><script data-x="<head>">1;</script></body></html>';
+        $this->app['router']->get('/meta-script', static fn() => response(
+            $body,
+            200,
+            ['Content-Type' => 'text/html'],
+        ))->middleware('web');
+
+        self::assertSame($body, (string) $this->get('/meta-script')->getContent());
+    }
+
+    /**
+     * A literal "<head>" inside a comment is not a head tag, even when a
+     * real <head> follows later in the document. The first match wins the
+     * decision, it fails the markup check, and the body is left untouched
+     * rather than hunted for a second match. The ribbon is disabled so the
+     * only middleware that could touch the body is the meta tag injection.
+     */
+    public function testNonceMetaSkipsAHeadInsideAComment(): void
+    {
+        config(['helmet.ribbon' => false]);
+
+        $body = '<html><!-- <head> --><head><title>hi</title></head><body>hi</body></html>';
+        $this->app['router']->get('/meta-comment', static fn() => response(
+            $body,
+            200,
+            ['Content-Type' => 'text/html'],
+        ))->middleware('web');
+
+        self::assertSame($body, (string) $this->get('/meta-comment')->getContent());
+    }
+
+    /**
+     * A literal "<head>" inside a textarea is not a head tag: textarea takes
+     * its inner text verbatim until the matching close tag, so the first
+     * match is skipped and the body is left unchanged. The ribbon is
+     * disabled so the only middleware that could touch the body is the meta
+     * tag injection.
+     */
+    public function testNonceMetaSkipsAHeadInsideATextarea(): void
+    {
+        config(['helmet.ribbon' => false]);
+
+        $body = '<html><body><textarea><head></textarea></body></html>';
+        $this->app['router']->get('/meta-textarea', static fn() => response(
+            $body,
+            200,
+            ['Content-Type' => 'text/html'],
+        ))->middleware('web');
+
+        self::assertSame($body, (string) $this->get('/meta-textarea')->getContent());
+    }
+
+    /**
+     * A literal "<head>" inside a style block is not a head tag: style takes
+     * its inner text verbatim until the matching close tag, so the first
+     * match is skipped and the body is left unchanged. The ribbon is
+     * disabled so the only middleware that could touch the body is the meta
+     * tag injection.
+     */
+    public function testNonceMetaSkipsAHeadInsideAStyleBlock(): void
+    {
+        config(['helmet.ribbon' => false]);
+
+        $body = '<html><body><style>.a { content: "<head>"; }</style></body></html>';
+        $this->app['router']->get('/meta-style', static fn() => response(
+            $body,
+            200,
+            ['Content-Type' => 'text/html'],
+        ))->middleware('web');
+
+        self::assertSame($body, (string) $this->get('/meta-style')->getContent());
+    }
+
+    /**
+     * A literal "<head>" inside a title element is not a head tag: title
+     * takes its inner text verbatim until the matching close tag, so the
+     * first match is skipped and the body is left unchanged. The ribbon is
+     * disabled so the only middleware that could touch the body is the meta
+     * tag injection.
+     */
+    public function testNonceMetaSkipsAHeadInsideATitle(): void
+    {
+        config(['helmet.ribbon' => false]);
+
+        $body = '<html><body><title>foo <head> bar</title></body></html>';
+        $this->app['router']->get('/meta-title', static fn() => response(
+            $body,
+            200,
+            ['Content-Type' => 'text/html'],
+        ))->middleware('web');
+
+        self::assertSame($body, (string) $this->get('/meta-title')->getContent());
+    }
+
+    /**
+     * Real markup before the <head> tag still gets the meta: a doctype, a
+     * closed comment, and the <html> opening tag are all outside markup, so
+     * the injection proceeds and the preceding text survives intact.
+     */
+    public function testNonceMetaStillInjectsWhenRealMarkupPrecedesTheHead(): void
+    {
+        $this->app['router']->get('/meta-doctype', static fn() => response(
+            '<!DOCTYPE html><!-- generated --><html lang="en"><head><title>hi</title></head><body>hi</body></html>',
+            200,
+            ['Content-Type' => 'text/html'],
+        ))->middleware('web');
+
+        $response = $this->get('/meta-doctype');
+        $nonceInHeader = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
+
+        self::assertNotNull($nonceInHeader);
+        $body = (string) $response->getContent();
+        self::assertStringStartsWith('<!DOCTYPE html><!-- generated --><html lang="en">', $body);
+        self::assertStringContainsString(
+            '<head><meta property="csp-nonce" nonce="' . $nonceInHeader . '"><title>hi</title></head>',
+            $body,
+        );
+    }
+
+    /**
      * @param array<string, list<string>|null>|null $cspConfig
      * @param array<string, list<string>>|null $permissionsPolicy
      */
@@ -1061,5 +1190,103 @@ final class SecurityHeadersTest extends TestCase
 
         // The path does not match, so the framework default stays.
         $response->assertHeader('Cache-Control', 'no-cache, private');
+    }
+
+    // ── shared cache directives ───────────────────────────────────────────
+
+    /**
+     * A nonce page differs per request, so a shared cache must not store it.
+     * An HTML response whose Cache-Control names public comes back with
+     * private instead; Symfony's header bag sorts the directives, which is
+     * why max-age leads the final value.
+     */
+    public function testSharedCacheDirectivesAreMadePrivateOnAnHtmlPage(): void
+    {
+        $this->app['router']->get('/cache-public', static fn() => response(
+            '<html><head><title>hi</title></head><body>hi</body></html>',
+            200,
+            ['Content-Type' => 'text/html', 'Cache-Control' => 'public, max-age=60'],
+        ))->middleware('web');
+
+        $response = $this->get('/cache-public');
+
+        $response->assertHeader('Cache-Control', 'max-age=60, private');
+    }
+
+    /**
+     * s-maxage names a lifetime for shared caches only, so it is dropped
+     * along with the public swap: the page may still be cached privately for
+     * max-age, but a CDN or browser shared cache must not store it.
+     */
+    public function testSharedCacheDirectivesDropSMaxageOnAnHtmlPage(): void
+    {
+        $this->app['router']->get('/cache-smaxage', static fn() => response(
+            '<html><head><title>hi</title></head><body>hi</body></html>',
+            200,
+            [
+                'Content-Type' => 'text/html',
+                'Cache-Control' => 'max-age=60, s-maxage=120, public',
+            ],
+        ))->middleware('web');
+
+        $response = $this->get('/cache-smaxage');
+
+        $response->assertHeader('Cache-Control', 'max-age=60, private');
+    }
+
+    /**
+     * A Cache-Control that already forbids storage is left exactly as the
+     * middleware received it. The ", private" suffix is Symfony's own
+     * conservative addition to a header that names no visibility (the same
+     * one the no-store tests above assert); the middleware did not touch the
+     * header.
+     */
+    public function testSharedCacheDirectivesLeaveNoStoreUntouched(): void
+    {
+        $this->app['router']->get('/cache-nostore', static fn() => response(
+            '<html><head><title>hi</title></head><body>hi</body></html>',
+            200,
+            ['Content-Type' => 'text/html', 'Cache-Control' => 'no-store'],
+        ))->middleware('web');
+
+        $response = $this->get('/cache-nostore');
+
+        $response->assertHeader('Cache-Control', 'no-store, private');
+    }
+
+    /**
+     * Only HTML responses carry the injected nonce meta and the CSP nonce
+     * header that makes the page unique per request, so non-HTML responses
+     * keep their Cache-Control exactly as written.
+     */
+    public function testSharedCacheDirectivesKeepPublicOnANonHtmlResponse(): void
+    {
+        $this->app['router']->get('/cache-json', static fn() => response(
+            '{"ok":true}',
+            200,
+            ['Content-Type' => 'application/json', 'Cache-Control' => 'public'],
+        ))->middleware('web');
+
+        $response = $this->get('/cache-json');
+
+        $response->assertHeader('Cache-Control', 'public');
+    }
+
+    /**
+     * A Cache-Control without public or s-maxage is not shared-cacheable and
+     * is left alone. The ", private" suffix is Symfony's own conservative
+     * addition to a header that names no visibility, not the middleware's.
+     */
+    public function testSharedCacheDirectivesLeaveNonSharedHeadersUntouched(): void
+    {
+        $this->app['router']->get('/cache-maxage', static fn() => response(
+            '<html><head><title>hi</title></head><body>hi</body></html>',
+            200,
+            ['Content-Type' => 'text/html', 'Cache-Control' => 'max-age=60'],
+        ))->middleware('web');
+
+        $response = $this->get('/cache-maxage');
+
+        $response->assertHeader('Cache-Control', 'max-age=60, private');
     }
 }

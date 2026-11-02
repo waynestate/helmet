@@ -51,6 +51,11 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * that tag to nonce the CSS and preload tags it adds after page load. A meta
  * tag error must never break the page, so any failure is swallowed and the
  * response is returned as-is.
+ *
+ * A nonce page differs per request, so a shared cache must not store it. For
+ * an HTML response whose Cache-Control names public or s-maxage, the
+ * middleware replaces public with private and drops s-maxage; every other
+ * directive, and every non-HTML response, is left exactly as written.
  */
 final class SecurityHeaders
 {
@@ -144,6 +149,10 @@ final class SecurityHeaders
             $response->headers->set('Cache-Control', 'no-store');
         }
 
+        // A nonce page differs per request, so a shared cache must not store
+        // it. Make any shareable Cache-Control directives private.
+        $this->makeSharedCacheDirectivesPrivate($response);
+
         $response->headers->remove('X-Powered-By');
 
         try {
@@ -163,6 +172,11 @@ final class SecurityHeaders
      * The tag is only injected when the response is HTML (Content-Type starts
      * with text/html) and is not a streamed response. If the content has no
      * <head> tag, it is left unchanged.
+     *
+     * Only the first <head> match is considered, and only when it sits in
+     * real markup. A literal "<head>" inside a comment, an attribute value,
+     * or a raw-text element (script, style, textarea, title) is skipped and
+     * the body is left untouched rather than hunted for a later match.
      */
     private function maybeInjectCspNonceMeta(Response $response, string $nonce): void
     {
@@ -179,42 +193,120 @@ final class SecurityHeaders
             return;
         }
 
-        $meta = '<meta property="csp-nonce" nonce="' . htmlspecialchars($nonce, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">';
-
         // The pattern matches the opening head tag, with or without
         // attributes, but not <header> or <headline>, which the looser
-        // head-prefix match would also hit and inject after.
-        $modified = preg_replace_callback(
-            '/<head(\s[^>]*)?>/i',
-            static function (array $matches) use ($meta): string {
-                return $matches[0] . $meta;
-            },
-            $content,
-            1,
-        );
+        // head-prefix match would also hit. PREG_OFFSET_CAPTURE tells us
+        // where the match starts so the text before it can be checked.
+        if (preg_match('/<head(\s[^>]*)?>/i', $content, $matches, PREG_OFFSET_CAPTURE) !== 1) {
+            return;
+        }
 
-        if (is_string($modified) && $modified !== $content) {
-            // setContent() on a Laravel response overwrites the public
-            // $original property with whatever we pass in (here a string),
-            // and test helpers such as assertInertia() and assertViewHas()
-            // read that property to find the view. Save it, swap the body,
-            // put it back: the page changes, the view does not.
-            $original = null;
-            if ($response instanceof \Illuminate\Http\Response) {
-                $original = $response->original;
-            }
-            $response->setContent($modified);
-            if ($response instanceof \Illuminate\Http\Response) {
-                $response->original = $original;
-            }
+        $headStart = (int) $matches[0][1];
+        if (!$this->isOutsideMarkup(substr($content, 0, $headStart))) {
+            return;
+        }
 
-            // The body grew by the length of the meta tag. A stale
-            // Content-Length would cut the page off mid-tag, so refresh it
-            // when the response carries one.
-            if ($response->headers->has('Content-Length')) {
-                $response->headers->set('Content-Length', (string) strlen($modified));
+        $meta = '<meta property="csp-nonce" nonce="' . htmlspecialchars($nonce, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '">';
+        $insertAt = $headStart + strlen((string) $matches[0][0]);
+        $modified = substr($content, 0, $insertAt) . $meta . substr($content, $insertAt);
+
+        // setContent() on a Laravel response overwrites the public
+        // $original property with whatever we pass in (here a string),
+        // and test helpers such as assertInertia() and assertViewHas()
+        // read that property to find the view. Save it, swap the body,
+        // put it back: the page changes, the view does not.
+        $original = null;
+        if ($response instanceof \Illuminate\Http\Response) {
+            $original = $response->original;
+        }
+        $response->setContent($modified);
+        if ($response instanceof \Illuminate\Http\Response) {
+            $response->original = $original;
+        }
+
+        // The body grew by the length of the meta tag. A stale
+        // Content-Length would cut the page off mid-tag, so refresh it
+        // when the response carries one.
+        if ($response->headers->has('Content-Length')) {
+            $response->headers->set('Content-Length', (string) strlen($modified));
+        }
+    }
+
+    /**
+     * Decide whether a <head> tag at the end of $prefix sits in real markup
+     * rather than inside something that swallows its text. The prefix must
+     * be outside comments, and every raw-text element opened in it (script,
+     * style, textarea, title) must already be closed, because those elements
+     * take their inner text verbatim until the matching close tag.
+     */
+    private function isOutsideMarkup(string $prefix): bool
+    {
+        $lastOpen = strrpos($prefix, '<');
+        if ($lastOpen !== false && strpos($prefix, '>', $lastOpen) === false) {
+            // An unclosed start tag would swallow the <head> tag itself.
+            return false;
+        }
+        if (substr_count($prefix, '<!--') > substr_count($prefix, '-->')) {
+            // Inside an open comment.
+            return false;
+        }
+        foreach (['script', 'style', 'textarea', 'title'] as $element) {
+            $open = preg_match_all('/<' . $element . '(?=[\s>])/i', $prefix);
+            $close = preg_match_all('/<\/' . $element . '\s*>/i', $prefix);
+            if ($open !== $close) {
+                return false;
             }
         }
+        return true;
+    }
+
+    /**
+     * A nonce page differs per request, so a shared cache must not store it.
+     * For an HTML response whose Cache-Control names a shared-cache
+     * directive (public) or a shared-cache lifetime (s-maxage), replace
+     * public with private and drop s-maxage; leave every other directive
+     * untouched. Non-HTML responses and headers without either directive are
+     * left exactly as written.
+     */
+    private function makeSharedCacheDirectivesPrivate(Response $response): void
+    {
+        // Streamed responses carry the same CSP nonce header, so their
+        // Cache-Control must be made private too; only the body swap in
+        // maybeInjectCspNonceMeta() skips them.
+        if (!$this->isHtml($response)) {
+            return;
+        }
+
+        $cacheControl = $response->headers->get('Cache-Control');
+        if ($cacheControl === null || trim($cacheControl) === '') {
+            return;
+        }
+
+        $directives = array_map('trim', explode(',', $cacheControl));
+        $hasPublic = in_array('public', $directives, true);
+        $hasSMaxAge = false;
+        foreach ($directives as $directive) {
+            if (stripos($directive, 's-maxage=') === 0) {
+                $hasSMaxAge = true;
+                break;
+            }
+        }
+        if (!$hasPublic && !$hasSMaxAge) {
+            return;
+        }
+
+        $kept = [];
+        foreach ($directives as $directive) {
+            if ($directive === '' || stripos($directive, 's-maxage=') === 0) {
+                continue;
+            }
+            $kept[] = strtolower($directive) === 'public' ? 'private' : $directive;
+        }
+        if ($kept === []) {
+            $response->headers->remove('Cache-Control');
+            return;
+        }
+        $response->headers->set('Cache-Control', implode(', ', $kept));
     }
 
     /**
