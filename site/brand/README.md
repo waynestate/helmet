@@ -28,7 +28,7 @@ The favicon links a page head carries:
 
 ## The board
 `helmet-board.png` is the identity sheet: hero mark, app icon, horizontal and stacked lockups, the mark
-on light and on dark, the colour palette, typography, the favicons at 64/32/16, clear space and minimum
+on light and on dark, the color palette, typography, the favicons at 64/32/16, clear space and minimum
 size (32 px digital), the do/don't, and a response-headers mockup. It is the reference for how the mark
 sits next to the wordmark.
 

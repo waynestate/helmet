@@ -55,7 +55,7 @@ fail oddly after a Docker install, delete `vendor/` and install again.
 - The trusted-proxy list decides whether `X-Forwarded-*` headers are believed. Changes there are security changes:
   test them and get a second reviewer.
 - `/metrics` is off by default and gated; keep it that way.
-- Browser behaviour changes over time; recheck headers against current guidance (OWASP, MDN) when you touch them.
+- Browser behavior changes over time; recheck headers against current guidance (OWASP, MDN) when you touch them.
 
 ## Releasing
 

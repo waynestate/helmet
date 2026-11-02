@@ -5,10 +5,10 @@ the quick start, the film room, the coach's clipboard and the WELD depth chart. 
 small vanilla script. No build step and no network calls, so it deploys as plain files on Citadel or
 anywhere else.
 
-- type: **Graduate** (SIL OFL 1.1, licence in `assets/fonts/OFL-graduate.txt`) for display, jersey
+- type: **Graduate** (SIL OFL 1.1, license in `assets/fonts/OFL-graduate.txt`) for display, jersey
   lettering; **Permanent Marker** (Apache 2.0, `assets/fonts/LICENSE-permanent-marker.txt`) for the
   coach's notes; Lato from WayneUI for reading. Both are self-hosted in `assets/fonts/`.
-- colours: WSU green `#0C5449` and gold `#FFCC33`, the mark's cream `#F4F1EA`, and berry `#8B2145` from the
+- colors: WSU green `#0C5449` and gold `#FFCC33`, the mark's cream `#F4F1EA`, and berry `#8B2145` from the
   brand board, which marks the rushers. Slate and chalk are this page's own.
 - built on WayneUI 2.0.8, copied into `assets/wayne-ui/` from its documented static path (tokens, Lato,
   container, buttons, skip link, focus ring). Other parts' marks are copies in `assets/marks/`; WayneUI uses
