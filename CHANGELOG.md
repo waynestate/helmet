@@ -8,6 +8,9 @@ All notable changes to this project are documented in this file.
 - Security: IPv4-mapped IPv6 addresses (`::ffff:a.b.c.d`) are unmapped before matching trusted proxies, for both the peer and the forwarded entries, so a dual-stack proxy still matches its IPv4 entry instead of slipping past the trust check.
 - Security: `X-Forwarded-Proto` now follows one rule everywhere, the last non-empty value in `HttpsDetector` and the Laravel normalizer, and the normalizer decides trust with the list Laravel itself uses (`trustedproxy.proxies` when set, else `helmet.proxies`, with `*` and `**` trusting every peer as in Symfony), so HELMET and the framework can no longer disagree about which value to read or from whom to accept it.
 - Security: an explicitly empty `HELMET_PROXIES=` now trusts nobody even when `HELMET_PRESET` is set, because only an unset variable falls back to the preset, so an app that clears the list on purpose is not silently re-opened by the platform default.
+- Security: the CSP nonce meta tag is injected only into the real `<head>`, so a literal `<head>` inside a comment, an attribute value, or a script, style, textarea or title element no longer receives it.
+- Security: an HTML response that carries a CSP nonce has `public` changed to `private` and `s-maxage` dropped from its `Cache-Control`, so a shared cache cannot store a page whose nonce differs per request.
+- Fixed: the Vite dev origin must be a bare origin (no path, query, fragment or userinfo) and is normalized to `scheme://host[:port]`; a CSP directive the app removed is no longer recreated by the dev origin, which dropped its `default-src` fallback (it is copied from `default-src` first, or skipped).
 - Changed: CI pulls its Docker Hub images through the GitLab Dependency Proxy (the group's CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX), so pipelines no longer hit Docker Hub's anonymous pull limit.
 
 ## 0.2.6 (2026-11-02)
