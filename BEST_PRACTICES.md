@@ -406,7 +406,7 @@ HELMET is at 0.2.5. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Test on each PHP branch the stack supports and drop a branch the day it loses security support. Today that is 8.3, 8.4 and 8.5, with 8.2 only until 2026-12-31.
 - **Why:** The stack allows only non-EOL PHP and Citadel offers 8.4 and 8.5 images. A library tested on one version can break on another through a deprecation or a changed default. Session deprecations are one example (H26, H32).
 - **Sources:** [php.net supported versions](https://www.php.net/supported-versions.php), [PHP 8.4 deprecations](https://www.php.net/manual/en/migration84.deprecated.php)
-- **Stack:** `Checked`. The CI matrix (`.gitlab-ci.yml` and `.github/workflows/ci.yml`) tests on 8.3, 8.4 and 8.5, the three supported branches. The README's Docker commands cover 8.5, 8.4 and 8.3, but only with PowerShell's `${PWD}` variable syntax; there is no sh variant. `composer.json` requires `^8.3` (gap 13 is done).
+- **Stack:** `Checked`. The CI matrix (`.gitlab-ci.yml` and `.github/workflows/ci.yml`) tests on 8.3, 8.4 and 8.5, the three supported branches. The README's Docker commands cover 8.5, 8.4 and 8.3 on both shells (a PowerShell block with `${PWD}` and an sh block with `$PWD`). `composer.json` requires `^8.3` (gap 13 is done).
 
 ### H58. Scan for committed secrets in CI
 - **Practice:** Run secret detection on every pipeline for every project in the stack, in addition to the dependency audit.
