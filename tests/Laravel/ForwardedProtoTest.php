@@ -147,4 +147,133 @@ final class ForwardedProtoTest extends TestCase
         self::assertSame('https', $request->headers->get('X-Forwarded-Proto'));
         self::assertSame('https', $request->server->get('HTTP_X_FORWARDED_PROTO'));
     }
+
+    public function testTrailingEmptyTokenAfterHttpsIsStillSecure(): void
+    {
+        $this->app['router']->get('/secure', static fn() => response()->json([
+            'secure' => request()->isSecure(),
+        ]));
+
+        // A trailing comma leaves one real value; the request was secure.
+        $response = $this->withServerVariables([
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_PROTO' => 'https,',
+        ])->get('/secure');
+
+        $response->assertStatus(200);
+        $response->assertJson(['secure' => true]);
+    }
+
+    public function testTrailingEmptyTokenAfterLastValueIsRead(): void
+    {
+        $this->app['router']->get('/secure', static fn() => response()->json([
+            'secure' => request()->isSecure(),
+        ]));
+
+        // The last non-empty value is the proxy's: https wins over the
+        // client's earlier http.
+        $response = $this->withServerVariables([
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_PROTO' => 'http, https,',
+        ])->get('/secure');
+
+        $response->assertStatus(200);
+        $response->assertJson(['secure' => true]);
+    }
+
+    public function testTrailingEmptyTokenAfterHttpIsNotSecure(): void
+    {
+        $this->app['router']->get('/secure', static fn() => response()->json([
+            'secure' => request()->isSecure(),
+        ]));
+
+        // The client sent https first, the trusted proxy appended http and a
+        // stray comma. The proxy's value is the truth: not secure.
+        $response = $this->withServerVariables([
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_PROTO' => 'https, http,',
+        ])->get('/secure');
+
+        $response->assertStatus(200);
+        $response->assertJson(['secure' => false]);
+    }
+
+    public function testPeerInTrustedProxiesListOnlyIsNormalized(): void
+    {
+        // The app set trustedproxy.proxies itself, so Laravel trusts that
+        // list and the normalizer must follow it: the peer is trusted even
+        // though it is not in helmet.proxies.
+        $request = Request::create('/', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '192.168.1.5',
+            'HTTP_X_FORWARDED_PROTO' => 'http, https',
+        ]);
+
+        config([
+            'helmet.proxies' => ['10.0.0.1'],
+            'trustedproxy.proxies' => ['192.168.1.5'],
+        ]);
+        (new ForwardedProtoNormalizer())->handle($request, static fn() => new Response('ok'));
+
+        self::assertSame('https', $request->headers->get('X-Forwarded-Proto'));
+        self::assertSame('https', $request->server->get('HTTP_X_FORWARDED_PROTO'));
+    }
+
+    public function testPeerInHelmetProxiesOnlyIsNotNormalized(): void
+    {
+        // The app set trustedproxy.proxies to a list that does not include
+        // the peer, so Laravel will not trust the header and the normalizer
+        // must leave it alone, even though helmet.proxies still lists the
+        // peer.
+        $request = Request::create('/', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '192.168.1.5',
+            'HTTP_X_FORWARDED_PROTO' => 'http, https',
+        ]);
+
+        config([
+            'helmet.proxies' => ['192.168.1.5'],
+            'trustedproxy.proxies' => ['10.0.0.1'],
+        ]);
+        (new ForwardedProtoNormalizer())->handle($request, static fn() => new Response('ok'));
+
+        self::assertSame('http, https', $request->headers->get('X-Forwarded-Proto'));
+        self::assertSame('http, https', $request->server->get('HTTP_X_FORWARDED_PROTO'));
+    }
+
+    public function testWildcardTrustedProxiesTrustsEveryPeer(): void
+    {
+        // Symfony treats "*" as "trust every peer", so the normalizer
+        // rewrites the header no matter where the request came from.
+        $request = Request::create('/', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '203.0.113.50',
+            'HTTP_X_FORWARDED_PROTO' => 'http, https',
+        ]);
+
+        config([
+            'helmet.proxies' => ['10.0.0.1'],
+            'trustedproxy.proxies' => '*',
+        ]);
+        (new ForwardedProtoNormalizer())->handle($request, static fn() => new Response('ok'));
+
+        self::assertSame('https', $request->headers->get('X-Forwarded-Proto'));
+        self::assertSame('https', $request->server->get('HTTP_X_FORWARDED_PROTO'));
+    }
+
+    public function testCommaStringTrustedProxiesIsHonored(): void
+    {
+        // The effective list may be a comma separated string; the peer in
+        // the second position is trusted and the header is normalized.
+        $request = Request::create('/', 'GET', [], [], [], [
+            'REMOTE_ADDR' => '172.16.0.9',
+            'HTTP_X_FORWARDED_PROTO' => 'http, https',
+        ]);
+
+        config([
+            'helmet.proxies' => ['10.0.0.1'],
+            'trustedproxy.proxies' => '10.0.0.1, 172.16.0.9',
+        ]);
+        (new ForwardedProtoNormalizer())->handle($request, static fn() => new Response('ok'));
+
+        self::assertSame('https', $request->headers->get('X-Forwarded-Proto'));
+        self::assertSame('https', $request->server->get('HTTP_X_FORWARDED_PROTO'));
+    }
 }

@@ -16,9 +16,10 @@ namespace Waynestate\Helmet\Proxy;
  *     forwarded X-Forwarded-Proto: https, the request is HTTPS.
  *
  * X-Forwarded-Proto may be a comma-separated list when the request passed
- * more than one proxy. The last value is the one the closest proxy (the one
- * the app talks to) appended, so it is the only one that is read; it is
- * trimmed and lower-cased before comparison.
+ * more than one proxy. The last non-empty value is the one the closest proxy
+ * (the one the app talks to) appended, so it is the only one that is read; it
+ * is trimmed and lower-cased before comparison. Empty tokens are ignored, so
+ * a trailing comma cannot hide the real value.
  *
  * X-Forwarded-Port is deliberately never read: the front proxy sets
  * X-Forwarded-Proto and the port is always 443 on the TLS edge, so the port
@@ -54,11 +55,17 @@ final class HttpsDetector
         $forwardedProto = $serverParams['HTTP_X_FORWARDED_PROTO'] ?? null;
         if (is_string($forwardedProto)) {
             // A comma-separated list means the request passed several proxies.
-            // The last value is the one the closest proxy appended, so it is
-            // the only one that is read.
-            $parts = explode(',', $forwardedProto);
-            $last = strtolower(trim(end($parts)));
-            if ($last === 'https') {
+            // The last non-empty value is the one the closest proxy appended,
+            // so it is the only one that is read; empty tokens are dropped so
+            // a trailing comma cannot hide the real value.
+            $last = '';
+            foreach (explode(',', $forwardedProto) as $part) {
+                $part = trim($part);
+                if ($part !== '') {
+                    $last = $part;
+                }
+            }
+            if (strtolower($last) === 'https') {
                 return true;
             }
         }
