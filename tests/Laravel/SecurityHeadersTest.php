@@ -1473,4 +1473,38 @@ final class SecurityHeadersTest extends TestCase
 
         $response->assertHeader('Cache-Control', 'max-age=60, private');
     }
+
+    // ── Clear-Site-Data passthrough ───────────────────────────────────────
+
+    /**
+     * SESAME's logout response sends Clear-Site-Data through HELMET's
+     * middleware, so the app's header must come out byte for byte unchanged
+     * instead of being stripped, replaced or merged. The app's Cache-Control
+     * is left alone too, and HELMET's own headers are still added.
+     */
+    public function testClearSiteDataFromTheAppIsLeftAlone(): void
+    {
+        $this->app['router']->get('/logout', static fn() => response(
+            '<html><head><title>bye</title></head><body>bye</body></html>',
+            200,
+            [
+                'Content-Type' => 'text/html',
+                'Clear-Site-Data' => '"cache", "storage"',
+                'Cache-Control' => 'no-store',
+            ],
+        ))->middleware('web');
+
+        $response = $this->get('/logout');
+
+        // The app's Clear-Site-Data header passes through untouched.
+        $response->assertHeader('Clear-Site-Data', '"cache", "storage"');
+        // The app's Cache-Control passes through untouched. The ", private"
+        // suffix is Laravel's own conservative addition to a header that names
+        // no visibility, the same one the no-store tests above assert; the
+        // middleware did not touch the header.
+        $response->assertHeader('Cache-Control', 'no-store, private');
+        // HELMET's own headers are still added alongside.
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
+        $response->assertHeader('Content-Security-Policy');
+    }
 }

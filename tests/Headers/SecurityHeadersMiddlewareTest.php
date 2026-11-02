@@ -742,4 +742,44 @@ final class SecurityHeadersMiddlewareTest extends TestCase
 
         self::assertSame('max-age=60', $response->getHeaderLine('Cache-Control'));
     }
+
+    // ── Clear-Site-Data passthrough ───────────────────────────────────────
+
+    /**
+     * SESAME's logout response sends Clear-Site-Data through HELMET's
+     * middleware, so the handler's header must come out byte for byte
+     * unchanged instead of being stripped, replaced or merged. The handler's
+     * Cache-Control is left alone too, and HELMET's own headers are still
+     * added.
+     */
+    public function testClearSiteDataFromTheHandlerIsLeftAlone(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware($proxies);
+
+        $handler = new class implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return (new Response(200))
+                    ->withHeader('Clear-Site-Data', '"cache", "storage"')
+                    ->withHeader('Cache-Control', 'no-store');
+            }
+        };
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $handler);
+
+        // The handler's Clear-Site-Data header passes through untouched.
+        self::assertSame('"cache", "storage"', $response->getHeaderLine('Clear-Site-Data'));
+        // The handler's Cache-Control passes through untouched: the no-store
+        // feature never overrides a header the app already sent.
+        self::assertSame('no-store', $response->getHeaderLine('Cache-Control'));
+        // HELMET's own headers are still added alongside.
+        self::assertSame('nosniff', $response->getHeaderLine('X-Content-Type-Options'));
+        self::assertTrue($response->hasHeader('Content-Security-Policy'));
+    }
 }
