@@ -92,7 +92,19 @@ final class InjectRibbon
         );
 
         if (is_string($modified) && $modified !== $content) {
+            // setContent() on a Laravel response overwrites the public
+            // $original property with whatever we pass in (here a string),
+            // and test helpers such as assertInertia() and assertViewHas()
+            // read that property to find the view. Save it, swap the body,
+            // put it back: the ribbon shows up, the view stays put.
+            $original = null;
+            if ($response instanceof \Illuminate\Http\Response) {
+                $original = $response->original;
+            }
             $response->setContent($modified);
+            if ($response instanceof \Illuminate\Http\Response) {
+                $response->original = $original;
+            }
         }
     }
 
