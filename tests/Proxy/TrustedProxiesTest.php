@@ -147,15 +147,22 @@ final class TrustedProxiesTest extends TestCase
         }
     }
 
-    public function testIpv4MappedIpv6DoesNotMatchAnIpv4Range(): void
+    public function testIpv4MappedIpv6MatchesAnIpv4Range(): void
     {
-        // IpUtils dispatches on the request address family: an IPv4-mapped
-        // IPv6 address is checked as IPv6, so it never falls in an IPv4
-        // range. IpUtils::checkIp('::ffff:10.0.0.1', ['10.0.0.0/8']) is
-        // false, and that is what is asserted here.
+        // An IPv4-mapped IPv6 address is unmapped to its IPv4 form before
+        // matching, so ::ffff:10.0.0.1 matches the IPv4 range 10.0.0.0/8.
         $proxies = new TrustedProxies(['10.0.0.0/8']);
 
-        self::assertFalse($proxies->isTrusted('::ffff:10.0.0.1'));
+        self::assertTrue($proxies->isTrusted('::ffff:10.0.0.1'));
+    }
+
+    public function testIpv4MappedIpv6OutsideTheListIsNotTrusted(): void
+    {
+        // Unmapping only changes the form, not the address: a mapped address
+        // outside the trusted ranges is still untrusted.
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+
+        self::assertFalse($proxies->isTrusted('::ffff:172.18.0.1'));
     }
 
     public function testIpv6Cidr64RangeIsTrusted(): void

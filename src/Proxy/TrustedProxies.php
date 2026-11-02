@@ -72,14 +72,35 @@ final class TrustedProxies
 
     /**
      * Whether the given IP address is one of the trusted proxies.
+     *
+     * An IPv4-mapped IPv6 address (::ffff:a.b.c.d) is unmapped to a.b.c.d
+     * before matching, so a dual-stack peer presenting its IPv4 address in
+     * mapped form still matches an IPv4 entry in the list.
      */
     public function isTrusted(string $ip): bool
     {
+        $ip = self::unmapIpv4MappedIpv6($ip);
         if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
             return false;
         }
 
         return IpUtils::checkIp($ip, $this->proxies);
+    }
+
+    /**
+     * Turn an IPv4-mapped IPv6 address into its IPv4 form.
+     *
+     * Only the exact mapped form "::ffff:a.b.c.d" is unmapped; every other
+     * string is returned unchanged. Shared with ClientIp so that peers and
+     * forwarded entries are compared against the list in the same form.
+     */
+    public static function unmapIpv4MappedIpv6(string $ip): string
+    {
+        if (str_starts_with($ip, '::ffff:') && filter_var(substr($ip, 7), FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+            return substr($ip, 7);
+        }
+
+        return $ip;
     }
 
     /**
