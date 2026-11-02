@@ -298,7 +298,7 @@ HELMET is at 0.2.6. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Log JSON, one object per line, with the same field names everywhere.
 - **Why:** Structured output is searchable, and the encoder escapes line breaks, which blocks forged log lines.
 - **Sources:** [OWASP Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html), [Monolog handlers and formatters](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md)
-- **Stack:** `Enforced`. `Logging::create()` returns a Monolog logger with `JsonFormatter` on a `StreamHandler`. No test covers the logger yet.
+- **Stack:** `Enforced`. `Logging::create()` returns a Monolog logger with `JsonFormatter` on a `StreamHandler`. `tests/Logging/LoggingTest.php` covers it: sensitive keys are redacted (also nested and with a request id), a logging failure does not throw, and every record in a process carries the same request id (a supplied valid id is used, an invalid one is ignored).
 
 ### H37. Treat logs as a stream and let the platform route them
 - **Practice:** Write events to a stream (stderr or a configured path) and leave collection, rotation and retention to the platform.
