@@ -74,6 +74,9 @@
     },
     "config": {
         "sort-packages": true,
+        "audit": {
+            "abandoned": "report"
+        },
         "platform": {
             "php": "8.3.0"
         },
