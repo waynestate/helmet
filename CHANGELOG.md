@@ -4,6 +4,11 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Security: `ClientIp` fails closed on an unparseable `X-Forwarded-For` entry (for example `203.0.113.5:443`): it returns the peer instead of walking on to an earlier, client-chosen entry, so a malformed header can no longer steer the resolved client IP.
+- Security: IPv4-mapped IPv6 addresses (`::ffff:a.b.c.d`) are unmapped before matching trusted proxies, for both the peer and the forwarded entries, so a dual-stack proxy still matches its IPv4 entry instead of slipping past the trust check.
+- Security: `X-Forwarded-Proto` now follows one rule everywhere, the last non-empty value in `HttpsDetector` and the Laravel normalizer, and the normalizer decides trust with the list Laravel itself uses (`trustedproxy.proxies` when set, else `helmet.proxies`, with `*` and `**` trusting every peer as in Symfony), so HELMET and the framework can no longer disagree about which value to read or from whom to accept it.
+- Security: an explicitly empty `HELMET_PROXIES=` now trusts nobody even when `HELMET_PRESET` is set, because only an unset variable falls back to the preset, so an app that clears the list on purpose is not silently re-opened by the platform default.
+
 ## 0.2.6 (2026-11-02)
 
 - Fixed: HTML rewrites (CSP nonce meta, environment ribbon) keep the response's view object, so `assertInertia()` and `assertViewHas()` work in apps that use HELMET.
