@@ -90,6 +90,48 @@ final class ConfigTest extends TestCase
         $this->reloadPackageConfig();
     }
 
+    public function testExplicitEmptyProxiesUnsetWithPresetUsesPresetList(): void
+    {
+        // HELMET_PROXIES is unset, so the preset list fills the gap. This
+        // is the only case that may borrow the preset.
+        $this->putEnv('HELMET_PRESET', 'citadel');
+        $this->reloadPackageConfig();
+
+        self::assertSame(['172.18.0.1'], config('helmet.proxies'));
+        self::assertSame('citadel', config('helmet.preset'));
+    }
+
+    public function testExplicitEmptyProxiesSetToEmptyWithPresetKeepsEmptyList(): void
+    {
+        // HELMET_PROXIES is set to an empty string, which means the
+        // operator wants to trust nobody. The preset list must not come
+        // back.
+        $this->putEnv('HELMET_PRESET', 'citadel');
+        $this->putEnv('HELMET_PROXIES', '');
+        $this->reloadPackageConfig();
+
+        self::assertSame([], config('helmet.proxies'));
+        self::assertSame('citadel', config('helmet.preset'));
+
+        // A whitespace-only value means the same thing.
+        $this->putEnv('HELMET_PROXIES', '   ');
+        $this->reloadPackageConfig();
+
+        self::assertSame([], config('helmet.proxies'));
+    }
+
+    public function testExplicitEmptyProxiesSetToListWithPresetUsesThatList(): void
+    {
+        // A non-empty HELMET_PROXIES still wins over the preset, exactly
+        // as before.
+        $this->putEnv('HELMET_PRESET', 'citadel');
+        $this->putEnv('HELMET_PROXIES', '10.0.0.1, 10.0.0.0/8');
+        $this->reloadPackageConfig();
+
+        self::assertSame(['10.0.0.1', '10.0.0.0/8'], config('helmet.proxies'));
+        self::assertSame('citadel', config('helmet.preset'));
+    }
+
     public function testScopeEnvVarIsReadWithGlobalAsTheDefault(): void
     {
         self::assertSame('global', config('helmet.scope'));
