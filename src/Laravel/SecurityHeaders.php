@@ -194,7 +194,19 @@ final class SecurityHeaders
         );
 
         if (is_string($modified) && $modified !== $content) {
+            // setContent() on a Laravel response overwrites the public
+            // $original property with whatever we pass in (here a string),
+            // and test helpers such as assertInertia() and assertViewHas()
+            // read that property to find the view. Save it, swap the body,
+            // put it back: the page changes, the view does not.
+            $original = null;
+            if ($response instanceof \Illuminate\Http\Response) {
+                $original = $response->original;
+            }
             $response->setContent($modified);
+            if ($response instanceof \Illuminate\Http\Response) {
+                $response->original = $original;
+            }
 
             // The body grew by the length of the meta tag. A stale
             // Content-Length would cut the page off mid-tag, so refresh it
