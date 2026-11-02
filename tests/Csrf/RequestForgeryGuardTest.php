@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Csrf;
 
+use Monolog\Handler\AbstractProcessingHandler;
+use Monolog\Handler\TestHandler;
+use Monolog\Logger;
+use Monolog\LogRecord;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
@@ -11,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use Waynestate\Helmet\Csrf\RequestForgeryGuard;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
@@ -48,6 +53,38 @@ final class RequestForgeryGuardTest extends TestCase
             $trustedOrigins,
             $except,
         );
+    }
+
+    /**
+     * A guard wired to a logger, so a test can inspect what it logged.
+     */
+    private function guardWithLogger(LoggerInterface $logger): RequestForgeryGuard
+    {
+        $factory = new Psr17Factory();
+
+        return new RequestForgeryGuard(
+            new TrustedProxies([]),
+            $factory,
+            $factory,
+            false,
+            [],
+            [],
+            $logger,
+        );
+    }
+
+    /**
+     * A Monolog logger backed by a TestHandler, returned as [logger, handler].
+     *
+     * @return array{0: Logger, 1: TestHandler}
+     */
+    private function recordingLogger(): array
+    {
+        $logger = new Logger('test');
+        $handler = new TestHandler();
+        $logger->pushHandler($handler);
+
+        return [$logger, $handler];
     }
 
     /**
@@ -358,6 +395,76 @@ final class RequestForgeryGuardTest extends TestCase
         $response = $guard->process($request, $this->passthroughHandler());
 
         self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testARefusalIsLoggedOnceWithoutTheOriginValue(): void
+    {
+        [$logger, $handler] = $this->recordingLogger();
+        $guard = $this->guardWithLogger($logger);
+        $request = $this->makeRequest(
+            'POST',
+            'https://app.example/submit?next=login',
+            ['Sec-Fetch-Site' => 'cross-site', 'Origin' => 'https://evil.example'],
+            ['HTTP_HOST' => 'app.example', 'HTTPS' => 'on'],
+        );
+
+        $response = $guard->process($request, $this->passthroughHandler());
+
+        self::assertSame(403, $response->getStatusCode());
+        self::assertCount(1, $handler->getRecords());
+
+        $record = $handler->getRecords()[0];
+        self::assertSame('helmet.request_refused', $record->message);
+        self::assertSame('request_refused', $record->context['event']);
+        self::assertSame('POST', $record->context['method']);
+        // The query string stays out of the logged path.
+        self::assertSame('/submit', $record->context['path']);
+        self::assertSame('cross-site', $record->context['sec_fetch_site']);
+        self::assertTrue($record->context['origin_present']);
+
+        // The Origin value never reaches the record in any form.
+        $serialized = json_encode(['message' => $record->message, 'context' => $record->context]);
+        self::assertStringNotContainsString('https://evil.example', (string) $serialized);
+    }
+
+    public function testAnAllowedRequestLogsNothing(): void
+    {
+        [$logger, $handler] = $this->recordingLogger();
+        $guard = $this->guardWithLogger($logger);
+        $request = $this->makeRequest(
+            'POST',
+            'https://app.example/submit',
+            ['Sec-Fetch-Site' => 'same-origin'],
+            ['HTTP_HOST' => 'app.example', 'HTTPS' => 'on'],
+        );
+
+        $response = $guard->process($request, $this->passthroughHandler());
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertCount(0, $handler->getRecords());
+    }
+
+    public function testALoggerThatThrowsStillGets403(): void
+    {
+        $logger = new Logger('test');
+        $logger->pushHandler(new class extends AbstractProcessingHandler {
+            protected function write(LogRecord $record): void
+            {
+                throw new \RuntimeException('logger down');
+            }
+        });
+        $guard = $this->guardWithLogger($logger);
+        $request = $this->makeRequest(
+            'POST',
+            'https://app.example/submit',
+            ['Sec-Fetch-Site' => 'cross-site'],
+            ['HTTP_HOST' => 'app.example', 'HTTPS' => 'on'],
+        );
+
+        $response = $guard->process($request, $this->passthroughHandler());
+
+        self::assertSame(403, $response->getStatusCode());
+        self::assertSame('Forbidden', (string) $response->getBody());
     }
 
     public function testOriginFromServerParamsUsesHttps(): void

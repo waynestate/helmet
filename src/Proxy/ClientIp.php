@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Proxy;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * Resolves the real client IP from the server params.
  *
@@ -27,9 +29,16 @@ final class ClientIp
     /**
      * The client IP, or an empty string when REMOTE_ADDR is absent.
      *
+     * When a forwarded entry fails closed, a warning is logged (when a
+     * logger is given) with the reason and the peer that already passed
+     * isTrusted(). The header and the bad entry are never logged. A logger
+     * that throws is ignored: it must never change the resolved IP.
+     *
      * @param array<string, mixed> $serverParams The $_SERVER array.
+     * @param LoggerInterface|null $logger Optional logger for the fail-closed
+     *        event.
      */
-    public static function resolve(array $serverParams, TrustedProxies $proxies): string
+    public static function resolve(array $serverParams, TrustedProxies $proxies, ?LoggerInterface $logger = null): string
     {
         $remote = $serverParams['REMOTE_ADDR'] ?? '';
         if (!is_string($remote) || $remote === '') {
@@ -55,6 +64,18 @@ final class ClientIp
                 // Fail closed: an unparseable entry may hide a real client
                 // behind it, so stop and use the peer instead of walking on
                 // to an earlier entry.
+                if ($logger !== null) {
+                    try {
+                        $logger->warning('helmet.forwarded_for_rejected', [
+                            'event' => 'forwarded_for_rejected',
+                            'reason' => 'unparseable_entry',
+                            'peer' => $remote,
+                        ]);
+                    } catch (\Throwable) {
+                        // A logging failure must never change the resolved IP.
+                    }
+                }
+
                 return $remote;
             }
             $entry = TrustedProxies::unmapIpv4MappedIpv6($entry);

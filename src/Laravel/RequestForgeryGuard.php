@@ -6,6 +6,7 @@ namespace Waynestate\Helmet\Laravel;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Waynestate\Helmet\Csrf\RequestForgeryGuard as CoreRequestForgeryGuard;
@@ -67,6 +68,8 @@ final class RequestForgeryGuard
             $origin,
             $requestOrigin,
         )) {
+            $this->logRefusal($request->method(), $request->getPathInfo(), $secFetchSite, $origin);
+
             $headers = [
                 'Content-Type' => 'text/plain; charset=utf-8',
                 'Cache-Control' => 'no-store',
@@ -87,5 +90,43 @@ final class RequestForgeryGuard
         }
 
         return $next($request);
+    }
+
+    /**
+     * Log a refused request as a structured security event.
+     *
+     * The Laravel path has no injected logger, so it logs through the Log
+     * facade with the same message and context the core PSR-15 middleware
+     * uses. The context carries only the method, the path without the query
+     * string, the Sec-Fetch-Site value normalized to one of the four known
+     * values or "other" (null when the header is absent), and whether an
+     * Origin header was present. It never carries the Origin value,
+     * cookies, Authorization, or any other header value. A logging failure
+     * is ignored: it must never change the 403 answer.
+     *
+     * @param string $method The HTTP method, in any case.
+     * @param string $path The request path, without the query string.
+     * @param string|null $secFetchSite The Sec-Fetch-Site header, or null
+     *        when absent.
+     * @param string|null $origin The Origin header, or null when absent.
+     */
+    private function logRefusal(string $method, string $path, ?string $secFetchSite, ?string $origin): void
+    {
+        $site = $secFetchSite === null ? '' : strtolower($secFetchSite);
+        $normalizedSite = $site === ''
+            ? null
+            : (in_array($site, ['same-origin', 'same-site', 'cross-site', 'none'], true) ? $site : 'other');
+
+        try {
+            Log::warning('helmet.request_refused', [
+                'event' => 'request_refused',
+                'method' => strtoupper($method),
+                'path' => $path,
+                'sec_fetch_site' => $normalizedSite,
+                'origin_present' => $origin !== null && $origin !== '',
+            ]);
+        } catch (\Throwable) {
+            // A logging failure must never change the 403 answer.
+        }
     }
 }

@@ -10,6 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use Waynestate\Helmet\Proxy\HttpsDetector;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
@@ -67,6 +68,9 @@ final class RequestForgeryGuard implements MiddlewareInterface
      * @param list<string> $except Paths that skip the guard. A pattern is
      *        either an exact path or a prefix ending in "*"; "*" matches
      *        every path.
+     * @param LoggerInterface|null $logger When set, a refused request is
+     *        logged as a structured security event. A logger that throws
+     *        never changes the 403 answer.
      *
      * @throws \InvalidArgumentException If a trusted origin or except pattern
      *         is invalid.
@@ -78,6 +82,7 @@ final class RequestForgeryGuard implements MiddlewareInterface
         private readonly bool $allowSameSite = false,
         array $trustedOrigins = [],
         array $except = [],
+        private readonly ?LoggerInterface $logger = null,
     ) {
         $this->trustedOrigins = $this->normalizeOrigins($trustedOrigins);
         $this->except = $this->normalizeExcept($except);
@@ -101,7 +106,49 @@ final class RequestForgeryGuard implements MiddlewareInterface
             return $handler->handle($request);
         }
 
+        $this->logRefusal($method, $path, $secFetchSite, $origin !== '');
+
         return $this->forbiddenResponse();
+    }
+
+    /**
+     * Log a refused request as a structured security event.
+     *
+     * The context carries only the method, the path without the query
+     * string, the Sec-Fetch-Site value normalized to one of the four known
+     * values or "other" (null when the header is absent), and whether an
+     * Origin header was present. It never carries the Origin value,
+     * cookies, Authorization, or any other header value. A logger that
+     * throws is ignored: logging must never change the 403 answer.
+     *
+     * @param string $method The HTTP method, in any case.
+     * @param string $path The request path, without the query string.
+     * @param string $secFetchSite The Sec-Fetch-Site header line, "" when
+     *        absent.
+     * @param bool $originPresent Whether an Origin header was present.
+     */
+    private function logRefusal(string $method, string $path, string $secFetchSite, bool $originPresent): void
+    {
+        if ($this->logger === null) {
+            return;
+        }
+
+        $site = strtolower($secFetchSite);
+        $normalizedSite = $site === ''
+            ? null
+            : (in_array($site, ['same-origin', 'same-site', 'cross-site', 'none'], true) ? $site : 'other');
+
+        try {
+            $this->logger->warning('helmet.request_refused', [
+                'event' => 'request_refused',
+                'method' => strtoupper($method),
+                'path' => $path,
+                'sec_fetch_site' => $normalizedSite,
+                'origin_present' => $originPresent,
+            ]);
+        } catch (\Throwable) {
+            // A logging failure must never change the 403 answer.
+        }
     }
 
     /**

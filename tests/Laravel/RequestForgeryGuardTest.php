@@ -7,6 +7,7 @@ namespace Waynestate\Helmet\Tests\Laravel;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Http\Kernel as FoundationKernel;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Waynestate\Helmet\Laravel\RequestForgeryGuard;
 
@@ -227,5 +228,29 @@ final class RequestForgeryGuardTest extends TestCase
         $response = $this->handle($request);
 
         self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testTheLaravelRefusalIsLogged(): void
+    {
+        $this->enableCsrf();
+        $request = $this->makeRequest('POST', 'https://app.example/submit?next=login', [
+            'HTTP_SEC_FETCH_SITE' => 'cross-site',
+            'HTTP_ORIGIN' => 'https://evil.example',
+        ]);
+
+        Log::shouldReceive('warning')
+            ->once()
+            ->with('helmet.request_refused', [
+                'event' => 'request_refused',
+                'method' => 'POST',
+                'path' => '/submit',
+                'sec_fetch_site' => 'cross-site',
+                'origin_present' => true,
+            ]);
+
+        $response = $this->handle($request);
+
+        self::assertSame(403, $response->getStatusCode());
+        self::assertSame('Forbidden', $response->getContent());
     }
 }

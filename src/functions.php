@@ -184,6 +184,7 @@ if (!function_exists('helmet_boot')) {
                 $csrfAllowSameSite,
                 $csrfTrustedOrigins,
                 $csrfExcept,
+                $logger,
             );
             $secFetchSite = $_SERVER['HTTP_SEC_FETCH_SITE'] ?? null;
             $secFetchSite = is_string($secFetchSite) && $secFetchSite !== '' ? $secFetchSite : null;
@@ -471,7 +472,7 @@ if (!function_exists('helmet_metrics')) {
         }
         $proxies = new TrustedProxies($proxyList);
 
-        $clientIp = ClientIp::resolve($_SERVER, $proxies);
+        $clientIp = ClientIp::resolve($_SERVER, $proxies, $config['logger'] ?? null);
         $requestToken = BearerToken::from($_SERVER['HTTP_AUTHORIZATION'] ?? null);
 
         $gate = new MetricsGate(
