@@ -26,12 +26,14 @@ use Waynestate\Helmet\Support\Setting;
 |
 | "proxies"     The trusted proxies (a list of IPs or CIDR ranges) that may
 |               set the X-Forwarded-Proto header. Filled from HELMET_PROXIES
-|               (comma-separated) when it is set, otherwise from the
-|               HELMET_PRESET preset, otherwise empty. Empty means the app
-|               trusts no proxy and HTTPS is detected from the direct
-|               connection only. HELMET_PROXIES wins over HELMET_PRESET. An
-|               unknown HELMET_PRESET throws, even when HELMET_PROXIES is
-|               set.
+|               (comma-separated) when it is set. Only when HELMET_PROXIES
+|               is unset does the list fall back to the HELMET_PRESET
+|               preset, then to empty. Empty means the app trusts no proxy
+|               and HTTPS is detected from the direct connection only.
+|               HELMET_PROXIES wins over HELMET_PRESET. A set-but-empty or
+|               whitespace-only HELMET_PROXIES keeps the empty list, so an
+|               explicit empty value trusts nobody. An unknown
+|               HELMET_PRESET throws, even when HELMET_PROXIES is set.
 |
 | "scope"       Where the SecurityHeaders middleware runs. "global" (the
 |               default) adds it to the kernel's global middleware, so every
@@ -236,6 +238,10 @@ use Waynestate\Helmet\Support\Setting;
 
 // HELMET_PROXIES wins over HELMET_PRESET, so an app can start from a preset
 // and override the proxy list. With neither, nothing is trusted.
+//
+// The fallback is about whether the variable was set at all. env() returns
+// null only when HELMET_PROXIES is unset. A set-but-empty or whitespace-only
+// value is a deliberate "trust nobody" and keeps the empty list.
 $helmetProxies = env('HELMET_PROXIES');
 $proxies = [];
 if (is_string($helmetProxies) && $helmetProxies !== '') {
@@ -258,7 +264,10 @@ $helmetPreset = Setting::get('HELMET_PRESET');
 // going silently unused.
 $presetProxies = $helmetPreset !== null ? Presets::proxies($helmetPreset) : null;
 
-if ($proxies === [] && $presetProxies !== null) {
+// Fall back to the preset only when HELMET_PROXIES was never set at all.
+// A set-but-empty or whitespace-only value already decided to trust
+// nobody, so it keeps its empty list here.
+if ($helmetProxies === null && $presetProxies !== null) {
     $proxies = $presetProxies;
 }
 
