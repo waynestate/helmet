@@ -327,9 +327,13 @@ final class SecurityHeaders
     /**
      * Add the Vite dev server origin to the policy, but only in the local
      * environment when the dev server is running (a hot file exists). The
-     * origin is validated: it must be http or https, on localhost,
-     * 127.0.0.1 or [::1], with an optional port. An invalid origin is
-     * ignored and a warning is logged.
+     * origin is validated as a bare origin (no path, query, fragment or
+     * userinfo) and normalized to scheme://host[:port]. An invalid origin
+     * is ignored and a warning is logged. A directive the app removed from
+     * the policy is not recreated with just the origin, because that would
+     * drop the default-src fallback for it: it is recreated only by copying
+     * the default-src values first, and skipped when default-src is also
+     * absent.
      *
      * @param array<string, list<string>> $policy
      *
@@ -350,25 +354,61 @@ final class SecurityHeaders
             return $policy;
         }
 
-        // The dev server serves scripts, styles, fonts and images.
-        foreach (['script-src', 'style-src', 'style-src-elem', 'font-src', 'img-src'] as $directive) {
-            $policy[$directive][] = $origin;
+        // The dev server serves scripts, styles, fonts, images, its HMR
+        // websocket and the page's fetch calls.
+        foreach (['script-src', 'style-src', 'style-src-elem', 'font-src', 'img-src', 'connect-src'] as $directive) {
+            $sources = $this->withDevOrigin($policy, $directive, $origin);
+            if ($sources !== null) {
+                $policy[$directive] = $sources;
+            }
         }
 
-        // The dev server's HMR websocket and the page's fetch calls.
-        $policy['connect-src'][] = $origin;
-        $policy['connect-src'][] = $this->websocketTwin($origin);
+        // The dev server's HMR websocket, only when connect-src exists now.
+        if (array_key_exists('connect-src', $policy)) {
+            $policy['connect-src'][] = $this->websocketTwin($origin);
+        }
 
         // Vite's dev server may use web workers loaded from blob: URLs.
-        $policy['worker-src'][] = 'blob:';
+        if (array_key_exists('worker-src', $policy)) {
+            $policy['worker-src'][] = 'blob:';
+        } elseif (array_key_exists('default-src', $policy)) {
+            $policy['worker-src'] = [...$policy['default-src'], 'blob:'];
+        }
 
         return $policy;
     }
 
     /**
+     * The sources for $directive once $origin is added to it, or null when
+     * the directive must be left out of the policy. When the directive is
+     * absent, it is created only by copying the default-src values first,
+     * so the default-src fallback for it survives; when default-src is also
+     * absent, the directive is skipped rather than recreated.
+     *
+     * @param array<string, list<string>> $policy
+     *
+     * @return list<string>|null
+     */
+    private function withDevOrigin(array $policy, string $directive, string $origin): ?array
+    {
+        if (array_key_exists($directive, $policy)) {
+            $policy[$directive][] = $origin;
+
+            return $policy[$directive];
+        }
+
+        if (array_key_exists('default-src', $policy)) {
+            return [...$policy['default-src'], $origin];
+        }
+
+        return null;
+    }
+
+    /**
      * The Vite dev server origin: config('helmet.dev_origin') when set,
-     * otherwise the hot file contents. Returns null when the origin is
-     * missing or invalid.
+     * otherwise the hot file contents. Returns the origin in its bare,
+     * normalized form scheme://host[:port] (no trailing slash), or null
+     * when the origin is missing or invalid.
      */
     private function devOrigin(): ?string
     {
@@ -384,12 +424,27 @@ final class SecurityHeaders
         $origin = trim($origin);
 
         if (!$this->isValidDevOrigin($origin)) {
-            Log::warning('HELMET ignored an invalid Vite dev origin: ' . $origin . '. The origin must be http or https on localhost, 127.0.0.1 or [::1], with an optional port.');
+            Log::warning('HELMET ignored an invalid Vite dev origin: ' . $origin . '. The origin must be a bare http or https origin on localhost, 127.0.0.1 or [::1], with an optional port and no path, query, fragment or userinfo.');
 
             return null;
         }
 
-        return $origin;
+        return $this->normalizeDevOrigin($origin);
+    }
+
+    /**
+     * The bare, normalized form of a valid dev origin: scheme://host[:port],
+     * with no trailing slash, path, query, fragment or userinfo.
+     */
+    private function normalizeDevOrigin(string $origin): string
+    {
+        $parts = parse_url($origin);
+
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+        $port = isset($parts['port']) && $parts['port'] >= 1 ? ':' . $parts['port'] : '';
+
+        return $scheme . '://' . $host . $port;
     }
 
     /**
@@ -412,8 +467,10 @@ final class SecurityHeaders
     }
 
     /**
-     * Whether the origin is a valid Vite dev server origin: http or https,
-     * on localhost, 127.0.0.1 or [::1], with an optional port.
+     * Whether the origin is a valid Vite dev server origin: a bare http or
+     * https origin on localhost, 127.0.0.1 or [::1], with an optional port
+     * and no userinfo, query, fragment or path other than empty or "/".
+     * Anything else would land raw in the CSP header, so it is rejected.
      */
     private function isValidDevOrigin(string $origin): bool
     {
@@ -433,6 +490,17 @@ final class SecurityHeaders
         }
 
         if (isset($parts['port']) && $parts['port'] < 1) {
+            return false;
+        }
+
+        // A bare origin carries no userinfo, query or fragment.
+        if (array_key_exists('user', $parts) || array_key_exists('pass', $parts) || array_key_exists('query', $parts) || array_key_exists('fragment', $parts)) {
+            return false;
+        }
+
+        // A bare origin has no path other than the empty string or "/".
+        $path = (string) ($parts['path'] ?? '');
+        if ($path !== '' && $path !== '/') {
             return false;
         }
 

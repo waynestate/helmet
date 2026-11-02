@@ -432,7 +432,9 @@ final class SecurityHeadersTest extends TestCase
 
             self::assertStringContainsString('http://localhost:5173', $csp);
             self::assertStringContainsString('ws://localhost:5173', $csp);
-            self::assertStringContainsString('worker-src blob:', $csp);
+            // worker-src already exists in the default policy, so the dev
+            // origin appends to it instead of creating a new directive.
+            self::assertStringContainsString("worker-src 'self' blob:", $csp);
         } finally {
             unlink($hotFile);
         }
@@ -627,6 +629,188 @@ final class SecurityHeadersTest extends TestCase
 
             self::assertStringContainsString('http://localhost:5173', $csp);
             self::assertStringContainsString('ws://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * A dev origin with a trailing slash is accepted and normalized to the
+     * bare origin, so the CSP carries scheme://host[:port] without a
+     * trailing slash.
+     */
+    public function testDevOriginBareTrailingSlashIsNormalized(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173/');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString('http://localhost:5173', $csp);
+            self::assertStringNotContainsString('http://localhost:5173/', $csp);
+            self::assertStringContainsString('ws://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public static function bareOriginRejections(): array
+    {
+        return [
+            'a path' => ['http://localhost:5173/app'],
+            'a query' => ['http://localhost:5173?x=1'],
+            'a fragment' => ['http://localhost:5173#a'],
+            'userinfo' => ['http://user:pw@localhost:5173'],
+        ];
+    }
+
+    /**
+     * A dev origin that is not a bare origin (it carries a path, query,
+     * fragment or userinfo) is ignored with the same warning as any other
+     * invalid origin, because the raw string would land in the CSP header.
+     */
+    #[DataProvider('bareOriginRejections')]
+    public function testDevOriginBareNonBareOriginsAreIgnoredWithAWarning(string $origin): void
+    {
+        Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(static function (string $message): bool {
+                return str_contains($message, 'HELMET') && str_contains($message, 'invalid Vite dev origin');
+            });
+
+        $this->app->detectEnvironment(static fn() => 'local');
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, $origin);
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('localhost:5173', $csp);
+            self::assertStringNotContainsString('ws://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * A directive the app removed from the policy is recreated only by
+     * copying the default-src values first, so the default-src fallback for
+     * it survives instead of being dropped.
+     */
+    public function testDevOriginDoesNotRecreateARemovedDirectiveWithoutDefaultSrcFallback(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+        config(['helmet.csp' => [
+            'default-src' => ["'self'"],
+            'font-src' => null,
+        ]]);
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString("font-src 'self' http://localhost:5173", $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * When both font-src and default-src are absent from the policy, no
+     * font-src directive is created: a bare origin-only directive would
+     * drop the default-src fallback the browser applies.
+     */
+    public function testDevOriginDoesNotRecreateADirectiveWhenDefaultSrcIsAlsoAbsent(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+        config(['helmet.csp' => [
+            'default-src' => null,
+            'font-src' => null,
+        ]]);
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringNotContainsString('font-src', $csp);
+            // The origin still reaches the directives the policy keeps.
+            self::assertStringContainsString("script-src 'self'", $csp);
+            self::assertStringContainsString('http://localhost:5173', $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * A directive the app kept is appended to as before: the dev origin is
+     * added to its existing sources.
+     */
+    public function testDevOriginDoesNotRecreateADirectiveThatIsPresent(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+        config(['helmet.csp' => [
+            'font-src' => ["'self'", 'https://fonts.example'],
+        ]]);
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString("font-src 'self' https://fonts.example http://localhost:5173", $csp);
+        } finally {
+            unlink($hotFile);
+        }
+    }
+
+    /**
+     * worker-src follows the same rule as every other directive: when the
+     * app removed it but kept default-src, blob: is added to a copy of the
+     * default-src values, not to a bare blob: directive.
+     */
+    public function testDevOriginDoesNotRecreateWorkerSrcWithoutDefaultSrcFallback(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'local');
+        config(['helmet.csp' => [
+            'worker-src' => null,
+        ]]);
+
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->defineHtmlRoute('/test');
+            $response = $this->get('/test');
+            $csp = (string) $response->headers->get('Content-Security-Policy');
+
+            self::assertStringContainsString("worker-src 'self' blob:", $csp);
         } finally {
             unlink($hotFile);
         }
