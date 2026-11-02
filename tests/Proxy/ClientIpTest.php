@@ -67,16 +67,53 @@ final class ClientIpTest extends TestCase
         self::assertSame('10.0.0.1', ClientIp::resolve($server, new TrustedProxies(['10.0.0.1'])));
     }
 
-    public function testSkipsInvalidEntries(): void
+    public function testFailsClosedOnAnUnparseableEntry(): void
     {
         $server = [
             'REMOTE_ADDR' => '10.0.0.1',
-            'HTTP_X_FORWARDED_FOR' => 'garbage, 9.9.9.9, 10.0.0.1',
+            'HTTP_X_FORWARDED_FOR' => '9.9.9.9, garbage, 10.0.0.1',
         ];
 
-        // Walk right to left: 10.0.0.1 (trusted, skip), 9.9.9.9 (untrusted,
-        // return); "garbage" is never reached.
+        // Walk right to left: 10.0.0.1 (trusted, skip), "garbage" is not a
+        // valid IP, so resolve fails closed and returns the peer instead of
+        // continuing to 9.9.9.9.
+        self::assertSame('10.0.0.1', ClientIp::resolve($server, new TrustedProxies(['10.0.0.1'])));
+    }
+
+    public function testFailsClosedOnAnAddressWithPort(): void
+    {
+        $server = [
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_FOR' => '9.9.9.9, 203.0.113.5:443',
+        ];
+
+        // 203.0.113.5:443 is not a valid IP address, so resolve fails closed
+        // and returns the peer instead of 9.9.9.9.
+        self::assertSame('10.0.0.1', ClientIp::resolve($server, new TrustedProxies(['10.0.0.1'])));
+    }
+
+    public function testIpv4MappedIpv6ForwardedEntryIsUnmapped(): void
+    {
+        $server = [
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_FOR' => '::ffff:9.9.9.9, 10.0.0.1',
+        ];
+
+        // ::ffff:9.9.9.9 is unmapped to 9.9.9.9 before matching and is
+        // returned in that form.
         self::assertSame('9.9.9.9', ClientIp::resolve($server, new TrustedProxies(['10.0.0.1'])));
+    }
+
+    public function testIpv4MappedIpv6TrustedHopIsSkipped(): void
+    {
+        $server = [
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_FOR' => '9.9.9.9, ::ffff:10.0.0.2',
+        ];
+
+        // ::ffff:10.0.0.2 is unmapped to 10.0.0.2, matches the trust list,
+        // and is skipped; the walk continues to 9.9.9.9.
+        self::assertSame('9.9.9.9', ClientIp::resolve($server, new TrustedProxies(['10.0.0.0/8'])));
     }
 
     public function testCidrTrustedProxy(): void
