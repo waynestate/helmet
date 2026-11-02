@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file.
 - Security: IPv4-mapped IPv6 addresses (`::ffff:a.b.c.d`) are unmapped before matching trusted proxies, for both the peer and the forwarded entries, so a dual-stack proxy still matches its IPv4 entry instead of slipping past the trust check.
 - Security: `X-Forwarded-Proto` now follows one rule everywhere, the last non-empty value in `HttpsDetector` and the Laravel normalizer, and the normalizer decides trust with the list Laravel itself uses (`trustedproxy.proxies` when set, else `helmet.proxies`, with `*` and `**` trusting every peer as in Symfony), so HELMET and the framework can no longer disagree about which value to read or from whom to accept it.
 - Security: an explicitly empty `HELMET_PROXIES=` now trusts nobody even when `HELMET_PRESET` is set, because only an unset variable falls back to the preset, so an app that clears the list on purpose is not silently re-opened by the platform default.
+- Changed: CI pulls its Docker Hub images through the GitLab Dependency Proxy (the group's CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX), so pipelines no longer hit Docker Hub's anonymous pull limit.
 
 ## 0.2.6 (2026-11-02)
 
