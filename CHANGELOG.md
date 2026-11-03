@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file.
 - Security: the CSP nonce meta tag is injected only into the real `<head>`, so a literal `<head>` inside a comment, an attribute value, or a script, style, textarea or title element no longer receives it.
 - Security: an HTML response that carries a CSP nonce has `public` changed to `private` and `s-maxage` dropped from its `Cache-Control`, so a shared cache cannot store a page whose nonce differs per request.
 - Fixed: the Vite dev origin must be a bare origin (no path, query, fragment or userinfo) and is normalized to `scheme://host[:port]`; a CSP directive the app removed is no longer recreated by the dev origin, which dropped its `default-src` fallback (it is copied from `default-src` first, or skipped).
+- Fixed: the Laravel adapter resets Vite's CSP nonce when the request ends (after the mismatch check and the nonce meta tag, on success and when the inner handler throws), so a long-lived worker (Octane, Swoole, FrankenPHP) does not carry one request's nonce into the next.
 - Changed: CI pulls its Docker Hub images through the GitLab Dependency Proxy (the group's CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX), so pipelines no longer hit Docker Hub's anonymous pull limit.
 
 ## 0.2.6 (2026-11-02)

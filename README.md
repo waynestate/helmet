@@ -459,7 +459,9 @@ terrible nonce.
 The middleware hands the per-request nonce to Laravel's Vite helper and
 injects a `csp-nonce` meta tag into `<head>`. `@vite` needs nothing. The meta
 tag lets Vite's dev runtime nonce the CSS and preload tags it adds after page
-load.
+load. When the request ends, HELMET resets the Vite nonce to a fresh random
+one, so a long-lived worker (Octane, Swoole, FrankenPHP) does not carry one
+request's nonce into the next.
 
 A few rules keep the CSP honest:
 
