@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Proxy;
 
+use Monolog\Handler\TestHandler;
+use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
 use Waynestate\Helmet\Proxy\ClientIp;
 use Waynestate\Helmet\Proxy\TrustedProxies;
@@ -90,6 +92,49 @@ final class ClientIpTest extends TestCase
         // 203.0.113.5:443 is not a valid IP address, so resolve fails closed
         // and returns the peer instead of 9.9.9.9.
         self::assertSame('10.0.0.1', ClientIp::resolve($server, new TrustedProxies(['10.0.0.1'])));
+    }
+
+    public function testAnUnparseableForwardedEntryIsLoggedWithoutTheHeader(): void
+    {
+        $server = [
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_FOR' => '9.9.9.9, garbage, 10.0.0.1',
+        ];
+        $logger = new Logger('test');
+        $handler = new TestHandler();
+        $logger->pushHandler($handler);
+
+        $ip = ClientIp::resolve($server, new TrustedProxies(['10.0.0.1']), $logger);
+
+        self::assertSame('10.0.0.1', $ip);
+        self::assertCount(1, $handler->getRecords());
+
+        $record = $handler->getRecords()[0];
+        self::assertSame('helmet.forwarded_for_rejected', $record->message);
+        self::assertSame('forwarded_for_rejected', $record->context['event']);
+        self::assertSame('unparseable_entry', $record->context['reason']);
+        self::assertSame('10.0.0.1', $record->context['peer']);
+
+        // Neither the header nor the bad entry reaches the record.
+        $serialized = json_encode(['message' => $record->message, 'context' => $record->context]);
+        self::assertStringNotContainsString('garbage', (string) $serialized);
+        self::assertStringNotContainsString('9.9.9.9, garbage, 10.0.0.1', (string) $serialized);
+    }
+
+    public function testAGoodForwardedHeaderLogsNothing(): void
+    {
+        $server = [
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_FOR' => '9.9.9.9, 10.0.0.1',
+        ];
+        $logger = new Logger('test');
+        $handler = new TestHandler();
+        $logger->pushHandler($handler);
+
+        $ip = ClientIp::resolve($server, new TrustedProxies(['10.0.0.1']), $logger);
+
+        self::assertSame('9.9.9.9', $ip);
+        self::assertCount(0, $handler->getRecords());
     }
 
     public function testIpv4MappedIpv6ForwardedEntryIsUnmapped(): void
