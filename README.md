@@ -271,6 +271,24 @@ exception handler. If you want to build the page yourself, call
 for the status, headers and body as data. HELMET does not switch PHP's
 `display_errors` off for you; the platform setting does that.
 
+The same class builds the 4xx half of the rule: a raw PHP app that wants a
+neutral 4xx page for a client fault calls `clientError()` with the status
+and sends the result itself:
+
+```php
+$page = (new \Waynestate\Helmet\Error\GenericErrorResponse())->clientError(404);
+http_response_code($page['status']);
+foreach ($page['headers'] as $name => $value) {
+    header($name . ': ' . $value);
+}
+echo $page['body'];
+```
+
+The page is fixed text: 400, 401, 403, 404, 405, 410 and 429 each carry
+their own title and sentence, and any other 4xx keeps the status you passed
+and falls back to the Bad request text. Nothing from the request or an
+exception reaches the body, and a status outside the 400s throws.
+
 #### Health check without a front controller
 
 A raw PHP app with no front controller (or an Apache setup with no rewrite)
