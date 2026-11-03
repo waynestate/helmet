@@ -18,7 +18,7 @@
   <a class="docs-header__brand" href="../../docs/index.html">HELMET</a>
   <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../../index.html">Back to HELMET</a></span>
 </header>
-<div class="docs-layout">
+<div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html" aria-current="page">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
@@ -26,12 +26,237 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html" aria-current="page">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="environment-variables">Environment variables<a class="docs-heading-link" aria-label="Link to this section" href="#environment-variables">#</a></h1>
-<p>STUB: this page is written in a later batch.</p>
+      <article class="docs-article"><h1 id="configuration">Configuration<a class="docs-heading-link" aria-label="Link to this section" href="#configuration">#</a></h1>
+<p>Every <code>HELMET_</code> environment variable the package reads, its meaning, its default, and the file that reads it. The table below is generated from the code, so it cannot drift from what the package actually reads. To set a value, add it to your environment or <code>.env</code>; for how the platform presets choose the trusted proxies, see <a href="../guides/platform-presets.html">Platform presets</a>.</p>
+<h2 id="how-a-value-is-read">How a value is read<a class="docs-heading-link" aria-label="Link to this section" href="#how-a-value-is-read">#</a></h2>
+<p>The Laravel adapter reads every value through <code>Waynestate\Helmet\Support\Setting::get()</code>. The real environment wins (getenv, then <code>$_ENV</code>, then <code>$_SERVER</code>); an empty string counts as not set, so a blank value falls through to the next source. When the environment has no value for the key, the private <code>waynestate/playbook</code> package (Playbook) supplies it, if it is installed. When neither has it, null comes back and the default in the table applies. Playbook is optional by design: the package never requires it, it only looks for the class. That is how a WSU value can arrive at an app without this public repo naming a single one of them.</p>
+<h2 id="platform-presets">Platform presets<a class="docs-heading-link" aria-label="Link to this section" href="#platform-presets">#</a></h2>
+<p>A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app. The presets live in <code>Waynestate\Helmet\Platform\Presets</code>:</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Preset</th>
+<th>Trusted proxies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>citadel</code></td>
+<td>the Docker bridge gateway to the HA-Proxy front (see <a href="../guides/running-off-citadel.html">Running off Citadel</a>)</td>
+</tr>
+<tr>
+<td><code>docker</code></td>
+<td>none: a plain Docker network with no front proxy</td>
+</tr>
+</tbody>
+</table></div>
+<p>Laravel reads the preset from <code>HELMET_PRESET</code> (Playbook supplies it when the environment has none); an explicit <code>HELMET_PROXIES</code> always wins over the preset. Off the WSU platform, skip the preset and pass your own list of the addresses your front proxy connects from. An unknown preset name throws at boot, so a typo fails loudly instead of silently trusting nothing.</p>
+<h2 id="the-variables">The variables<a class="docs-heading-link" aria-label="Link to this section" href="#the-variables">#</a></h2>
+<!-- generated:env -->
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Meaning</th>
+<th>Default</th>
+<th>Read in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HELMET_COOP</td>
+<td>Value of the Cross-Origin-Opener-Policy header; an empty value sends no header.</td>
+<td>same-origin</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CORP</td>
+<td>Value of the Cross-Origin-Resource-Policy header; unset sends no header.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CSP</td>
+<td>JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default.</td>
+<td>the core default policy</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CSP_REPORT_ONLY</td>
+<td>true sends the policy as Content-Security-Policy-Report-Only, observing violations without blocking them.</td>
+<td>false</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CSP_REPORT_URI</td>
+<td>URL browsers POST CSP violation reports to; adds report-uri and report-to to the policy plus a Reporting-Endpoints header. Must be https.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CSP_TRUSTED_TYPES_ENABLED</td>
+<td>true appends Trusted Types directives to the report-only CSP header.</td>
+<td>false</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CSP_TRUSTED_TYPES_POLICIES</td>
+<td>Comma-separated Trusted Types policy names; replaces the default list.</td>
+<td>[&quot;default&quot;]</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CSRF_ALLOW_SAME_SITE</td>
+<td>true lets Sec-Fetch-Site: same-site pass; off by default because sibling subdomains are still same-site.</td>
+<td>false</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CSRF_ENABLED</td>
+<td>true turns on the request-forgery guard for state-changing requests.</td>
+<td>false</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CSRF_EXCEPT</td>
+<td>Comma-separated path patterns that skip the guard: an exact path, a prefix ending in *, or * for every path.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_CSRF_TRUSTED_ORIGINS</td>
+<td>Comma-separated origins allowed to make state-changing requests when the Origin fallback is used.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_DEV_ORIGIN</td>
+<td>Vite dev server origin, used in local only while the dev server is running; must be http or https on localhost, 127.0.0.1 or [::1]. Overrides the hot file.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_HSTS_INCLUDE_SUBDOMAINS</td>
+<td>false omits the HSTS includeSubDomains directive.</td>
+<td>true</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_HSTS_MAX_AGE</td>
+<td>HSTS max-age in seconds, sent on HTTPS only; must not be negative.</td>
+<td>31536000</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_HSTS_PRELOAD</td>
+<td>true appends preload to HSTS; requires a year of max-age and includeSubDomains, and is hard to undo.</td>
+<td>false</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_METRICS_ALLOW</td>
+<td>Comma-separated IPs or CIDR ranges allowed to scrape /metrics without a token.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_METRICS_ENABLED</td>
+<td>true exposes the /metrics endpoint; with neither a token nor an allow list it returns 404 and logs a warning.</td>
+<td>false</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_METRICS_TOKEN</td>
+<td>Bearer token the scraper sends as Authorization: Bearer <token>; compared with hash_equals.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_NO_STORE_ENABLED</td>
+<td>true sends Cache-Control: no-store on matching responses.</td>
+<td>false</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_NO_STORE_PATHS</td>
+<td>Comma-separated path prefixes that carry no-store; empty means every response.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_PERMISSIONS_POLICY</td>
+<td>JSON feature map for the Permissions-Policy header; the default is a deny list and an empty object sends no header.</td>
+<td>the default deny list</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_POLICY_PATH</td>
+<td>Path to a CREED policy.json; the ribbon then shows a version warning for the running PHP (and, in Laravel, framework) version. A missing or invalid file never breaks the page.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_PRESET</td>
+<td>Platform preset name (citadel or docker) that supplies the trusted proxies; read from the environment, else from Playbook. HELMET_PROXIES wins when both are set; an unknown name throws.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_PROXIES</td>
+<td>Comma-separated IPs or CIDR ranges allowed to set X-Forwarded-Proto; wins over HELMET_PRESET and is copied to trustedproxy.proxies when the app has not set it. An explicitly empty value trusts nobody.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_RIBBON</td>
+<td>false switches the maintenance ribbon off everywhere.</td>
+<td>true</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_SCOPE</td>
+<td>global puts SecurityHeaders in the kernel's global middleware; web keeps it in the web group only. InjectRibbon always stays in web.</td>
+<td>global</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_SESSION_SECURE</td>
+<td>auto sets the Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. Anything else throws.</td>
+<td>auto</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_WARN_DEBUG</td>
+<td>true makes the Laravel adapter log one warning when the app boots with debug enabled in production.</td>
+<td>true</td>
+<td>config/helmet.php</td>
+</tr>
+</tbody>
+</table></div>
+<!-- /generated -->
+<h2 id="example-env">Example .env<a class="docs-heading-link" aria-label="Link to this section" href="#example-env">#</a></h2>
+<pre><code>HELMET_PRESET=citadel
+HELMET_CSP_REPORT_URI=https://app.apps.wayne.edu/csp-report
+HELMET_METRICS_ENABLED=true
+HELMET_METRICS_TOKEN=change-me
+</code></pre>
+<blockquote>
+<p>[!WARNING]
+<code>HELMET_METRICS_TOKEN</code> is a secret. Set a different value per environment and never commit it; the scraper sends it as <code>Authorization: Bearer &lt;token&gt;</code> and the package compares it with <code>hash_equals</code>.</p>
+</blockquote>
+<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<ul>
+<li><a href="api.html">API</a></li>
+<li><a href="proof.html">Proof</a></li>
+<li><a href="../install.html">Install</a></li>
+<li><a href="../guides/platform-presets.html">Platform presets</a></li>
+<li><a href="../guides/wsu-values.html">WSU values (Playbook)</a></li>
+</ul>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/instance-runner.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Strongly recommended: a git.wayne.edu instance runner</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/reference/api.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">API</span></a></nav>
   </div>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#how-a-value-is-read">How a value is read</a></li><li class="docs-toc__item"><a href="#platform-presets">Platform presets</a></li><li class="docs-toc__item"><a href="#the-variables">The variables</a></li><li class="docs-toc__item"><a href="#example-env">Example .env</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>
