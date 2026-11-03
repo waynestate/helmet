@@ -6,7 +6,6 @@ namespace Waynestate\Helmet\Tests\Error;
 
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
-use Psr\Log\LoggerInterface;
 use Waynestate\Helmet\Error\GenericErrorResponse;
 
 final class GenericErrorResponseTest extends TestCase
@@ -77,46 +76,9 @@ final class GenericErrorResponseTest extends TestCase
 
     public function testAThrowingLoggerDoesNotChangeTheResult(): void
     {
-        $throwing = new class implements LoggerInterface
+        $throwing = new class extends AbstractLogger
         {
-            use \Psr\Log\LoggerTrait;
-
-            public function emergency(string|\Stringable $message, array $context = []): void
-            {
-                throw new \RuntimeException('log disk on fire');
-            }
-
-            public function alert(string|\Stringable $message, array $context = []): void
-            {
-                throw new \RuntimeException('log disk on fire');
-            }
-
-            public function critical(string|\Stringable $message, array $context = []): void
-            {
-                throw new \RuntimeException('log disk on fire');
-            }
-
-            public function error(string|\Stringable $message, array $context = []): void
-            {
-                throw new \RuntimeException('log disk on fire');
-            }
-
-            public function warning(string|\Stringable $message, array $context = []): void
-            {
-                throw new \RuntimeException('log disk on fire');
-            }
-
-            public function notice(string|\Stringable $message, array $context = []): void
-            {
-                throw new \RuntimeException('log disk on fire');
-            }
-
-            public function info(string|\Stringable $message, array $context = []): void
-            {
-                throw new \RuntimeException('log disk on fire');
-            }
-
-            public function debug(string|\Stringable $message, array $context = []): void
+            public function log($level, string|\Stringable $message, array $context = []): void
             {
                 throw new \RuntimeException('log disk on fire');
             }
