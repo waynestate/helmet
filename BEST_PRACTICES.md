@@ -328,7 +328,7 @@ HELMET is at 0.2.6. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Log authentication and authorization failures, session failures, validation failures and trust-decision surprises, in proportion to risk.
 - **Why:** These are the events an investigation starts from.
 - **Sources:** [OWASP Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
-- **Stack:** `Not yet`. Partly done. HELMET now logs two security events: `helmet.request_refused` when the request-forgery guard answers 403, and `helmet.forwarded_for_rejected` when `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry. Still not logged: a skipped session hardening, and authentication failures, which belong to the app and to SESAME.
+- **Stack:** `Not yet`. Partly done. HELMET now logs three security events: `helmet.request_refused` when the request-forgery guard answers 403, `helmet.forwarded_for_rejected` when `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry, and `helmet.debug_enabled_in_production` when the Laravel adapter boots with `app.debug` true in the production environment. Still not logged: a skipped session hardening, and authentication failures, which belong to the app and to SESAME.
 
 ---
 
@@ -344,7 +344,7 @@ HELMET is at 0.2.6. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** `display_errors=Off` and `APP_DEBUG=false` in production.
 - **Why:** Debug pages expose configuration values to users.
 - **Sources:** [Laravel deployment](https://laravel.com/docs/12.x/deployment), [Laravel configuration](https://laravel.com/docs/12.x/configuration), [PHP ini list](https://www.php.net/manual/en/ini.list.php)
-- **Stack:** `Not yet`. The Citadel `php.ini` already has `display_errors=Off`. HELMET neither sets nor verifies it, and it does not look at `APP_DEBUG`. An app that turns it on at runtime is not stopped.
+- **Stack:** `Partly done`. The Laravel adapter writes one warning, `helmet.debug_enabled_in_production`, through the Log facade when the app boots with `app.debug` true in the production environment (`src/Laravel/HelmetServiceProvider.php:159`, `tests/Laravel/DebugWarningTest.php`); opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`). The Citadel `php.ini` already has `display_errors=Off`, but HELMET neither sets nor verifies it, and it does not stop an app that turns debug on at runtime.
 
 ---
 
