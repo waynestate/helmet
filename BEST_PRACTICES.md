@@ -338,7 +338,7 @@ HELMET is at 0.2.6. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Install a global exception handler that returns a neutral message and logs the full exception. Use 4xx for client faults and 5xx for server faults.
 - **Why:** Stack traces, SQL errors and paths help an attacker.
 - **Sources:** [OWASP Error Handling](https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html)
-- **Stack:** `Not yet`. HELMET has no error handler. The "E" in the name is still a plan.
+- **Stack:** `Partly enforced`. For raw PHP, `helmet_boot(['error_handler' => ['enabled' => true]])` (opt-in) installs a handler that logs the class, message, file, line and trace and shows a fixed 500 page with no exception text (`src/Error/GenericErrorResponse.php`, `src/functions.php`, `tests/Error/GenericErrorResponseTest.php`). It is off by default, and Laravel apps keep the framework's own handler (set `APP_DEBUG=false`, see H43). Still open: 4xx pages for client faults.
 
 ### H43. Keep debug output off in production
 - **Practice:** `display_errors=Off` and `APP_DEBUG=false` in production.
