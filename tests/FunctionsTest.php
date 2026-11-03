@@ -942,4 +942,137 @@ final class FunctionsTest extends TestCase
             'session' => ['secure' => 'bogus'],
         ]);
     }
+
+    // error_handler config validation
+
+    public function testBootThrowsOnInvalidErrorHandlerConfig(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('error_handler" must be an array');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'error_handler' => 'not-an-array',
+        ]);
+    }
+
+    public function testBootThrowsOnInvalidErrorHandlerEnabled(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('error_handler.enabled" must be a bool');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'error_handler' => [
+                'enabled' => 'yes',
+            ],
+        ]);
+    }
+
+    /**
+     * error_handler.enabled false installs no handler: an uncaught exception
+     * still ends as PHP's own fatal error, not as HELMET's error page.
+     * helmet_boot() plus a throw cannot be exercised in-process, so we shell
+     * out to a real PHP process (argument array, no shell) and check its
+     * exit code, stdout and stderr.
+     */
+    public function testBootErrorHandlerDisabledInstallsNothing(): void
+    {
+        $autoload = dirname(__DIR__) . '/vendor/autoload.php';
+        $tempFile = tempnam(sys_get_temp_dir(), 'helmet-error-off-');
+
+        $script = '<?php' . "\n"
+            . 'require ' . var_export($autoload, true) . ";\n"
+            . "\$_SERVER['REMOTE_ADDR'] = '127.0.0.1';\n"
+            . "\$_SERVER['REQUEST_METHOD'] = 'GET';\n"
+            . "\$_SERVER['REQUEST_URI'] = '/';\n"
+            . "\Waynestate\Helmet\helmet_boot(['trusted_proxies' => ['127.0.0.1'], 'error_handler' => ['enabled' => false]]);\n"
+            . "throw new RuntimeException('boom');\n";
+
+        file_put_contents($tempFile, $script);
+
+        try {
+            $process = proc_open(
+                [PHP_BINARY, $tempFile],
+                [
+                    0 => ['pipe', 'r'],
+                    1 => ['pipe', 'w'],
+                    2 => ['pipe', 'w'],
+                ],
+                $pipes,
+            );
+
+            self::assertIsResource($process);
+
+            fclose($pipes[0]);
+            $stdout = stream_get_contents($pipes[1]);
+            $stderr = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $exitCode = proc_close($process);
+        } finally {
+            @unlink($tempFile);
+        }
+
+        self::assertStringNotContainsString('Something went wrong', $stdout);
+        self::assertStringContainsString('Uncaught', $stderr);
+        self::assertNotSame(1, $exitCode, "child stderr: $stderr");
+    }
+
+    /**
+     * error_handler.enabled true installs the handler: the uncaught
+     * exception ends as HELMET's neutral page and a non-zero exit, with no
+     * exception detail on the wire. Same shell-out pattern as above.
+     */
+    public function testBootErrorHandlerEnabledAnswersTheNeutralPage(): void
+    {
+        $autoload = dirname(__DIR__) . '/vendor/autoload.php';
+        $tempFile = tempnam(sys_get_temp_dir(), 'helmet-error-on-');
+
+        $script = '<?php' . "\n"
+            . 'require ' . var_export($autoload, true) . ";\n"
+            . "\$_SERVER['REMOTE_ADDR'] = '127.0.0.1';\n"
+            . "\$_SERVER['REQUEST_METHOD'] = 'GET';\n"
+            . "\$_SERVER['REQUEST_URI'] = '/';\n"
+            . "\Waynestate\Helmet\helmet_boot(['trusted_proxies' => ['127.0.0.1'], 'error_handler' => ['enabled' => true]]);\n"
+            . "throw new RuntimeException('boom');\n";
+
+        file_put_contents($tempFile, $script);
+
+        try {
+            $process = proc_open(
+                [PHP_BINARY, $tempFile],
+                [
+                    0 => ['pipe', 'r'],
+                    1 => ['pipe', 'w'],
+                    2 => ['pipe', 'w'],
+                ],
+                $pipes,
+            );
+
+            self::assertIsResource($process);
+
+            fclose($pipes[0]);
+            $stdout = stream_get_contents($pipes[1]);
+            $stderr = stream_get_contents($pipes[2]);
+            fclose($pipes[1]);
+            fclose($pipes[2]);
+            $exitCode = proc_close($process);
+        } finally {
+            @unlink($tempFile);
+        }
+
+        self::assertSame(1, $exitCode, "child stderr: $stderr");
+        self::assertStringContainsString('Something went wrong. Try again in a moment.', $stdout);
+        self::assertStringNotContainsString('boom', $stdout);
+        self::assertStringNotContainsString('RuntimeException', $stdout);
+    }
 }
