@@ -344,7 +344,7 @@ HELMET is at 0.3.0. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** `display_errors=Off` and `APP_DEBUG=false` in production.
 - **Why:** Debug pages expose configuration values to users.
 - **Sources:** [Laravel deployment](https://laravel.com/docs/12.x/deployment), [Laravel configuration](https://laravel.com/docs/12.x/configuration), [PHP ini list](https://www.php.net/manual/en/ini.list.php)
-- **Stack:** `Partly done`. The Laravel adapter writes one warning, `helmet.debug_enabled_in_production`, through the Log facade when the app boots with `app.debug` true in the production environment (`src/Laravel/HelmetServiceProvider.php:159`, `tests/Laravel/DebugWarningTest.php`); opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`). The Citadel `php.ini` already has `display_errors=Off`, but HELMET neither sets nor verifies it, and it does not stop an app that turns debug on at runtime.
+- **Stack:** `Documented`. The README section "Debug output stays off in production" says where each setting lives and that HELMET only warns. The Laravel adapter writes one warning, `helmet.debug_enabled_in_production`, through the Log facade when the app boots with `app.debug` true in the production environment (`src/Laravel/HelmetServiceProvider.php:159`, `tests/Laravel/DebugWarningTest.php`); opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`). The Citadel `php.ini` already has `display_errors=Off`, but HELMET neither sets nor verifies it, and it does not stop an app that turns debug on at runtime. Squire's deploy kit `php.ini` ships `display_errors = Off` too. Nothing in this repo tests the platform settings.
 
 ---
 

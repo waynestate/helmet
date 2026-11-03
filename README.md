@@ -289,6 +289,28 @@ their own title and sentence, and any other 4xx keeps the status you passed
 and falls back to the Bad request text. Nothing from the request or an
 exception reaches the body, and a status outside the 400s throws.
 
+#### Debug output stays off in production
+
+HELMET never switches debug output off or on for you, because the right place is
+the platform, not a library. Two settings decide whether a visitor can read a
+stack trace, and both belong to your deploy:
+
+- **PHP's `display_errors`.** Keep it `Off` in production. Squire's deploy kit
+  already ships a `php.ini` with `display_errors = Off` and `log_errors = On`
+  (`deploy/.squire/php.ini` in a Squire-based app), and Citadel uses the same
+  values. Off the platform, set it in `php.ini` or the FPM pool. HELMET does not
+  set or check it.
+- **Laravel's `APP_DEBUG`.** Keep it `false` in production. The Laravel adapter
+  cannot stop an app from turning it on, but it notices: when the app boots with
+  `app.debug` true in the production environment it writes one warning,
+  `helmet.debug_enabled_in_production`, through the Log facade. Opt out with
+  `helmet.warn_debug` (env `HELMET_WARN_DEBUG`, default `true`). A logger that
+  fails never breaks the boot.
+
+The opt-in error handler above covers one more case: with it on, an uncaught
+exception in a raw PHP app shows the fixed 500 page even if `display_errors` is
+wrong. Warnings and notices still follow `display_errors`, so set it anyway.
+
 #### Health check without a front controller
 
 A raw PHP app with no front controller (or an Apache setup with no rewrite)
