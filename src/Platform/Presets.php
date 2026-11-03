@@ -16,7 +16,11 @@ namespace Waynestate\Helmet\Platform;
  *
  *  - "citadel": the WSU container platform. The app container talks to the
  *    HA-Proxy front through the Docker bridge gateway 172.18.0.1, the only
- *    address allowed to set X-Forwarded-Proto.
+ *    address allowed to set X-Forwarded-Proto. The preset is safe only when
+ *    the front proxy reaches the app over that bridge, because a published
+ *    app port that is source-NATed to the gateway address would make a
+ *    direct client look like the proxy, so the platform must not publish
+ *    the app's port.
  *  - "docker": a plain Docker deployment with no front proxy in front of the
  *    app container. Nothing is trusted; HTTPS is detected from the direct
  *    connection only.
