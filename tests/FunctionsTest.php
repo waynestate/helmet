@@ -1000,8 +1000,19 @@ final class FunctionsTest extends TestCase
         file_put_contents($tempFile, $script);
 
         try {
+            // Pin the child's error display so the result does not depend
+            // on the image's php.ini (some images ship display_errors off).
+            // In the CLI SAPI, display_errors=1 sends PHP's own fatal
+            // error to stdout, where the assertion below looks for it.
             $process = proc_open(
-                [PHP_BINARY, $tempFile],
+                [
+                    PHP_BINARY,
+                    '-d', 'display_errors=1',
+                    '-d', 'display_startup_errors=1',
+                    '-d', 'error_reporting=-1',
+                    '-d', 'html_errors=0',
+                    $tempFile,
+                ],
                 [
                     0 => ['pipe', 'r'],
                     1 => ['pipe', 'w'],
@@ -1023,8 +1034,8 @@ final class FunctionsTest extends TestCase
         }
 
         self::assertStringNotContainsString('Something went wrong', $stdout);
-        self::assertStringContainsString('Uncaught', $stderr);
-        self::assertNotSame(1, $exitCode, "child stderr: $stderr");
+        self::assertStringContainsString('Uncaught', $stdout);
+        self::assertNotSame(1, $exitCode, "child stdout: $stdout");
     }
 
     /**
@@ -1048,8 +1059,17 @@ final class FunctionsTest extends TestCase
         file_put_contents($tempFile, $script);
 
         try {
+            // Same pinned flags: with display_errors on, a missing handler
+            // would leak the exception text and the assertions catch it.
             $process = proc_open(
-                [PHP_BINARY, $tempFile],
+                [
+                    PHP_BINARY,
+                    '-d', 'display_errors=1',
+                    '-d', 'display_startup_errors=1',
+                    '-d', 'error_reporting=-1',
+                    '-d', 'html_errors=0',
+                    $tempFile,
+                ],
                 [
                     0 => ['pipe', 'r'],
                     1 => ['pipe', 'w'],
