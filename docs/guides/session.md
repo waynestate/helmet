@@ -5,4 +5,55 @@ description: SessionHardening::apply() sets the session ini values, including a 
 
 # The session
 
-STUB: this page is written in a later batch.
+This page covers the session hardening HELMET applies before the first `session_start()`: the `ini` values it sets, the cookie name rule, and how Secure mode works. Read it before you deploy a raw PHP app, then move on to [The request-forgery guard](csrf.md) for the next layer.
+
+A session is the one thing you want nobody to forge, steal, or pin down early. HELMET tightens the screws before the first `session_start()`, so the cookie is as hard to misuse as the headers are to spoof.
+
+## The goal
+
+Call `SessionHardening::apply()` once, before the session starts, and let it set the session `ini` values that the platform's shared `php.ini` leaves at insecure defaults. It refuses to run once a session is active, because changing them mid-session does nothing. In raw PHP the call happens inside `helmet_boot()`; in Laravel the adapter does not apply it, so the framework's own session config applies instead.
+
+## The settings
+
+`SessionHardening::apply()` sets these `ini` values before the session starts:
+
+| Setting | Value | Why |
+| --- | --- | --- |
+| `session.use_strict_mode` | `1` | Rejects session IDs the server did not issue, which blocks fixation. |
+| `session.use_only_cookies` | `1` | The session ID travels only in the cookie, never in a URL. |
+| `session.cookie_httponly` | `1` | JavaScript cannot read the session cookie. |
+| `session.cookie_samesite` | `Lax` | Cuts cross-site session reuse. |
+| `session.cookie_secure` | `1` on HTTPS, or always in `always` mode, unset otherwise | The cookie is sent only over TLS, and plain-HTTP setups keep working. |
+| `session.cookie_lifetime` | `0` | A browser-session cookie: it ends when the browser closes. |
+| `session.cache_limiter` | `nocache` | Pages cannot be cached and replayed with the session attached. |
+| `session.cookie_path` | `/` | The usual scope, and required by the `__Host-` prefix. |
+| `session.cookie_domain` | empty | Host-only: the cookie is not sent to sibling subdomains. |
+| `session.name` | `__Host-WSUSESSID` on HTTPS, `WSUSESSID` on HTTP | A generic name reveals less, and the `__Host-` prefix makes the browser reject the cookie unless it is `Secure`, `Path=/` and has no `Domain`. |
+
+> [!NOTE]
+> `session.sid_length` is deliberately not touched. It is deprecated as of PHP 8.4 and the platform image sets it to 26, so changing it here would fight the platform. That change is left to the Upgrade project.
+
+## The cookie name rule
+
+The name rule applies only while the name is still PHP's default `PHPSESSID`. An app that chose its own name keeps it, and SESAME reads whatever `session_name()` returns, so a changed name is safe for it. When an app first runs this version, existing sessions under the old name end: the next request still carries the old cookie, the app finds no session under the new name and starts a fresh one.
+
+> [!WARNING]
+> Deploying this version ends every session that still uses the default `PHPSESSID` name. Signed-in users sign in once more after the deploy.
+
+## Secure mode
+
+By default (`auto`) the Secure flag follows the request. On Citadel, HA-Proxy ends TLS before the request reaches PHP, so the request looks plain even though the client connected over HTTPS; there, set `HELMET_SESSION_SECURE=always` so the cookie keeps its `Secure` flag. In Laravel the value lands in `helmet.session.secure`; in raw PHP pass `'session' => ['secure' => 'always']` to `helmet_boot()`, and a Laravel app that boots through `helmet_boot()` can hand it `config('helmet.session.secure')`.
+
+The cookie name still follows the request, so it never takes the `__Host-` prefix on a plain-HTTP request, and plain HTTP development keeps `auto`.
+
+> [!NOTE]
+> For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`.
+
+## Failure behavior
+
+`apply()` throws a `LogicException` if a session is already active, and a `RuntimeException` naming the first setting that could not be changed if any `ini` value refuses to be set. A setting that cannot be changed is a loud failure, not a silent insecure default.
+
+## Related
+
+- [The request-forgery guard](csrf.md)
+- [Metrics](metrics.md)
