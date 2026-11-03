@@ -14,6 +14,7 @@ All notable changes to this project are documented in this file.
 - Fixed: the Vite dev origin must be a bare origin (no path, query, fragment or userinfo) and is normalized to `scheme://host[:port]`; a CSP directive the app removed is no longer recreated by the dev origin, which dropped its `default-src` fallback (it is copied from `default-src` first, or skipped).
 - Fixed: the Laravel adapter resets Vite's CSP nonce when the request ends (after the mismatch check and the nonce meta tag, on success and when the inner handler throws), so a long-lived worker (Octane, Swoole, FrankenPHP) does not carry one request's nonce into the next.
 - Changed: CI pulls its Docker Hub images through the GitLab Dependency Proxy (the group's CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX), so pipelines no longer hit Docker Hub's anonymous pull limit.
+- Changed: docs and package metadata name nougat as the canonical repository, with git.wayne.edu and GitHub as read-only mirrors, until git.wayne.edu has CI runners.
 
 ## 0.2.6 (2026-11-02)
 
