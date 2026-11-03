@@ -18,7 +18,7 @@
   <a class="docs-header__brand" href="../../docs/index.html">HELMET</a>
   <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../../index.html">Back to HELMET</a></span>
 </header>
-<div class="docs-layout">
+<div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html" aria-current="page">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
@@ -27,11 +27,63 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="running-off-citadel">Running off Citadel<a class="docs-heading-link" aria-label="Link to this section" href="#running-off-citadel">#</a></h1>
-<p>STUB: this page is written in a later batch.</p>
+<p>HELMET ships one package for every platform, so running off Citadel means changing configuration, not code. Pick the row for your platform below, set <code>HELMET_PROXIES</code> or a preset, and point logs at <code>php://stderr</code>; for what a preset is, see <a href="platform-presets.html">Platform presets</a>.</p>
+<h2 id="the-platforms">The platforms<a class="docs-heading-link" aria-label="Link to this section" href="#the-platforms">#</a></h2>
+<p>The only platform fact HELMET needs is the address of whatever stands in front of the app container:</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>What sits in front</th>
+<th><code>HELMET_PROXIES</code></th>
+<th>Where logs go</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Citadel</td>
+<td>HA-Proxy</td>
+<td>use the <code>citadel</code> preset (<code>172.18.0.1</code>)</td>
+<td><code>/var/log/app/helmet.log</code>, the preset's file path</td>
+</tr>
+<tr>
+<td>OpenShift</td>
+<td>the OpenShift router</td>
+<td>the router's pod network CIDR, from your cluster admin</td>
+<td><code>php://stderr</code></td>
+</tr>
+<tr>
+<td>Coolify</td>
+<td>Traefik or Caddy</td>
+<td>the Docker network of the proxy</td>
+<td><code>php://stderr</code></td>
+</tr>
+<tr>
+<td>Raw Docker behind a compose proxy</td>
+<td>your proxy service</td>
+<td>the compose network's subnet</td>
+<td><code>php://stderr</code></td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="the-citadel-caveat">The citadel caveat<a class="docs-heading-link" aria-label="Link to this section" href="#the-citadel-caveat">#</a></h2>
+<p>One caveat about the <code>citadel</code> row: <code>172.18.0.1</code> is the Docker bridge gateway, and the <code>citadel</code> preset is safe only when the front proxy reaches the app over that bridge. A published app port that is source-NATed to the gateway address would make a direct client look like the proxy, so the platform must not publish the app's port.</p>
+<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>If the platform publishes the app's port, a direct client can appear to come from the gateway address and set <code>X-Forwarded-Proto</code>. Keep the app's port unpublished while you use the <code>citadel</code> preset.</p></aside>
+<h2 id="overrides-and-the-no-trust-default">Overrides and the no-trust default<a class="docs-heading-link" aria-label="Link to this section" href="#overrides-and-the-no-trust-default">#</a></h2>
+<p>An explicit <code>HELMET_PROXIES</code> overrides the preset on every platform. With neither a preset nor a list, no address is trusted, so forwarded headers such as <code>X-Forwarded-Proto</code> are ignored and the request is read as it arrived. Off Citadel, log to <code>php://stderr</code> and let the container runtime collect the lines.</p>
+<p>The helmet comes off the platform, not the app.</p>
+<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<ul>
+<li><a href="platform-presets.html">Platform presets</a></li>
+<li><a href="wsu-values.html">WSU values (Playbook)</a></li>
+<li><a href="https-and-proxies.html">HTTPS, and why the proxy list matters</a></li>
+<li><a href="../reference/configuration.html">Environment variables</a></li>
+</ul>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/wsu-values.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">WSU values (Playbook)</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/usage-raw-php.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Raw PHP</span></a></nav>
   </div>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#the-platforms">The platforms</a></li><li class="docs-toc__item"><a href="#the-citadel-caveat">The citadel caveat</a></li><li class="docs-toc__item"><a href="#overrides-and-the-no-trust-default">Overrides and the no-trust default</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

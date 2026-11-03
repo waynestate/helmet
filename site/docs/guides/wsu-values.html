@@ -18,7 +18,7 @@
   <a class="docs-header__brand" href="../../docs/index.html">HELMET</a>
   <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../../index.html">Back to HELMET</a></span>
 </header>
-<div class="docs-layout">
+<div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html" aria-current="page">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
@@ -27,11 +27,60 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="wsu-values-playbook">WSU values (Playbook)<a class="docs-heading-link" aria-label="Link to this section" href="#wsu-values-playbook">#</a></h1>
-<p>STUB: this page is written in a later batch.</p>
+<p>This page covers the one value HELMET reads from Playbook, <code>HELMET_PRESET</code>, and the three ways to get Playbook itself with your own GitLab token. Once the preset is set, see <a href="platform-presets.html">Platform presets</a> for what it supplies.</p>
+<h2 id="how-the-preset-is-read">How the preset is read<a class="docs-heading-link" aria-label="Link to this section" href="#how-the-preset-is-read">#</a></h2>
+<p>The Laravel config reads <code>HELMET_PRESET</code> from the environment first and from the private <code>waynestate/playbook</code> package (Playbook) second, when the environment has no value. The raw PHP path takes the preset as an option to <code>helmet_boot()</code> and reads no environment at all.</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>What it is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELMET_PRESET</code></td>
+<td>A platform preset name (<code>citadel</code> or <code>docker</code>) that supplies the trusted proxies.</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="get-playbook-with-your-own-gitlab-token">Get Playbook with your own GitLab token<a class="docs-heading-link" aria-label="Link to this section" href="#get-playbook-with-your-own-gitlab-token">#</a></h2>
+<p>Three ways.</p>
+<h3 id="composer">Composer<a class="docs-heading-link" aria-label="Link to this section" href="#composer">#</a></h3>
+<p>Add the repository to your app's <code>composer.json</code>, put the token in <code>auth.json</code> (Composer's credential store, never in the repo), then require the package:</p>
+<pre><code class="language-json">{
+    &quot;repositories&quot;: [
+        {
+            &quot;type&quot;: &quot;vcs&quot;,
+            &quot;url&quot;: &quot;https://git.wayne.edu/enterprise-apps/playbook.git&quot;
+        }
+    ]
+}
+</code></pre>
+<pre><code>composer require waynestate/playbook
+</code></pre>
+<h3 id="fetch-the-values-file-directly">Fetch the values file directly<a class="docs-heading-link" aria-label="Link to this section" href="#fetch-the-values-file-directly">#</a></h3>
+<pre><code class="language-bash">curl --fail -H &quot;PRIVATE-TOKEN: $GITLAB_TOKEN&quot; &quot;https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main&quot; -o .env.playbook
+</code></pre>
+<pre><code class="language-powershell">Invoke-WebRequest -Headers @{ 'PRIVATE-TOKEN' = $env:GITLAB_TOKEN } -Uri &quot;https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main&quot; -OutFile .env.playbook
+</code></pre>
+<p>A fetched <code>.env.playbook</code> is plain <code>KEY=value</code> lines: copy the ones you need into your app's <code>.env</code> (or your Citadel environment).</p>
+<h3 id="clone">Clone<a class="docs-heading-link" aria-label="Link to this section" href="#clone">#</a></h3>
+<pre><code>git clone https://git.wayne.edu/enterprise-apps/playbook.git
+</code></pre>
+<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>The token is your own: <code>read_api</code> for curl, <code>read_repository</code> for clone and Composer. Keep it out of the repo; for Composer it lives in <code>auth.json</code>.</p></aside>
+<aside class="docs-callout docs-callout--tip" role="note"><p class="docs-callout__label">Tip</p><p>Playbook is private on git.wayne.edu. If you get a 404, ask the Enterprise Applications team for read access.</p></aside>
+<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<ul>
+<li><a href="platform-presets.html">Platform presets</a></li>
+<li><a href="running-off-citadel.html">Running off Citadel</a></li>
+<li><a href="../reference/configuration.html">Environment variables</a></li>
+</ul>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/platform-presets.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Platform presets</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/running-off-citadel.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Running off Citadel</span></a></nav>
   </div>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#how-the-preset-is-read">How the preset is read</a></li><li class="docs-toc__item"><a href="#get-playbook-with-your-own-gitlab-token">Get Playbook with your own GitLab token</a></li><li class="docs-toc__item--sub"><a href="#composer">Composer</a></li><li class="docs-toc__item--sub"><a href="#fetch-the-values-file-directly">Fetch the values file directly</a></li><li class="docs-toc__item--sub"><a href="#clone">Clone</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

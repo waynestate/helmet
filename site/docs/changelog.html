@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Changelog | HELMET docs</title>
-<meta name="description" content="The release history of HELMET, kept in CHANGELOG.md in the repository.">
+<meta name="description" content="All notable changes to this project.">
 <meta name="docs-version" content="0.3.0">
 <link rel="stylesheet" href="../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../assets/docs.css">
@@ -18,7 +18,7 @@
   <a class="docs-header__brand" href="../docs/index.html">HELMET</a>
   <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../index.html">Back to HELMET</a></span>
 </header>
-<div class="docs-layout">
+<div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../docs/index.html">Overview</a></li><li><a href="../docs/install.html">Install</a></li><li><a href="../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../docs/guides/headers.html">The headers</a></li><li><a href="../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../docs/guides/session.html">The session</a></li><li><a href="../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../docs/guides/metrics.html">Metrics</a></li><li><a href="../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../docs/reference/configuration.html">Environment variables</a></li><li><a href="../docs/reference/api.html">API</a></li><li><a href="../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../docs/upgrading.html">Upgrading</a></li><li><a href="../docs/changelog.html" aria-current="page">Changelog</a></li></ul></nav>
@@ -26,12 +26,273 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../docs/index.html">Overview</a></li><li><a href="../docs/install.html">Install</a></li><li><a href="../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../docs/guides/headers.html">The headers</a></li><li><a href="../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../docs/guides/session.html">The session</a></li><li><a href="../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../docs/guides/metrics.html">Metrics</a></li><li><a href="../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../docs/reference/configuration.html">Environment variables</a></li><li><a href="../docs/reference/api.html">API</a></li><li><a href="../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../docs/upgrading.html">Upgrading</a></li><li><a href="../docs/changelog.html" aria-current="page">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="changelog">Changelog<a class="docs-heading-link" aria-label="Link to this section" href="#changelog">#</a></h1>
-<p>The full release history lives in the repository's <code>CHANGELOG.md</code>; the latest released version is 0.3.0.</p>
+      <article class="docs-article"><!-- Generated from CHANGELOG.md by bin/docs-site.php. Edit CHANGELOG.md, not this file. -->
+<p>All notable changes to this project are documented in this file.</p>
+<h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
+<ul>
+<li>
+<p>Added: the docs site. <code>bin/docs-site.php</code> (Squire's shared builder) turns <code>docs/</code> into <code>site/docs/</code>: the Overview page carries the README opening and a generated table of every <code>HELMET_</code> environment variable the package reads. <code>composer docs</code> rebuilds it, <code>composer ci</code> checks it through <code>composer docs:check</code>, and the front page links it.</p>
+</li>
+<li>
+<p>Docs: BEST_PRACTICES H53 is <code>Documented</code> (SESAME owns the logout headers, <code>Clear-Site-Data</code> without <code>&quot;cookies&quot;</code>) and H41 is <code>Partly enforced</code> (three events are logged, authentication failures belong to SESAME).</p>
+</li>
+<li>
+<p>Docs: README section &quot;Debug output stays off in production&quot; names the two settings that decide whether a visitor sees a trace (PHP <code>display_errors</code>, Laravel <code>APP_DEBUG</code>), points at Squire's deploy <code>php.ini</code>, and documents the <code>helmet.warn_debug</code> opt-out; BEST_PRACTICES H43 is now <code>Documented</code>.</p>
+</li>
+<li>
+<p>Changed: the front-page deploy layer pins HELMET ^0.3, PROCTOR ^0.4 and CREED ^0.1 (lock: HELMET 0.3.0, PROCTOR 0.4.0, CREED 0.1.6).</p>
+</li>
+<li>
+<p>Changed: CI pins Preflight 0.1.4 (GitLab component includes and the GitHub reusable workflow at its tag commit); the deploy layer sets minimum-stability to stable.</p>
+</li>
+<li>
+<p>Docs: the sample metrics output shows 0.3.0.</p>
+</li>
+<li>
+<p>Added: <code>GenericErrorResponse::clientError(int $status)</code> returns a fixed 4xx page (status, headers, body) for client faults, with its own title and sentence for 400, 401, 403, 404, 405, 410 and 429 and the Bad request text for any other 4xx; a status outside the 400s throws <code>InvalidArgumentException</code>, and nothing from the request or an exception reaches the body. An app calls it from its router; nothing wires it into <code>helmet_boot()</code> automatically.</p>
+</li>
+</ul>
+<h2 id="0-3-0-2026-11-03">0.3.0 (2026-11-03)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-0-2026-11-03">#</a></h2>
+<ul>
+<li>
+<p>This is a pre-1.0 minor: apps that pin <code>^0.2</code> stay on 0.2.x until they move their constraint to <code>^0.3</code>. The proxy and forwarded-header changes below make some requests resolve differently (an empty <code>HELMET_PROXIES=</code> now trusts nobody), so read the Security lines first.</p>
+</li>
+<li>
+<p>Docs: BEST_PRACTICES H14, H13 and H41 say what is tested and what is not (error page headers on the raw PHP path, WayneUI assets, session hardening events).</p>
+</li>
+<li>
+<p>Added: opt-in generic error page for raw PHP. <code>helmet_boot(['error_handler' =&gt; ['enabled' =&gt; true]])</code> installs an exception handler that logs the full detail at <code>error</code> level and shows a fixed 500 page with no exception text; <code>Waynestate\Helmet\Error\GenericErrorResponse::build()</code> returns the same response as data. Off by default; Laravel keeps its own handler.</p>
+</li>
+<li>
+<p>Added: two structured security events, <code>helmet.request_refused</code> (warning, logged when the request-forgery guard answers 403, with <code>event</code>, <code>method</code>, <code>path</code>, <code>sec_fetch_site</code> and <code>origin_present</code> in the context) and <code>helmet.forwarded_for_rejected</code> (warning, logged by <code>ClientIp::resolve()</code> when it fails closed on an unparseable <code>X-Forwarded-For</code> entry, with <code>event</code>, <code>reason</code> and <code>peer</code> in the context); the Origin value, cookies, Authorization, the header and the bad entry are never logged, and a failing logger never changes the 403 or the resolved IP.</p>
+</li>
+<li>
+<p>Added: <code>helmet.debug_enabled_in_production</code> (warning, logged once by the Laravel adapter at boot when the app boots with <code>app.debug</code> true in the production environment, with <code>event</code> in the context); opt out with <code>helmet.warn_debug</code> (env <code>HELMET_WARN_DEBUG</code>, default true), and a failing logger never breaks the boot.</p>
+</li>
+<li>
+<p>Security: <code>ClientIp</code> fails closed on an unparseable <code>X-Forwarded-For</code> entry (for example <code>203.0.113.5:443</code>): it returns the peer instead of walking on to an earlier, client-chosen entry, so a malformed header can no longer steer the resolved client IP.</p>
+</li>
+<li>
+<p>Security: IPv4-mapped IPv6 addresses (<code>::ffff:a.b.c.d</code>) are unmapped before matching trusted proxies, for both the peer and the forwarded entries, so a dual-stack proxy still matches its IPv4 entry instead of slipping past the trust check.</p>
+</li>
+<li>
+<p>Security: <code>X-Forwarded-Proto</code> now follows one rule everywhere, the last non-empty value in <code>HttpsDetector</code> and the Laravel normalizer, and the normalizer decides trust with the list Laravel itself uses (<code>trustedproxy.proxies</code> when set, else <code>helmet.proxies</code>, with <code>*</code> and <code>**</code> trusting every peer as in Symfony), so HELMET and the framework can no longer disagree about which value to read or from whom to accept it.</p>
+</li>
+<li>
+<p>Security: an explicitly empty <code>HELMET_PROXIES=</code> now trusts nobody even when <code>HELMET_PRESET</code> is set, because only an unset variable falls back to the preset, so an app that clears the list on purpose is not silently re-opened by the platform default.</p>
+</li>
+<li>
+<p>Security: the CSP nonce meta tag is injected only into the real <code>&lt;head&gt;</code>, so a literal <code>&lt;head&gt;</code> inside a comment, an attribute value, or a script, style, textarea or title element no longer receives it.</p>
+</li>
+<li>
+<p>Security: an HTML response that carries a CSP nonce has <code>public</code> changed to <code>private</code> and <code>s-maxage</code> dropped from its <code>Cache-Control</code>, so a shared cache cannot store a page whose nonce differs per request.</p>
+</li>
+<li>
+<p>Fixed: the Vite dev origin must be a bare origin (no path, query, fragment or userinfo) and is normalized to <code>scheme://host[:port]</code>; a CSP directive the app removed is no longer recreated by the dev origin, which dropped its <code>default-src</code> fallback (it is copied from <code>default-src</code> first, or skipped).</p>
+</li>
+<li>
+<p>Fixed: the Laravel adapter resets Vite's CSP nonce when the request ends (after the mismatch check and the nonce meta tag, on success and when the inner handler throws), so a long-lived worker (Octane, Swoole, FrankenPHP) does not carry one request's nonce into the next.</p>
+</li>
+<li>
+<p>Changed: CI pulls its Docker Hub images through the GitLab Dependency Proxy (the group's CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX), so pipelines no longer hit Docker Hub's anonymous pull limit.</p>
+</li>
+<li>
+<p>Docs: the README and the <code>Presets</code> docblock now state the <code>citadel</code> preset's NAT assumption: <code>172.18.0.1</code> is the Docker bridge gateway, the preset is safe only when the front proxy reaches the app over that bridge, and a published app port that is source-NATed to the gateway address would make a direct client look like the proxy, so the platform must not publish the app's port.</p>
+</li>
+<li>
+<p>Changed: docs and package metadata name nougat as the canonical repository, with git.wayne.edu and GitHub as read-only mirrors, until git.wayne.edu has CI runners.</p>
+</li>
+</ul>
+<h2 id="0-2-6-2026-11-02">0.2.6 (2026-11-02)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-6-2026-11-02">#</a></h2>
+<ul>
+<li>Fixed: HTML rewrites (CSP nonce meta, environment ribbon) keep the response's view object, so <code>assertInertia()</code> and <code>assertViewHas()</code> work in apps that use HELMET.</li>
+<li>Changed: the deploy layer's Squire kit is refreshed to 0.3.3 (release options can now live in ./.env.squire).</li>
+<li>Changed: the deploy layer's Squire kit is refreshed to 0.3.4 (the local .env.squire file is now git-ignored).</li>
+<li>Docs: BEST_PRACTICES.md tags re-checked against the code; H22, H24 and H28 are now Enforced, H32 is Enforced, and the gap list line numbers are current.</li>
+<li>Changed: composer.json sets config.audit.abandoned to report, making the Composer audit policy explicit.</li>
+<li>Docs: README Docker test commands cover PHP 8.5, 8.4 and 8.3 on both PowerShell and sh, and the middleware error-path wording matches the default rethrow behaviour.</li>
+</ul>
+<h2 id="0-2-5-2026-10-29">0.2.5 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-5-2026-10-29">#</a></h2>
+<ul>
+<li>Added: agent-ready site (prompt blocks, Markdown twins, llms.txt), from Squire's kit.</li>
+<li>Added: HELMET_SESSION_SECURE=always keeps the session cookie Secure even when HTTPS is not detected.</li>
+<li>Changed: the proof page moves to a private site that needs a Wayne State sign-in.</li>
+<li>Changed: project names written as words except acronyms.</li>
+<li>Fixed: stale capability claims in the site and docs.</li>
+</ul>
+<h2 id="0-2-4-2026-10-29">0.2.4 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-4-2026-10-29">#</a></h2>
+<ul>
+<li><code>HELMET_PRESET</code> (Laravel) now also comes from the private
+<code>waynestate/playbook</code> package when the environment has no value: the config
+reads it through <code>Waynestate\Helmet\Support\Setting</code>, which checks the
+environment first, then PLAYBOOK, then gives up. A missing preset is still
+not an error, and <code>waynestate/playbook</code> is suggested, never required. The
+README gains a &quot;WSU values (PLAYBOOK)&quot; section with the fetch commands.</li>
+</ul>
+<h2 id="0-2-3-2026-10-29">0.2.3 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-3-2026-10-29">#</a></h2>
+<ul>
+<li>Fixed: <code>helmet_boot()</code> removed <code>X-Powered-By</code> only after it had already
+answered the health check path, so a GET or HEAD to <code>/up</code> (the default
+<code>health_path</code>) still sent the header. The removal now runs before the
+health answer and the request-forgery rejection, so both early exits leave
+the response clean.</li>
+</ul>
+<h2 id="0-2-2-2026-10-29">0.2.2 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-2-2026-10-29">#</a></h2>
+<ul>
+<li>Every JSON log record now carries a request ID in <code>extra.request_id</code>: 16
+lowercase hex characters generated by HELMET (<code>Logging::requestId()</code>),
+stamped by a processor pushed before the redaction processor, so a record
+with a <code>password</code> context key still comes out redacted and keeps its ID.
+An inbound header is never trusted for the ID. <code>Logging::create()</code> takes an
+optional fourth argument for a caller-supplied ID (8 to 64 letters, digits,
+dots, underscores or dashes; anything else is ignored), and <code>helmet_boot()</code>
+accepts it as <code>log.request_id</code>, which must be a string. <code>helmet_boot()</code> now
+also returns the ID as <code>request_id</code>.</li>
+</ul>
+<h2 id="0-2-1-2026-10-29">0.2.1 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-1-2026-10-29">#</a></h2>
+<ul>
+<li>
+<p>Upgrade note: a raw-PHP app that still used the default <code>PHPSESSID</code> cookie gets the new <code>WSUSESSID</code> name (<code>__Host-WSUSESSID</code> on HTTPS), so signed-in users sign in once more after deploying. Laravel apps are unaffected (Laravel names its own cookie).</p>
+</li>
+<li>
+<p>Docs: added a &quot;Running off Citadel&quot; section to the README with a table for
+Citadel, OpenShift, Coolify and raw Docker behind a compose proxy: what
+sits in front, what to put in <code>HELMET_PROXIES</code>, and where logs go. The
+README log example now leads with <code>php://stderr</code>, and the hard-coded
+<code>172.18.0.1</code> now lives only in that table, with the other references
+pointing at the <code>citadel</code> preset.</p>
+</li>
+<li>
+<p><code>SessionHardening::apply()</code> now also sets the session cookie name,
+lifetime, path, domain and cache limiter: <code>cookie_lifetime=0</code> (a
+browser-session cookie), <code>cache_limiter=nocache</code>, <code>cookie_path=/</code>, an
+empty <code>cookie_domain</code> (host-only), and the name <code>__Host-WSUSESSID</code> on
+HTTPS or <code>WSUSESSID</code> on HTTP. The rename happens only while the name is
+still the PHP default <code>PHPSESSID</code>; an app-chosen name is left alone, and
+SESAME reads whatever <code>session_name()</code> returns.</p>
+</li>
+</ul>
+<h2 id="0-2-0-2026-10-29">0.2.0 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-0-2026-10-29">#</a></h2>
+<ul>
+<li>
+<p>Fixed the <code>&lt;head&gt;</code> match when injecting the csp-nonce meta tag into HTML
+responses: the old pattern also matched <code>&lt;header&gt;</code> and <code>&lt;headline&gt;</code> and
+injected the tag after the wrong element. Responses that carry a
+<code>Content-Length</code> header now have it refreshed to the new body length after
+injection, so a stale length cannot cut the page off mid-tag.</p>
+</li>
+<li>
+<p>Narrowed the trusted-header set in the Laravel adapter. <code>X-Forwarded-Host</code>,
+<code>X-Forwarded-Prefix</code> and now <code>X-Forwarded-Port</code> are no longer trusted by
+default. Port is out because Citadel's HA-Proxy never sends it, so a
+client-sent value would pass through untouched and change the port Laravel
+reports and the URLs it generates. Apps that need any of them choose the
+set themselves with <code>trustProxies(at: ..., headers: ...)</code> or
+<code>TrustProxies::withHeaders()</code>.</p>
+</li>
+<li>
+<p>Laravel now agrees with HELMET on multi-value <code>X-Forwarded-Proto</code>.
+Citadel's HA-Proxy appends the header instead of replacing it, so a client
+can produce <code>https, http</code>. Symfony reads the first value of such a list
+(the client's), while HELMET reads the last (the one the closest proxy
+appended). A new middleware prepended to the global chain rewrites the
+header to its last value when the request comes from a trusted proxy; a
+single value is left alone, and requests from untrusted peers are ignored
+as before.</p>
+</li>
+<li>
+<p>An unknown <code>HELMET_PRESET</code> now throws even when <code>HELMET_PROXIES</code> is set.
+A typo in the preset name fails loudly at boot instead of going silently
+unused.</p>
+</li>
+<li>
+<p>Docs: noted that the CSP nonce is added to <code>style-src</code> and
+<code>style-src-elem</code>. A browser ignores <code>'unsafe-inline'</code> once a nonce is
+present, so overriding <code>style-src</code> with <code>[&quot;'unsafe-inline'&quot;]</code> loses inline
+styles instead of restoring them.</p>
+</li>
+<li>
+<p>Added HSTS <code>preload</code> support. Set <code>hsts_preload</code> / <code>HELMET_HSTS_PRELOAD</code> to
+<code>true</code> to append the <code>preload</code> directive to the
+<code>Strict-Transport-Security</code> header. Preload requires a <code>max-age</code> of at
+least one year (31536000) and <code>includeSubDomains</code>; a shorter max-age or
+missing <code>includeSubDomains</code> throws. Preload is hard to undo: once a browser
+has preloaded the domain it refuses plain-HTTP connections until the entry
+is removed.</p>
+</li>
+<li>
+<p>Added Trusted Types directives on the report-only CSP header. Set
+<code>csp_trusted_types.enabled</code> / <code>HELMET_CSP_TRUSTED_TYPES_ENABLED</code> to <code>true</code>
+to append <code>require-trusted-types-for 'script'</code> and
+<code>trusted-types &lt;policies&gt;</code> to the
+<code>Content-Security-Policy-Report-Only</code> header only (never the enforcing
+header). Policy names default to <code>[&quot;default&quot;]</code>; set
+<code>csp_trusted_types.policies</code> / <code>HELMET_CSP_TRUSTED_TYPES_POLICIES</code> to
+override. Invalid policy names throw.</p>
+</li>
+<li>
+<p>Added opt-in <code>Cache-Control: no-store</code>. Set <code>no_store.enabled</code> /
+<code>HELMET_NO_STORE_ENABLED</code> to <code>true</code> to send <code>Cache-Control: no-store</code> on
+matching responses. <code>no_store.paths</code> / <code>HELMET_NO_STORE_PATHS</code> limits the
+header to specific path prefixes; empty means every response. An existing
+<code>Cache-Control</code> header is never overridden.</p>
+</li>
+<li>
+<p>Added <code>helmet_up()</code>: answers the <code>/up</code> health check with <code>200</code>,
+<code>Content-Type: text/plain; charset=utf-8</code>, <code>Cache-Control: no-store</code> and
+the body <code>ok</code>, then exits. For a raw PHP app with no front controller,
+point the probe at a <code>public/up.php</code> that requires the autoloader and
+calls it. <code>helmet_boot()</code> now calls <code>helmet_up()</code> for the health path;
+behaviour is unchanged.</p>
+</li>
+<li>
+<p>Added an opt-in request-forgery (CSRF) guard. <code>helmet_boot()</code> accepts a
+<code>csrf</code> option, the PSR-15 core exposes <code>RequestForgeryGuard</code>, and the
+Laravel adapter registers a <code>RequestForgeryGuard</code> middleware when
+<code>helmet.csrf.enabled</code> is true. Safe methods (<code>GET</code>, <code>HEAD</code>, <code>OPTIONS</code>)
+always pass. For state-changing requests, <code>Sec-Fetch-Site</code> is used when
+present; otherwise the <code>Origin</code> header is checked against the request's own
+origin and <code>csrf.trusted_origins</code>. A rejected request receives <code>403</code> with
+<code>Content-Type: text/plain; charset=utf-8</code>, <code>Cache-Control: no-store</code> and the
+body <code>Forbidden</code>. Config keys: <code>csrf.enabled</code>, <code>csrf.allow_same_site</code>,
+<code>csrf.trusted_origins</code>, <code>csrf.except</code>; env vars: <code>HELMET_CSRF_ENABLED</code>,
+<code>HELMET_CSRF_ALLOW_SAME_SITE</code>, <code>HELMET_CSRF_TRUSTED_ORIGINS</code>,
+<code>HELMET_CSRF_EXCEPT</code>.</p>
+</li>
+<li>
+<p>Added configurable <code>Cross-Origin-Opener-Policy</code> (COOP),
+<code>Cross-Origin-Resource-Policy</code> (CORP) and <code>Permissions-Policy</code> headers.
+COOP defaults to <code>same-origin</code> (set <code>coop</code> / <code>HELMET_COOP</code> to
+<code>same-origin-allow-popups</code>, <code>noopener-allow-popups</code> or <code>unsafe-none</code>, or
+<code>null</code> to send no header). CORP is opt-in (set <code>corp</code> / <code>HELMET_CORP</code> to
+<code>same-site</code>, <code>same-origin</code> or <code>cross-origin</code>). Permissions-Policy defaults
+to a deny list for <code>camera</code>, <code>geolocation</code>, <code>microphone</code>, <code>payment</code> and
+<code>usb</code> (set <code>permissions_policy</code> / <code>HELMET_PERMISSIONS_POLICY</code> to a feature
+map; an empty map sends no header). Invalid values throw.</p>
+</li>
+<li>
+<p>BEST_PRACTICES tags brought up to date. The Stack lines are now picture
+perfect.</p>
+</li>
+<li>
+<p>PHPStan and Pint now run from Pinstripe, the stack's coding standard,
+instead of a hand copy. <code>composer.json</code> requires <code>waynestate/pinstripe</code>
+(dev-main, until 0.1.0 is tagged) as a dev dependency, <code>phpstan.neon</code>
+includes <code>vendor/waynestate/pinstripe/phpstan/raw.neon</code> (keeping this
+repo's paths, PHP version range and three commented exceptions), and
+<code>pint.json</code> keeps the <code>per</code> preset Pinstripe ships. No behaviour change;
+the code is just cut from the same cloth now.</p>
+</li>
+</ul>
+<h2 id="0-1-0-2026-10-27">0.1.0 (2026-10-27)<a class="docs-heading-link" aria-label="Link to this section" href="#0-1-0-2026-10-27">#</a></h2>
+<ul>
+<li>First tagged release.</li>
+</ul>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../docs/upgrading.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Upgrading</span></a></nav>
   </div>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#unreleased">Unreleased</a></li><li class="docs-toc__item"><a href="#0-3-0-2026-11-03">0.3.0 (2026-11-03)</a></li><li class="docs-toc__item"><a href="#0-2-6-2026-11-02">0.2.6 (2026-11-02)</a></li><li class="docs-toc__item"><a href="#0-2-5-2026-10-29">0.2.5 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-4-2026-10-29">0.2.4 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-3-2026-10-29">0.2.3 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-2-2026-10-29">0.2.2 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-1-2026-10-29">0.2.1 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-0-2026-10-29">0.2.0 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-1-0-2026-10-27">0.1.0 (2026-10-27)</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

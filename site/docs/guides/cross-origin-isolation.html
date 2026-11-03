@@ -18,7 +18,7 @@
   <a class="docs-header__brand" href="../../docs/index.html">HELMET</a>
   <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../../index.html">Back to HELMET</a></span>
 </header>
-<div class="docs-layout">
+<div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html" aria-current="page">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
@@ -27,11 +27,67 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="cross-origin-isolation-and-feature-policy">Cross-origin isolation and feature policy<a class="docs-heading-link" aria-label="Link to this section" href="#cross-origin-isolation-and-feature-policy">#</a></h1>
-<p>STUB: this page is written in a later batch.</p>
+<p>This page covers the three headers that round out the baseline beyond the CSP: <code>Cross-Origin-Opener-Policy</code>, <code>Cross-Origin-Resource-Policy</code> and <code>Permissions-Policy</code>. Two are on by default, one is opt-in. When you are done here, see <a href="headers.html">The headers</a> for the full set.</p>
+<h2 id="cross-origin-opener-policy">Cross-Origin-Opener-Policy<a class="docs-heading-link" aria-label="Link to this section" href="#cross-origin-opener-policy">#</a></h2>
+<p><code>Cross-Origin-Opener-Policy</code> defaults to <code>same-origin</code>, which puts the page in its own browsing-context group so an opener or parent page cannot read it. Set <code>coop</code> (raw PHP) or <code>HELMET_COOP</code> (Laravel) to <code>same-origin-allow-popups</code> or <code>noopener-allow-popups</code> to keep the isolation but let a popup window (such as an OAuth login popup to the IdP) stay cross-origin, or to <code>unsafe-none</code> to turn the header off. Set it to <code>null</code> to send no COOP header at all.</p>
+<h2 id="cross-origin-resource-policy">Cross-Origin-Resource-Policy<a class="docs-heading-link" aria-label="Link to this section" href="#cross-origin-resource-policy">#</a></h2>
+<p><code>Cross-Origin-Resource-Policy</code> is opt-in: HELMET sends no CORP header by default, because a blanket <code>same-site</code> can break an app whose assets are read cross-origin. Set <code>corp</code> (raw PHP) or <code>HELMET_CORP</code> (Laravel) to <code>same-site</code>, <code>same-origin</code> or <code>cross-origin</code> to send it.</p>
+<h2 id="permissions-policy">Permissions-Policy<a class="docs-heading-link" aria-label="Link to this section" href="#permissions-policy">#</a></h2>
+<p><code>Permissions-Policy</code> defaults to a deny list: <code>camera</code>, <code>geolocation</code>, <code>microphone</code>, <code>payment</code> and <code>usb</code> are all denied, so an injected script cannot use a feature the page has switched off. Set <code>permissions_policy</code> (raw PHP) or <code>HELMET_PERMISSIONS_POLICY</code> (Laravel) to a feature map to change it: each feature maps to an allowlist of <code>self</code> and https origins, and an empty allowlist denies the feature. An empty map sends no Permissions-Policy header.</p>
+<h2 id="example">Example<a class="docs-heading-link" aria-label="Link to this section" href="#example">#</a></h2>
+<pre><code class="language-php">$helmet = helmet_boot([
+    'preset' =&gt; 'citadel',
+    'coop' =&gt; 'same-origin-allow-popups',
+    'corp' =&gt; 'same-site',
+    'permissions_policy' =&gt; [
+        'camera' =&gt; ['self'],
+        'geolocation' =&gt; [],
+    ],
+]);
+</code></pre>
+<h2 id="settings">Settings<a class="docs-heading-link" aria-label="Link to this section" href="#settings">#</a></h2>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Raw PHP (<code>helmet_boot()</code>)</th>
+<th>Laravel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>COOP</td>
+<td><code>coop</code></td>
+<td><code>HELMET_COOP</code> / <code>helmet.coop</code>, default <code>same-origin</code>, <code>null</code> sends no header</td>
+</tr>
+<tr>
+<td>CORP</td>
+<td><code>corp</code></td>
+<td><code>HELMET_CORP</code> / <code>helmet.corp</code>, default <code>null</code> (no header)</td>
+</tr>
+<tr>
+<td>Permissions-Policy</td>
+<td><code>permissions_policy</code></td>
+<td><code>HELMET_PERMISSIONS_POLICY</code> / <code>helmet.permissions_policy</code>, default deny list, <code>[]</code> sends no header</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="validation">Validation<a class="docs-heading-link" aria-label="Link to this section" href="#validation">#</a></h2>
+<p>An invalid COOP or CORP value, or a Permissions-Policy feature name or allowlist entry that is not <code>self</code> or an https origin, throws, so a typo fails loudly instead of sending a header the browser will ignore.</p>
+<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<ul>
+<li><a href="headers.html">The headers</a></li>
+<li><a href="csp.html">Customizing the CSP</a></li>
+<li><a href="hsts.html">Configuring HSTS</a></li>
+<li><a href="usage-raw-php.html">Raw PHP</a></li>
+<li><a href="usage-laravel.html">Laravel</a></li>
+<li><a href="../reference/configuration.html">Environment variables</a></li>
+</ul>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/hsts.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Configuring HSTS</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/https-and-proxies.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">HTTPS, and why the proxy list matters</span></a></nav>
   </div>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#cross-origin-opener-policy">Cross-Origin-Opener-Policy</a></li><li class="docs-toc__item"><a href="#cross-origin-resource-policy">Cross-Origin-Resource-Policy</a></li><li class="docs-toc__item"><a href="#permissions-policy">Permissions-Policy</a></li><li class="docs-toc__item"><a href="#example">Example</a></li><li class="docs-toc__item"><a href="#settings">Settings</a></li><li class="docs-toc__item"><a href="#validation">Validation</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

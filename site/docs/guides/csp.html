@@ -18,7 +18,7 @@
   <a class="docs-header__brand" href="../../docs/index.html">HELMET</a>
   <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../../index.html">Back to HELMET</a></span>
 </header>
-<div class="docs-layout">
+<div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html" aria-current="page">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
@@ -27,11 +27,55 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="customizing-the-csp">Customizing the CSP<a class="docs-heading-link" aria-label="Link to this section" href="#customizing-the-csp">#</a></h1>
-<p>STUB: this page is written in a later batch.</p>
+<p>The default policy is a starting point, not a cage. Pass a <code>csp</code> policy (raw PHP) or a second constructor argument (middleware) and it is merged over the default, per directive: a directive you set replaces the default's value for that directive, and a directive you leave out keeps the default. The default itself, exactly as the code defines it, is on <a href="headers.html">The headers</a>.</p>
+<h2 id="merging-over-the-default">Merging over the default<a class="docs-heading-link" aria-label="Link to this section" href="#merging-over-the-default">#</a></h2>
+<p>To remove a directive the default sets, set it to <code>null</code>:</p>
+<pre><code class="language-php">$helmet = helmet_boot([
+    'preset' =&gt; 'citadel',
+    'csp' =&gt; [
+        // Replace the default img-src.
+        'img-src' =&gt; [&quot;'self'&quot;, 'data:'],
+        // Remove form-action entirely.
+        'form-action' =&gt; null,
+    ],
+]);
+</code></pre>
+<p>In Laravel the same array goes in <code>helmet.csp</code> (published config) or <code>HELMET_CSP</code> (JSON in the environment); see <a href="usage-laravel.html">Laravel</a>. The merge rule is identical on both paths, because both call the same core function.</p>
+<h2 id="reporting-setup">Reporting setup<a class="docs-heading-link" aria-label="Link to this section" href="#reporting-setup">#</a></h2>
+<p>By default the policy is enforced: a violation is blocked. To see what would be blocked before you enforce it, or to keep collecting reports after you do, point the policy at a report endpoint.</p>
+<p>Set <code>csp_report_uri</code> (raw PHP) or <code>HELMET_CSP_REPORT_URI</code> (Laravel) to the URL browsers POST reports to. It must be <code>https</code>. HELMET then adds <code>report-uri</code> and <code>report-to</code> to the policy and sends a <code>Reporting-Endpoints</code> header naming the endpoint. Set <code>csp_report_only</code> (or <code>HELMET_CSP_REPORT_ONLY</code>) to <code>true</code> to send the policy as <code>Content-Security-Policy-Report-Only</code>, which observes violations without blocking them.</p>
+<pre><code class="language-php">$helmet = helmet_boot([
+    'preset' =&gt; 'citadel',
+    'csp_report_uri' =&gt; 'https://app.example.edu/csp-report',
+    'csp_report_only' =&gt; true,
+]);
+</code></pre>
+<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>An invalid URI (not <code>https</code>, no host, or a value carrying whitespace or a quote) throws at boot, so a typo fails loudly instead of pointing the browser at a destination it cannot reach.</p></aside>
+<aside class="docs-callout docs-callout--tip" role="note"><p class="docs-callout__label">Tip</p><p>Run report-only first. That is how you see what would be blocked before you enforce it; once the policy is clean, switch off <code>csp_report_only</code> and keep collecting.</p></aside>
+<h2 id="receiving-the-reports-in-laravel">Receiving the reports in Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#receiving-the-reports-in-laravel">#</a></h2>
+<p>Laravel ships an opt-in endpoint that receives the reports and logs one line per violation (the violated directive, the blocked URI's host, and the document path) and nothing else. It accepts both report formats: the legacy <code>application/csp-report</code> object, and the Reporting API's <code>application/reports+json</code> array, from which it logs the <code>csp-violation</code> entries (at most 20 per POST; browsers batch other report types into the same request, and those are ignored). The route is off until you register it:</p>
+<pre><code class="language-php">// routes/web.php
+Route::cspReport();                 // POST /csp-report
+Route::cspReport('/reports/csp');   // or your own path
+</code></pre>
+<p>The endpoint caps the body at 16 KiB, returns <code>204</code>, and carries no authentication of its own; wrap it in your own middleware if you want to keep it private. Browsers POST reports without a CSRF token, so the route excludes the <code>web</code> group's CSRF middleware. Because the endpoint is public and its input is attacker-influenced, it is throttled by default to 60 reports a minute per IP (<code>throttle:60,1</code>); pass a second argument to use a different throttle, or <code>null</code> to disable it:</p>
+<pre><code class="language-php">Route::cspReport('/reports/csp', 'throttle:120,1'); // your own limit
+Route::cspReport('/reports/csp', null);             // no throttle
+</code></pre>
+<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<ul>
+<li><a href="headers.html">The headers</a></li>
+<li><a href="usage-laravel.html">Laravel</a></li>
+<li><a href="usage-raw-php.html">Raw PHP</a></li>
+<li><a href="usage-psr15.html">PSR-15 middleware</a></li>
+<li><a href="../reference/configuration.html">Environment variables</a></li>
+<li><a href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/headers.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">The headers</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/hsts.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Configuring HSTS</span></a></nav>
   </div>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#merging-over-the-default">Merging over the default</a></li><li class="docs-toc__item"><a href="#reporting-setup">Reporting setup</a></li><li class="docs-toc__item"><a href="#receiving-the-reports-in-laravel">Receiving the reports in Laravel</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

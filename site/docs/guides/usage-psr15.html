@@ -155,10 +155,7 @@ $middleware = [
 </tr>
 </tbody>
 </table></div>
-<blockquote>
-<p>[!NOTE]
-The cross-origin isolation settings are validated at construction, not per request: a bad <code>coop</code>, <code>corp</code>, <code>permissionsPolicy</code> or <code>trustedTypesPolicies</code> value is a config error, and it fails where the app starts, not on the first request, with an <code>\InvalidArgumentException</code>.</p>
-</blockquote>
+<aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>The cross-origin isolation settings are validated at construction, not per request: a bad <code>coop</code>, <code>corp</code>, <code>permissionsPolicy</code> or <code>trustedTypesPolicies</code> value is a config error, and it fails where the app starts, not on the first request, with an <code>\InvalidArgumentException</code>.</p></aside>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>
 <li><a href="quick-start.html">Quick start</a></li>

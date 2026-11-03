@@ -18,7 +18,7 @@
   <a class="docs-header__brand" href="../../docs/index.html">HELMET</a>
   <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../../index.html">Back to HELMET</a></span>
 </header>
-<div class="docs-layout">
+<div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/metrics.html" aria-current="page">Metrics</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
@@ -27,11 +27,66 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="metrics">Metrics<a class="docs-heading-link" aria-label="Link to this section" href="#metrics">#</a></h1>
-<p>STUB: this page is written in a later batch.</p>
+<p>This page is for the opt-in Prometheus metrics endpoint: how to turn it on, how to gate access, and what the response carries. Read it before you expose <code>/metrics</code>, then pick the section that matches your stack.</p>
+<p>HELMET can expose a Prometheus metrics endpoint. It is off by default and stays off until you turn it on. No Prometheus scraper is wired yet; the endpoint is there for when one is.</p>
+<h2 id="the-goal">The goal<a class="docs-heading-link" aria-label="Link to this section" href="#the-goal">#</a></h2>
+<p>Expose a single endpoint that reports the PHP and HELMET versions, gated so only an authorized scraper can read it. The endpoint speaks Prometheus exposition format, uses no personal data in labels, and keeps labels low-cardinality.</p>
+<h2 id="enable-it">Enable it<a class="docs-heading-link" aria-label="Link to this section" href="#enable-it">#</a></h2>
+<p>Set <code>HELMET_METRICS_ENABLED=true</code> and choose at least one way to prove who is asking:</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELMET_METRICS_TOKEN</code></td>
+<td>A bearer token. The scraper sends <code>Authorization: Bearer &lt;token&gt;</code>. Compared with <code>hash_equals</code>.</td>
+</tr>
+<tr>
+<td><code>HELMET_METRICS_ALLOW</code></td>
+<td>Comma-separated IPs or CIDR ranges allowed to scrape without a token.</td>
+</tr>
+</tbody>
+</table></div>
+<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>With neither a token nor an allow list set, the endpoint returns <code>404</code> and logs a warning, so a misconfigured app does not hand its metrics to the whole network.</p></aside>
+<h2 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h2>
+<p>The provider registers a <code>Route::helmetMetrics()</code> macro. The route is not created until you call it:</p>
+<pre><code class="language-php">// routes/web.php
+Route::helmetMetrics();                          // GET /metrics, throttle:60,1
+Route::helmetMetrics('/metrics', 'throttle:120,1'); // your own throttle
+Route::helmetMetrics('/metrics', null);           // no throttle
+</code></pre>
+<p>The controller reads <code>helmet.metrics</code> from the published config, resolves the client IP through the same trusted-proxy list the headers use, and renders <code>text/plain; version=0.0.4</code>.</p>
+<h2 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h2>
+<pre><code class="language-php">use function Waynestate\Helmet\helmet_metrics;
+
+$result = helmet_metrics([
+    'enabled' =&gt; true,
+    'token'   =&gt; 's3cret',
+    'allow'   =&gt; ['10.0.0.0/8'],
+    'preset'  =&gt; 'citadel',
+]);
+
+http_response_code($result['status']);
+header('Content-Type: ' . $result['content_type']);
+echo $result['body'];
+</code></pre>
+<h2 id="what-the-response-carries">What the response carries<a class="docs-heading-link" aria-label="Link to this section" href="#what-the-response-carries">#</a></h2>
+<p>The response carries a <code>helmet_info</code> gauge with the PHP and HELMET versions, and a <code>helmet_php_version_status</code> gauge when a <code>PolicySource</code> is available. No personal data in labels; labels stay low-cardinality.</p>
+<p>The endpoint is the only place in HELMET that says &quot;I am still here&quot; without saying &quot;here is your page&quot;. A lullaby, in a way.</p>
+<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<ul>
+<li><a href="session.html">The session</a></li>
+<li><a href="csrf.html">The request-forgery guard</a></li>
+</ul>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/csrf.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">The request-forgery guard</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/instance-runner.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Strongly recommended: a git.wayne.edu instance runner</span></a></nav>
   </div>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#the-goal">The goal</a></li><li class="docs-toc__item"><a href="#enable-it">Enable it</a></li><li class="docs-toc__item"><a href="#laravel">Laravel</a></li><li class="docs-toc__item"><a href="#raw-php">Raw PHP</a></li><li class="docs-toc__item"><a href="#what-the-response-carries">What the response carries</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

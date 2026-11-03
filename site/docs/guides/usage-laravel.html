@@ -18,7 +18,7 @@
   <a class="docs-header__brand" href="../../docs/index.html">HELMET</a>
   <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../../index.html">Back to HELMET</a></span>
 </header>
-<div class="docs-layout">
+<div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html" aria-current="page">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
@@ -27,11 +27,320 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h1>
-<p>STUB: this page is written in a later batch.</p>
+<p>This page walks the Laravel adapter from <code>composer require</code> to a fully wired app: install the adapter, publish the config, trust the proxy, then turn the knobs. The adapter is a service provider, two always-on middlewares, an optional request-forgery guard, and a config file. It only wires and configures: every rule (what the headers say, how a nonce is made, how a CSP is merged, and how a request-forgery check is applied) lives in the core, so Laravel and raw PHP cannot drift apart. The suite runs against Laravel 13 with Orchestra Testbench. Helmet is the band, and the name fits: put it on before you ship.</p>
+<h2 id="install-the-adapter">Install the adapter<a class="docs-heading-link" aria-label="Link to this section" href="#install-the-adapter">#</a></h2>
+<p>Strap It On:</p>
+<pre><code class="language-bash">composer require waynestate/helmet
+</code></pre>
+<p>Package discovery registers <code>Waynestate\Helmet\Laravel\HelmetServiceProvider</code>, so there is nothing to add to <code>bootstrap/providers.php</code>. The provider merges the <code>helmet</code> config and joins the HTTP kernel's middleware:</p>
+<ul>
+<li><code>SecurityHeaders</code> sends the headers in <a href="headers.html">The headers</a> and strips <code>X-Powered-By</code>. By default it is global, so 404s and JSON routes carry them too.</li>
+<li><code>InjectRibbon</code> adds the environment ribbon (<a href="#the-ribbon">The ribbon</a>). It always stays in the <code>web</code> group, because it edits HTML.</li>
+<li><code>RequestForgeryGuard</code> is opt-in. When <code>helmet.csrf.enabled</code> is true, it joins the <code>web</code> group after <code>InjectRibbon</code> and applies the check in <a href="csrf.html">The request-forgery guard</a>.</li>
+</ul>
+<p>They are added through the HTTP kernel, so they survive another package adding to the same group. Set <code>HELMET_SCOPE=web</code> to keep <code>SecurityHeaders</code> in the <code>web</code> group only; then routes outside <code>web</code> and unmatched 404s do not carry its headers.</p>
+<p>At boot the provider also registers two route macros: <code>Route::cspReport()</code> for the CSP report endpoint (<a href="csp.html">Customizing the CSP</a>) and <code>Route::helmetMetrics()</code> for the metrics endpoint (<a href="metrics.html">Metrics</a>). Both macros are always registered, but each route is added only when the app calls it, so both endpoints stay off by default.</p>
+<h2 id="publish-the-config">Publish the config<a class="docs-heading-link" aria-label="Link to this section" href="#publish-the-config">#</a></h2>
+<pre><code class="language-bash">php artisan vendor:publish --tag=helmet-config
+</code></pre>
+<p>This copies <code>config/helmet.php</code> into your app. Do it: it is the best place to change the CSP, because the policy is a PHP array there, not JSON squeezed into <code>.env</code>. The config file is also the one place HELMET reads the environment (<code>env()</code>, plus <code>HELMET_PRESET</code> through <code>Setting</code>, which also checks Playbook), so <code>php artisan config:cache</code> keeps working.</p>
+<h2 id="trust-the-proxy">Trust the proxy<a class="docs-heading-link" aria-label="Link to this section" href="#trust-the-proxy">#</a></h2>
+<p>HELMET decides on its own whether a request was really HTTPS, from <code>HELMET_PROXIES</code>. Laravel has a separate trusted-proxy setting that drives <code>url()</code>, secure cookies and <code>$request-&gt;isSecure()</code>. The provider follows the same list: when the app has not set <code>trustedproxy.proxies</code> itself, it copies <code>helmet.proxies</code> over, so <code>HELMET_PROXIES</code> drives both. An app that sets <code>trustedproxy.proxies</code> keeps its own value, and an explicit <code>trustProxies(at: ...)</code> call in <code>bootstrap/app.php</code> still wins, because Laravel applies it before the config fallback.</p>
+<p>The provider also narrows which forwarded headers Laravel believes from those proxies: <code>X-Forwarded-For</code> and <code>X-Forwarded-Proto</code>, and nothing else. Laravel's own default also trusts <code>X-Forwarded-Host</code>, <code>X-Forwarded-Prefix</code> and <code>X-Forwarded-Port</code>, and a client can pre-seed any of them on a platform whose proxy does not overwrite them, which poisons <code>url()</code>, redirects and password-reset links. Port is out for the same reason: Citadel's HA-Proxy never sends it at all, so a client-sent value would pass through untouched and change the port Laravel reports and the URLs it generates. If your app needs one of them, choose the set yourself with <code>trustProxies(at: ..., headers: ...)</code> in <code>bootstrap/app.php</code> (or <code>TrustProxies::withHeaders()</code>); HELMET then leaves your choice alone.</p>
+<p>Citadel's HA-Proxy <em>appends</em> <code>X-Forwarded-Proto</code> instead of replacing it, so a client can arrive with two values, <code>https, http</code>. Symfony reads the first value of such a list (the client's), while HELMET reads the last (the one the closest proxy appended). To keep Laravel in agreement, the provider prepends a small middleware to the global chain that rewrites the header to its last value when the request comes from a trusted proxy. A single value is left alone, and requests from untrusted peers are ignored as before.</p>
+<p>As in the <a href="usage-raw-php.html">Raw PHP</a> path, use a <a href="platform-presets.html">preset</a> or list only the address your front proxy connects from, never a whole private range. See <a href="running-off-citadel.html">Running off Citadel</a> for the platform layout.</p>
+<p>The <code>/up</code> health route is Laravel's own: keep <code>health: '/up'</code> in <code>withRouting()</code>. The adapter registers no route.</p>
+<h2 id="environment-variables">Environment variables<a class="docs-heading-link" aria-label="Link to this section" href="#environment-variables">#</a></h2>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Config key</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>HELMET_SCOPE</code></td>
+<td><code>helmet.scope</code></td>
+<td><code>global</code></td>
+<td><code>global</code> puts <code>SecurityHeaders</code> in the kernel's global middleware; <code>web</code> keeps it in the <code>web</code> group only. <code>InjectRibbon</code> always stays in <code>web</code>.</td>
+</tr>
+<tr>
+<td><code>HELMET_PRESET</code></td>
+<td><code>helmet.preset</code></td>
+<td>none</td>
+<td>A platform preset name (<code>citadel</code> or <code>docker</code>) that supplies the trusted proxies. Read from the environment, else from Playbook (see <a href="wsu-values.html">WSU values (Playbook)</a>). <code>HELMET_PROXIES</code> wins when both are set. An unknown name throws, even when <code>HELMET_PROXIES</code> is set.</td>
+</tr>
+<tr>
+<td><code>HELMET_PROXIES</code></td>
+<td><code>helmet.proxies</code></td>
+<td>none</td>
+<td>Comma-separated IPs or CIDR ranges allowed to set <code>X-Forwarded-Proto</code>. Wins over <code>HELMET_PRESET</code>. Also copied to <code>trustedproxy.proxies</code> when the app has not set it. An explicitly empty value (<code>HELMET_PROXIES=</code>) trusts nobody, even when <code>HELMET_PRESET</code> is set; only an unset variable falls back to the preset.</td>
+</tr>
+<tr>
+<td><code>HELMET_CSP</code></td>
+<td><code>helmet.csp</code></td>
+<td>the core default policy</td>
+<td>A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default.</td>
+</tr>
+<tr>
+<td><code>HELMET_HSTS_MAX_AGE</code></td>
+<td><code>helmet.hsts</code></td>
+<td><code>31536000</code></td>
+<td>The HSTS <code>max-age</code> in seconds, sent on HTTPS only. It must not be negative.</td>
+</tr>
+<tr>
+<td><code>HELMET_HSTS_INCLUDE_SUBDOMAINS</code></td>
+<td><code>helmet.hsts_include_subdomains</code></td>
+<td><code>true</code></td>
+<td>Set <code>false</code> to omit the HSTS <code>includeSubDomains</code> directive.</td>
+</tr>
+<tr>
+<td><code>HELMET_HSTS_PRELOAD</code></td>
+<td><code>helmet.hsts_preload</code></td>
+<td><code>false</code></td>
+<td>Set <code>true</code> to append the <code>preload</code> directive to HSTS. Requires <code>max-age</code> of at least one year and <code>includeSubDomains</code>.</td>
+</tr>
+<tr>
+<td><code>HELMET_CSP_TRUSTED_TYPES_ENABLED</code></td>
+<td><code>helmet.csp_trusted_types.enabled</code></td>
+<td><code>false</code></td>
+<td>Set <code>true</code> to append Trusted Types directives to the report-only CSP header.</td>
+</tr>
+<tr>
+<td><code>HELMET_CSP_TRUSTED_TYPES_POLICIES</code></td>
+<td><code>helmet.csp_trusted_types.policies</code></td>
+<td><code>[&quot;default&quot;]</code></td>
+<td>Comma-separated Trusted Types policy names.</td>
+</tr>
+<tr>
+<td><code>HELMET_NO_STORE_ENABLED</code></td>
+<td><code>helmet.no_store.enabled</code></td>
+<td><code>false</code></td>
+<td>Set <code>true</code> to send <code>Cache-Control: no-store</code> on matching responses.</td>
+</tr>
+<tr>
+<td><code>HELMET_NO_STORE_PATHS</code></td>
+<td><code>helmet.no_store.paths</code></td>
+<td>none</td>
+<td>Comma-separated path prefixes that carry no-store. Empty means every response.</td>
+</tr>
+<tr>
+<td><code>HELMET_RIBBON</code></td>
+<td><code>helmet.ribbon</code></td>
+<td><code>true</code></td>
+<td>Set <code>false</code> to switch the ribbon off everywhere.</td>
+</tr>
+<tr>
+<td><code>HELMET_POLICY_PATH</code></td>
+<td><code>helmet.policy_path</code></td>
+<td>none</td>
+<td>Path to a CREED <code>policy.json</code>. When set, the ribbon shows a version warning for the running PHP (and, in Laravel, the framework) version. A missing or invalid file shows no warning and never breaks the page.</td>
+</tr>
+<tr>
+<td><code>HELMET_DEV_ORIGIN</code></td>
+<td><code>helmet.dev_origin</code></td>
+<td>none</td>
+<td>The Vite dev server origin, used in <code>local</code> only when the dev server is running. Must be <code>http</code> or <code>https</code> on <code>localhost</code>, <code>127.0.0.1</code> or <code>[::1]</code>. Overrides the hot file.</td>
+</tr>
+<tr>
+<td><code>HELMET_CSP_REPORT_URI</code></td>
+<td><code>helmet.csp_report_uri</code></td>
+<td>none</td>
+<td>The URL browsers POST CSP violation reports to. Adds <code>report-uri</code> and <code>report-to</code> to the policy and a <code>Reporting-Endpoints</code> header. Must be <code>https</code>.</td>
+</tr>
+<tr>
+<td><code>HELMET_CSP_REPORT_ONLY</code></td>
+<td><code>helmet.csp_report_only</code></td>
+<td><code>false</code></td>
+<td>Set <code>true</code> to send the policy as <code>Content-Security-Policy-Report-Only</code> (observe violations without blocking them).</td>
+</tr>
+<tr>
+<td><code>HELMET_CSRF_ENABLED</code></td>
+<td><code>helmet.csrf.enabled</code></td>
+<td><code>false</code></td>
+<td>Set <code>true</code> to turn on the request-forgery guard for state-changing requests.</td>
+</tr>
+<tr>
+<td><code>HELMET_CSRF_ALLOW_SAME_SITE</code></td>
+<td><code>helmet.csrf.allow_same_site</code></td>
+<td><code>false</code></td>
+<td>Set <code>true</code> to let <code>Sec-Fetch-Site: same-site</code> pass. Off by default because sibling subdomains are still same-site.</td>
+</tr>
+<tr>
+<td><code>HELMET_CSRF_TRUSTED_ORIGINS</code></td>
+<td><code>helmet.csrf.trusted_origins</code></td>
+<td>none</td>
+<td>Comma-separated origins allowed to make state-changing requests when the <code>Origin</code> fallback is used.</td>
+</tr>
+<tr>
+<td><code>HELMET_CSRF_EXCEPT</code></td>
+<td><code>helmet.csrf.except</code></td>
+<td>none</td>
+<td>Comma-separated path patterns that skip the guard: an exact path, a prefix ending in <code>*</code>, or <code>*</code> for every path.</td>
+</tr>
+<tr>
+<td><code>HELMET_WARN_DEBUG</code></td>
+<td><code>helmet.warn_debug</code></td>
+<td><code>true</code></td>
+<td>Set <code>false</code> to stop the one boot-time warning the adapter logs when the app boots with <code>app.debug</code> true in <code>production</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed.</p></aside>
+<h2 id="customizing-the-csp-in-laravel">Customizing the CSP in Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#customizing-the-csp-in-laravel">#</a></h2>
+<p><code>helmet.csp</code> takes the same shape as the raw PHP <code>csp</code> option and follows the same rule: it is merged over the default, per directive. A directive you set replaces the default's, a directive you leave out keeps it, and <code>null</code> removes one. Open the published <code>config/helmet.php</code> and replace the <code>$csp = SecurityHeaders::defaultCspPolicy();</code> line:</p>
+<pre><code class="language-php">$csp = [
+    'img-src' =&gt; [&quot;'self'&quot;, 'data:', 'https://images.example.edu'],
+    'form-action' =&gt; null,
+];
+</code></pre>
+<p>If you would rather use the environment, <code>HELMET_CSP</code> takes the same array as JSON. In a <code>.env</code> file it needs double quotes and escaped inner quotes, which is the reason to publish the config instead:</p>
+<pre><code class="language-ini">HELMET_CSP=&quot;{\&quot;img-src\&quot;:[\&quot;'self'\&quot;,\&quot;data:\&quot;],\&quot;form-action\&quot;:null}&quot;
+</code></pre>
+<p>Invalid JSON is ignored and the default policy stays, so a typo in the environment cannot loosen the CSP. For the merge rule and report-only mode, see <a href="csp.html">Customizing the CSP</a>.</p>
+<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>One gotcha when overriding: the policy adds the per-request nonce to <code>style-src</code> and <code>style-src-elem</code>. A browser ignores <code>'unsafe-inline'</code> once a nonce is present, so setting <code>style-src</code> to <code>[&quot;'unsafe-inline'&quot;]</code> does not restore inline styles; it removes them.</p></aside>
+<h2 id="the-nonce-in-blade">The nonce in Blade<a class="docs-heading-link" aria-label="Link to this section" href="#the-nonce-in-blade">#</a></h2>
+<p>The middleware puts the per-request nonce on the request as the attribute <code>helmet.csp_nonce</code>, the same name the PSR-15 middleware uses. It also hands the nonce to Laravel's Vite helper, so <code>@vite</code> needs nothing: the <code>script</code> and <code>style</code> tags it print already carry the nonce the CSP header sends.</p>
+<p>For an inline script, print the nonce from the Vite helper:</p>
+<pre><code class="language-blade">&lt;script nonce=&quot;{{ Vite::cspNonce() }}&quot;&gt;
+    // allowed by the nonce, and free to load more scripts (strict-dynamic)
+&lt;/script&gt;
+</code></pre>
+<p>In a controller it is <code>$request-&gt;attributes-&gt;get('helmet.csp_nonce')</code>. A new nonce is made for every request. Repetition is a fine Helmet song and a terrible nonce.</p>
+<h2 id="vite-and-inertia">Vite and Inertia<a class="docs-heading-link" aria-label="Link to this section" href="#vite-and-inertia">#</a></h2>
+<p>The middleware hands the per-request nonce to Laravel's Vite helper and injects a <code>csp-nonce</code> meta tag into <code>&lt;head&gt;</code>. <code>@vite</code> needs nothing. The meta tag lets Vite's dev runtime nonce the CSS and preload tags it adds after page load. When the request ends, HELMET resets the Vite nonce to a fresh random one, so a long-lived worker (Octane, Swoole, FrankenPHP) does not carry one request's nonce into the next.</p>
+<p>A few rules keep the CSP honest:</p>
+<ul>
+<li><strong>Nonce every inline script.</strong> The CSP has no <code>'unsafe-inline'</code> for scripts. Every <code>&lt;script&gt;</code> without a <code>src</code> needs <code>nonce=&quot;{{ Vite::cspNonce() }}&quot;</code>.</li>
+<li><strong>No <code>'unsafe-eval'</code>.</strong> The CSP never allows it. If your bundle needs <code>eval</code>, fix the bundle.</li>
+<li><strong>No scripts in Inertia's <code>&lt;Head&gt;</code>.</strong> Inertia's <code>&lt;Head&gt;</code> renders into the document head after the page loads. A <code>&lt;script&gt;</code> there would not carry the nonce, and the browser would block it. Put scripts in your layout, where <code>@vite</code> and the nonce reach them.</li>
+<li><strong>No second nonce-producing package.</strong> If another package calls <code>Vite::useCspNonce()</code> after HELMET, the <code>@vite</code> tags carry a different nonce than the CSP header, and the browser blocks the scripts. The middleware logs a warning when it detects this.</li>
+<li><strong>No shared caching of nonced HTML.</strong> The nonce changes every request. A cached page would carry a stale nonce, and the browser would block its scripts. Do not cache HTML at a layer that shares it across requests.</li>
+<li><strong>Do not replace <code>style-src</code> with <code>'unsafe-inline'</code>.</strong> The policy adds the per-request nonce to <code>style-src</code> and <code>style-src-elem</code>, and a browser ignores <code>'unsafe-inline'</code> once a nonce is present. An override that relies on it loses every inline style silently. Keep the nonce, move the styles into files, or give the inline styles a nonce.</li>
+</ul>
+<p>In raw PHP, print the meta tag in <code>&lt;head&gt;</code> with the nonce <code>helmet_boot()</code> returned:</p>
+<pre><code class="language-php">echo helmet_csp_nonce_meta($helmet['nonce']);
+</code></pre>
+<p>The Vite dev server is allowed in the <code>local</code> environment only, and only when it is running (a hot file exists). The origin comes from <code>HELMET_DEV_ORIGIN</code> when set, otherwise from the hot file. It must be <code>http</code> or <code>https</code> on <code>localhost</code>, <code>127.0.0.1</code> or <code>[::1]</code>, with an optional port. An invalid origin is ignored and a warning is logged. In every other environment the dev server origin is never added.</p>
+<h2 id="the-ribbon">The ribbon<a class="docs-heading-link" aria-label="Link to this section" href="#the-ribbon">#</a></h2>
+<p>In <code>local</code>, <code>development</code>, <code>dev</code>, <code>testing</code>, <code>test</code> and <code>staging</code>, <code>InjectRibbon</code> adds <code>&lt;div class=&quot;helmet-ribbon&quot; data-environment=&quot;staging&quot;&gt;staging&lt;/div&gt;</code> right after the opening <code>&lt;body&gt;</code> tag of an HTML response, so nobody mistakes a test site for the real one. It never appears in <code>production</code>, on JSON or other non-HTML responses, or on HTML with no <code>&lt;body&gt;</code>. The package ships no stylesheet; style <code>.helmet-ribbon</code> in your own CSS. Even with <code>HELMET_RIBBON=true</code>, production never gets it, so there is no Aftertaste.</p>
+<p><strong>Version warnings.</strong> Point <code>HELMET_POLICY_PATH</code> at a CREED <code>policy.json</code> and the ribbon gains a warning line for each component version that is in its security-only phase or end of life. The raw PHP path checks the running PHP version; the Laravel adapter also checks the framework's major version. With no policy path there is no warning and no file read, and a missing, unreadable or invalid file shows no warning and never breaks the page. Style <code>.helmet-ribbon-warning</code> in your own CSS.</p>
+<h2 id="raw-php-and-laravel-agree">Raw PHP and Laravel agree<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php-and-laravel-agree">#</a></h2>
+<p>Both paths call <code>SecurityHeaders::build()</code>, so for the same request and settings they send the same headers. A test pins that down: it compares what the Laravel middleware sends, name and value, with <code>build()</code>. The settings map like this:</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Raw PHP (<code>helmet_boot()</code>)</th>
+<th>Laravel</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trusted proxies</td>
+<td><code>trusted_proxies</code></td>
+<td><code>HELMET_PROXIES</code> / <code>helmet.proxies</code></td>
+</tr>
+<tr>
+<td>CSP overrides</td>
+<td><code>csp</code></td>
+<td><code>HELMET_CSP</code> / <code>helmet.csp</code>, same merge, <code>null</code> removes</td>
+</tr>
+<tr>
+<td>HSTS max-age</td>
+<td><code>hsts_max_age</code></td>
+<td><code>HELMET_HSTS_MAX_AGE</code> / <code>helmet.hsts</code></td>
+</tr>
+<tr>
+<td>HSTS subdomains</td>
+<td><code>hsts_include_subdomains</code></td>
+<td><code>HELMET_HSTS_INCLUDE_SUBDOMAINS</code> / <code>helmet.hsts_include_subdomains</code>, default <code>true</code></td>
+</tr>
+<tr>
+<td>HSTS preload</td>
+<td><code>hsts_preload</code></td>
+<td><code>HELMET_HSTS_PRELOAD</code> / <code>helmet.hsts_preload</code>, default <code>false</code></td>
+</tr>
+<tr>
+<td>Trusted Types</td>
+<td><code>csp_trusted_types</code></td>
+<td><code>HELMET_CSP_TRUSTED_TYPES_*</code> / <code>helmet.csp_trusted_types.*</code>, default off</td>
+</tr>
+<tr>
+<td>no-store</td>
+<td><code>no_store</code></td>
+<td><code>HELMET_NO_STORE_*</code> / <code>helmet.no_store.*</code>, default off</td>
+</tr>
+<tr>
+<td>CSP report URI</td>
+<td><code>csp_report_uri</code></td>
+<td><code>HELMET_CSP_REPORT_URI</code> / <code>helmet.csp_report_uri</code></td>
+</tr>
+<tr>
+<td>CSP report-only</td>
+<td><code>csp_report_only</code></td>
+<td><code>HELMET_CSP_REPORT_ONLY</code> / <code>helmet.csp_report_only</code>, default <code>false</code></td>
+</tr>
+<tr>
+<td>COOP</td>
+<td><code>coop</code></td>
+<td><code>HELMET_COOP</code> / <code>helmet.coop</code>, default <code>same-origin</code>, <code>null</code> sends no header</td>
+</tr>
+<tr>
+<td>CORP</td>
+<td><code>corp</code></td>
+<td><code>HELMET_CORP</code> / <code>helmet.corp</code>, default <code>null</code> (no header)</td>
+</tr>
+<tr>
+<td>Permissions-Policy</td>
+<td><code>permissions_policy</code></td>
+<td><code>HELMET_PERMISSIONS_POLICY</code> / <code>helmet.permissions_policy</code>, default deny list, <code>[]</code> sends no header</td>
+</tr>
+<tr>
+<td>Nonce</td>
+<td><code>$helmet['nonce']</code></td>
+<td><code>request()-&gt;attributes-&gt;get('helmet.csp_nonce')</code></td>
+</tr>
+<tr>
+<td>Health check</td>
+<td><code>health_path</code>, answered by <code>helmet_boot()</code></td>
+<td>Laravel's <code>health: '/up'</code></td>
+</tr>
+<tr>
+<td>Request-forgery guard</td>
+<td><code>csrf</code> option to <code>helmet_boot()</code></td>
+<td><code>helmet.csrf.*</code> / <code>HELMET_CSRF_*</code>; the middleware is registered only when enabled</td>
+</tr>
+<tr>
+<td>Session hardening, JSON logs</td>
+<td>applied by <code>helmet_boot()</code></td>
+<td>not applied by the adapter; Laravel's session and logging config apply</td>
+</tr>
+</tbody>
+</table></div>
+<p>For session hardening in Laravel, use the framework's own session config: set <code>secure</code>, <code>http_only</code>, and <code>same_site</code> in <code>config/session.php</code> rather than expecting the adapter to apply raw-PHP <code>SessionHardening</code>. For structured logs, use Laravel's log channels, for example the <code>stderr</code> channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events (<a rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet#security-events">Security events</a>) are written through the Log facade with the same message and context, and the third, <code>helmet.debug_enabled_in_production</code>, is written by the Laravel adapter at boot. The check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: <code>app.debug</code> must be the boolean <code>true</code>, and the environment must be exactly <code>production</code>. Opt out with <code>helmet.warn_debug</code> (env <code>HELMET_WARN_DEBUG</code>); a logging failure is swallowed and never breaks the boot.</p>
+<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<ul>
+<li><a href="headers.html">The headers</a></li>
+<li><a href="csp.html">Customizing the CSP</a></li>
+<li><a href="hsts.html">Configuring HSTS</a></li>
+<li><a href="csrf.html">The request-forgery guard</a></li>
+<li><a href="platform-presets.html">Platform presets</a></li>
+<li><a href="wsu-values.html">WSU values (Playbook)</a></li>
+<li><a href="running-off-citadel.html">Running off Citadel</a></li>
+<li><a href="metrics.html">Metrics</a></li>
+<li><a href="session.html">The session</a></li>
+<li><a href="../reference/configuration.html">Environment variables</a></li>
+<li><a href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/usage-psr15.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">PSR-15 middleware</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/headers.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">The headers</span></a></nav>
   </div>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#install-the-adapter">Install the adapter</a></li><li class="docs-toc__item"><a href="#publish-the-config">Publish the config</a></li><li class="docs-toc__item"><a href="#trust-the-proxy">Trust the proxy</a></li><li class="docs-toc__item"><a href="#environment-variables">Environment variables</a></li><li class="docs-toc__item"><a href="#customizing-the-csp-in-laravel">Customizing the CSP in Laravel</a></li><li class="docs-toc__item"><a href="#the-nonce-in-blade">The nonce in Blade</a></li><li class="docs-toc__item"><a href="#vite-and-inertia">Vite and Inertia</a></li><li class="docs-toc__item"><a href="#the-ribbon">The ribbon</a></li><li class="docs-toc__item"><a href="#raw-php-and-laravel-agree">Raw PHP and Laravel agree</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

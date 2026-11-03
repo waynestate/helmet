@@ -18,7 +18,7 @@
   <a class="docs-header__brand" href="../../docs/index.html">HELMET</a>
   <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../../index.html">Back to HELMET</a></span>
 </header>
-<div class="docs-layout">
+<div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html" aria-current="page">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
@@ -27,11 +27,152 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="the-headers">The headers<a class="docs-heading-link" aria-label="Link to this section" href="#the-headers">#</a></h1>
-<p>STUB: this page is written in a later batch.</p>
+<p>Every response gets the same set, built by one shared function. This page shows the set, the default Content-Security-Policy exactly as the code defines it, and the rule behind each header. To change the policy itself, see <a href="csp.html">Customizing the CSP</a>.</p>
+<p><img src="../readme/play.svg" alt="A chalkboard play of HELMET's default headers. Seven O's on the line of scrimmage each run a route to one header: Content-Security-Policy (default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self', plus 7 more directives, a fresh nonce and 'strict-dynamic'), X-Content-Type-Options nosniff, X-Frame-Options SAMEORIGIN, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy camera=(), geolocation=(), microphone=(), payment=(), usb=(), Cross-Origin-Opener-Policy same-origin, and Strict-Transport-Security max-age=31536000; includeSubDomains on HTTPS responses only. Cross-Origin-Resource-Policy is on the bench, opt-in. The HELMET mark sits in the pocket." /></p>
+<p>The play is read from <code>src/Headers/SecurityHeaders.php</code>: seven routes, one per default header, drawn in the order HELMET sets them. Cross-Origin-Resource-Policy waits on the bench until you opt in. With reduced motion on, you get the finished play.</p>
+<h2 id="the-set">The set<a class="docs-heading-link" aria-label="Link to this section" href="#the-set">#</a></h2>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Header</th>
+<th>Value</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Content-Security-Policy</code></td>
+<td>the WayneUI default policy, plus a per-request nonce and <code>strict-dynamic</code></td>
+</tr>
+<tr>
+<td><code>X-Content-Type-Options</code></td>
+<td><code>nosniff</code></td>
+</tr>
+<tr>
+<td><code>X-Frame-Options</code></td>
+<td><code>SAMEORIGIN</code></td>
+</tr>
+<tr>
+<td><code>Referrer-Policy</code></td>
+<td><code>strict-origin-when-cross-origin</code></td>
+</tr>
+<tr>
+<td><code>Permissions-Policy</code></td>
+<td><code>camera=(), geolocation=(), microphone=(), payment=(), usb=()</code> by default, configurable</td>
+</tr>
+<tr>
+<td><code>Cross-Origin-Opener-Policy</code></td>
+<td><code>same-origin</code> by default, configurable, <code>null</code> sends no header</td>
+</tr>
+<tr>
+<td><code>Cross-Origin-Resource-Policy</code></td>
+<td>not sent by default, opt-in</td>
+</tr>
+<tr>
+<td><code>Strict-Transport-Security</code></td>
+<td><code>max-age=31536000; includeSubDomains</code> by default, HTTPS only, configurable</td>
+</tr>
+</tbody>
+</table></div>
+<p>The default CSP is the union of the WayneUI recipes, with <code>frame-ancestors 'self'</code>, <code>base-uri 'self'</code>, <code>object-src 'none'</code> and <code>form-action 'self'</code> added so an app can never be framed by a stranger, have its base tag hijacked, load plugins, or post its forms to an attacker. <code>script-src</code> carries a per-request nonce plus <code>strict-dynamic</code>, so a script loaded with the nonce can load other scripts without opening the door to <code>'unsafe-inline'</code>.</p>
+<p>Milquetoast is a Helmet song. It is not a Content-Security-Policy.</p>
+<h2 id="the-default-policy-exactly">The default policy, exactly<a class="docs-heading-link" aria-label="Link to this section" href="#the-default-policy-exactly">#</a></h2>
+<p><code>SecurityHeaders::defaultCspPolicy()</code> returns the full default, directive by directive:</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Directive</th>
+<th>Sources</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>default-src</code></td>
+<td><code>'self'</code></td>
+</tr>
+<tr>
+<td><code>style-src</code></td>
+<td><code>'self'</code>, <code>https://wayneui.apps.wayne.edu</code></td>
+</tr>
+<tr>
+<td><code>style-src-attr</code></td>
+<td><code>'unsafe-inline'</code></td>
+</tr>
+<tr>
+<td><code>style-src-elem</code></td>
+<td><code>'self'</code>, <code>https://wayneui.apps.wayne.edu</code></td>
+</tr>
+<tr>
+<td><code>script-src</code></td>
+<td><code>'self'</code>, <code>https://wayneui.apps.wayne.edu</code></td>
+</tr>
+<tr>
+<td><code>font-src</code></td>
+<td><code>'self'</code>, <code>data:</code>, <code>https://wayneui.apps.wayne.edu</code></td>
+</tr>
+<tr>
+<td><code>img-src</code></td>
+<td><code>'self'</code>, <code>data:</code>, <code>https://wayneui.apps.wayne.edu</code></td>
+</tr>
+<tr>
+<td><code>connect-src</code></td>
+<td><code>'self'</code>, <code>https://wayneui.apps.wayne.edu</code></td>
+</tr>
+<tr>
+<td><code>base-uri</code></td>
+<td><code>'self'</code></td>
+</tr>
+<tr>
+<td><code>object-src</code></td>
+<td><code>'none'</code></td>
+</tr>
+<tr>
+<td><code>form-action</code></td>
+<td><code>'self'</code></td>
+</tr>
+<tr>
+<td><code>frame-ancestors</code></td>
+<td><code>'self'</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Where each piece comes from:</p>
+<ul>
+<li><code>default-src</code>, <code>style-src</code>, <code>style-src-attr</code>, <code>script-src</code>, <code>font-src</code>, <code>img-src</code> and <code>connect-src</code> come from the raw PHP recipe.</li>
+<li><code>style-src-elem</code> comes from the Laravel/Blade recipe. It does not carry <code>'unsafe-inline'</code>; only <code>style-src-attr</code> does, and only for the inline <code>style=&quot;...&quot;</code> attributes the recipes rely on (block spacing). <code>style-src-attr</code> governs only the style attribute, not <code>&lt;style&gt;</code> elements or stylesheets, so this is the narrowest allowance that keeps those recipes working.</li>
+<li><code>frame-ancestors 'self'</code> covers clickjacking at the CSP layer.</li>
+<li><code>base-uri 'self'</code>, <code>object-src 'none'</code> and <code>form-action 'self'</code> close the base-tag, plugin and form-targeting gaps that <code>default-src</code> alone does not cover in every browser.</li>
+<li><code>data:</code> appears on <code>font-src</code> and <code>img-src</code>: Vite and Vue inline small fonts as <code>data:</code> URIs, and the nonce does not cover font sources.</li>
+</ul>
+<h2 id="the-nonce">The nonce<a class="docs-heading-link" aria-label="Link to this section" href="#the-nonce">#</a></h2>
+<p><code>SecurityHeaders::generateNonce()</code> makes a new nonce for every request: 18 random bytes, base64 encoded. When the header is built, the nonce is bound to <code>script-src</code>, and to <code>style-src</code> and <code>style-src-elem</code> when those directives are present in the merged policy. An app may remove a directive with <code>null</code>, so the nonce only goes on the directives that are there. Vite and Vue inject <code>&lt;style&gt;</code> and <code>&lt;link&gt;</code> tags that carry the nonce, which is why the style directives need it too.</p>
+<p><code>strict-dynamic</code> rides along on <code>script-src</code>: it lets a script that was loaded with the nonce load other scripts dynamically, without opening <code>script-src</code> to <code>'unsafe-inline'</code>.</p>
+<h2 id="permissions-policy">Permissions-Policy<a class="docs-heading-link" aria-label="Link to this section" href="#permissions-policy">#</a></h2>
+<p>The default denies the browser features a typical app never uses: <code>camera</code>, <code>geolocation</code>, <code>microphone</code>, <code>payment</code> and <code>usb</code>. An injected script cannot use a feature the page has disabled, so the deny list targets the features most useful to an attacker and least useful to a form-filling app. <code>interest-cohort</code> is not in it: the browser vendors dropped it, so denying it buys nothing.</p>
+<p>The header renders as <code>feature=(allowlist)</code>: an empty list denies the feature, <code>self</code> allows the page's own origin unquoted, and an https origin is quoted. Passing <code>null</code> (the default) uses the deny list above; an empty map sends no <code>Permissions-Policy</code> header at all.</p>
+<h2 id="cross-origin-opener-policy-and-cross-origin-resource-policy">Cross-Origin-Opener-Policy and Cross-Origin-Resource-Policy<a class="docs-heading-link" aria-label="Link to this section" href="#cross-origin-opener-policy-and-cross-origin-resource-policy">#</a></h2>
+<p>COOP puts the page in its own browsing context group, so a cross-origin page cannot reach it through <code>window.opener</code> or the cross-origin Web APIs. The default is <code>same-origin</code>: only same-origin pages may open it. The accepted values are <code>unsafe-none</code>, <code>same-origin-allow-popups</code>, <code>same-origin</code> and <code>noopener-allow-popups</code>; anything else throws. Set COOP to <code>null</code> to send no header.</p>
+<p>CORP declares who may load this page's resources cross-origin. It is the resource-side half of the cross-origin isolation pair with COOP, and its accepted values are <code>same-site</code>, <code>same-origin</code> and <code>cross-origin</code>. CORP is off by default: pass a value to send it. See <a href="cross-origin-isolation.html">Cross-origin isolation and feature policy</a> for the pair working together.</p>
+<h2 id="strict-transport-security">Strict-Transport-Security<a class="docs-heading-link" aria-label="Link to this section" href="#strict-transport-security">#</a></h2>
+<p>The default is <code>max-age=31536000; includeSubDomains</code> (one year, all subdomains), sent on HTTPS responses only. Roll it out in stages: start with a short <code>max-age</code>, raise it once nothing breaks, and keep <code>includeSubDomains</code> only when every subdomain serves HTTPS.</p>
+<p><code>preload</code> is a decision for the domain owner, not for one app, so HELMET never adds it by default. It is opt-in, and it is only appended when the <code>max-age</code> is at least a year and <code>includeSubDomains</code> is on, because a browser refuses a preload HSTS header that does not meet both. A negative <code>max-age</code> throws. The knobs and the staged rollout are on <a href="hsts.html">Configuring HSTS</a>.</p>
+<h2 id="one-shared-function">One shared function<a class="docs-heading-link" aria-label="Link to this section" href="#one-shared-function">#</a></h2>
+<p><code>SecurityHeaders</code> is the single place that defines HELMET's security headers and the default Content-Security-Policy. Both the PSR-15 middleware and the framework-free <code>helmet_boot()</code> path build their headers from this class, so the two consumer paths always agree. That is what lets the <a href="usage-laravel.html">Laravel</a> and <a href="usage-raw-php.html">Raw PHP</a> pages promise identical behavior: they call the same <code>build()</code>.</p>
+<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<ul>
+<li><a href="csp.html">Customizing the CSP</a></li>
+<li><a href="hsts.html">Configuring HSTS</a></li>
+<li><a href="cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li>
+<li><a href="usage-laravel.html">Laravel</a></li>
+<li><a href="usage-raw-php.html">Raw PHP</a></li>
+<li><a href="usage-psr15.html">PSR-15 middleware</a></li>
+<li><a href="../reference/api.html">API</a></li>
+<li><a href="../troubleshooting.html">Troubleshooting</a></li>
+</ul>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/usage-laravel.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Laravel</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/csp.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Customizing the CSP</span></a></nav>
   </div>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#the-set">The set</a></li><li class="docs-toc__item"><a href="#the-default-policy-exactly">The default policy, exactly</a></li><li class="docs-toc__item"><a href="#the-nonce">The nonce</a></li><li class="docs-toc__item"><a href="#permissions-policy">Permissions-Policy</a></li><li class="docs-toc__item"><a href="#cross-origin-opener-policy-and-cross-origin-resource-policy">Cross-Origin-Opener-Policy and Cross-Origin-Resource-Policy</a></li><li class="docs-toc__item"><a href="#strict-transport-security">Strict-Transport-Security</a></li><li class="docs-toc__item"><a href="#one-shared-function">One shared function</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

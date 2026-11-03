@@ -35,12 +35,9 @@ rest (Monolog, the PSR interfaces, csp-builder, the Prometheus client and symfon
 </code></pre>
 <p>The same line works for a raw PHP app, a Laravel app, or a PSR-15 stack: HELMET ships one package for every platform,
 so the adapters come with it, nothing extra to require.</p>
-<blockquote>
-<p>[!NOTE]
-The example everywhere in these docs uses <code>'preset' =&gt; 'citadel'</code>, which trusts the Docker bridge gateway in front
+<aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>The example everywhere in these docs uses <code>'preset' =&gt; 'citadel'</code>, which trusts the Docker bridge gateway in front
 of HA-Proxy. Off the WSU platform, skip the preset and pass your own list of the addresses your front proxy
-connects from.</p>
-</blockquote>
+connects from.</p></aside>
 <h2 id="verify">Verify<a class="docs-heading-link" aria-label="Link to this section" href="#verify">#</a></h2>
 <p>Boot the package as the <a href="guides/quick-start.html">Quick start</a> does, then ask the load balancer's question:</p>
 <pre><code>curl -sI http://localhost/up

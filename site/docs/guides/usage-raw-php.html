@@ -66,10 +66,7 @@ $helmet = helmet_boot([
 <li>sends the security headers (including a per-request CSP nonce),</li>
 <li>sets up a JSON logger (if configured).</li>
 </ul>
-<blockquote>
-<p>[!NOTE]
-A bad config throws at boot: <code>UnknownPresetException</code> if <code>&quot;preset&quot;</code> names a preset the package does not know, <code>\InvalidArgumentException</code> for a wrong type or an invalid value, <code>InvalidCspReportUriException</code> if <code>&quot;csp_report_uri&quot;</code> is not a valid report destination, and <code>\LogicException</code> if a session is already active.</p>
-</blockquote>
+<aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>A bad config throws at boot: <code>UnknownPresetException</code> if <code>&quot;preset&quot;</code> names a preset the package does not know, <code>\InvalidArgumentException</code> for a wrong type or an invalid value, <code>InvalidCspReportUriException</code> if <code>&quot;csp_report_uri&quot;</code> is not a valid report destination, and <code>\LogicException</code> if a session is already active.</p></aside>
 <h2 id="structured-logs">Structured logs<a class="docs-heading-link" aria-label="Link to this section" href="#structured-logs">#</a></h2>
 <p>Each record is one JSON line:</p>
 <pre><code class="language-json">{&quot;message&quot;:&quot;login&quot;,&quot;context&quot;:{&quot;user&quot;:&quot;alice&quot;},&quot;level&quot;:200,&quot;level_name&quot;:&quot;INFO&quot;,&quot;channel&quot;:&quot;app&quot;,&quot;datetime&quot;:&quot;2026-10-29T12:00:00.000000+00:00&quot;,&quot;extra&quot;:{&quot;request_id&quot;:&quot;9f2c1ab04d5e6f70&quot;}}
@@ -107,10 +104,7 @@ A bad config throws at boot: <code>UnknownPresetException</code> if <code>&quot;
 <p>The logger reaches each path this way: <code>helmet_boot()</code> hands its own logger to the guard; PSR-15 users pass a <code>LoggerInterface</code> as the last constructor argument <code>$logger</code> of <code>RequestForgeryGuard</code>; <code>helmet_metrics()</code> passes its configured logger to <code>ClientIp::resolve()</code>.</p>
 <h2 id="trusted-proxies">Trusted proxies<a class="docs-heading-link" aria-label="Link to this section" href="#trusted-proxies">#</a></h2>
 <p>Use a platform preset (for example <code>citadel</code>, which trusts the Docker bridge gateway), or list only the address the front proxy connects from, never a whole private range. A broad range such as <code>10.0.0.0/8</code> also trusts other containers on the same network, and any of them could then set <code>X-Forwarded-Proto</code>. An explicitly empty <code>HELMET_PROXIES</code> means trust nobody, even when a preset is set; only an unset variable falls back to the preset.</p>
-<blockquote>
-<p>[!WARNING]
-The <code>citadel</code> preset trusts the container bridge gateway address, which is only correct while the app's port is not published to the host network, because a published port can make a direct client appear to come from the gateway.</p>
-</blockquote>
+<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>The <code>citadel</code> preset trusts the container bridge gateway address, which is only correct while the app's port is not published to the host network, because a published port can make a direct client appear to come from the gateway.</p></aside>
 <p>The trusted proxies come from, in order of precedence:</p>
 <ul>
 <li><code>trusted_proxies</code>: an explicit list of IPs or CIDR ranges.</li>
@@ -151,10 +145,7 @@ helmet_up();
 <p>Squire's raw template ships this file. The probe only checks that the ball is in the air; it does not grade the play.</p>
 <p><code>helmet_up()</code> sends exactly what <code>helmet_boot()</code> sends for the health path (<code>200</code>, <code>Content-Type: text/plain; charset=utf-8</code>, <code>Cache-Control: no-store</code>, body <code>ok</code>) and exits. No session, no other headers, no config read.</p>
 <h2 id="the-nonce-in-your-markup">The nonce in your markup<a class="docs-heading-link" aria-label="Link to this section" href="#the-nonce-in-your-markup">#</a></h2>
-<blockquote>
-<p>[!TIP]
-Vite's dev runtime reads a <code>&lt;meta property=&quot;csp-nonce&quot; nonce=&quot;...&quot;&gt;</code> tag to nonce the CSS and preload tags it adds after page load. Print <code>helmet_csp_nonce_meta($helmet['nonce'])</code> in the <code>&lt;head&gt;</code> of every page, with the same nonce <code>helmet_boot()</code> returned. The nonce is escaped, so a nonce with a quote cannot break out of the attribute.</p>
-</blockquote>
+<aside class="docs-callout docs-callout--tip" role="note"><p class="docs-callout__label">Tip</p><p>Vite's dev runtime reads a <code>&lt;meta property=&quot;csp-nonce&quot; nonce=&quot;...&quot;&gt;</code> tag to nonce the CSS and preload tags it adds after page load. Print <code>helmet_csp_nonce_meta($helmet['nonce'])</code> in the <code>&lt;head&gt;</code> of every page, with the same nonce <code>helmet_boot()</code> returned. The nonce is escaped, so a nonce with a quote cannot break out of the attribute.</p></aside>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>
 <li><a href="quick-start.html">Quick start</a></li>

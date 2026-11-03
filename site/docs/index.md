@@ -16,15 +16,13 @@ generator: Squire agent-ready
 
 **Put it on before you ship.** Security headers, a hardened session and an honest proxy check, snapped on before the first page is served.
 
-Checks: `composer ci` (the same command runs on GitLab and GitHub). Two mirrors, one command: the only thing in this repo that plays both sides is the CI. Front page: [`site/index.html`](https://helmet.apps.wayne.edu/index.html), the playbook, as static files (`site/README.md`). On Citadel it is served by the raw-PHP deploy layer in `deploy/`: a Squire kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
+HELMET is the Wayne State app stack's baseline runtime: one small framework-free PHP core that sends the security headers, hardens the session, decides whether the request really arrived over HTTPS, answers the load balancer's `/up` ping, and writes structured logs.
 
-HELMET is the Wayne State app stack's baseline runtime. One small framework-free PHP core, `Waynestate\Helmet`, does the five things every app on Citadel needs before it serves a single page: it sends the security headers, hardens the session, decides whether the request really arrived over HTTPS, answers the load balancer's `/up` ping, and writes structured logs.
+## Pick your path[#](https://helmet.apps.wayne.edu/docs/#pick-your-path)
 
-## Where the code lives[#](https://helmet.apps.wayne.edu/docs/#where-the-code-lives)
-
-The canonical repository is on nougat: [enterprise-apps/helmet](https://nougat.snu.gs/enterprise-apps/helmet). git.wayne.edu and GitHub ([waynestate/helmet](https://github.com/waynestate/helmet)) are read-only mirrors of it. Open issues and merge requests on nougat, not on the mirrors. This moves to git.wayne.edu once it has CI runners. Nougat is the head this helmet fits; the mirrors are mannequins.
-
-It is the floor, not the ceiling. An app on raw PHP calls `helmet_boot()` once at the top of its front controller and is done. An app on Laravel or a PSR-15 stack mounts the same core as middleware and gets the identical headers. The rules live in one place, and every consumer path agrees.
+- **New here?** The [Quick start](https://helmet.apps.wayne.edu/docs/guides/quick-start.html) puts a raw PHP app behind the baseline in four steps.
+- **Installing it now?** [Install](https://helmet.apps.wayne.edu/docs/install.html) has the requirements, the Composer line and the verify step.
+- **Looking for a setting or a function?** The Reference group starts with [Environment variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html), every `HELMET_` variable the package reads.
 
 ## Install[#](https://helmet.apps.wayne.edu/docs/#install)
 
@@ -32,37 +30,22 @@ It is the floor, not the ceiling. An app on raw PHP calls `helmet_boot()` once a
 composer require waynestate/helmet
 ```
 
-## Environment variables[#](https://helmet.apps.wayne.edu/docs/#environment-variables)
+Then boot it once at the top of the front controller, before anything is echoed:
 
-Generated from the code: every `HELMET_` variable the package reads, its meaning, its default, and the file that reads it.
+```php
+use function Waynestate\Helmet\helmet_boot;
 
-| Variable | Meaning | Default | Read in |
-| --- | --- | --- | --- |
-| HELMET_COOP | Value of the Cross-Origin-Opener-Policy header; an empty value sends no header. | same-origin | config/helmet.php |
-| HELMET_CORP | Value of the Cross-Origin-Resource-Policy header; unset sends no header. | none | config/helmet.php |
-| HELMET_CSP | JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default. | the core default policy | config/helmet.php |
-| HELMET_CSP_REPORT_ONLY | true sends the policy as Content-Security-Policy-Report-Only, observing violations without blocking them. | false | config/helmet.php |
-| HELMET_CSP_REPORT_URI | URL browsers POST CSP violation reports to; adds report-uri and report-to to the policy plus a Reporting-Endpoints header. Must be https. | none | config/helmet.php |
-| HELMET_CSP_TRUSTED_TYPES_ENABLED | true appends Trusted Types directives to the report-only CSP header. | false | config/helmet.php |
-| HELMET_CSP_TRUSTED_TYPES_POLICIES | Comma-separated Trusted Types policy names; replaces the default list. | \["default"\] | config/helmet.php |
-| HELMET_CSRF_ALLOW_SAME_SITE | true lets Sec-Fetch-Site: same-site pass; off by default because sibling subdomains are still same-site. | false | config/helmet.php |
-| HELMET_CSRF_ENABLED | true turns on the request-forgery guard for state-changing requests. | false | config/helmet.php |
-| HELMET_CSRF_EXCEPT | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in \*, or \* for every path. | none | config/helmet.php |
-| HELMET_CSRF_TRUSTED_ORIGINS | Comma-separated origins allowed to make state-changing requests when the Origin fallback is used. | none | config/helmet.php |
-| HELMET_DEV_ORIGIN | Vite dev server origin, used in local only while the dev server is running; must be http or https on localhost, 127.0.0.1 or \[::1\]. Overrides the hot file. | none | config/helmet.php |
-| HELMET_HSTS_INCLUDE_SUBDOMAINS | false omits the HSTS includeSubDomains directive. | true | config/helmet.php |
-| HELMET_HSTS_MAX_AGE | HSTS max-age in seconds, sent on HTTPS only; must not be negative. | 31536000 | config/helmet.php |
-| HELMET_HSTS_PRELOAD | true appends preload to HSTS; requires a year of max-age and includeSubDomains, and is hard to undo. | false | config/helmet.php |
-| HELMET_METRICS_ALLOW | Comma-separated IPs or CIDR ranges allowed to scrape /metrics without a token. | none | config/helmet.php |
-| HELMET_METRICS_ENABLED | true exposes the /metrics endpoint; with neither a token nor an allow list it returns 404 and logs a warning. | false | config/helmet.php |
-| HELMET_METRICS_TOKEN | Bearer token the scraper sends as Authorization: Bearer ; compared with hash_equals. | none | config/helmet.php |
-| HELMET_NO_STORE_ENABLED | true sends Cache-Control: no-store on matching responses. | false | config/helmet.php |
-| HELMET_NO_STORE_PATHS | Comma-separated path prefixes that carry no-store; empty means every response. | none | config/helmet.php |
-| HELMET_PERMISSIONS_POLICY | JSON feature map for the Permissions-Policy header; the default is a deny list and an empty object sends no header. | the default deny list | config/helmet.php |
-| HELMET_POLICY_PATH | Path to a CREED policy.json; the ribbon then shows a version warning for the running PHP (and, in Laravel, framework) version. A missing or invalid file never breaks the page. | none | config/helmet.php |
-| HELMET_PRESET | Platform preset name (citadel or docker) that supplies the trusted proxies; read from the environment, else from Playbook. HELMET_PROXIES wins when both are set; an unknown name throws. | none | config/helmet.php |
-| HELMET_PROXIES | Comma-separated IPs or CIDR ranges allowed to set X-Forwarded-Proto; wins over HELMET_PRESET and is copied to trustedproxy.proxies when the app has not set it. An explicitly empty value trusts nobody. | none | config/helmet.php |
-| HELMET_RIBBON | false switches the maintenance ribbon off everywhere. | true | config/helmet.php |
-| HELMET_SCOPE | global puts SecurityHeaders in the kernel's global middleware; web keeps it in the web group only. InjectRibbon always stays in web. | global | config/helmet.php |
-| HELMET_SESSION_SECURE | auto sets the Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. Anything else throws. | auto | config/helmet.php |
-| HELMET_WARN_DEBUG | true makes the Laravel adapter log one warning when the app boots with debug enabled in production. | true | config/helmet.php |
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+]);
+```
+
+`helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up` with `200 ok` before your code runs. It returns the nonce, the logger and the request ID so the rest of the app can use them.
+
+Version 0.3.0, MIT licensed.
+
+Agents: the machine-readable map of these docs lives at [https://helmet.apps.wayne.edu/llms.txt](https://helmet.apps.wayne.edu/llms.txt).
+
+Milquetoast is a Helmet song. It is not a Content-Security-Policy.
+
+Every `HELMET_` environment variable the package reads, with its meaning, default and the file that reads it, is in [the configuration reference](https://helmet.apps.wayne.edu/docs/reference/configuration.html).

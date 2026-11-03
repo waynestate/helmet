@@ -24,7 +24,30 @@ Every page below is Markdown. The HTML pages send the same Markdown to a client 
 ## Pages
 
 - [HELMET: Put it on before you ship.](https://helmet.apps.wayne.edu/index.md): HELMET is a small PHP package that sends the security headers and a nonce-based CSP, hardens the session, checks the proxy, answers /up and writes JSON logs. Raw PHP, Laravel and PSR-15 apps all use the same core.
+- [Changelog | HELMET docs](https://helmet.apps.wayne.edu/docs/changelog.md): All notable changes to this project.
+- [Cross-origin isolation and feature policy | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.md): Three more headers round out the baseline: Cross-Origin-Opener-Policy and Permissions-Policy are on by default, Cross-Origin-Resource-Policy is opt-in.
+- [Customizing the CSP | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/csp.md): A csp policy passed to helmet_boot() or the middleware is merged over the default, per directive.
+- [The request-forgery guard | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/csrf.md): SameSite=Lax is a layer, not a wall: the optional request-forgery guard checks state-changing requests before they reach the app.
+- [The headers | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/headers.md): Every response gets the same set of security headers, built by one shared function.
+- [Configuring HSTS | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/hsts.md): The default HSTS is max-age=31536000 with includeSubDomains, sent on HTTPS responses only, and it rolls out in stages.
+- [HTTPS, and why the proxy list matters | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.md): HELMET honors X-Forwarded-Proto only when the connection came from a trusted proxy, so a spoofed header is ignored and no HSTS goes out for a request that was not really secure.
+- [Strongly recommended: a git.wayne.edu instance runner | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/instance-runner.md): git.wayne.edu has no runners today, so CI for this repo runs on the test GitLab instance, and every product in the stack strongly recommends a git.wayne.edu instance runner.
+- [Metrics | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/metrics.md): HELMET can expose a Prometheus metrics endpoint, off by default and gated by a bearer token or an IP allow list.
+- [Platform presets | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/platform-presets.md): A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app.
+- [Quick start | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/quick-start.md): A raw PHP app behind the HELMET baseline in four steps: require, boot, verify, nonce.
+- [Running off Citadel | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.md): HELMET ships one package for every platform, so running off Citadel means changing configuration, not code.
+- [The session | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/session.md): SessionHardening::apply() sets the session ini values, including a __Host- prefixed cookie name on HTTPS, before the session starts.
+- [Laravel | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.md): The Laravel adapter is a service provider, two always-on middlewares, an optional request-forgery guard, and a config file.
+- [PSR-15 middleware | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.md): The same core, mounted in a middleware pipeline, sends the identical headers.
+- [Raw PHP | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.md): An app on raw PHP calls helmet_boot() once at the top of its front controller, before anything is echoed, and is done.
+- [WSU values (Playbook) | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/wsu-values.md): The Laravel config reads HELMET_PRESET from the environment first and from the private waynestate/playbook package (Playbook) second, when the environment has no value.
 - [Overview | HELMET docs](https://helmet.apps.wayne.edu/docs/index.md): HELMET is the Wayne State app stack's baseline runtime: security headers, a hardened session, an honest proxy check, /up and structured logs.
+- [Install | HELMET docs](https://helmet.apps.wayne.edu/docs/install.md): Add waynestate/helmet with Composer, then verify the headers are on the wire.
+- [API | HELMET docs](https://helmet.apps.wayne.edu/docs/reference/api.md): The public entry points of the core, from helmet_boot() to helmet_metrics(), plus the middleware and guard around them.
+- [Environment variables | HELMET docs](https://helmet.apps.wayne.edu/docs/reference/configuration.md): Every HELMET_ environment variable the package reads, its meaning, its default, and the file that reads it.
+- [Proof | HELMET docs](https://helmet.apps.wayne.edu/docs/reference/proof.md): Proof runs against real Wayne State applications are on a private site, proof.apps.wayne.edu/helmet, behind a Wayne State employee sign-in.
+- [Troubleshooting | HELMET docs](https://helmet.apps.wayne.edu/docs/troubleshooting.md): What to look at when a header is missing, a proxy is not trusted, or the guard refuses a request that should pass.
+- [Upgrading | HELMET docs](https://helmet.apps.wayne.edu/docs/upgrading.md): How to move an app from one HELMET release to the next.
 
 ## Prompts
 

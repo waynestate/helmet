@@ -240,10 +240,7 @@ HELMET_CSP_REPORT_URI=https://app.apps.wayne.edu/csp-report
 HELMET_METRICS_ENABLED=true
 HELMET_METRICS_TOKEN=change-me
 </code></pre>
-<blockquote>
-<p>[!WARNING]
-<code>HELMET_METRICS_TOKEN</code> is a secret. Set a different value per environment and never commit it; the scraper sends it as <code>Authorization: Bearer &lt;token&gt;</code> and the package compares it with <code>hash_equals</code>.</p>
-</blockquote>
+<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p><code>HELMET_METRICS_TOKEN</code> is a secret. Set a different value per environment and never commit it; the scraper sends it as <code>Authorization: Bearer &lt;token&gt;</code> and the package compares it with <code>hash_equals</code>.</p></aside>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>
 <li><a href="api.html">API</a></li>
