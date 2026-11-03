@@ -6,6 +6,7 @@ namespace Waynestate\Helmet;
 
 use Psr\Log\LoggerInterface;
 use Waynestate\Helmet\Csrf\RequestForgeryGuard;
+use Waynestate\Helmet\Error\GenericErrorResponse;
 use Waynestate\Helmet\Headers\SecurityHeaders;
 use Waynestate\Helmet\Logging\Logging;
 use Waynestate\Helmet\Metrics\BearerToken;
@@ -61,7 +62,8 @@ if (!function_exists('helmet_boot')) {
        *     hsts_preload?: bool,
        *     no_store?: array{enabled?: bool, paths?: list<string>},
        *     csrf?: array{enabled?: bool, allow_same_site?: bool, trusted_origins?: list<string>, except?: list<string>},
-        *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency', request_id?: string}
+        *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency', request_id?: string},
+        *     error_handler?: array{enabled?: bool}
         * } $config
       *
       * @return array{nonce: string, logger: LoggerInterface|null, request_id: string}
@@ -72,7 +74,8 @@ if (!function_exists('helmet_boot')) {
       *         "session" is the wrong type, "csrf" is the wrong type, or
       *         "coop", "corp", "permissions_policy", "csp_trusted_types",
       *         "no_store", "session.secure" or a "csrf" value is invalid, or
-      *         "log.request_id" is not a string.
+      *         "log.request_id" is not a string, or "error_handler" is the
+      *         wrong type.
      * @throws \Waynestate\Helmet\Headers\InvalidCspReportUriException If
      *         "csp_report_uri" is not a valid report destination.
      * @throws \LogicException If a session is already active.
@@ -140,6 +143,34 @@ if (!function_exists('helmet_boot')) {
             );
             if ($suppliedRequestId !== null && Logging::isValidRequestId($suppliedRequestId)) {
                 $requestId = $suppliedRequestId;
+            }
+        }
+
+        $errorHandler = $config['error_handler'] ?? null;
+        if ($errorHandler !== null) {
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
+            if (!is_array($errorHandler)) {
+                throw new \InvalidArgumentException('helmet_boot() "error_handler" must be an array.');
+            }
+            $errorHandlerEnabled = $errorHandler['enabled'] ?? false;
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says bool, but a caller may pass a non-bool at runtime)
+            if (!is_bool($errorHandlerEnabled)) {
+                throw new \InvalidArgumentException('helmet_boot() "error_handler.enabled" must be a bool.');
+            }
+            if ($errorHandlerEnabled === true) {
+                // The full detail goes to the log; the user gets a neutral page.
+                set_exception_handler(static function (\Throwable $e) use ($logger): never {
+                    $response = (new GenericErrorResponse())->build($e, $logger);
+
+                    if (!headers_sent()) {
+                        http_response_code($response['status']);
+                        foreach ($response['headers'] as $name => $value) {
+                            header($name . ': ' . $value, true);
+                        }
+                    }
+                    echo $response['body'];
+                    exit(1);
+                });
             }
         }
 
