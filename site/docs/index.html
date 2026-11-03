@@ -21,9 +21,9 @@
 <div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
-    <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li><a href="../docs/index.html" aria-current="page">Overview</a></li></ul></nav>
+    <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../docs/index.html" aria-current="page">Overview</a></li><li><a href="../docs/install.html">Install</a></li><li><a href="../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../docs/guides/headers.html">The headers</a></li><li><a href="../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../docs/guides/session.html">The session</a></li><li><a href="../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../docs/guides/metrics.html">Metrics</a></li><li><a href="../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../docs/reference/configuration.html">Environment variables</a></li><li><a href="../docs/reference/api.html">API</a></li><li><a href="../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../docs/upgrading.html">Upgrading</a></li><li><a href="../docs/changelog.html">Changelog</a></li></ul></nav>
   </details>
-  <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li><a href="../docs/index.html" aria-current="page">Overview</a></li></ul></nav>
+  <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../docs/index.html" aria-current="page">Overview</a></li><li><a href="../docs/install.html">Install</a></li><li><a href="../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../docs/guides/headers.html">The headers</a></li><li><a href="../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../docs/guides/session.html">The session</a></li><li><a href="../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../docs/guides/metrics.html">Metrics</a></li><li><a href="../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../docs/reference/configuration.html">Environment variables</a></li><li><a href="../docs/reference/api.html">API</a></li><li><a href="../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../docs/upgrading.html">Upgrading</a></li><li><a href="../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><div align="center">
@@ -40,26 +40,31 @@
 </p>
 <p><strong>Put it on before you ship.</strong> Security headers, a hardened session and an honest proxy check, snapped on before
 the first page is served.</p>
-<p>Checks: <code>composer ci</code> (the same command runs on GitLab and GitHub).
-Two mirrors, one command: the only thing in this repo that plays both sides is the CI.
-Front page: <a href="../index.html"><code>site/index.html</code></a>, the playbook, as static files (<code>site/README.md</code>).
-On Citadel it is served by the raw-PHP deploy layer in <code>deploy/</code>: a Squire kit whose front controller serves <code>site/</code> behind HELMET's security headers. For local development, keep serving <code>site/</code> directly.</p>
-<p>HELMET is the Wayne State app stack's baseline runtime. One small
-framework-free PHP core, <code>Waynestate\Helmet</code>, does the five things every app on
-Citadel needs before it serves a single page: it sends the security headers,
-hardens the session, decides whether the request really arrived over HTTPS,
-answers the load balancer's <code>/up</code> ping, and writes structured logs.</p>
-<h2 id="where-the-code-lives">Where the code lives<a class="docs-heading-link" aria-label="Link to this section" href="#where-the-code-lives">#</a></h2>
-<p>The canonical repository is on nougat: <a rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">enterprise-apps/helmet</a>. git.wayne.edu and GitHub (<a rel="noopener" href="https://github.com/waynestate/helmet">waynestate/helmet</a>) are read-only mirrors of it.
-Open issues and merge requests on nougat, not on the mirrors.
-This moves to git.wayne.edu once it has CI runners. Nougat is the head this helmet fits; the mirrors are mannequins.</p>
-<p>It is the floor, not the ceiling. An app on raw PHP calls <code>helmet_boot()</code> once
-at the top of its front controller and is done. An app on Laravel or a PSR-15
-stack mounts the same core as middleware and gets the identical headers. The
-rules live in one place, and every consumer path agrees.</p>
+<p>HELMET is the Wayne State app stack's baseline runtime: one small framework-free PHP core that sends the security
+headers, hardens the session, decides whether the request really arrived over HTTPS, answers the load balancer's
+<code>/up</code> ping, and writes structured logs.</p>
+<h2 id="pick-your-path">Pick your path<a class="docs-heading-link" aria-label="Link to this section" href="#pick-your-path">#</a></h2>
+<ul>
+<li><strong>New here?</strong> The <a href="guides/quick-start.html">Quick start</a> puts a raw PHP app behind the baseline in four steps.</li>
+<li><strong>Installing it now?</strong> <a href="install.html">Install</a> has the requirements, the Composer line and the verify step.</li>
+<li><strong>Looking for a setting or a function?</strong> The Reference group starts with <a href="reference/configuration.html">Environment variables</a>,
+every <code>HELMET_</code> variable the package reads.</li>
+</ul>
 <h2 id="install">Install<a class="docs-heading-link" aria-label="Link to this section" href="#install">#</a></h2>
 <pre><code>composer require waynestate/helmet
 </code></pre>
+<p>Then boot it once at the top of the front controller, before anything is echoed:</p>
+<pre><code class="language-php">use function Waynestate\Helmet\helmet_boot;
+
+$helmet = helmet_boot([
+    'preset' =&gt; 'citadel',
+]);
+</code></pre>
+<p><code>helmet_boot()</code> sends the headers, strips <code>X-Powered-By</code>, and answers <code>/up</code> with <code>200 ok</code> before your code runs.
+It returns the nonce, the logger and the request ID so the rest of the app can use them.</p>
+<p>Version 0.3.0, MIT licensed.</p>
+<p>Agents: the machine-readable map of these docs lives at <a rel="noopener" href="https://helmet.apps.wayne.edu/llms.txt">https://helmet.apps.wayne.edu/llms.txt</a>.</p>
+<p>Milquetoast is a Helmet song. It is not a Content-Security-Policy.</p>
 <h2 id="environment-variables">Environment variables<a class="docs-heading-link" aria-label="Link to this section" href="#environment-variables">#</a></h2>
 <p>Generated from the code: every <code>HELMET_</code> variable the package reads, its meaning, its default, and the file that reads it.</p>
 <!-- generated:env -->
@@ -246,9 +251,9 @@ rules live in one place, and every consumer path agrees.</p>
 <!-- /generated -->
 </article>
     </main>
-    <nav class="docs-pager" aria-label="Pages"></nav>
+    <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link docs-pager__link--next" href="../docs/install.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Install</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#where-the-code-lives">Where the code lives</a></li><li class="docs-toc__item"><a href="#install">Install</a></li><li class="docs-toc__item"><a href="#environment-variables">Environment variables</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#pick-your-path">Pick your path</a></li><li class="docs-toc__item"><a href="#install">Install</a></li><li class="docs-toc__item"><a href="#environment-variables">Environment variables</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

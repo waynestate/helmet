@@ -1,21 +1,128 @@
 {
-    "title": "HELMET",
-    "tagline": "Put it on before you ship.",
-    "items": [
+  "title": "HELMET",
+  "tagline": "Put it on before you ship.",
+  "items": [
+    {
+      "title": "Getting Started",
+      "items": [
         {
-            "title": "Overview",
-            "path": "index"
-        }
-    ],
-    "source": "https://nougat.snu.gs/enterprise-apps/helmet",
-    "mirrors": [
-        {
-            "title": "git.wayne.edu",
-            "url": "https://git.wayne.edu/enterprise-apps/helmet"
+          "title": "Overview",
+          "path": "index"
         },
         {
-            "title": "GitHub",
-            "url": "https://github.com/waynestate/helmet"
+          "title": "Install",
+          "path": "install"
+        },
+        {
+          "title": "Quick start",
+          "path": "guides/quick-start"
         }
-    ]
+      ]
+    },
+    {
+      "title": "Guides",
+      "items": [
+        {
+          "title": "Platform presets",
+          "path": "guides/platform-presets"
+        },
+        {
+          "title": "WSU values (Playbook)",
+          "path": "guides/wsu-values"
+        },
+        {
+          "title": "Running off Citadel",
+          "path": "guides/running-off-citadel"
+        },
+        {
+          "title": "Raw PHP",
+          "path": "guides/usage-raw-php"
+        },
+        {
+          "title": "PSR-15 middleware",
+          "path": "guides/usage-psr15"
+        },
+        {
+          "title": "Laravel",
+          "path": "guides/usage-laravel"
+        },
+        {
+          "title": "The headers",
+          "path": "guides/headers"
+        },
+        {
+          "title": "Customizing the CSP",
+          "path": "guides/csp"
+        },
+        {
+          "title": "Configuring HSTS",
+          "path": "guides/hsts"
+        },
+        {
+          "title": "Cross-origin isolation and feature policy",
+          "path": "guides/cross-origin-isolation"
+        },
+        {
+          "title": "HTTPS, and why the proxy list matters",
+          "path": "guides/https-and-proxies"
+        },
+        {
+          "title": "The session",
+          "path": "guides/session"
+        },
+        {
+          "title": "The request-forgery guard",
+          "path": "guides/csrf"
+        },
+        {
+          "title": "Metrics",
+          "path": "guides/metrics"
+        },
+        {
+          "title": "Strongly recommended: a git.wayne.edu instance runner",
+          "path": "guides/instance-runner"
+        }
+      ]
+    },
+    {
+      "title": "Reference",
+      "items": [
+        {
+          "title": "Environment variables",
+          "path": "reference/configuration"
+        },
+        {
+          "title": "API",
+          "path": "reference/api"
+        },
+        {
+          "title": "Proof",
+          "path": "reference/proof"
+        }
+      ]
+    },
+    {
+      "title": "Troubleshooting",
+      "path": "troubleshooting"
+    },
+    {
+      "title": "Upgrading",
+      "path": "upgrading"
+    },
+    {
+      "title": "Changelog",
+      "path": "changelog"
+    }
+  ],
+  "source": "https://nougat.snu.gs/enterprise-apps/helmet",
+  "mirrors": [
+    {
+      "title": "git.wayne.edu",
+      "url": "https://git.wayne.edu/enterprise-apps/helmet"
+    },
+    {
+      "title": "GitHub",
+      "url": "https://github.com/waynestate/helmet"
+    }
+  ]
 }

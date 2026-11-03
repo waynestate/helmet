@@ -22,33 +22,41 @@ description: HELMET is the Wayne State app stack's baseline runtime: security he
 **Put it on before you ship.** Security headers, a hardened session and an honest proxy check, snapped on before
 the first page is served.
 
-Checks: `composer ci` (the same command runs on GitLab and GitHub).
-Two mirrors, one command: the only thing in this repo that plays both sides is the CI.
-Front page: [`site/index.html`](../index.html), the playbook, as static files (`site/README.md`).
-On Citadel it is served by the raw-PHP deploy layer in `deploy/`: a Squire kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
+HELMET is the Wayne State app stack's baseline runtime: one small framework-free PHP core that sends the security
+headers, hardens the session, decides whether the request really arrived over HTTPS, answers the load balancer's
+`/up` ping, and writes structured logs.
 
-HELMET is the Wayne State app stack's baseline runtime. One small
-framework-free PHP core, `Waynestate\Helmet`, does the five things every app on
-Citadel needs before it serves a single page: it sends the security headers,
-hardens the session, decides whether the request really arrived over HTTPS,
-answers the load balancer's `/up` ping, and writes structured logs.
+## Pick your path
 
-## Where the code lives
-
-The canonical repository is on nougat: [enterprise-apps/helmet](https://nougat.snu.gs/enterprise-apps/helmet). git.wayne.edu and GitHub ([waynestate/helmet](https://github.com/waynestate/helmet)) are read-only mirrors of it.
-Open issues and merge requests on nougat, not on the mirrors.
-This moves to git.wayne.edu once it has CI runners. Nougat is the head this helmet fits; the mirrors are mannequins.
-
-It is the floor, not the ceiling. An app on raw PHP calls `helmet_boot()` once
-at the top of its front controller and is done. An app on Laravel or a PSR-15
-stack mounts the same core as middleware and gets the identical headers. The
-rules live in one place, and every consumer path agrees.
+- **New here?** The [Quick start](guides/quick-start.md) puts a raw PHP app behind the baseline in four steps.
+- **Installing it now?** [Install](install.md) has the requirements, the Composer line and the verify step.
+- **Looking for a setting or a function?** The Reference group starts with [Environment variables](reference/configuration.md),
+  every `HELMET_` variable the package reads.
 
 ## Install
 
 ```
 composer require waynestate/helmet
 ```
+
+Then boot it once at the top of the front controller, before anything is echoed:
+
+```php
+use function Waynestate\Helmet\helmet_boot;
+
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+]);
+```
+
+`helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up` with `200 ok` before your code runs.
+It returns the nonce, the logger and the request ID so the rest of the app can use them.
+
+Version 0.3.0, MIT licensed.
+
+Agents: the machine-readable map of these docs lives at [https://helmet.apps.wayne.edu/llms.txt](https://helmet.apps.wayne.edu/llms.txt).
+
+Milquetoast is a Helmet song. It is not a Content-Security-Policy.
 
 ## Environment variables
 
