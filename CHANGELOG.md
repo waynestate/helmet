@@ -4,7 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
-- Added: the docs site. `bin/docs-site.php` (Squire's shared builder) turns `docs/` into `site/docs/`: the Overview page carries the README opening and a generated table of every `HELMET_` environment variable the package reads. `composer docs` rebuilds it, `composer docs:check` gates it in CI, and the front page links it.
+- Added: the docs site. `bin/docs-site.php` (Squire's shared builder) turns `docs/` into `site/docs/`: the Overview page carries the README opening and a generated table of every `HELMET_` environment variable the package reads. `composer docs` rebuilds it, `composer ci` checks it through `composer docs:check`, and the front page links it.
 - Docs: BEST_PRACTICES H53 is `Documented` (SESAME owns the logout headers, `Clear-Site-Data` without `"cookies"`) and H41 is `Partly enforced` (three events are logged, authentication failures belong to SESAME).
 - Docs: README section "Debug output stays off in production" names the two settings that decide whether a visitor sees a trace (PHP `display_errors`, Laravel `APP_DEBUG`), points at Squire's deploy `php.ini`, and documents the `helmet.warn_debug` opt-out; BEST_PRACTICES H43 is now `Documented`.
 - Changed: the front-page deploy layer pins HELMET ^0.3, PROCTOR ^0.4 and CREED ^0.1 (lock: HELMET 0.3.0, PROCTOR 0.4.0, CREED 0.1.6).
