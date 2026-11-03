@@ -204,7 +204,7 @@ Each record is one JSON line:
 {"message":"login","context":{"user":"alice"},"level":200,"level_name":"INFO","channel":"app","datetime":"2026-10-29T12:00:00.000000+00:00","extra":{"request_id":"9f2c1ab04d5e6f70"}}
 ```
 
-#### Security events
+**Security events.**
 
 Two warnings carry HELMET's security events, and a logger that throws never
 changes the answer: the `403` still goes out, and the resolved client IP is
