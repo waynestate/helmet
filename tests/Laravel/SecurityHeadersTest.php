@@ -413,6 +413,99 @@ final class SecurityHeadersTest extends TestCase
     }
 
     /**
+     * A nonce that outlives its request is a nonce an attacker may have
+     * seen. After a handled request, the Vite nonce is a fresh random one,
+     * not the nonce the CSP header carried.
+     */
+    public function testTheViteNonceIsNotLeftBehindAfterARequest(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        $response = $this->get('/test');
+        $nonceInHeader = $this->nonceFromCsp((string) $response->headers->get('Content-Security-Policy'));
+
+        self::assertNotNull($nonceInHeader, 'The CSP header should contain a nonce.');
+
+        $leftBehind = Vite::cspNonce();
+        self::assertIsString($leftBehind, 'The reset Vite nonce should be a string.');
+        self::assertNotSame('', $leftBehind, 'The reset Vite nonce should be a non-empty string.');
+        self::assertNotSame($nonceInHeader, $leftBehind, 'The request nonce must not survive the request.');
+    }
+
+    /**
+     * An exception from the inner handler propagates unchanged, and the
+     * Vite nonce is still reset on the way out, so a failed request leaves
+     * no stale nonce behind either.
+     */
+    public function testTheViteNonceIsResetWhenTheInnerHandlerThrows(): void
+    {
+        $capturedNonce = null;
+        $exception = null;
+
+        try {
+            (new LaravelSecurityHeaders())->handle(Request::create('/', 'GET'), static function () use (&$capturedNonce): never {
+                // Capture the nonce HELMET set for this request.
+                $capturedNonce = Vite::cspNonce();
+                throw new \RuntimeException('boom');
+            });
+            self::fail('The exception from the inner handler should propagate.');
+        } catch (\Throwable $e) {
+            $exception = $e;
+        }
+
+        self::assertInstanceOf(\RuntimeException::class, $exception, 'The exception from the inner handler should propagate unchanged.');
+        self::assertSame('boom', $exception->getMessage());
+
+        self::assertIsString($capturedNonce, 'The handler should see the nonce HELMET set for the request.');
+        self::assertNotSame('', $capturedNonce, 'The captured nonce should be non-empty.');
+
+        $leftBehind = Vite::cspNonce();
+        self::assertIsString($leftBehind, 'The reset Vite nonce should be a string.');
+        self::assertNotSame('', $leftBehind, 'The reset Vite nonce should be a non-empty string.');
+        self::assertNotSame($capturedNonce, $leftBehind, 'The request nonce must not survive a failed request.');
+    }
+
+    /**
+     * Two requests in a row carry different nonces in their CSP headers,
+     * and the @vite tags each handler renders carry the nonce of that
+     * request's header, not the other request's.
+     */
+    public function testEachRequestGetsItsOwnViteNonce(): void
+    {
+        // A hot file makes @vite print dev-server tags without a build manifest.
+        $hotFile = sys_get_temp_dir() . '/helmet-vite-hot-' . bin2hex(random_bytes(4));
+        file_put_contents($hotFile, 'http://localhost:5173');
+        Vite::useHotFile($hotFile);
+
+        try {
+            $this->app['router']->get('/vite', static fn() => response(
+                Blade::render(
+                    "@vite(['resources/js/app.js'])",
+                ),
+                200,
+                ['Content-Type' => 'text/html'],
+            ))->middleware('web');
+
+            $first = $this->get('/vite');
+            $second = $this->get('/vite');
+        } finally {
+            unlink($hotFile);
+        }
+
+        $firstNonce = $this->nonceFromCsp((string) $first->headers->get('Content-Security-Policy'));
+        $secondNonce = $this->nonceFromCsp((string) $second->headers->get('Content-Security-Policy'));
+
+        self::assertNotNull($firstNonce, 'The first CSP header should contain a nonce.');
+        self::assertNotNull($secondNonce, 'The second CSP header should contain a nonce.');
+        self::assertNotSame($firstNonce, $secondNonce, 'The two requests should carry different nonces.');
+
+        // The @vite nonce rendered inside each handler equals that request's
+        // header nonce.
+        self::assertStringContainsString('src="http://localhost:5173/resources/js/app.js" nonce="' . $firstNonce . '"', (string) $first->getContent());
+        self::assertStringContainsString('src="http://localhost:5173/resources/js/app.js" nonce="' . $secondNonce . '"', (string) $second->getContent());
+    }
+
+    /**
      * In the local environment with a hot file, the Vite dev server origin
      * is added to the CSP so the dev server's scripts, styles, fonts,
      * images and HMR websocket are allowed.

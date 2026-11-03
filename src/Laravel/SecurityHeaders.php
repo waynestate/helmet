@@ -44,7 +44,11 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * longer needs to call Vite::useCspNonce() itself. If a second package or the
  * app changes the Vite nonce after HELMET set it, the middleware logs a
  * warning, because the @vite tags would then carry a different nonce than the
- * CSP header and the browser would block the scripts.
+ * CSP header and the browser would block the scripts. When the request ends,
+ * however it ends, the middleware resets the Vite nonce to a fresh random
+ * one, because a nonce that outlives its request is a nonce an attacker may
+ * have seen, and in a long-lived worker (Octane, Swoole, FrankenPHP) the Vite
+ * singleton would otherwise carry it into the next request.
  *
  * It also injects a <meta property="csp-nonce" nonce="..."> tag into HTML
  * responses, right after the opening <head> tag. Vite's dev runtime reads
@@ -128,40 +132,50 @@ final class SecurityHeaders
         // Vite::useCspNonce() itself.
         Vite::useCspNonce($nonce);
 
-        $response = $next($request);
-
-        // Catch a second package or the app that changed the Vite nonce after
-        // HELMET set it. The @vite tags would then carry a different nonce
-        // than the CSP header, so the browser would block the scripts.
-        if (Vite::cspNonce() !== $nonce) {
-            Log::warning('HELMET set the CSP nonce via Vite::useCspNonce(), but a different nonce is now active. A second package or the app changed it; the @vite tags may not match the CSP header.');
-        }
-
-        foreach ($headers as $name => $value) {
-            $response->headers->set($name, $value);
-        }
-
-        // In Laravel the framework sets a default Cache-Control (no-cache,
-        // private), so no-store must override it rather than skip when the
-        // header is already present.
-        if (CoreSecurityHeaders::noStoreApplies($noStoreEnabled, $request->getPathInfo(), $noStorePaths)) {
-            $response->headers->remove('Cache-Control');
-            $response->headers->set('Cache-Control', 'no-store');
-        }
-
-        // A nonce page differs per request, so a shared cache must not store
-        // it. Make any shareable Cache-Control directives private.
-        $this->makeSharedCacheDirectivesPrivate($response);
-
-        $response->headers->remove('X-Powered-By');
-
         try {
-            $this->maybeInjectCspNonceMeta($response, $nonce);
-        } catch (Throwable) {
-            // A meta tag error must not break the page.
-        }
+            $response = $next($request);
 
-        return $response;
+            // Catch a second package or the app that changed the Vite nonce
+            // after HELMET set it. The @vite tags would then carry a
+            // different nonce than the CSP header, so the browser would
+            // block the scripts.
+            if (Vite::cspNonce() !== $nonce) {
+                Log::warning('HELMET set the CSP nonce via Vite::useCspNonce(), but a different nonce is now active. A second package or the app changed it; the @vite tags may not match the CSP header.');
+            }
+
+            foreach ($headers as $name => $value) {
+                $response->headers->set($name, $value);
+            }
+
+            // In Laravel the framework sets a default Cache-Control (no-cache,
+            // private), so no-store must override it rather than skip when the
+            // header is already present.
+            if (CoreSecurityHeaders::noStoreApplies($noStoreEnabled, $request->getPathInfo(), $noStorePaths)) {
+                $response->headers->remove('Cache-Control');
+                $response->headers->set('Cache-Control', 'no-store');
+            }
+
+            // A nonce page differs per request, so a shared cache must not
+            // store it. Make any shareable Cache-Control directives private.
+            $this->makeSharedCacheDirectivesPrivate($response);
+
+            $response->headers->remove('X-Powered-By');
+
+            try {
+                $this->maybeInjectCspNonceMeta($response, $nonce);
+            } catch (Throwable) {
+                // A meta tag error must not break the page.
+            }
+
+            return $response;
+        } finally {
+            // A nonce that outlives its request is a nonce an attacker may
+            // have seen. In a long-lived worker (Octane, Swoole, FrankenPHP)
+            // the Vite singleton survives the request, so hand it a fresh
+            // random nonce on the way out. useCspNonce() with no argument
+            // generates one; it cannot be cleared to null.
+            Vite::useCspNonce();
+        }
     }
 
     /**
