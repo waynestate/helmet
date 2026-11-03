@@ -49,8 +49,7 @@ final class GenericErrorResponseTest extends TestCase
 
     public function testTheLoggerReceivesOneErrorRecordWithMessageAndClass(): void
     {
-        $logger = new class extends AbstractLogger
-        {
+        $logger = new class extends AbstractLogger {
             /** @var list<array{level: string, message: string, context: array<mixed>}> */
             public array $records = [];
 
@@ -76,8 +75,7 @@ final class GenericErrorResponseTest extends TestCase
 
     public function testAThrowingLoggerDoesNotChangeTheResult(): void
     {
-        $throwing = new class extends AbstractLogger
-        {
+        $throwing = new class extends AbstractLogger {
             public function log($level, string|\Stringable $message, array $context = []): void
             {
                 throw new \RuntimeException('log disk on fire');

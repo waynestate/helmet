@@ -244,6 +244,27 @@ gateway.
 with `200 ok` before your code runs. It returns the nonce, the logger and
 the request ID so the rest of the app can use them.
 
+##### A generic error page
+
+A raw PHP app has no framework to catch an uncaught exception, so PHP may print
+the message, the file path and a stack trace to the visitor. Turn on the
+opt-in handler and the visitor gets a short, fixed "Something went wrong"
+page with status 500 and `Cache-Control: no-store`, while the full detail
+(class, message, file, line and trace) goes to the log at `error` level:
+
+```php
+helmet_boot([
+    'error_handler' => ['enabled' => true],
+]);
+```
+
+The page never contains anything from the exception, and a logger that
+throws cannot change it. It is off by default, and Laravel keeps its own
+exception handler. If you want to build the page yourself, call
+`(new \Waynestate\Helmet\Error\GenericErrorResponse())->build($exception, $logger)`
+for the status, headers and body as data. HELMET does not switch PHP's
+`display_errors` off for you; the platform setting does that.
+
 ##### Health check without a front controller
 
 A raw PHP app with no front controller (or an Apache setup with no rewrite)
