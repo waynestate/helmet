@@ -8,6 +8,7 @@ use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Http\Kernel as FoundationKernel;
 use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use ReflectionProperty;
 
@@ -134,5 +135,47 @@ final class HelmetServiceProvider extends ServiceProvider
                 $kernel->appendMiddlewareToGroup('web', RequestForgeryGuard::class);
             }
         });
+
+        // H43: keep debug output off in production. A production app that
+        // boots with app.debug true is a misconfiguration, so say so once
+        // through the Log facade. The check runs at boot, not per request:
+        // the value is fixed for the life of the process, and a long-lived
+        // worker must not log it on every request.
+        $this->warnIfDebugInProduction();
+    }
+
+    /**
+     * Write one warning when the app boots with app.debug true in the
+     * production environment (H43: keep debug output off in production).
+     *
+     * Both sides are checked strictly: app.debug must be the boolean true
+     * (a string such as "false" does not trigger the warning), and the
+     * environment must be exactly "production", so staging or local never
+     * log it. The context carries only the event name: no values, no
+     * config, no paths. Opt out with helmet.warn_debug (env
+     * HELMET_WARN_DEBUG). A logging failure is swallowed: it must never
+     * break the boot.
+     */
+    private function warnIfDebugInProduction(): void
+    {
+        if ((bool) config('helmet.warn_debug') !== true) {
+            return;
+        }
+
+        if (config('app.debug') !== true) {
+            return;
+        }
+
+        if (!$this->app->environment('production')) {
+            return;
+        }
+
+        try {
+            Log::warning('helmet.debug_enabled_in_production', [
+                'event' => 'debug_enabled_in_production',
+            ]);
+        } catch (\Throwable) {
+            // A logging failure must never break the boot.
+        }
     }
 }

@@ -179,9 +179,14 @@ use Waynestate\Helmet\Support\Setting;
 |               origin must be http or https on localhost, 127.0.0.1 or
 |               [::1], with an optional port. An invalid origin is ignored
 |               and a warning is logged. Set with the HELMET_DEV_ORIGIN env
-|               var. null when not set.
-|
-| "metrics"     The /metrics endpoint, in the Prometheus text exposition
+ |               var. null when not set.
+ |
+ | "warn_debug"  Whether the Laravel adapter writes the
+ |               helmet.debug_enabled_in_production warning when the app
+ |               boots with app.debug true in the production environment.
+ |               On by default. Set with the HELMET_WARN_DEBUG env var.
+ |
+ | "metrics"     The /metrics endpoint, in the Prometheus text exposition
 |               format. Off by default. When enabled, a request is served
 |               only if it presents the bearer token or comes from an
 |               allowed client IP; anything else is 403, and an
@@ -353,6 +358,10 @@ if (is_string($metricsAllow) && $metricsAllow !== '') {
 $policyPath = env('HELMET_POLICY_PATH');
 $policyPath = is_string($policyPath) && $policyPath !== '' ? $policyPath : null;
 
+// The debug-in-production warning: on by default. A deploy that boots with
+// APP_DEBUG=true in production should show up in the logs.
+$warnDebug = (bool) env('HELMET_WARN_DEBUG', true);
+
 // The request-forgery guard: off by default. When on, it rejects
 // state-changing requests that are not same-origin (or from a trusted
 // origin).
@@ -429,6 +438,7 @@ return [
     'ribbon' => (bool) env('HELMET_RIBBON', true),
     'policy_path' => $policyPath,
     'dev_origin' => env('HELMET_DEV_ORIGIN'),
+    'warn_debug' => $warnDebug,
     'metrics' => [
         'enabled' => $metricsEnabled,
         'token' => $metricsToken,
