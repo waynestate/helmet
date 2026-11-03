@@ -4,6 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Added: two structured security events, `helmet.request_refused` (warning, logged when the request-forgery guard answers 403, with `event`, `method`, `path`, `sec_fetch_site` and `origin_present` in the context) and `helmet.forwarded_for_rejected` (warning, logged by `ClientIp::resolve()` when it fails closed on an unparseable `X-Forwarded-For` entry, with `event`, `reason` and `peer` in the context); the Origin value, cookies, Authorization, the header and the bad entry are never logged, and a failing logger never changes the 403 or the resolved IP.
 - Security: `ClientIp` fails closed on an unparseable `X-Forwarded-For` entry (for example `203.0.113.5:443`): it returns the peer instead of walking on to an earlier, client-chosen entry, so a malformed header can no longer steer the resolved client IP.
 - Security: IPv4-mapped IPv6 addresses (`::ffff:a.b.c.d`) are unmapped before matching trusted proxies, for both the peer and the forwarded entries, so a dual-stack proxy still matches its IPv4 entry instead of slipping past the trust check.
 - Security: `X-Forwarded-Proto` now follows one rule everywhere, the last non-empty value in `HttpsDetector` and the Laravel normalizer, and the normalizer decides trust with the list Laravel itself uses (`trustedproxy.proxies` when set, else `helmet.proxies`, with `*` and `**` trusting every peer as in Symfony), so HELMET and the framework can no longer disagree about which value to read or from whom to accept it.

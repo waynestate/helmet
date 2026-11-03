@@ -204,6 +204,26 @@ Each record is one JSON line:
 {"message":"login","context":{"user":"alice"},"level":200,"level_name":"INFO","channel":"app","datetime":"2026-10-29T12:00:00.000000+00:00","extra":{"request_id":"9f2c1ab04d5e6f70"}}
 ```
 
+**Security events.**
+
+Two warnings carry HELMET's security events, and a logger that throws never
+changes the answer: the `403` still goes out, and the resolved client IP is
+still the peer.
+
+| Message | When | Context keys |
+| --- | --- | --- |
+| `helmet.request_refused` | the request-forgery guard answers `403` | `event` (`request_refused`), `method` (upper case), `path` (no query string), `sec_fetch_site` (`same-origin`, `same-site`, `cross-site`, `none`, `other`, or null when the header is absent), `origin_present` (bool) |
+| `helmet.forwarded_for_rejected` | `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry | `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`), `peer` (the trusted peer address) |
+
+Never logged: the Origin value, cookies, Authorization, the `X-Forwarded-For`
+header, or the bad entry. The helmet takes the hit and reports it, without
+quoting the attacker.
+
+The logger reaches each path this way: `helmet_boot()` hands its own logger to
+the guard; PSR-15 users pass a `LoggerInterface` as the last constructor
+argument `$logger` of `RequestForgeryGuard`; `helmet_metrics()` passes its
+configured logger to `ClientIp::resolve()`.
+
 Use a platform preset (for example `citadel`, which trusts the Docker bridge
 gateway), or list only the address the front proxy connects from, never a
 whole private range. A broad range such as `10.0.0.0/8` also trusts other
@@ -523,7 +543,7 @@ like this:
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
-For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger.
+For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. The two security events ([Security events](#security-events)) are written through the Log facade with the same message and context.
 
 ## The headers
 

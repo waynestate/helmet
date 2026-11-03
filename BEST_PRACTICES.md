@@ -328,7 +328,7 @@ HELMET is at 0.2.6. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Log authentication and authorization failures, session failures, validation failures and trust-decision surprises, in proportion to risk.
 - **Why:** These are the events an investigation starts from.
 - **Sources:** [OWASP Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
-- **Stack:** `Not yet`. `helmet_boot()` returns a logger but logs nothing itself. For example, it does not record a rejected forwarded header or a skipped session hardening.
+- **Stack:** `Not yet`. Partly done. HELMET now logs two security events: `helmet.request_refused` when the request-forgery guard answers 403, and `helmet.forwarded_for_rejected` when `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry. Still not logged: a skipped session hardening, and authentication failures, which belong to the app and to SESAME.
 
 ---
 
