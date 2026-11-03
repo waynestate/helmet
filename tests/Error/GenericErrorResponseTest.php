@@ -99,4 +99,79 @@ final class GenericErrorResponseTest extends TestCase
         self::assertSame(500, $response['status']);
         self::assertStringContainsString('Something went wrong.', $response['body']);
     }
+
+    public function testClientErrorReturnsTheFixedPageForEachKnownStatus(): void
+    {
+        $builder = new GenericErrorResponse();
+        $expected = [
+            400 => ['Bad request.', 'That request could not be understood.'],
+            401 => ['Sign in required.', 'Sign in to see this page.'],
+            403 => ['Forbidden.', 'You do not have access to this page.'],
+            404 => ['Not found.', 'That page does not exist.'],
+            405 => ['Method not allowed.', 'That page does not accept this kind of request.'],
+            410 => ['Gone.', 'That page is no longer here.'],
+            429 => ['Too many requests.', 'Try again in a moment.'],
+        ];
+
+        $bodies = [];
+
+        foreach ($expected as $status => [$title, $paragraph]) {
+            $response = $builder->clientError($status);
+
+            self::assertSame($status, $response['status']);
+            self::assertSame(
+                [
+                    'Content-Type' => 'text/html; charset=utf-8',
+                    'Cache-Control' => 'no-store',
+                ],
+                $response['headers'],
+            );
+            self::assertStringContainsString('<title>' . $title . '</title>', $response['body']);
+            self::assertStringContainsString('<p>' . $paragraph . '</p>', $response['body']);
+            $bodies[] = $response['body'];
+        }
+
+        self::assertCount(7, array_unique($bodies));
+    }
+
+    public function testClientErrorUsesTheBadRequestTextForAnUnlistedStatus(): void
+    {
+        $response = (new GenericErrorResponse())->clientError(418);
+
+        self::assertSame(418, $response['status']);
+        self::assertStringContainsString('Bad request.', $response['body']);
+    }
+
+    public function testClientErrorRejectsAStatusOutsideTheFourHundreds(): void
+    {
+        $builder = new GenericErrorResponse();
+
+        foreach ([200, 399, 500, 0, 600] as $status) {
+            try {
+                $builder->clientError($status);
+                self::fail('clientError() accepted a status outside the 400s');
+            } catch (\InvalidArgumentException $e) {
+                self::assertSame('clientError() takes a 4xx status.', $e->getMessage());
+                self::assertStringNotContainsString((string) $status, $e->getMessage());
+            }
+        }
+    }
+
+    public function testClientErrorBodiesAreStaticAndEscapeFree(): void
+    {
+        $builder = new GenericErrorResponse();
+
+        self::assertSame(
+            $builder->clientError(404)['body'],
+            $builder->clientError(404)['body'],
+        );
+
+        foreach ([400, 401, 403, 404, 405, 410, 418, 429] as $status) {
+            $body = $builder->clientError($status)['body'];
+
+            self::assertStringNotContainsString('<script', $body);
+            self::assertStringNotContainsString('$', $body);
+            self::assertStringNotContainsString('{', $body);
+        }
+    }
 }
