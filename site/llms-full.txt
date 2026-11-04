@@ -323,6 +323,36 @@ helmet_up();
 Squire's raw template ships this file. The probe only checks that the ball
 is in the air; it does not grade the play.
 
+##### Readiness is a separate check
+
+`/up` is liveness: "the process is running". Keep it free of dependency checks. If `/up` fails because the database is
+down, the platform restarts a healthy app and makes the outage worse. Put dependency checks on a different path, for
+example `/ready`, and point the load balancer's "send me traffic" probe at that one, not the restart probe.
+
+```php
+<?php // public/ready.php
+declare(strict_types=1);
+
+header('Content-Type: text/plain; charset=utf-8');
+header('Cache-Control: no-store');
+
+try {
+    $pdo = new PDO(getenv('DB_DSN'), getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [
+        PDO::ATTR_TIMEOUT => 2,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    ]);
+    $pdo->query('SELECT 1');
+    echo 'ready';
+} catch (Throwable) {
+    http_response_code(503);
+    echo 'not ready';
+}
+```
+
+Keep the same rules as `/up`: a short body, `no-store`, and no detail about which dependency failed (log that, do not
+print it). Give the check a short timeout so a hung database cannot hang the probe. In Laravel, register a separate
+`/ready` route that runs the checks; do not put them in the `DiagnosingHealth` listener, because that event fires for
+`/up` and would turn the liveness probe into a readiness probe.
 #### PSR-15 middleware
 
 The same core, mounted in a middleware pipeline:
@@ -440,6 +470,8 @@ is left alone, and requests from untrusted peers are ignored as before.
 
 As in the raw PHP section, use a preset or list only the address your front
 proxy connects from, never a whole private range.
+
+Keep `/up` for liveness only; readiness checks (database, cache) belong on a separate `/ready` route (see [Readiness is a separate check](#readiness-is-a-separate-check)).
 
 The `/up` health route is Laravel's own: keep `health: '/up'` in
 `withRouting()`. The adapter registers no route.
@@ -1401,6 +1433,7 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Docs: README and the raw PHP guide gain "Readiness is a separate check": `/up` stays liveness-only, dependency checks go on a separate `/ready` path with a short timeout and a fixed 503 body, and Laravel apps keep them out of the `DiagnosingHealth` listener; BEST_PRACTICES H34 is `Documented`.
 - Added: the docs site. `bin/docs-site.php` (Squire's shared builder) turns `docs/` into `site/docs/`: the Overview page carries the README opening and a generated table of every `HELMET_` environment variable the package reads. `composer docs` rebuilds it, `composer ci` checks it through `composer docs:check`, and the front page links it.
 - Docs: BEST_PRACTICES H53 is `Documented` (SESAME owns the logout headers, `Clear-Site-Data` without `"cookies"`) and H41 is `Partly enforced` (three events are logged, authentication failures belong to SESAME).
 - Docs: README section "Debug output stays off in production" names the two settings that decide whether a visitor sees a trace (PHP `display_errors`, Laravel `APP_DEBUG`), points at Squire's deploy `php.ini`, and documents the `helmet.warn_debug` opt-out; BEST_PRACTICES H43 is now `Documented`.
@@ -2300,7 +2333,7 @@ Citadel's HA-Proxy *appends* `X-Forwarded-Proto` instead of replacing it, so a c
 
 As in the [Raw PHP](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html) path, use a [preset](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html) or list only the address your front proxy connects from, never a whole private range. See [Running off Citadel](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.html) for the platform layout.
 
-The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`. The adapter registers no route.
+The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`. The adapter registers no route. Keep `/up` for liveness only: readiness checks (database, cache) belong on a separate `/ready` route, as described in [Readiness is a separate check](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#readiness-is-a-separate-check); do not put them in the `DiagnosingHealth` listener, which fires for `/up`.
 
 ### Environment variables[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#environment-variables)
 
@@ -2661,6 +2694,32 @@ helmet_up();
 Squire's raw template ships this file. The probe only checks that the ball is in the air; it does not grade the play.
 
 `helmet_up()` sends exactly what `helmet_boot()` sends for the health path (`200`, `Content-Type: text/plain; charset=utf-8`, `Cache-Control: no-store`, body `ok`) and exits. No session, no other headers, no config read.
+
+### Readiness is a separate check[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#readiness-is-a-separate-check)
+
+`/up` is liveness: "the process is running". Keep it free of dependency checks. If `/up` fails because the database is down, the platform restarts a healthy app and makes the outage worse. Put dependency checks on a different path, for example `/ready`, and point the load balancer's "send me traffic" probe at that one, not the restart probe.
+
+```php
+<?php // public/ready.php
+declare(strict_types=1);
+
+header('Content-Type: text/plain; charset=utf-8');
+header('Cache-Control: no-store');
+
+try {
+    $pdo = new PDO(getenv('DB_DSN'), getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [
+        PDO::ATTR_TIMEOUT => 2,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    ]);
+    $pdo->query('SELECT 1');
+    echo 'ready';
+} catch (Throwable) {
+    http_response_code(503);
+    echo 'not ready';
+}
+```
+
+Keep the same rules as `/up`: a short body, `no-store`, and no detail about which dependency failed (log that, do not print it). Give the check a short timeout so a hung database cannot hang the probe. In Laravel, register a separate `/ready` route that runs the checks; do not put them in the `DiagnosingHealth` listener, because that event fires for `/up` and would turn the liveness probe into a readiness probe.
 
 ### The nonce in your markup[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#the-nonce-in-your-markup)
 

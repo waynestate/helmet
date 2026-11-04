@@ -31,6 +31,9 @@
 <h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
 <ul>
 <li>
+<p>Docs: README and the raw PHP guide gain &quot;Readiness is a separate check&quot;: <code>/up</code> stays liveness-only, dependency checks go on a separate <code>/ready</code> path with a short timeout and a fixed 503 body, and Laravel apps keep them out of the <code>DiagnosingHealth</code> listener; BEST_PRACTICES H34 is <code>Documented</code>.</p>
+</li>
+<li>
 <p>Added: the docs site. <code>bin/docs-site.php</code> (Squire's shared builder) turns <code>docs/</code> into <code>site/docs/</code>: the Overview page carries the README opening and a generated table of every <code>HELMET_</code> environment variable the package reads. <code>composer docs</code> rebuilds it, <code>composer ci</code> checks it through <code>composer docs:check</code>, and the front page links it.</p>
 </li>
 <li>

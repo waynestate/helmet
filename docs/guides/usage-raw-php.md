@@ -140,6 +140,31 @@ Squire's raw template ships this file. The probe only checks that the ball is in
 
 `helmet_up()` sends exactly what `helmet_boot()` sends for the health path (`200`, `Content-Type: text/plain; charset=utf-8`, `Cache-Control: no-store`, body `ok`) and exits. No session, no other headers, no config read.
 
+## Readiness is a separate check
+
+`/up` is liveness: "the process is running". Keep it free of dependency checks. If `/up` fails because the database is down, the platform restarts a healthy app and makes the outage worse. Put dependency checks on a different path, for example `/ready`, and point the load balancer's "send me traffic" probe at that one, not the restart probe.
+
+```php
+<?php // public/ready.php
+declare(strict_types=1);
+
+header('Content-Type: text/plain; charset=utf-8');
+header('Cache-Control: no-store');
+
+try {
+    $pdo = new PDO(getenv('DB_DSN'), getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [
+        PDO::ATTR_TIMEOUT => 2,
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    ]);
+    $pdo->query('SELECT 1');
+    echo 'ready';
+} catch (Throwable) {
+    http_response_code(503);
+    echo 'not ready';
+}
+```
+
+Keep the same rules as `/up`: a short body, `no-store`, and no detail about which dependency failed (log that, do not print it). Give the check a short timeout so a hung database cannot hang the probe. In Laravel, register a separate `/ready` route that runs the checks; do not put them in the `DiagnosingHealth` listener, because that event fires for `/up` and would turn the liveness probe into a readiness probe.
 ## The nonce in your markup
 
 > [!TIP]

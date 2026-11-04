@@ -282,7 +282,7 @@ HELMET is at 0.3.0. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Put dependency checks, such as the database or a cache, on a different endpoint from the liveness check.
 - **Why:** A failed dependency should take an app out of rotation, not kill it.
 - **Sources:** [Kubernetes probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/), [Laravel deployment](https://laravel.com/docs/12.x/deployment)
-- **Stack:** `Not yet`. HELMET has only the liveness endpoint. Laravel's `DiagnosingHealth` event is the hook for readiness work in the Laravel adapter.
+- **Stack:** `Documented`. HELMET ships only the liveness endpoint (`/up`, `helmet_up()`) and keeps it free of dependency checks on purpose. The README section "Readiness is a separate check" shows a separate `/ready` path for dependency checks (a short timeout, a 503 with a fixed body, `no-store`, no detail) and warns against Laravel's `DiagnosingHealth` event for this, because that event fires for `/up`. No code or test enforces it; the pattern is the app's to wire.
 
 ### H35. Keep the response tiny, uncached and free of detail
 - **Practice:** Return a short body, `Cache-Control: no-store`, and no version or configuration detail.

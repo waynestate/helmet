@@ -43,7 +43,7 @@ Citadel's HA-Proxy *appends* `X-Forwarded-Proto` instead of replacing it, so a c
 
 As in the [Raw PHP](usage-raw-php.md) path, use a [preset](platform-presets.md) or list only the address your front proxy connects from, never a whole private range. See [Running off Citadel](running-off-citadel.md) for the platform layout.
 
-The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`. The adapter registers no route.
+The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`. The adapter registers no route. Keep `/up` for liveness only: readiness checks (database, cache) belong on a separate `/ready` route, as described in [Readiness is a separate check](usage-raw-php.md#readiness-is-a-separate-check); do not put them in the `DiagnosingHealth` listener, which fires for `/up`.
 
 ## Environment variables
 
