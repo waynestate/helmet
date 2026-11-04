@@ -974,6 +974,8 @@ The response carries a `helmet_info` gauge with the PHP and HELMET versions,
 and a `helmet_php_version_status` gauge when a `PolicySource` is available.
 No personal data in labels; labels stay low-cardinality.
 
+A Grafana dashboard for these metrics ships in [`docs/grafana/helmet.json`](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/docs/grafana/helmet.json), ready to import as soon as a Prometheus server exists.
+
 The endpoint is the only place in HELMET that says "I am still here" without
 saying "here is your page". A lullaby, in a way.
 
@@ -1434,6 +1436,7 @@ All notable changes to this project are documented in this file.
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
 - Docs: README and the raw PHP guide gain "Readiness is a separate check": `/up` stays liveness-only, dependency checks go on a separate `/ready` path with a short timeout and a fixed 503 body, and Laravel apps keep them out of the `DiagnosingHealth` listener; BEST_PRACTICES H34 is `Documented`.
+- Added: a Grafana dashboard for the HELMET metrics (`docs/grafana/helmet.json`, uid `helmet-fleet`) with panels for apps reporting, HELMET and PHP versions in use, PHP support status, apps by instance, and scrape health; it imports into any Grafana through a `DS_PROMETHEUS` datasource input, and `tests/Support/GrafanaDashboardTest.php` pins its shape. The metrics guide gains a "Graph it in Grafana" section with a sample `scrape_configs` stanza. `docs/` was never export-ignored, so the dashboard already ships in the dist archive.
 - Added: the docs site. `bin/docs-site.php` (Squire's shared builder) turns `docs/` into `site/docs/`: the Overview page carries the README opening and a generated table of every `HELMET_` environment variable the package reads. `composer docs` rebuilds it, `composer ci` checks it through `composer docs:check`, and the front page links it.
 - Docs: BEST_PRACTICES H53 is `Documented` (SESAME owns the logout headers, `Clear-Site-Data` without `"cookies"`) and H41 is `Partly enforced` (three events are logged, authentication failures belong to SESAME).
 - Docs: README section "Debug output stays off in production" names the two settings that decide whether a visitor sees a trace (PHP `display_errors`, Laravel `APP_DEBUG`), points at Squire's deploy `php.ini`, and documents the `helmet.warn_debug` opt-out; BEST_PRACTICES H43 is now `Documented`.
@@ -2068,6 +2071,26 @@ echo $result['body'];
 The response carries a `helmet_info` gauge with the PHP and HELMET versions, and a `helmet_php_version_status` gauge when a `PolicySource` is available. No personal data in labels; labels stay low-cardinality.
 
 The endpoint is the only place in HELMET that says "I am still here" without saying "here is your page". A lullaby, in a way.
+
+### Graph it in Grafana[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#graph-it-in-grafana)
+
+The fleet dashboard for these metrics ships in [`docs/grafana/helmet.json`](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/docs/grafana/helmet.json): in Grafana, open Dashboards, New, Import, paste the file, and pick your Prometheus data source for the `DS_PROMETHEUS` input. It shows how many apps report, which HELMET and PHP versions they run, the PHP support status of each app, every reporting instance, and whether Prometheus can reach them.
+
+A sample scrape config for a Prometheus server, with a bearer token file and example targets:
+
+```yaml
+scrape_configs:
+  - job_name: helmet
+    metrics_path: /metrics
+    authorization:
+      credentials_file: /etc/prometheus/secrets/helmet-token
+    static_configs:
+      - targets:
+          - app-one.example.test:80
+          - app-two.example.test:80
+```
+
+WSU has no Prometheus server yet (decision D-024), so the dashboard is ready, not live: it graphs as soon as a server exists and scrapes `/metrics`.
 
 ### Related[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#related)
 

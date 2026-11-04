@@ -77,6 +77,20 @@ echo $result['body'];
 <h2 id="what-the-response-carries">What the response carries<a class="docs-heading-link" aria-label="Link to this section" href="#what-the-response-carries">#</a></h2>
 <p>The response carries a <code>helmet_info</code> gauge with the PHP and HELMET versions, and a <code>helmet_php_version_status</code> gauge when a <code>PolicySource</code> is available. No personal data in labels; labels stay low-cardinality.</p>
 <p>The endpoint is the only place in HELMET that says &quot;I am still here&quot; without saying &quot;here is your page&quot;. A lullaby, in a way.</p>
+<h2 id="graph-it-in-grafana">Graph it in Grafana<a class="docs-heading-link" aria-label="Link to this section" href="#graph-it-in-grafana">#</a></h2>
+<p>The fleet dashboard for these metrics ships in <a rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/docs/grafana/helmet.json"><code>docs/grafana/helmet.json</code></a>: in Grafana, open Dashboards, New, Import, paste the file, and pick your Prometheus data source for the <code>DS_PROMETHEUS</code> input. It shows how many apps report, which HELMET and PHP versions they run, the PHP support status of each app, every reporting instance, and whether Prometheus can reach them.</p>
+<p>A sample scrape config for a Prometheus server, with a bearer token file and example targets:</p>
+<pre><code class="language-yaml">scrape_configs:
+  - job_name: helmet
+    metrics_path: /metrics
+    authorization:
+      credentials_file: /etc/prometheus/secrets/helmet-token
+    static_configs:
+      - targets:
+          - app-one.example.test:80
+          - app-two.example.test:80
+</code></pre>
+<p>WSU has no Prometheus server yet (decision D-024), so the dashboard is ready, not live: it graphs as soon as a server exists and scrapes <code>/metrics</code>.</p>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>
 <li><a href="session.html">The session</a></li>
@@ -86,7 +100,7 @@ echo $result['body'];
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/csrf.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">The request-forgery guard</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/instance-runner.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Strongly recommended: a git.wayne.edu instance runner</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#the-goal">The goal</a></li><li class="docs-toc__item"><a href="#enable-it">Enable it</a></li><li class="docs-toc__item"><a href="#laravel">Laravel</a></li><li class="docs-toc__item"><a href="#raw-php">Raw PHP</a></li><li class="docs-toc__item"><a href="#what-the-response-carries">What the response carries</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#the-goal">The goal</a></li><li class="docs-toc__item"><a href="#enable-it">Enable it</a></li><li class="docs-toc__item"><a href="#laravel">Laravel</a></li><li class="docs-toc__item"><a href="#raw-php">Raw PHP</a></li><li class="docs-toc__item"><a href="#what-the-response-carries">What the response carries</a></li><li class="docs-toc__item"><a href="#graph-it-in-grafana">Graph it in Grafana</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>
