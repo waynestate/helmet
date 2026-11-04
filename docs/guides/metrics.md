@@ -61,6 +61,26 @@ The response carries a `helmet_info` gauge with the PHP and HELMET versions, and
 
 The endpoint is the only place in HELMET that says "I am still here" without saying "here is your page". A lullaby, in a way.
 
+## Graph it in Grafana
+
+The fleet dashboard for these metrics ships in [`docs/grafana/helmet.json`](../grafana/helmet.json): in Grafana, open Dashboards, New, Import, paste the file, and pick your Prometheus data source for the `DS_PROMETHEUS` input. It shows how many apps report, which HELMET and PHP versions they run, the PHP support status of each app, every reporting instance, and whether Prometheus can reach them.
+
+A sample scrape config for a Prometheus server, with a bearer token file and example targets:
+
+```yaml
+scrape_configs:
+  - job_name: helmet
+    metrics_path: /metrics
+    authorization:
+      credentials_file: /etc/prometheus/secrets/helmet-token
+    static_configs:
+      - targets:
+          - app-one.example.test:80
+          - app-two.example.test:80
+```
+
+WSU has no Prometheus server yet (decision D-024), so the dashboard is ready, not live: it graphs as soon as a server exists and scrapes `/metrics`.
+
 ## Related
 
 - [The session](session.md)

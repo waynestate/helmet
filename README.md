@@ -956,6 +956,8 @@ The response carries a `helmet_info` gauge with the PHP and HELMET versions,
 and a `helmet_php_version_status` gauge when a `PolicySource` is available.
 No personal data in labels; labels stay low-cardinality.
 
+A Grafana dashboard for these metrics ships in [`docs/grafana/helmet.json`](docs/grafana/helmet.json), ready to import as soon as a Prometheus server exists.
+
 The endpoint is the only place in HELMET that says "I am still here" without
 saying "here is your page". A lullaby, in a way.
 
