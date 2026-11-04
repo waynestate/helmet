@@ -19,6 +19,7 @@ File `src/functions.php`, namespace `Waynestate\Helmet`:
 | `helmet_forbidden_response()` | `function helmet_forbidden_response(): array` |
 | `helmet_forbidden()` | `function helmet_forbidden(): never` |
 | `helmet_csp_nonce_meta()` | `function helmet_csp_nonce_meta(string $nonce): string` |
+| `helmet_csp_nonce_swap()` | `function helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'HELMET_CSP_NONCE_PLACEHOLDER'): string` |
 | `helmet_metrics()` | `function helmet_metrics(array $config): array` |
 
 What each one returns, from the docblocks:
@@ -26,6 +27,7 @@ What each one returns, from the docblocks:
 - `helmet_boot()` boots the core for raw PHP: it validates the config and returns `array{nonce: string, logger: LoggerInterface|null, request_id: string}`. It throws `UnknownPresetException` for an unknown preset, `\InvalidArgumentException` for a bad config value, `InvalidCspReportUriException` for a bad report URI, and `\LogicException` if a session is already active.
 - `helmet_up_response()` and `helmet_forbidden_response()` return the answer as data, `array{status: int, headers: array<string, string>, body: string}`, without sending anything; the caller sends it. `helmet_up()` and `helmet_forbidden()` send the same answers (200, body "ok", and 403, body "Forbidden") and exit, so a small public file can answer a probe that never reaches `helmet_boot()`.
 - `helmet_csp_nonce_meta()` builds the `<meta property="csp-nonce">` tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in `<head>` of every page, with the same nonce `helmet_boot()` returned; the nonce is escaped so a quote cannot break out of the attribute.
+- `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder (default `HELMET_CSP_NONCE_PLACEHOLDER`, the value a built Vue/Vite page carries where Vite's `html.cspNonce` stood) with the nonce, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws `\InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged.
 - `helmet_metrics()` builds the `/metrics` answer as data, `array{status: int, content_type: string, body: string}`. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning.
 
 File `src/Ribbon/functions.php`, namespace `Waynestate\Helmet\Ribbon`:
