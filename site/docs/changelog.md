@@ -6,7 +6,7 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Changelog | HELMET docs
+# Changelog[#](https://helmet.apps.wayne.edu/docs/changelog.html#changelog)
 
 All notable changes to this project are documented in this file.
 

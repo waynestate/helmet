@@ -1499,7 +1499,7 @@ Starters, deploys, sign-in and upgrades
 
 Source: https://helmet.apps.wayne.edu/docs/changelog.html
 
-## Changelog | HELMET docs
+## Changelog[#](https://helmet.apps.wayne.edu/docs/changelog.html#changelog)
 
 All notable changes to this project are documented in this file.
 
