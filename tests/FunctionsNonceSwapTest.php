@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  */
 final class FunctionsNonceSwapTest extends TestCase
 {
-    private const PLACEHOLDER = 'HELMET_CSP_NONCE_PLACEHOLDER';
+    private const PLACEHOLDER = 'CSP_NONCE_SLOT_FOR_HELMET';
 
     public function testSwapReplacesEveryOccurrence(): void
     {

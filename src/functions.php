@@ -451,7 +451,7 @@ if (!function_exists('helmet_csp_nonce_swap')) {
      *         characters (a short one would collide with page text), or if
      *         "nonce" is empty.
      */
-    function helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'HELMET_CSP_NONCE_PLACEHOLDER'): string
+    function helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'CSP_NONCE_SLOT_FOR_HELMET'): string
     {
         if (strlen($placeholder) < 16) {
             throw new \InvalidArgumentException('helmet_csp_nonce_swap() "placeholder" must be at least 16 characters.');

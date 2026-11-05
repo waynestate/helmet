@@ -9,6 +9,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Added: `helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'CSP_NONCE_SLOT_FOR_HELMET')` for raw PHP apps serving a built Vue/Vite page: it replaces every occurrence of the build-time placeholder (the value Vite's `html.cspNonce` stood in for) with the response nonce from `helmet_boot()`, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. A placeholder shorter than 16 characters throws `InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged. Pure function: no output, no headers, no globals. Covered by `tests/FunctionsNonceSwapTest.php`.
 - Added: the docs site. `bin/docs-site.php` (Squire's shared builder) turns `docs/` into `site/docs/`: the Overview page carries the README opening and a generated table of every `HELMET_` environment variable the package reads. `composer docs` rebuilds it, `composer ci` checks it through `composer docs:check`, and the front page links it.
 - Docs: BEST_PRACTICES H53 is `Documented` (SESAME owns the logout headers, `Clear-Site-Data` without `"cookies"`) and H41 is `Partly enforced` (three events are logged, authentication failures belong to SESAME).
 - Docs: README section "Debug output stays off in production" names the two settings that decide whether a visitor sees a trace (PHP `display_errors`, Laravel `APP_DEBUG`), points at Squire's deploy `php.ini`, and documents the `helmet.warn_debug` opt-out; BEST_PRACTICES H43 is now `Documented`.

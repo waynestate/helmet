@@ -341,7 +341,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
     html: {
-        cspNonce: 'HELMET_CSP_NONCE_PLACEHOLDER',
+        cspNonce: 'CSP_NONCE_SLOT_FOR_HELMET',
     },
 });
 ```
