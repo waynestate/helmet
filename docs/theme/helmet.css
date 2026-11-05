@@ -563,6 +563,67 @@ body {
   outline-color: var(--h-ink);
 }
 
+/* Code tabs are the scoreboard's tabs: dark tabs in Graduate caps sitting
+   on the glass, the one you are on in turf green. */
+.docs-tabs {
+  margin: 1.1rem 0 1.4rem;
+}
+
+.docs-tabs__tablist {
+  gap: 0.35rem;
+  margin-bottom: 0;
+  padding-inline-start: 0.5rem;
+}
+
+.docs-tabs__tab {
+  min-height: 40px;
+  padding: 0.45rem 0.95rem;
+  font-family: var(--h-display);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--h-chalk-dim);
+  background: #121c18;
+  border: 2px solid #2a3631;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+}
+
+.docs-tabs__tab:hover {
+  color: var(--h-chalk);
+  border-color: #2a3631;
+}
+
+.docs-tabs__tab[aria-selected="true"] {
+  font-weight: 400;
+  color: var(--h-cream);
+  background: var(--h-green);
+  border-color: var(--h-green);
+  box-shadow: none;
+}
+
+.docs-tabs__label {
+  margin: 0.4rem 0 0.4rem;
+  font-family: var(--h-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--dk-muted);
+}
+
+.docs-tabs__panel > :is(.docs-copy, pre):first-child {
+  margin-top: 0;
+}
+
+.docs-tabs__tablist ~ .docs-tabs__panel > :is(.docs-copy, pre):first-child {
+  border-top: 3px solid var(--h-green);
+}
+
+/* Task list boxes take the turf green. */
+.docs-task input {
+  accent-color: var(--h-green);
+}
+
 /* ------------------------------------------- 7. callouts, quotes, tables */
 
 /* A callout is a play card with a stamp on it, like BLOCKS on the
