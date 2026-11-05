@@ -13,6 +13,8 @@ Proof runs against real Wayne State applications live on a private site, [proof.
 
 ## Tests
 
+The header contract suite (`vendor/bin/phpunit tests/Contract`) runs one request through raw PHP, PSR-15, Laravel HTML and Laravel JSON and checks that the security headers agree on every path.
+
 No PHP on the machine? Fine. Docker runs the suite.
 
 ```bash tab="windows"

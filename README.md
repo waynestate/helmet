@@ -1054,6 +1054,15 @@ docker run --rm -v "$PWD:/app" -w /app php:8.4-cli vendor/bin/phpunit
 docker run --rm -v "$PWD:/app" -w /app php:8.3-cli vendor/bin/phpunit
 ```
 
+### One contract, every path
+
+`tests/Contract/HeaderContractTest.php` sends the same request and the same config through all four ways HELMET ships
+headers: raw PHP (`helmet_boot()` in a `php -S` child, probed over real HTTP), the PSR-15 middleware, the Laravel `web`
+group (HTML) and a Laravel JSON answer. It proves that the contract headers (Content-Security-Policy with a fresh nonce
+and `'strict-dynamic'`, Strict-Transport-Security on HTTPS only, `nosniff`, Referrer-Policy, Cross-Origin-Opener-Policy,
+Permissions-Policy, X-Frame-Options, no X-Powered-By) are byte-equal across the HTML paths once the nonce is swapped for
+a fixed token. Run it with the Docker lines above plus `vendor/bin/phpunit tests/Contract`. Four doors, one lock.
+
 Style and static analysis come from [Pinstripe](https://github.com/waynestate/pinstripe),
 the stack's coding standard: `phpstan.neon` includes
 `vendor/waynestate/pinstripe/phpstan/raw.neon`, and `pint.json` uses the same

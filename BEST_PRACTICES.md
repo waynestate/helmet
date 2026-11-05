@@ -100,7 +100,7 @@ HELMET is at 0.3.0. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`.
 - **Why:** The first stops browsers from guessing a content type. The second limits what leaks in the `Referer` header. OWASP says to set the policy explicitly rather than rely on browser defaults.
 - **Sources:** [OWASP HTTP Headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html)
-- **Stack:** `Enforced`. Both are in `SecurityHeaders::build()`.
+- **Stack:** `Enforced`. Both are in `SecurityHeaders::build()`, and `tests/Contract/HeaderContractTest.php` proves every consumer path (raw PHP, PSR-15, Laravel HTML and JSON) sends them the same way.
 
 ### H11. Turn off browser features the app does not use
 - **Practice:** Send a Permissions-Policy that disables camera, microphone, geolocation and any other feature the app never needs, such as `payment` and `usb`.
