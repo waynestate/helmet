@@ -361,7 +361,7 @@ The CSP stays honest only if the bundle plays along.
 
 ## Practice squad
 
-These are on HELMET's backlog and aren't in 0.2. They suit up when they're ready.
+These are on HELMET's backlog and aren't in 0.3. They suit up when they're ready.
 
 - A readiness check, separate from `/up`
 - A `Clear-Site-Data` helper for logout

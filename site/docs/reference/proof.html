@@ -31,6 +31,7 @@
 <h2 id="proof">Proof<a class="docs-heading-link" aria-label="Link to this section" href="#proof">#</a></h2>
 <p>Proof runs against real Wayne State applications live on a private site, <a rel="noopener" href="https://proof.apps.wayne.edu/helmet/">proof.apps.wayne.edu/helmet</a>, behind a Wayne State employee sign-in.</p>
 <h2 id="tests">Tests<a class="docs-heading-link" aria-label="Link to this section" href="#tests">#</a></h2>
+<p>The header contract suite (<code>vendor/bin/phpunit tests/Contract</code>) runs one request through raw PHP, PSR-15, Laravel HTML and Laravel JSON and checks that the security headers agree on every path.</p>
 <p>No PHP on the machine? Fine. Docker runs the suite.</p>
 <pre><code class="language-bash">docker run --rm -v &quot;${PWD}:/app&quot; -w /app composer:2 composer install --no-interaction
 docker run --rm -v &quot;${PWD}:/app&quot; -w /app php:8.5-cli vendor/bin/phpunit

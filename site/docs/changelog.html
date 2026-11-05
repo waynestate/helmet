@@ -31,10 +31,22 @@
 <h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
 <ul>
 <li>
+<p>Docs: BEST_PRACTICES H45 is <code>Documented</code>. <code>tests/Support/ConfigDocsTest.php</code> fails when a <code>helmet_boot()</code> option or a <code>config/helmet.php</code> key is missing from the README or the configuration reference, and both now list every option and key.</p>
+</li>
+<li>
+<p>Docs: BEST_PRACTICES H14 is <code>Partly enforced</code> with tests on every path (raw PHP over HTTP, PSR-15 error-middleware order, Laravel aborted and unmatched requests); the README and the PSR-15 guide say to mount HELMET outermost, after the error middleware in a Slim-style app.</p>
+</li>
+<li>
+<p>Added: <code>tests/Contract/HeaderContractTest.php</code>, a contract suite that runs the same request and config through raw PHP (<code>helmet_boot()</code> in a <code>php -S</code> child), the PSR-15 middleware, the Laravel <code>web</code> group and a Laravel JSON answer, and asserts the contract headers agree byte for byte apart from the nonce; README section &quot;One contract, every path&quot;, BEST_PRACTICES H10 names the suite.</p>
+</li>
+<li>
 <p>Docs: README and the raw PHP guide gain &quot;Readiness is a separate check&quot;: <code>/up</code> stays liveness-only, dependency checks go on a separate <code>/ready</code> path with a short timeout and a fixed 503 body, and Laravel apps keep them out of the <code>DiagnosingHealth</code> listener; BEST_PRACTICES H34 is <code>Documented</code>.</p>
 </li>
 <li>
 <p>Added: a Grafana dashboard for the HELMET metrics (<code>docs/grafana/helmet.json</code>, uid <code>helmet-fleet</code>) with panels for apps reporting, HELMET and PHP versions in use, PHP support status, apps by instance, and scrape health; it imports into any Grafana through a <code>DS_PROMETHEUS</code> datasource input, and <code>tests/Support/GrafanaDashboardTest.php</code> pins its shape. The metrics guide gains a &quot;Graph it in Grafana&quot; section with a sample <code>scrape_configs</code> stanza. <code>docs/</code> was never export-ignored, so the dashboard already ships in the dist archive.</p>
+</li>
+<li>
+<p>Added: <code>helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'CSP_NONCE_SLOT_FOR_HELMET')</code> for raw PHP apps serving a built Vue/Vite page: it replaces every occurrence of the build-time placeholder (the value Vite's <code>html.cspNonce</code> stood in for) with the response nonce from <code>helmet_boot()</code>, HTML-escaped exactly like <code>helmet_csp_nonce_meta()</code> escapes it. A placeholder shorter than 16 characters throws <code>InvalidArgumentException</code>, as does an empty nonce, and a page without the placeholder is returned unchanged. Pure function: no output, no headers, no globals. Covered by <code>tests/FunctionsNonceSwapTest.php</code>.</p>
 </li>
 <li>
 <p>Added: the docs site. <code>bin/docs-site.php</code> (Squire's shared builder) turns <code>docs/</code> into <code>site/docs/</code>: the Overview page carries the README opening and a generated table of every <code>HELMET_</code> environment variable the package reads. <code>composer docs</code> rebuilds it, <code>composer ci</code> checks it through <code>composer docs:check</code>, and the front page links it.</p>

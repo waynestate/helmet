@@ -63,6 +63,10 @@
 <td><code>function helmet_csp_nonce_meta(string $nonce): string</code></td>
 </tr>
 <tr>
+<td><code>helmet_csp_nonce_swap()</code></td>
+<td><code>function helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'CSP_NONCE_SLOT_FOR_HELMET'): string</code></td>
+</tr>
+<tr>
 <td><code>helmet_metrics()</code></td>
 <td><code>function helmet_metrics(array $config): array</code></td>
 </tr>
@@ -73,6 +77,7 @@
 <li><code>helmet_boot()</code> boots the core for raw PHP: it validates the config and returns <code>array{nonce: string, logger: LoggerInterface|null, request_id: string}</code>. It throws <code>UnknownPresetException</code> for an unknown preset, <code>\InvalidArgumentException</code> for a bad config value, <code>InvalidCspReportUriException</code> for a bad report URI, and <code>\LogicException</code> if a session is already active.</li>
 <li><code>helmet_up_response()</code> and <code>helmet_forbidden_response()</code> return the answer as data, <code>array{status: int, headers: array&lt;string, string&gt;, body: string}</code>, without sending anything; the caller sends it. <code>helmet_up()</code> and <code>helmet_forbidden()</code> send the same answers (200, body &quot;ok&quot;, and 403, body &quot;Forbidden&quot;) and exit, so a small public file can answer a probe that never reaches <code>helmet_boot()</code>.</li>
 <li><code>helmet_csp_nonce_meta()</code> builds the <code>&lt;meta property=&quot;csp-nonce&quot;&gt;</code> tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in <code>&lt;head&gt;</code> of every page, with the same nonce <code>helmet_boot()</code> returned; the nonce is escaped so a quote cannot break out of the attribute.</li>
+<li><code>helmet_csp_nonce_swap()</code> replaces every occurrence of the placeholder (default <code>CSP_NONCE_SLOT_FOR_HELMET</code>, the value a built Vue/Vite page carries where Vite's <code>html.cspNonce</code> stood) with the nonce, HTML-escaped exactly like <code>helmet_csp_nonce_meta()</code> escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws <code>\InvalidArgumentException</code>, as does an empty nonce, and a page without the placeholder is returned unchanged.</li>
 <li><code>helmet_metrics()</code> builds the <code>/metrics</code> answer as data, <code>array{status: int, content_type: string, body: string}</code>. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning.</li>
 </ul>
 <p>File <code>src/Ribbon/functions.php</code>, namespace <code>Waynestate\Helmet\Ribbon</code>:</p>

@@ -30,6 +30,150 @@
 <p>Every <code>HELMET_</code> environment variable the package reads, its meaning, its default, and the file that reads it. The table below is generated from the code, so it cannot drift from what the package actually reads. To set a value, add it to your environment or <code>.env</code>; for how the platform presets choose the trusted proxies, see <a href="../guides/platform-presets.html">Platform presets</a>.</p>
 <h2 id="how-a-value-is-read">How a value is read<a class="docs-heading-link" aria-label="Link to this section" href="#how-a-value-is-read">#</a></h2>
 <p>The Laravel adapter reads every value through <code>Waynestate\Helmet\Support\Setting::get()</code>. The real environment wins (getenv, then <code>$_ENV</code>, then <code>$_SERVER</code>); an empty string counts as not set, so a blank value falls through to the next source. When the environment has no value for the key, the private <code>waynestate/playbook</code> package (Playbook) supplies it, if it is installed. When neither has it, null comes back and the default in the table applies. Playbook is optional by design: the package never requires it, it only looks for the class. That is how a WSU value can arrive at an app without this public repo naming a single one of them.</p>
+<h2 id="the-config-keys">The config keys<a class="docs-heading-link" aria-label="Link to this section" href="#the-config-keys">#</a></h2>
+<p>Every value above lands in the <code>helmet</code> config repo, and every other part of the package reads it through <code>config()</code>. This lists every key, one level deep; the environment variable that fills each one is in <a href="#the-variables">The variables</a> below. Publish the config (<code>php artisan vendor:publish --tag=helmet-config</code>) to edit a key directly instead of through the environment.</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>preset</code></td>
+<td>The platform preset name that fills <code>proxies</code> (see <a href="#platform-presets">Platform presets</a>). Read from <code>HELMET_PRESET</code>, else from Playbook; null when no preset is named. An unknown name throws at boot, even when <code>HELMET_PROXIES</code> is set.</td>
+</tr>
+<tr>
+<td><code>proxies</code></td>
+<td>The trusted proxies (IPs or CIDR ranges) that may set <code>X-Forwarded-Proto</code>. Filled from <code>HELMET_PROXIES</code>; only an unset variable falls back to the <code>preset</code> list. Empty trusts nobody.</td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td>Where the <code>SecurityHeaders</code> middleware runs: <code>global</code> (the default) adds it to the kernel's global middleware, <code>web</code> keeps it in the <code>web</code> group only. Set with <code>HELMET_SCOPE</code>.</td>
+</tr>
+<tr>
+<td><code>csp</code></td>
+<td>The Content-Security-Policy as a policy array keyed by directive, merged over the core default per directive; a directive you set replaces the default's, one you leave out keeps it, and one set to null is removed. Filled from <code>HELMET_CSP</code> when it parses as a non-empty JSON array.</td>
+</tr>
+<tr>
+<td><code>csp_report_uri</code></td>
+<td>The CSP report destination: an absolute https URL with a host, or a path relative to the page's origin that starts with a single slash. null sends no reporting directives. Set with <code>HELMET_CSP_REPORT_URI</code>.</td>
+</tr>
+<tr>
+<td><code>csp_report_only</code></td>
+<td>true sends the policy as <code>Content-Security-Policy-Report-Only</code>, observing violations without blocking them. Set with <code>HELMET_CSP_REPORT_ONLY</code>.</td>
+</tr>
+<tr>
+<td><code>csp_trusted_types</code></td>
+<td>The Trusted Types directives, appended to the report-only header only, never the enforcing one. Off by default.</td>
+</tr>
+<tr>
+<td><code>csp_trusted_types.enabled</code></td>
+<td>Whether the Trusted Types directives are appended. Set with <code>HELMET_CSP_TRUSTED_TYPES_ENABLED</code>.</td>
+</tr>
+<tr>
+<td><code>csp_trusted_types.policies</code></td>
+<td>The Trusted Types policy names, default <code>[&quot;default&quot;]</code>. Filled from <code>HELMET_CSP_TRUSTED_TYPES_POLICIES</code> (comma-separated).</td>
+</tr>
+<tr>
+<td><code>coop</code></td>
+<td>The Cross-Origin-Opener-Policy value, default <code>same-origin</code>; null sends no COOP header. Set with <code>HELMET_COOP</code>.</td>
+</tr>
+<tr>
+<td><code>corp</code></td>
+<td>The Cross-Origin-Resource-Policy value; null (the default) sends no CORP header. Set with <code>HELMET_CORP</code>.</td>
+</tr>
+<tr>
+<td><code>permissions_policy</code></td>
+<td>The Permissions-Policy feature map: each feature maps to its allowlist, and an empty allowlist denies the feature. The default is a deny list; an empty map sends no header. Filled from <code>HELMET_PERMISSIONS_POLICY</code> when it parses as JSON.</td>
+</tr>
+<tr>
+<td><code>hsts</code></td>
+<td>The Strict-Transport-Security max-age in seconds, sent on HTTPS responses only. Set with <code>HELMET_HSTS_MAX_AGE</code>.</td>
+</tr>
+<tr>
+<td><code>hsts_include_subdomains</code></td>
+<td>Whether the HSTS header carries the <code>includeSubDomains</code> directive. Set with <code>HELMET_HSTS_INCLUDE_SUBDOMAINS</code>.</td>
+</tr>
+<tr>
+<td><code>hsts_preload</code></td>
+<td>Whether the HSTS header carries the <code>preload</code> directive. Preload is hard to undo, so enable it only when every subdomain serves HTTPS. Set with <code>HELMET_HSTS_PRELOAD</code>.</td>
+</tr>
+<tr>
+<td><code>no_store</code></td>
+<td>The <code>Cache-Control: no-store</code> setting. Off by default.</td>
+</tr>
+<tr>
+<td><code>no_store.enabled</code></td>
+<td>Whether the <code>no-store</code> header is sent on matching responses. Set with <code>HELMET_NO_STORE_ENABLED</code>.</td>
+</tr>
+<tr>
+<td><code>no_store.paths</code></td>
+<td>Path prefixes that carry <code>no-store</code>; empty means every response. Filled from <code>HELMET_NO_STORE_PATHS</code> (comma-separated).</td>
+</tr>
+<tr>
+<td><code>session</code></td>
+<td>The session cookie settings that <code>helmet_boot()</code> applies when a raw PHP app boots through it; the Laravel adapter leaves the framework's session configuration alone.</td>
+</tr>
+<tr>
+<td><code>session.secure</code></td>
+<td>The session cookie Secure flag: <code>auto</code> (the default) follows the request's HTTPS detection, <code>always</code> forces it for apps whose TLS terminates in front of the app. Set with <code>HELMET_SESSION_SECURE</code>.</td>
+</tr>
+<tr>
+<td><code>ribbon</code></td>
+<td>Whether the environment ribbon is injected into HTML responses in non-production environments. Set with <code>HELMET_RIBBON</code>.</td>
+</tr>
+<tr>
+<td><code>policy_path</code></td>
+<td>The path to a CREED <code>policy.json</code> the ribbon reads for version warnings; null means no warning and no file read. Set with <code>HELMET_POLICY_PATH</code>.</td>
+</tr>
+<tr>
+<td><code>dev_origin</code></td>
+<td>The Vite dev server origin, used in <code>local</code> only while the dev server is running; it overrides the hot file. Set with <code>HELMET_DEV_ORIGIN</code>.</td>
+</tr>
+<tr>
+<td><code>warn_debug</code></td>
+<td>Whether the Laravel adapter writes the <code>helmet.debug_enabled_in_production</code> warning when the app boots with debug enabled in production. Set with <code>HELMET_WARN_DEBUG</code>.</td>
+</tr>
+<tr>
+<td><code>metrics</code></td>
+<td>The <code>/metrics</code> endpoint, in the Prometheus text exposition format. Off by default.</td>
+</tr>
+<tr>
+<td><code>metrics.enabled</code></td>
+<td>Whether the endpoint is on. Set with <code>HELMET_METRICS_ENABLED</code>.</td>
+</tr>
+<tr>
+<td><code>metrics.token</code></td>
+<td>The bearer token a scraper must present (<code>Authorization: Bearer &lt;token&gt;</code>); compared with <code>hash_equals</code>. Set with <code>HELMET_METRICS_TOKEN</code>.</td>
+</tr>
+<tr>
+<td><code>metrics.allow</code></td>
+<td>Client IPs or CIDR ranges allowed to read the endpoint without a token. Filled from <code>HELMET_METRICS_ALLOW</code> (comma-separated).</td>
+</tr>
+<tr>
+<td><code>csrf</code></td>
+<td>The request-forgery guard. Off by default.</td>
+</tr>
+<tr>
+<td><code>csrf.enabled</code></td>
+<td>Whether the guard is on. Set with <code>HELMET_CSRF_ENABLED</code>.</td>
+</tr>
+<tr>
+<td><code>csrf.allow_same_site</code></td>
+<td>Whether <code>Sec-Fetch-Site: same-site</code> passes. Off by default because sibling subdomains are still same-site. Set with <code>HELMET_CSRF_ALLOW_SAME_SITE</code>.</td>
+</tr>
+<tr>
+<td><code>csrf.trusted_origins</code></td>
+<td>Origins that may make state-changing requests to the app. Filled from <code>HELMET_CSRF_TRUSTED_ORIGINS</code> (comma-separated).</td>
+</tr>
+<tr>
+<td><code>csrf.except</code></td>
+<td>Paths that skip the guard: an exact path, a prefix ending in <code>*</code>, or <code>*</code> for every path. Filled from <code>HELMET_CSRF_EXCEPT</code> (comma-separated).</td>
+</tr>
+</tbody>
+</table></div>
 <h2 id="platform-presets">Platform presets<a class="docs-heading-link" aria-label="Link to this section" href="#platform-presets">#</a></h2>
 <p>A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app. The presets live in <code>Waynestate\Helmet\Platform\Presets</code>:</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
@@ -253,7 +397,7 @@ HELMET_METRICS_TOKEN=change-me
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/instance-runner.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Strongly recommended: a git.wayne.edu instance runner</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/reference/api.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">API</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#how-a-value-is-read">How a value is read</a></li><li class="docs-toc__item"><a href="#platform-presets">Platform presets</a></li><li class="docs-toc__item"><a href="#the-variables">The variables</a></li><li class="docs-toc__item"><a href="#example-env">Example .env</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#how-a-value-is-read">How a value is read</a></li><li class="docs-toc__item"><a href="#the-config-keys">The config keys</a></li><li class="docs-toc__item"><a href="#platform-presets">Platform presets</a></li><li class="docs-toc__item"><a href="#the-variables">The variables</a></li><li class="docs-toc__item"><a href="#example-env">Example .env</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

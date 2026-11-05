@@ -57,7 +57,7 @@ an address that belongs to the platform, not the app. The presets live in
 | `citadel` | the Docker bridge gateway to the HA-Proxy front (see "Running off Citadel") |
 | `docker` | none: a plain Docker network with no front proxy |
 
-Raw PHP passes the preset name:
+Raw PHP passes the preset name in the `preset` option:
 
 ```php
 $helmet = helmet_boot([
@@ -201,6 +201,21 @@ $helmet = helmet_boot([
 // $helmet['request_id'] is the ID stamped on this process's log records.
 ```
 
+Every other `helmet_boot()` option is covered in its own section below:
+`csp` (Customizing the CSP), `csp_report_uri` and `csp_report_only`
+(CSP reports), `coop`, `corp` and `permissions_policy` (Cross-origin
+isolation and feature policy), `hsts_max_age`, `hsts_include_subdomains`
+and `hsts_preload` (Configuring HSTS), `no_store` (the no-store rows of
+[Raw PHP and Laravel agree](#raw-php-and-laravel-agree)), `csrf`
+(The request-forgery guard), `health_path` (Health check without a front
+controller), `session` (The session, secure mode) and `error_handler`
+(A generic error page).
+
+The `log` option configures that logger: `channel` names it, `stream` is a
+stream or a file path, and `level` sets the minimum level. Set `request_id`
+to reuse an ID you already have (8 to 64 letters, digits, dots, underscores
+or dashes); otherwise HELMET generates one for the process.
+
 Each record is one JSON line:
 
 ```json
@@ -249,7 +264,7 @@ the request ID so the rest of the app can use them.
 
 A raw PHP app has no framework to catch an uncaught exception, so PHP may print
 the message, the file path and a stack trace to the visitor. Turn on the
-opt-in handler and the visitor gets a short, fixed "Something went wrong"
+opt-in `error_handler` and the visitor gets a short, fixed "Something went wrong"
 page with status 500 and `Cache-Control: no-store`, while the full detail
 (class, message, file, line and trace) goes to the log at `error` level:
 
@@ -353,6 +368,41 @@ Keep the same rules as `/up`: a short body, `no-store`, and no detail about whic
 print it). Give the check a short timeout so a hung database cannot hang the probe. In Laravel, register a separate
 `/ready` route that runs the checks; do not put them in the `DiagnosingHealth` listener, because that event fires for
 `/up` and would turn the liveness probe into a readiness probe.
+##### Raw PHP with a Vue (Vite) build
+
+A raw PHP app that serves a built Vue/Vite SPA gives the bundler HELMET's
+nonce in two steps. At build time, set Vite's `html.cspNonce` to a
+placeholder:
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+    html: {
+        cspNonce: 'CSP_NONCE_SLOT_FOR_HELMET',
+    },
+});
+```
+
+On every request, replace the placeholder with the nonce `helmet_boot()`
+returned before you echo the page:
+
+```php
+echo helmet_csp_nonce_swap(file_get_contents('dist/index.html'), $helmet['nonce']);
+```
+
+`helmet_csp_nonce_swap()` replaces every occurrence of the placeholder with
+the nonce, HTML-escaped exactly the way `helmet_csp_nonce_meta()` escapes
+it. A placeholder shorter than 16 characters throws, so it cannot collide
+with page text, an empty nonce throws, and a page that carries no
+placeholder is returned unchanged.
+
+One more setting keeps the CSP honest: Vite inlines small assets as `data:`
+URIs by default. The default policy already allows `data:` in `font-src` and
+`img-src`, so inlined fonts and images pass; if you would rather not inline
+at all, set `build.assetsInlineLimit: 0`.
+
 #### PSR-15 middleware
 
 The same core, mounted in a middleware pipeline:
@@ -374,6 +424,8 @@ $middleware = [
     new SecurityHeadersMiddleware($proxies),
 ];
 ```
+
+Order matters: `SecurityHeadersMiddleware` must be the outermost layer, so the error page your error middleware builds also carries the headers. In a Slim-style app, where the middleware added last runs first, add it after the error middleware; see [the PSR-15 guide](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/docs/guides/usage-psr15.md#put-helmet-outermost).
 
 `SecurityHeadersMiddleware` sets the request attribute `helmet.csp_nonce` so a
 downstream handler can read the same nonce the CSP header carries.
@@ -839,9 +891,9 @@ the new name and starts a fresh one.
 Citadel, HA-Proxy ends TLS before the request reaches PHP, so the request
 looks plain even though the client connected over HTTPS; there, set
 `HELMET_SESSION_SECURE=always` so the cookie keeps its `Secure` flag. In
-Laravel the value lands in `helmet.session.secure`; in raw PHP pass
-`'session' => ['secure' => 'always']` to `helmet_boot()`, and a Laravel app
-that boots through `helmet_boot()` can hand it
+Laravel the value lands in `helmet.session.secure`; in raw PHP pass the
+`session` option, `'session' => ['secure' => 'always']`, to `helmet_boot()`,
+and a Laravel app that boots through `helmet_boot()` can hand it
 `config('helmet.session.secure')`. The cookie name still follows the request,
 so it never takes the `__Host-` prefix on a plain-HTTP request, and plain
 HTTP development keeps `auto`.
@@ -1004,6 +1056,15 @@ docker run --rm -v "$PWD:/app" -w /app php:8.5-cli vendor/bin/phpunit
 docker run --rm -v "$PWD:/app" -w /app php:8.4-cli vendor/bin/phpunit
 docker run --rm -v "$PWD:/app" -w /app php:8.3-cli vendor/bin/phpunit
 ```
+
+#### One contract, every path
+
+`tests/Contract/HeaderContractTest.php` sends the same request and the same config through all four ways HELMET ships
+headers: raw PHP (`helmet_boot()` in a `php -S` child, probed over real HTTP), the PSR-15 middleware, the Laravel `web`
+group (HTML) and a Laravel JSON answer. It proves that the contract headers (Content-Security-Policy with a fresh nonce
+and `'strict-dynamic'`, Strict-Transport-Security on HTTPS only, `nosniff`, Referrer-Policy, Cross-Origin-Opener-Policy,
+Permissions-Policy, X-Frame-Options, no X-Powered-By) are byte-equal across the HTML paths once the nonce is swapped for
+a fixed token. Run it with the Docker lines above plus `vendor/bin/phpunit tests/Contract`. Four doors, one lock.
 
 Style and static analysis come from [Pinstripe](https://github.com/waynestate/pinstripe),
 the stack's coding standard: `phpstan.neon` includes
@@ -1384,7 +1445,7 @@ The CSP stays honest only if the bundle plays along.
 
 ### Practice squad
 
-These are on HELMET's backlog and aren't in 0.2. They suit up when they're ready.
+These are on HELMET's backlog and aren't in 0.3. They suit up when they're ready.
 
 - A readiness check, separate from `/up`
 - A `Clear-Site-Data` helper for logout
@@ -1435,8 +1496,12 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Docs: BEST_PRACTICES H45 is `Documented`. `tests/Support/ConfigDocsTest.php` fails when a `helmet_boot()` option or a `config/helmet.php` key is missing from the README or the configuration reference, and both now list every option and key.
+- Docs: BEST_PRACTICES H14 is `Partly enforced` with tests on every path (raw PHP over HTTP, PSR-15 error-middleware order, Laravel aborted and unmatched requests); the README and the PSR-15 guide say to mount HELMET outermost, after the error middleware in a Slim-style app.
+- Added: `tests/Contract/HeaderContractTest.php`, a contract suite that runs the same request and config through raw PHP (`helmet_boot()` in a `php -S` child), the PSR-15 middleware, the Laravel `web` group and a Laravel JSON answer, and asserts the contract headers agree byte for byte apart from the nonce; README section "One contract, every path", BEST_PRACTICES H10 names the suite.
 - Docs: README and the raw PHP guide gain "Readiness is a separate check": `/up` stays liveness-only, dependency checks go on a separate `/ready` path with a short timeout and a fixed 503 body, and Laravel apps keep them out of the `DiagnosingHealth` listener; BEST_PRACTICES H34 is `Documented`.
 - Added: a Grafana dashboard for the HELMET metrics (`docs/grafana/helmet.json`, uid `helmet-fleet`) with panels for apps reporting, HELMET and PHP versions in use, PHP support status, apps by instance, and scrape health; it imports into any Grafana through a `DS_PROMETHEUS` datasource input, and `tests/Support/GrafanaDashboardTest.php` pins its shape. The metrics guide gains a "Graph it in Grafana" section with a sample `scrape_configs` stanza. `docs/` was never export-ignored, so the dashboard already ships in the dist archive.
+- Added: `helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'CSP_NONCE_SLOT_FOR_HELMET')` for raw PHP apps serving a built Vue/Vite page: it replaces every occurrence of the build-time placeholder (the value Vite's `html.cspNonce` stood in for) with the response nonce from `helmet_boot()`, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. A placeholder shorter than 16 characters throws `InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged. Pure function: no output, no headers, no globals. Covered by `tests/FunctionsNonceSwapTest.php`.
 - Added: the docs site. `bin/docs-site.php` (Squire's shared builder) turns `docs/` into `site/docs/`: the Overview page carries the README opening and a generated table of every `HELMET_` environment variable the package reads. `composer docs` rebuilds it, `composer ci` checks it through `composer docs:check`, and the front page links it.
 - Docs: BEST_PRACTICES H53 is `Documented` (SESAME owns the logout headers, `Clear-Site-Data` without `"cookies"`) and H41 is `Partly enforced` (three events are logged, authentication failures belong to SESAME).
 - Docs: README section "Debug output stays off in production" names the two settings that decide whether a visitor sees a trace (PHP `display_errors`, Laravel `APP_DEBUG`), points at Squire's deploy `php.ini`, and documents the `helmet.warn_debug` opt-out; BEST_PRACTICES H43 is now `Documented`.
@@ -2542,6 +2607,10 @@ By default the middleware rethrows, so the framework's error handler still runs 
 
 The `500` response carries `Content-Type: text/plain; charset=utf-8`. If `rethrow` is false and no `ResponseFactory` was passed, the middleware throws a `\RuntimeException` when it needs to build the `500`.
 
+### Put HELMET outermost[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#put-helmet-outermost)
+
+Order decides whether an error page gets the headers. A response built by a layer inside HELMET comes back through HELMET and is stamped; a response built by a layer outside HELMET never is. So HELMET has to be the outermost layer. In a Slim-style app, where the middleware added last runs first, that means adding HELMET after the error middleware. If the error middleware sits outside HELMET, the exception passes straight through (HELMET rethrows by default) and the error middleware builds a bare `500` with no security headers. `tests/Headers/SecurityHeadersMiddlewareTest.php` pins both orders with a stand-in error middleware.
+
 ### Constructor options[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#constructor-options)
 
 | Option | Default | Meaning |
@@ -2750,6 +2819,31 @@ Tip
 
 Vite's dev runtime reads a `<meta property="csp-nonce" nonce="...">` tag to nonce the CSS and preload tags it adds after page load. Print `helmet_csp_nonce_meta($helmet['nonce'])` in the `<head>` of every page, with the same nonce `helmet_boot()` returned. The nonce is escaped, so a nonce with a quote cannot break out of the attribute.
 
+### Raw PHP with a Vue (Vite) build[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#raw-php-with-a-vue-vite-build)
+
+A raw PHP app that serves a built Vue/Vite SPA gives the bundler HELMET's nonce in two steps. At build time, set Vite's `html.cspNonce` to a placeholder:
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+    html: {
+        cspNonce: 'CSP_NONCE_SLOT_FOR_HELMET',
+    },
+});
+```
+
+On every request, replace the placeholder with the nonce `helmet_boot()` returned before you echo the page:
+
+```php
+echo helmet_csp_nonce_swap(file_get_contents('dist/index.html'), $helmet['nonce']);
+```
+
+`helmet_csp_nonce_swap()` replaces every occurrence of the placeholder with the nonce, HTML-escaped exactly the way `helmet_csp_nonce_meta()` escapes it. A placeholder shorter than 16 characters throws, so it cannot collide with page text, an empty nonce throws, and a page that carries no placeholder is returned unchanged.
+
+One more setting keeps the CSP honest: Vite inlines small assets as `data:` URIs by default. The default policy already allows `data:` in `font-src` and `img-src`, so inlined fonts and images pass; if you would rather not inline at all, set `build.assetsInlineLimit: 0`.
+
 ### Related[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#related)
 
 - [Quick start](https://helmet.apps.wayne.edu/docs/guides/quick-start.html)
@@ -2939,6 +3033,7 @@ File `src/functions.php`, namespace `Waynestate\Helmet`:
 | `helmet_forbidden_response()` | `function helmet_forbidden_response(): array` |
 | `helmet_forbidden()` | `function helmet_forbidden(): never` |
 | `helmet_csp_nonce_meta()` | `function helmet_csp_nonce_meta(string $nonce): string` |
+| `helmet_csp_nonce_swap()` | `function helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'CSP_NONCE_SLOT_FOR_HELMET'): string` |
 | `helmet_metrics()` | `function helmet_metrics(array $config): array` |
 
 What each one returns, from the docblocks:
@@ -2946,6 +3041,7 @@ What each one returns, from the docblocks:
 - `helmet_boot()` boots the core for raw PHP: it validates the config and returns `array{nonce: string, logger: LoggerInterface|null, request_id: string}`. It throws `UnknownPresetException` for an unknown preset, `\InvalidArgumentException` for a bad config value, `InvalidCspReportUriException` for a bad report URI, and `\LogicException` if a session is already active.
 - `helmet_up_response()` and `helmet_forbidden_response()` return the answer as data, `array{status: int, headers: array<string, string>, body: string}`, without sending anything; the caller sends it. `helmet_up()` and `helmet_forbidden()` send the same answers (200, body "ok", and 403, body "Forbidden") and exit, so a small public file can answer a probe that never reaches `helmet_boot()`.
 - `helmet_csp_nonce_meta()` builds the `<meta property="csp-nonce">` tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in `<head>` of every page, with the same nonce `helmet_boot()` returned; the nonce is escaped so a quote cannot break out of the attribute.
+- `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder (default `CSP_NONCE_SLOT_FOR_HELMET`, the value a built Vue/Vite page carries where Vite's `html.cspNonce` stood) with the nonce, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws `\InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged.
 - `helmet_metrics()` builds the `/metrics` answer as data, `array{status: int, content_type: string, body: string}`. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning.
 
 File `src/Ribbon/functions.php`, namespace `Waynestate\Helmet\Ribbon`:
@@ -3337,6 +3433,46 @@ Every `HELMET_` environment variable the package reads, its meaning, its default
 
 The Laravel adapter reads every value through `Waynestate\Helmet\Support\Setting::get()`. The real environment wins (getenv, then `$_ENV`, then `$_SERVER`); an empty string counts as not set, so a blank value falls through to the next source. When the environment has no value for the key, the private `waynestate/playbook` package (Playbook) supplies it, if it is installed. When neither has it, null comes back and the default in the table applies. Playbook is optional by design: the package never requires it, it only looks for the class. That is how a WSU value can arrive at an app without this public repo naming a single one of them.
 
+### The config keys[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#the-config-keys)
+
+Every value above lands in the `helmet` config repo, and every other part of the package reads it through `config()`. This lists every key, one level deep; the environment variable that fills each one is in [The variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html#the-variables) below. Publish the config (`php artisan vendor:publish --tag=helmet-config`) to edit a key directly instead of through the environment.
+
+| Key | Meaning |
+| --- | --- |
+| `preset` | The platform preset name that fills `proxies` (see [Platform presets](https://helmet.apps.wayne.edu/docs/reference/configuration.html#platform-presets)). Read from `HELMET_PRESET`, else from Playbook; null when no preset is named. An unknown name throws at boot, even when `HELMET_PROXIES` is set. |
+| `proxies` | The trusted proxies (IPs or CIDR ranges) that may set `X-Forwarded-Proto`. Filled from `HELMET_PROXIES`; only an unset variable falls back to the `preset` list. Empty trusts nobody. |
+| `scope` | Where the `SecurityHeaders` middleware runs: `global` (the default) adds it to the kernel's global middleware, `web` keeps it in the `web` group only. Set with `HELMET_SCOPE`. |
+| `csp` | The Content-Security-Policy as a policy array keyed by directive, merged over the core default per directive; a directive you set replaces the default's, one you leave out keeps it, and one set to null is removed. Filled from `HELMET_CSP` when it parses as a non-empty JSON array. |
+| `csp_report_uri` | The CSP report destination: an absolute https URL with a host, or a path relative to the page's origin that starts with a single slash. null sends no reporting directives. Set with `HELMET_CSP_REPORT_URI`. |
+| `csp_report_only` | true sends the policy as `Content-Security-Policy-Report-Only`, observing violations without blocking them. Set with `HELMET_CSP_REPORT_ONLY`. |
+| `csp_trusted_types` | The Trusted Types directives, appended to the report-only header only, never the enforcing one. Off by default. |
+| `csp_trusted_types.enabled` | Whether the Trusted Types directives are appended. Set with `HELMET_CSP_TRUSTED_TYPES_ENABLED`. |
+| `csp_trusted_types.policies` | The Trusted Types policy names, default `["default"]`. Filled from `HELMET_CSP_TRUSTED_TYPES_POLICIES` (comma-separated). |
+| `coop` | The Cross-Origin-Opener-Policy value, default `same-origin`; null sends no COOP header. Set with `HELMET_COOP`. |
+| `corp` | The Cross-Origin-Resource-Policy value; null (the default) sends no CORP header. Set with `HELMET_CORP`. |
+| `permissions_policy` | The Permissions-Policy feature map: each feature maps to its allowlist, and an empty allowlist denies the feature. The default is a deny list; an empty map sends no header. Filled from `HELMET_PERMISSIONS_POLICY` when it parses as JSON. |
+| `hsts` | The Strict-Transport-Security max-age in seconds, sent on HTTPS responses only. Set with `HELMET_HSTS_MAX_AGE`. |
+| `hsts_include_subdomains` | Whether the HSTS header carries the `includeSubDomains` directive. Set with `HELMET_HSTS_INCLUDE_SUBDOMAINS`. |
+| `hsts_preload` | Whether the HSTS header carries the `preload` directive. Preload is hard to undo, so enable it only when every subdomain serves HTTPS. Set with `HELMET_HSTS_PRELOAD`. |
+| `no_store` | The `Cache-Control: no-store` setting. Off by default. |
+| `no_store.enabled` | Whether the `no-store` header is sent on matching responses. Set with `HELMET_NO_STORE_ENABLED`. |
+| `no_store.paths` | Path prefixes that carry `no-store`; empty means every response. Filled from `HELMET_NO_STORE_PATHS` (comma-separated). |
+| `session` | The session cookie settings that `helmet_boot()` applies when a raw PHP app boots through it; the Laravel adapter leaves the framework's session configuration alone. |
+| `session.secure` | The session cookie Secure flag: `auto` (the default) follows the request's HTTPS detection, `always` forces it for apps whose TLS terminates in front of the app. Set with `HELMET_SESSION_SECURE`. |
+| `ribbon` | Whether the environment ribbon is injected into HTML responses in non-production environments. Set with `HELMET_RIBBON`. |
+| `policy_path` | The path to a CREED `policy.json` the ribbon reads for version warnings; null means no warning and no file read. Set with `HELMET_POLICY_PATH`. |
+| `dev_origin` | The Vite dev server origin, used in `local` only while the dev server is running; it overrides the hot file. Set with `HELMET_DEV_ORIGIN`. |
+| `warn_debug` | Whether the Laravel adapter writes the `helmet.debug_enabled_in_production` warning when the app boots with debug enabled in production. Set with `HELMET_WARN_DEBUG`. |
+| `metrics` | The `/metrics` endpoint, in the Prometheus text exposition format. Off by default. |
+| `metrics.enabled` | Whether the endpoint is on. Set with `HELMET_METRICS_ENABLED`. |
+| `metrics.token` | The bearer token a scraper must present (`Authorization: Bearer <token>`); compared with `hash_equals`. Set with `HELMET_METRICS_TOKEN`. |
+| `metrics.allow` | Client IPs or CIDR ranges allowed to read the endpoint without a token. Filled from `HELMET_METRICS_ALLOW` (comma-separated). |
+| `csrf` | The request-forgery guard. Off by default. |
+| `csrf.enabled` | Whether the guard is on. Set with `HELMET_CSRF_ENABLED`. |
+| `csrf.allow_same_site` | Whether `Sec-Fetch-Site: same-site` passes. Off by default because sibling subdomains are still same-site. Set with `HELMET_CSRF_ALLOW_SAME_SITE`. |
+| `csrf.trusted_origins` | Origins that may make state-changing requests to the app. Filled from `HELMET_CSRF_TRUSTED_ORIGINS` (comma-separated). |
+| `csrf.except` | Paths that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. Filled from `HELMET_CSRF_EXCEPT` (comma-separated). |
+
 ### Platform presets[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#platform-presets)
 
 A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app. The presets live in `Waynestate\Helmet\Platform\Presets`:
@@ -3415,6 +3551,8 @@ How HELMET is proven against real Wayne State applications, and how to run its t
 Proof runs against real Wayne State applications live on a private site, [proof.apps.wayne.edu/helmet](https://proof.apps.wayne.edu/helmet/), behind a Wayne State employee sign-in.
 
 ### Tests[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#tests)
+
+The header contract suite (`vendor/bin/phpunit tests/Contract`) runs one request through raw PHP, PSR-15, Laravel HTML and Laravel JSON and checks that the security headers agree on every path.
 
 No PHP on the machine? Fine. Docker runs the suite.
 
