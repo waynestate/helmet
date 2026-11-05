@@ -50,6 +50,10 @@ By default the middleware rethrows, so the framework's error handler still runs 
 
 The `500` response carries `Content-Type: text/plain; charset=utf-8`. If `rethrow` is false and no `ResponseFactory` was passed, the middleware throws a `\RuntimeException` when it needs to build the `500`.
 
+## Put HELMET outermost
+
+Order decides whether an error page gets the headers. A response built by a layer inside HELMET comes back through HELMET and is stamped; a response built by a layer outside HELMET never is. So HELMET has to be the outermost layer. In a Slim-style app, where the middleware added last runs first, that means adding HELMET after the error middleware. If the error middleware sits outside HELMET, the exception passes straight through (HELMET rethrows by default) and the error middleware builds a bare `500` with no security headers. `tests/Headers/SecurityHeadersMiddlewareTest.php` pins both orders with a stand-in error middleware.
+
 ## Constructor options
 
 | Option | Default | Meaning |
