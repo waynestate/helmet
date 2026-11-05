@@ -10,6 +10,7 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Waynestate\Helmet\Headers\SecurityHeaders;
 use Waynestate\Helmet\Headers\SecurityHeadersMiddleware;
@@ -42,6 +43,57 @@ final class SecurityHeadersMiddlewareTest extends TestCase
                 throw $this->e;
             }
         };
+    }
+
+    /**
+     * A Slim-style error middleware stand in. Real slim/slim is not a
+     * dependency, so this private anonymous class mirrors what Slim's
+     * ErrorMiddleware does: it catches a \Throwable from the next handler
+     * and returns a bare new Response(500). It is conventionally added
+     * last, which makes it the OUTERMOST layer of the PSR-15 pipeline.
+     */
+    private function slimStyleErrorMiddleware(): MiddlewareInterface
+    {
+        return new class implements MiddlewareInterface {
+            public function process(
+                ServerRequestInterface $request,
+                RequestHandlerInterface $handler,
+            ): ResponseInterface {
+                try {
+                    return $handler->handle($request);
+                } catch (\Throwable) {
+                    return new Response(500);
+                }
+            }
+        };
+    }
+
+    /**
+     * A small pipeline helper. It runs the given list of middleware around
+     * a final handler (which the caller typically makes throw). The first
+     * middleware in the list becomes the OUTERMOST layer, matching how a
+     * Slim-style app composes middleware.
+     */
+    private function runPipeline(array $middleware, RequestHandlerInterface $final): RequestHandlerInterface
+    {
+        $handler = $final;
+
+        foreach (array_reverse($middleware) as $layer) {
+            $next = $handler;
+            $handler = new class ($layer, $next) implements RequestHandlerInterface {
+                public function __construct(
+                    private readonly MiddlewareInterface $middleware,
+                    private readonly RequestHandlerInterface $next,
+                ) {}
+
+                public function handle(ServerRequestInterface $request): ResponseInterface
+                {
+                    return $this->middleware->process($request, $this->next);
+                }
+            };
+        }
+
+        return $handler;
     }
 
     public function testSetsAllSecurityHeaders(): void
@@ -437,6 +489,65 @@ final class SecurityHeadersMiddlewareTest extends TestCase
         $this->expectExceptionMessage('ResponseFactory');
 
         $middleware->process($request, $this->throwingHandler(new \RuntimeException('boom')));
+    }
+
+    // ── Slim-style error middleware ordering ──────────────────────────────
+
+    /**
+     * Slim-style ordering rule (these tests do NOT run real slim/slim, they
+     * use a stand in): the HELMET middleware must be added BEFORE the
+     * error middleware so that it sits OUTERMOST. In that order the 500
+     * page built by the error middleware still carries HELMET's security
+     * headers.
+     */
+    public function testHelmetOutermostPutsHeadersOnTheErrorPageBuiltByTheErrorMiddleware(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $helmet = new SecurityHeadersMiddleware($proxies);
+        $error = $this->slimStyleErrorMiddleware();
+
+        // Order: HELMET, then error middleware, then a handler that throws.
+        // HELMET is first in the list, so it is the OUTERMOST layer.
+        $pipeline = $this->runPipeline([$helmet, $error], $this->throwingHandler(new \RuntimeException('boom')));
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $pipeline->handle($request);
+
+        self::assertSame(500, $response->getStatusCode());
+        self::assertSame('nosniff', $response->getHeaderLine('X-Content-Type-Options'));
+    }
+
+    /**
+     * Pins the documented Slim-style ordering rule (stand in, not real
+     * slim/slim): if the HELMET middleware is placed INSIDE the error
+     * middleware and the default rethrow stays on, the exception passes
+     * straight through HELMET and the error middleware builds a bare 500
+     * that never gets HELMET's security headers.
+     */
+    public function testHelmetInsideTheErrorMiddlewareLeavesTheErrorPageWithoutHeaders(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        // Default rethrow is on, so HELMET lets the exception escape.
+        $helmet = new SecurityHeadersMiddleware($proxies);
+        $error = $this->slimStyleErrorMiddleware();
+
+        // Order: error middleware, then HELMET, then a handler that throws.
+        // The error middleware is first in the list, so it is OUTERMOST.
+        $pipeline = $this->runPipeline([$error, $helmet], $this->throwingHandler(new \RuntimeException('boom')));
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $pipeline->handle($request);
+
+        self::assertSame(500, $response->getStatusCode());
+        self::assertFalse($response->hasHeader('X-Content-Type-Options'));
     }
 
     // ── HSTS preload ──────────────────────────────────────────────────────
