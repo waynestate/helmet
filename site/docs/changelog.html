@@ -9,16 +9,29 @@
 <meta name="docs-version" content="0.3.0">
 <link rel="stylesheet" href="../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../assets/docs.css">
+<link rel="stylesheet" href="../docs/theme/helmet.css">
 <link rel="alternate" type="text/markdown" href="changelog.md">
 <script src="../assets/docs.js" defer></script>
 </head>
 <body>
 <a class="wsu-skip-link" href="#main">Skip to content</a>
-<header class="docs-header">
-  <a class="docs-header__brand" href="../docs/index.html">HELMET</a>
-  <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../index.html">Back to HELMET</a></span>
-</header>
-<div class="docs-layout docs-layout--toc">
+<header class="site-header">
+  <div class="site-header__row">
+    <a class="brand" href="../index.html">
+      <img src="../brand/helmet-avatar-256.png" width="34" height="34" alt="">
+      <span class="brand__name">HELMET</span>
+      <span class="brand__version">0.3.0</span>
+    </a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="../index.html#playbook">Playbook</a>
+      <a href="../index.html#quick-start">Quick start</a>
+      <a href="../index.html#huddle">Agents</a>
+      <a href="../index.html#depth-chart">Depth chart</a>
+      <a href="../docs/index.html" aria-current="page">Docs</a>
+      <a href="https://proof.apps.wayne.edu/helmet/">Proof</a>
+    </nav>
+  </div>
+</header><div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../docs/index.html">Overview</a></li><li><a href="../docs/install.html">Install</a></li><li><a href="../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../docs/guides/headers.html">The headers</a></li><li><a href="../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../docs/guides/session.html">The session</a></li><li><a href="../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../docs/guides/metrics.html">Metrics</a></li><li><a href="../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../docs/reference/configuration.html">Environment variables</a></li><li><a href="../docs/reference/api.html">API</a></li><li><a href="../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../docs/upgrading.html">Upgrading</a></li><li><a href="../docs/changelog.html" aria-current="page">Changelog</a></li></ul></nav>
@@ -38,6 +51,9 @@
 </li>
 <li>
 <p>Added: <code>tests/Contract/HeaderContractTest.php</code>, a contract suite that runs the same request and config through raw PHP (<code>helmet_boot()</code> in a <code>php -S</code> child), the PSR-15 middleware, the Laravel <code>web</code> group and a Laravel JSON answer, and asserts the contract headers agree byte for byte apart from the nonce; README section &quot;One contract, every path&quot;, BEST_PRACTICES H10 names the suite.</p>
+</li>
+<li>
+<p>Docs: the docs pages wear the front page. Every page under <code>site/docs/</code> carries the front page's slate header and main menu (Docs underlined in gold), Graduate titles with the depth chart's green rule, numbered gold binder tabs on each section (the &quot;On this page&quot; list carries the same numbers), the coach's marker on the sidebar groups with a berry &quot;you are here&quot; ring around the current page, code on the scoreboard's black glass with a gold Copy tab and the scoreboard's tabs over code tabs, callouts as stamped play cards, the depth chart's green bars on tables, previous and next as laminated play cards, and the end zone as the footer. Dark mode is the hero's chalkboard. The theme lives in <code>docs/theme/helmet.css</code> and <code>docs/_header.html</code>, named by the <code>theme</code> key in <code>docs/docs.json</code>; the shared builder and kit are resynced from SQUIRE <code>0778fed</code> (theme hook, callouts, code tabs, task lists, a copy button that reports a working copy, keyboard-reachable scrolling code) and not edited here. Motion only with <code>prefers-reduced-motion: no-preference</code>.</p>
 </li>
 <li>
 <p>Docs: README and the raw PHP guide gain &quot;Readiness is a separate check&quot;: <code>/up</code> stays liveness-only, dependency checks go on a separate <code>/ready</code> path with a short timeout and a fixed 503 body, and Laravel apps keep them out of the <code>DiagnosingHealth</code> listener; BEST_PRACTICES H34 is <code>Documented</code>.</p>

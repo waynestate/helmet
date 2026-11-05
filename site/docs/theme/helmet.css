@@ -1,0 +1,1201 @@
+/* ============================================================================
+   HELMET docs theme (2026-11-05): the playbook binder.
+
+   The front page (site/assets/helmet.css) is a sideline: a chalkboard, play
+   cards on turf, a scoreboard, the coach's clipboard, a depth-chart poster and
+   the end zone. The docs are the binder that lives on that sideline. Light
+   mode reads off the clipboard paper; dark mode reads off the chalkboard.
+   Every value below is the front page's own: WSU green and gold, cream,
+   berry, chalk and slate, Graduate for titles (jersey lettering), Permanent
+   Marker for the coach's handwriting, Lato for reading.
+
+   The pieces, and where each one comes from on the front page:
+     header       the slate site header, gold underline under the page you are on
+     page titles  the depth-chart poster: green Graduate caps over a thick rule
+     h2           the binder tab, a gold tab with a number (never a word)
+     sidebar      group labels in the coach's marker, and the "you are here"
+                  ring around the current page, as on the depth chart
+     code         the scoreboard's black glass, gold Copy tab in the corner
+     callouts     the stamp from the play cards (BLOCKS), one per kind
+     tables       the depth chart's green unit bars
+     pager        two laminated play cards, binder holes and all
+     footer       the end zone, HELMET painted on the grass
+
+   How it gets onto the pages: docs/docs.json "theme" names this file and
+   docs/_header.html. The docs builder copies this file to
+   site/docs/theme/helmet.css and links it after the kit's docs.css, so the
+   --dk-* tokens and the rules below win without !important. The kit's
+   docs.css stays byte for byte Squire's. Edit this file, never the kit.
+
+   File map: 1. fonts and tokens  2. frame  3. header  4. sidebar and menu
+             5. article  6. code  7. callouts, quotes, tables  8. toc, pager,
+             footer  9. dark (the chalkboard)  10. responsive
+             11. motion (no-preference only)  12. print
+   ========================================================================== */
+
+/* ---------------------------------------------------- 1. fonts and tokens */
+
+@font-face {
+  font-family: "Graduate";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../assets/fonts/graduate-latin-400-normal.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Permanent Marker";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("../../assets/fonts/permanent-marker-latin-400-normal.woff2") format("woff2");
+}
+
+:root {
+  /* The front page's palette, under the same names. */
+  --h-green: #0c5449;
+  --h-green-deep: #083e36;
+  --h-gold: #ffcc33;
+  --h-gold-soft: #ffe08a;
+  --h-gold-ink: #634d00;
+  --h-cream: #f4f1ea;
+  --h-paper: #fbf9f4;
+  --h-berry: #8b2145;
+  --h-berry-chalk: #f59ab9;
+  --h-slate: #15291f;
+  --h-slate-2: #0f1f18;
+  --h-chalk: #eef0e6;
+  --h-chalk-dim: #c3c9bd;
+  --h-ink: #14211d;
+  --h-ink-soft: #3f4d48;
+  --h-board: #0a120f;
+  --h-display: "Graduate", "Rockwell", "Georgia", serif;
+  --h-marker: "Permanent Marker", "Segoe Print", "Comic Sans MS", cursive;
+  --h-body: var(--wsu-font-family-body, Lato, Calibri, "Helvetica Neue", Arial, sans-serif);
+  --h-mono: var(--wsu-font-family-mono, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+  --h-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --h-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --h-chalk-tex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+
+  /* What changes between the clipboard (light) and the chalkboard (dark). */
+  --t-title: var(--h-green);
+  --t-strong: var(--h-ink);
+  --t-hand: var(--h-green);           /* the coach's marker */
+  --t-ring: var(--h-berry);           /* "you are here" */
+  --t-kicker: var(--h-berry);
+  --t-tint: rgba(12, 84, 73, 0.07);   /* hover, quotes */
+  --t-code-ink: var(--h-ink);
+  --t-code-bg: rgba(12, 84, 73, 0.09);
+  --t-los: rgba(20, 33, 29, 0.2);     /* the dashed line of scrimmage */
+  --t-card: var(--h-paper);
+  --t-card-lines: rgba(12, 84, 73, 0.06);
+  --t-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 0 0 1px rgba(0, 0, 0, 0.08), 0 18px 30px -20px rgba(0, 0, 0, 0.45);
+  --t-hole: var(--h-green-deep);
+  --t-note: var(--h-ink-soft);
+  --t-note-bg: var(--h-cream);
+  --t-tip: var(--h-green);
+  --t-tip-bg: rgba(12, 84, 73, 0.07);
+  --t-warn: var(--h-gold-ink);
+  --t-warn-bg: #fff6d6;
+  --t-warn-rule: #d49a00;
+  --t-danger: var(--h-berry);
+  --t-danger-bg: rgba(139, 33, 69, 0.06);
+
+  /* The kit's tokens, set from the palette above. */
+  --dk-bg: var(--h-paper);
+  --dk-ink: var(--h-ink);
+  --dk-muted: var(--h-ink-soft);
+  --dk-rule: #d9d2c0;
+  --dk-accent: var(--h-green);
+  --dk-on-accent: #ffffff;
+  --dk-code-bg: var(--h-cream);
+  --dk-note: var(--t-note);
+  --dk-tip: var(--t-tip);
+  --dk-warning: var(--t-warn);
+  --dk-danger: var(--t-danger);
+  --dk-display: var(--h-display);
+  --dk-mono: var(--h-mono);
+  --dk-radius: 10px;
+  --dk-focus: var(--h-green);
+  --dk-focus-w: 3px;
+  --dk-focus-o: 3px;
+  --dk-sidebar: 15.5rem;
+  --dk-prose-max: 46rem;
+  --dk-gap: 1.75rem;
+
+  color-scheme: light;
+}
+
+/* ------------------------------------------------------------- 2. frame */
+
+html {
+  background: var(--dk-bg);
+}
+
+body {
+  margin: 0;
+  color: var(--dk-ink);
+  background: var(--dk-bg);
+  font-family: var(--h-body);
+  overflow-x: clip;
+}
+
+:where(a, button, summary, [tabindex]):focus-visible {
+  outline: var(--dk-focus-w) solid var(--dk-focus);
+  outline-offset: var(--dk-focus-o);
+  border-radius: 3px;
+}
+
+/* ------------------------------------------------------------ 3. header */
+
+/* The front page's header, as is: slate, chalk, a gold version chip. It is
+   slate in both modes, so it reads as the same bar on every page. */
+.site-header {
+  color: var(--h-chalk);
+  background: var(--h-chalk-tex), var(--h-slate-2);
+  border-block-end: 1px solid rgba(238, 240, 230, 0.08);
+}
+
+.site-header__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  box-sizing: border-box;
+  max-inline-size: 100rem;
+  margin-inline: auto;
+  padding: 0.7rem var(--dk-gap);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--h-chalk);
+  text-decoration: none;
+}
+
+.brand img {
+  border-radius: 8px;
+}
+
+.brand__name {
+  font-family: var(--h-display);
+  font-size: 1.15rem;
+  letter-spacing: 0.04em;
+}
+
+.brand__version {
+  padding: 0.1rem 0.45rem;
+  font-family: var(--h-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--h-ink);
+  background: var(--h-gold);
+  border-radius: 999px;
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+}
+
+/* Lato bold in chalk; a gold underline draws in on hover and stays drawn
+   under the page you are on. */
+.site-nav a {
+  padding-block-end: 2px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--h-chalk);
+  text-decoration: none;
+  background: linear-gradient(var(--h-gold), var(--h-gold)) left bottom / 0 2px no-repeat;
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  background-size: 100% 2px;
+}
+
+.site-nav a[aria-current="page"] {
+  color: var(--h-gold);
+}
+
+.site-header :focus-visible {
+  outline-color: var(--h-gold);
+}
+
+/* --------------------------------------------------- 4. sidebar and menu */
+
+.docs-layout {
+  gap: 1.5rem clamp(1.75rem, 1rem + 2.5vw, 3.5rem);
+  padding-block: 2.25rem 3.5rem;
+  padding-inline: var(--dk-gap);
+}
+
+/* Group labels in the coach's marker, tilted like the front page's notes. */
+.docs-nav__label {
+  margin: 1.5rem 0 0.4rem;
+  padding-inline-start: 0.5rem;
+  font-family: var(--h-marker);
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--t-hand);
+  rotate: -2deg;
+  transform-origin: left;
+}
+
+.docs-nav__list > li:first-child > .docs-nav__label {
+  margin-top: 0.25rem;
+}
+
+/* Group lists are plain <ul> inside the kit's list: no bullets, no indent. */
+.docs-nav ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A group's pages hang off the binder's dashed margin. */
+.docs-nav__group > ul {
+  margin-inline-start: 0.5rem;
+  padding-inline-start: 0.35rem;
+  border-inline-start: 2px dashed var(--t-los);
+}
+
+.docs-nav__group + li {
+  margin-top: 1rem;
+}
+
+.docs-nav a {
+  position: relative;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.96rem;
+  line-height: 1.35;
+  color: var(--dk-ink);
+  border-radius: 6px;
+  /* The depth chart's highlighter, swept in on hover. */
+  background: linear-gradient(rgba(255, 204, 51, 0.45), rgba(255, 204, 51, 0.45)) left center / 0 70% no-repeat;
+}
+
+.docs-nav a:hover {
+  color: var(--dk-ink);
+  background-color: transparent;
+  background-size: 100% 70%;
+}
+
+/* You are here: the berry marker ring from HELMET's own row on the depth
+   chart, drawn around the current page. */
+.docs-nav a[aria-current="page"] {
+  inline-size: fit-content;
+  font-weight: 700;
+  color: var(--t-strong);
+  background-color: transparent;
+}
+
+.docs-nav a[aria-current="page"]::after {
+  content: "";
+  position: absolute;
+  inset: 1px -1px;
+  border: 2.5px solid var(--t-ring);
+  border-radius: 46% 54% 50% 50% / 60% 55% 45% 40%;
+  rotate: -1deg;
+  pointer-events: none;
+}
+
+.docs-menu summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-block-size: 44px;
+  box-sizing: border-box;
+  padding: 0.4rem 1rem;
+  font-family: var(--h-display);
+  font-size: 1rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--h-cream);
+  background: var(--h-green);
+  border-radius: var(--dk-radius);
+  list-style: none;
+}
+
+.docs-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.docs-menu summary::after {
+  content: "";
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-inline-end: 2px solid var(--h-gold);
+  border-block-end: 2px solid var(--h-gold);
+  rotate: 45deg;
+  translate: 0 -2px;
+}
+
+.docs-menu[open] summary::after {
+  rotate: 225deg;
+  translate: 0 2px;
+}
+
+.docs-menu summary:focus-visible {
+  outline-color: var(--dk-focus);
+}
+
+.docs-menu[open] > .docs-nav {
+  padding: 0.5rem 0.25rem 0.75rem;
+}
+
+/* ------------------------------------------------------------- 5. article */
+
+.docs-article {
+  counter-reset: play;
+  font-family: var(--h-body);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--dk-ink);
+}
+
+.docs-article h1,
+.docs-article h2,
+.docs-article h3 {
+  font-family: var(--h-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  scroll-margin-top: 1.25rem;
+}
+
+/* The page title is the depth-chart poster's: green Graduate caps over a
+   thick green rule. */
+.docs-article h1 {
+  margin: 0 0 1.6rem;
+  padding-block-end: 0.9rem;
+  font-size: clamp(2.1rem, 1.5rem + 2.4vw, 3.4rem);
+  line-height: 1.02;
+  color: var(--t-title);
+  border-block-end: 6px solid var(--h-green);
+}
+
+/* Each section is a binder tab: a gold tab with its number. */
+.docs-article h2 {
+  counter-increment: play;
+  position: relative;
+  margin: 3rem 0 1rem;
+  padding-block: 0.15rem 0.6rem;
+  padding-inline-start: 3.1rem;
+  font-size: clamp(1.35rem, 1.15rem + 0.8vw, 1.75rem);
+  line-height: 1.12;
+  color: var(--t-strong);
+  border-bottom: 2px dashed var(--t-los);
+}
+
+.docs-article h2::before {
+  content: counter(play);
+  content: counter(play) / "";
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  display: grid;
+  place-items: center;
+  inline-size: 2.3rem;
+  block-size: 2.3rem;
+  font-family: var(--h-display);
+  font-size: 1.05rem;
+  line-height: 1;
+  color: var(--h-ink);
+  background: var(--h-gold);
+  border-radius: 8px 8px 3px 3px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.22);
+}
+
+.docs-article h3 {
+  margin: 2rem 0 0.5rem;
+  font-size: 1.15rem;
+  line-height: 1.2;
+  color: var(--t-title);
+}
+
+/* Commands are case sensitive: code in a caps heading keeps its case. */
+.docs-article :is(h1, h2, h3) code {
+  font-size: 0.8em;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.docs-heading-link {
+  color: var(--dk-muted);
+}
+
+.docs-article a {
+  color: var(--dk-accent);
+  text-underline-offset: 0.18em;
+}
+
+.docs-article a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.docs-article strong {
+  color: var(--t-strong);
+}
+
+.docs-article :is(ul, ol) {
+  padding-inline-start: 1.4rem;
+}
+
+.docs-article li {
+  margin-block: 0.3rem;
+}
+
+.docs-article li::marker {
+  color: var(--dk-accent);
+}
+
+/* Numbered lists are the clipboard's rules: numbers in the coach's marker. */
+.docs-article ol > li::marker {
+  font-family: var(--h-marker);
+  color: var(--t-ring);
+}
+
+.docs-article img {
+  max-inline-size: 100%;
+  block-size: auto;
+}
+
+.docs-article hr {
+  margin-block: 2.5rem;
+  border: 0;
+  border-block-start: 2px dashed var(--t-los);
+}
+
+/* ---------------------------------------------------------------- 6. code */
+
+.docs-article code {
+  padding: 0.05em 0.3em;
+  font-size: 0.88em;
+  color: var(--t-code-ink);
+  background: var(--t-code-bg);
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+}
+
+/* Code you type or read: the scoreboard's black glass. Lines keep their
+   shape, so a long one scrolls instead of wrapping. */
+.docs-article pre {
+  margin: 1.1rem 0 1.4rem;
+  padding: 0.95rem 1.1rem 1.05rem;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: #e5ece6;
+  background: var(--h-board);
+  border: 1px solid rgba(238, 240, 230, 0.14);
+  border-radius: var(--dk-radius);
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.6);
+  tab-size: 4;
+  scrollbar-color: #2e3b36 transparent;
+}
+
+.docs-article pre code {
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border-radius: 0;
+  overflow-wrap: normal;
+}
+
+/* With docs.js the block sits in .docs-copy: the glass moves to the wrapper
+   and the pre stops short of a gutter, so the Copy tab never covers code. */
+.docs-copy {
+  margin: 1.1rem 0 1.4rem;
+  background: var(--h-board);
+  border: 1px solid rgba(238, 240, 230, 0.14);
+  border-radius: var(--dk-radius);
+  box-shadow: inset 0 0 22px rgba(0, 0, 0, 0.6);
+}
+
+.docs-copy > pre {
+  margin: 0;
+  margin-inline-end: 4.6rem;
+  padding-inline-end: 0.6rem;
+  background: transparent;
+  border: 0;
+  border-radius: var(--dk-radius) 0 0 var(--dk-radius);
+  box-shadow: none;
+}
+
+/* The Copy button from the front page's command line: gold, square, tucked
+   into the corner of the glass. */
+.docs-copy__button {
+  inset-block-start: -1px;
+  inset-inline-end: -1px;
+  min-block-size: 32px;
+  padding: 0.3rem 0.95rem;
+  font-family: var(--h-body);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--h-ink);
+  background: var(--h-gold);
+  border: 0;
+  border-radius: 0 var(--dk-radius) 0 8px;
+}
+
+.docs-copy__button:hover {
+  color: var(--h-ink);
+  background: var(--h-gold-soft);
+}
+
+/* On the black glass a green ring would vanish: gold, as on the board. */
+.docs-copy__button:focus-visible,
+.docs-article pre:focus-visible {
+  outline: 3px solid var(--h-gold);
+  outline-offset: -4px;
+}
+
+.docs-copy__button:focus-visible {
+  outline-color: var(--h-ink);
+}
+
+/* Code tabs are the scoreboard's tabs: dark tabs in Graduate caps sitting
+   on the glass, the one you are on in turf green. */
+.docs-tabs {
+  margin: 1.1rem 0 1.4rem;
+}
+
+.docs-tabs__tablist {
+  gap: 0.35rem;
+  margin-bottom: 0;
+  padding-inline-start: 0.5rem;
+}
+
+.docs-tabs__tab {
+  min-height: 40px;
+  padding: 0.45rem 0.95rem;
+  font-family: var(--h-display);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--h-chalk-dim);
+  background: #121c18;
+  border: 2px solid #2a3631;
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+}
+
+.docs-tabs__tab:hover {
+  color: var(--h-chalk);
+  border-color: #2a3631;
+}
+
+.docs-tabs__tab[aria-selected="true"] {
+  font-weight: 400;
+  color: var(--h-cream);
+  background: var(--h-green);
+  border-color: var(--h-green);
+  box-shadow: none;
+}
+
+.docs-tabs__label {
+  margin: 0.4rem 0 0.4rem;
+  font-family: var(--h-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: var(--dk-muted);
+}
+
+/* With the tablist up (docs.js), the glass hangs straight off the tabs. */
+.docs-tabs__tablist ~ .docs-tabs__panel > :is(.docs-copy, pre) {
+  margin-top: 0;
+  border-top: 3px solid var(--h-green);
+  border-top-left-radius: 0;
+}
+
+/* Task list boxes take the turf green. */
+.docs-task input {
+  accent-color: var(--h-green);
+}
+
+/* ------------------------------------------- 7. callouts, quotes, tables */
+
+/* A callout is a play card with a stamp on it, like BLOCKS on the
+   playbook's cards: one color per kind. */
+.docs-callout {
+  margin: 1.4rem 0 1.5rem;
+  padding: 0.9rem 1.15rem 1rem;
+  color: var(--dk-ink);
+  background: var(--t-note-bg);
+  border: 0;
+  border-inline-start: 5px solid var(--t-note);
+  border-radius: 4px var(--dk-radius) var(--dk-radius) 4px;
+}
+
+.docs-callout__label {
+  display: inline-block;
+  margin: 0 0 0.55rem;
+  padding: 0.05rem 0.4rem;
+  font-family: var(--h-display);
+  font-size: 0.74rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  rotate: -3deg;
+  transform-origin: left;
+}
+
+.docs-callout--note {
+  background: var(--t-note-bg);
+  border-inline-start-color: var(--t-note);
+}
+
+.docs-callout--tip {
+  background: var(--t-tip-bg);
+  border-inline-start-color: var(--h-green);
+}
+
+.docs-callout--warning {
+  background: var(--t-warn-bg);
+  border-inline-start-color: var(--t-warn-rule);
+}
+
+.docs-callout--danger {
+  background: var(--t-danger-bg);
+  border-inline-start-color: var(--t-danger);
+}
+
+.docs-callout > :last-child {
+  margin-bottom: 0;
+}
+
+/* A plain quote: a note clipped to the board, green margin rule. */
+.docs-article blockquote {
+  margin: 1.5rem 0;
+  padding: 0.9rem 1.2rem;
+  color: var(--dk-ink);
+  background: var(--t-tint);
+  border-inline-start: 4px solid var(--h-green);
+  border-radius: 0 var(--dk-radius) var(--dk-radius) 0;
+}
+
+.docs-article blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* Tables are the depth chart: a green unit bar on top, ruled rows below. */
+.docs-table {
+  margin: 1.25rem 0 1.6rem;
+  background: var(--t-card);
+  border: 1px solid var(--dk-rule);
+  border-radius: 6px;
+}
+
+.docs-article table {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.docs-article th {
+  padding: 0.55rem 0.9rem;
+  font-family: var(--h-display);
+  font-size: 0.85rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: bottom;
+  color: var(--h-cream);
+  background: var(--h-green);
+  border-bottom: 0;
+}
+
+.docs-article td {
+  padding: 0.6rem 0.9rem;
+  vertical-align: top;
+  border-bottom: 1px solid var(--dk-rule);
+}
+
+/* An id or a variable name keeps its shape in a cell: the column sizes to
+   it, and it only breaks if it would spill out of the table. */
+.docs-article td code {
+  overflow-wrap: break-word;
+}
+
+.docs-article tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.docs-table:focus-visible {
+  outline-offset: 2px;
+}
+
+/* ------------------------------------------------ 8. toc, pager, footer */
+
+/* The poster's kicker: berry mono caps. */
+.docs-toc__title {
+  margin-bottom: 0.6rem;
+  font-family: var(--h-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--t-kicker);
+}
+
+.docs-toc__list {
+  counter-reset: toc;
+  border-left: 2px dashed var(--t-los);
+}
+
+.docs-toc__item a {
+  display: flex;
+  gap: 0.55rem;
+  align-items: baseline;
+  padding: 0.28rem 0.7rem;
+  font-size: 0.92rem;
+  line-height: 1.4;
+  color: var(--dk-muted);
+}
+
+/* The same numbers as the binder tabs in the page. */
+.docs-toc__item:not(.docs-toc__item--sub) {
+  counter-increment: toc;
+}
+
+.docs-toc__item:not(.docs-toc__item--sub) a::before {
+  content: counter(toc);
+  content: counter(toc) / "";
+  flex: none;
+  min-inline-size: 1.1rem;
+  font-family: var(--h-display);
+  font-size: 0.82rem;
+  color: var(--t-title);
+}
+
+.docs-toc__item--sub a {
+  padding-inline-start: 2.35rem;
+}
+
+.docs-toc__item a:hover {
+  color: var(--dk-ink);
+}
+
+/* The changelog's sections are versions, not plays: no numbers there. */
+:root:has(link[rel="alternate"][href="changelog.md"]) .docs-article h2 {
+  padding-inline-start: 0;
+}
+
+:root:has(link[rel="alternate"][href="changelog.md"]) .docs-article h2::before,
+:root:has(link[rel="alternate"][href="changelog.md"]) .docs-toc__item a::before {
+  content: none;
+}
+
+/* Previous and next are two laminated play cards: ruled paper stock,
+   binder holes down the side, a slight tilt that straightens on hover. */
+.docs-pager {
+  gap: 1.25rem;
+  margin-top: 3.25rem;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.docs-pager__link {
+  --tilt: -0.8deg;
+
+  position: relative;
+  box-sizing: border-box;
+  flex: 1 1 0;
+  max-width: 22rem;
+  padding: 0.85rem 1.1rem 0.95rem 2.2rem;
+  overflow: hidden;
+  color: var(--dk-ink);
+  background:
+    linear-gradient(var(--t-card-lines) 1px, transparent 1px) 0 0 / 100% 22px,
+    var(--t-card);
+  border-radius: 12px;
+  box-shadow: var(--t-card-shadow);
+  rotate: var(--tilt);
+}
+
+.docs-pager__link--next {
+  --tilt: 0.8deg;
+
+  margin-inline-start: auto;
+}
+
+.docs-pager__link::before {
+  content: "";
+  position: absolute;
+  inset-block: 0.9rem;
+  inset-inline-start: 0.7rem;
+  inline-size: 0.7rem;
+  background: radial-gradient(circle, var(--t-hole) 0 4px, rgba(0, 0, 0, 0.12) 5px, transparent 6px) center top / 0.7rem 1.6rem repeat-y;
+}
+
+.docs-pager__link:hover {
+  rotate: 0deg;
+}
+
+.docs-pager__dir {
+  font-family: var(--h-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--h-ink-soft);
+}
+
+.docs-pager__title {
+  display: block;
+  margin-top: 0.2rem;
+  font-family: var(--h-display);
+  font-size: 1.15rem;
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: var(--h-green);
+  text-decoration: none;
+}
+
+.docs-pager__link:focus-visible {
+  outline-color: var(--dk-focus);
+}
+
+/* The end zone: green grass, painted stripes, a cream goal line, HELMET
+   painted in gold outline across it. */
+.docs-footer {
+  position: relative;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem 1.5rem;
+  box-sizing: border-box;
+  max-width: none;
+  padding: clamp(1.75rem, 4vw, 2.75rem) var(--dk-gap) 1.75rem;
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--h-cream);
+  background:
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.04) 0 28px, transparent 28px 56px),
+    var(--h-green);
+  border-top: 6px solid var(--h-cream);
+}
+
+.docs-footer::before {
+  content: "HELMET";
+  content: "HELMET" / "";
+  flex-basis: 100%;
+  margin-bottom: 0.5rem;
+  font-family: var(--h-display);
+  font-size: clamp(2.6rem, 1rem + 8vw, 6.5rem);
+  line-height: 0.9;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 2px rgba(255, 204, 51, 0.65);
+}
+
+.docs-footer a {
+  font-weight: 700;
+  color: var(--h-cream);
+  text-decoration-color: var(--h-gold);
+  text-underline-offset: 3px;
+}
+
+.docs-footer a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.docs-footer :focus-visible {
+  outline-color: var(--h-gold);
+}
+
+/* ------------------------------------------------- 9. dark (the chalkboard) */
+
+/* Dark mode reads off the hero's chalkboard: slate ground with a little
+   chalk dust, chalk text, gold where the paper uses green, berry in chalk. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --t-title: var(--h-chalk);
+    --t-strong: var(--h-chalk);
+    --t-hand: var(--h-gold);
+    --t-ring: var(--h-berry-chalk);
+    --t-kicker: var(--h-berry-chalk);
+    --t-tint: rgba(238, 240, 230, 0.05);
+    --t-code-ink: var(--h-gold-soft);
+    --t-code-bg: rgba(238, 240, 230, 0.07);
+    --t-los: rgba(238, 240, 230, 0.22);
+    --t-card: var(--h-slate);
+    --t-card-lines: rgba(238, 240, 230, 0.05);
+    --t-card-shadow: 0 0 0 1px rgba(238, 240, 230, 0.1), 0 18px 30px -20px rgba(0, 0, 0, 0.8);
+    --t-hole: var(--h-board);
+    --t-note: var(--h-chalk-dim);
+    --t-note-bg: rgba(238, 240, 230, 0.05);
+    --t-tip: var(--h-chalk);
+    --t-tip-bg: rgba(12, 84, 73, 0.35);
+    --t-warn: var(--h-gold-soft);
+    --t-warn-bg: rgba(255, 204, 51, 0.08);
+    --t-warn-rule: var(--h-gold);
+    --t-danger: var(--h-berry-chalk);
+    --t-danger-bg: rgba(245, 154, 185, 0.08);
+
+    --dk-bg: var(--h-slate-2);
+    --dk-ink: var(--h-chalk);
+    --dk-muted: var(--h-chalk-dim);
+    --dk-rule: #2a3a33;
+    --dk-accent: var(--h-gold);
+    --dk-on-accent: var(--h-board);
+    --dk-code-bg: var(--h-slate);
+    --dk-focus: var(--h-gold);
+
+    color-scheme: dark;
+  }
+
+  :root:not([data-theme="light"]) body {
+    background: var(--h-chalk-tex), var(--h-slate-2);
+  }
+
+  /* Chalk on the board: the hero title's faint glow. */
+  :root:not([data-theme="light"]) .docs-article h1 {
+    text-shadow: 0 0 1px rgba(238, 240, 230, 0.6);
+  }
+
+  :root:not([data-theme="light"]) .docs-pager__dir {
+    color: var(--h-chalk-dim);
+  }
+
+  :root:not([data-theme="light"]) .docs-pager__title {
+    color: var(--h-gold);
+  }
+}
+
+:root[data-theme="dark"] {
+  --t-title: var(--h-chalk);
+  --t-strong: var(--h-chalk);
+  --t-hand: var(--h-gold);
+  --t-ring: var(--h-berry-chalk);
+  --t-kicker: var(--h-berry-chalk);
+  --t-tint: rgba(238, 240, 230, 0.05);
+  --t-code-ink: var(--h-gold-soft);
+  --t-code-bg: rgba(238, 240, 230, 0.07);
+  --t-los: rgba(238, 240, 230, 0.22);
+  --t-card: var(--h-slate);
+  --t-card-lines: rgba(238, 240, 230, 0.05);
+  --t-card-shadow: 0 0 0 1px rgba(238, 240, 230, 0.1), 0 18px 30px -20px rgba(0, 0, 0, 0.8);
+  --t-hole: var(--h-board);
+  --t-note: var(--h-chalk-dim);
+  --t-note-bg: rgba(238, 240, 230, 0.05);
+  --t-tip: var(--h-chalk);
+  --t-tip-bg: rgba(12, 84, 73, 0.35);
+  --t-warn: var(--h-gold-soft);
+  --t-warn-bg: rgba(255, 204, 51, 0.08);
+  --t-warn-rule: var(--h-gold);
+  --t-danger: var(--h-berry-chalk);
+  --t-danger-bg: rgba(245, 154, 185, 0.08);
+
+  --dk-bg: var(--h-slate-2);
+  --dk-ink: var(--h-chalk);
+  --dk-muted: var(--h-chalk-dim);
+  --dk-rule: #2a3a33;
+  --dk-accent: var(--h-gold);
+  --dk-on-accent: var(--h-board);
+  --dk-code-bg: var(--h-slate);
+  --dk-focus: var(--h-gold);
+
+  color-scheme: dark;
+}
+
+:root[data-theme="dark"] body {
+  background: var(--h-chalk-tex), var(--h-slate-2);
+}
+
+:root[data-theme="dark"] .docs-article h1 {
+  text-shadow: 0 0 1px rgba(238, 240, 230, 0.6);
+}
+
+:root[data-theme="dark"] .docs-pager__dir {
+  color: var(--h-chalk-dim);
+}
+
+:root[data-theme="dark"] .docs-pager__title {
+  color: var(--h-gold);
+}
+
+/* --------------------------------------------------------- 10. responsive */
+
+@media (min-width: 760px) {
+  /* The sidebar rides along while the page scrolls. */
+  .docs-nav--sidebar {
+    position: sticky;
+    top: 1.25rem;
+    max-block-size: calc(100vh - 2.5rem);
+    overflow-y: auto;
+    padding: 0.25rem 0.4rem 0.5rem 0.1rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .docs-layout--toc .docs-toc {
+    top: 1.25rem;
+  }
+}
+
+/* Phone, as the front page does at 680: the header wraps, cards stand
+   straight, and the Copy tab takes a band above the code. */
+@media (max-width: 680px) {
+  :root {
+    --dk-gap: 1rem;
+  }
+
+  .docs-layout {
+    padding-block-start: 1.25rem;
+  }
+
+  .docs-article h2 {
+    padding-inline-start: 2.7rem;
+  }
+
+  .docs-article h2::before {
+    inline-size: 2rem;
+    block-size: 2rem;
+    font-size: 0.95rem;
+  }
+
+  .docs-article pre {
+    font-size: 0.8rem;
+  }
+
+  .docs-copy > pre {
+    margin-inline-end: 0;
+    padding-block-start: 2.6rem;
+    padding-inline-end: 1rem;
+    border-radius: var(--dk-radius);
+  }
+
+  .docs-pager {
+    flex-direction: column;
+    gap: 0.9rem;
+  }
+
+  /* In a column a zero flex basis would fold the cards shut. */
+  .docs-pager__link,
+  .docs-pager__link--next {
+    flex: none;
+    max-width: none;
+    margin-inline-start: 0;
+    rotate: none;
+  }
+}
+
+@media (max-width: 360px) {
+  .site-nav {
+    gap: 0.35rem 0.8rem;
+  }
+}
+
+/* ------------------------------------------- 11. motion (no-preference) */
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* The page title is chalked in, a stroke at a time, like the hero's. */
+  .docs-article h1 {
+    animation: chalk-in 0.55s steps(9, end) 0.1s both;
+  }
+
+  .site-nav a {
+    transition: background-size 0.25s var(--h-out), color 0.2s;
+  }
+
+  .docs-nav a {
+    transition: background-size 0.35s var(--h-out);
+  }
+
+  .docs-pager__link {
+    transition: rotate 0.35s var(--h-spring), translate 0.35s var(--h-spring);
+  }
+
+  .docs-pager__link:hover {
+    translate: 0 -4px;
+  }
+
+  /* Laminate: a sheen slides over the plastic on hover. */
+  .docs-pager__link::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.55) 45%, transparent 60%);
+    transform: translateX(-120%);
+    transition: transform 0.9s var(--h-out);
+    pointer-events: none;
+  }
+
+  .docs-pager__link:hover::after {
+    transform: translateX(120%);
+  }
+
+  .docs-copy__button {
+    transition: background-color 0.2s, scale 0.15s var(--h-spring);
+  }
+
+  .docs-copy__button:active {
+    scale: 0.94;
+  }
+}
+
+@keyframes chalk-in {
+  from { clip-path: inset(-10% 100% -20% 0); }
+  to { clip-path: inset(-10% -2% -20% 0); }
+}
+
+/* -------------------------------------------------------------- 12. print */
+
+@media print {
+  .site-nav {
+    display: none;
+  }
+
+  .site-header {
+    color: #14211d;
+    background: none;
+  }
+
+  .brand {
+    color: #14211d;
+  }
+
+  .docs-article pre,
+  .docs-copy {
+    color: #14211d;
+    background: #ffffff;
+    border-color: #d9d2c0;
+    box-shadow: none;
+  }
+
+  .docs-copy > pre {
+    margin-inline-end: 0;
+    white-space: pre-wrap;
+  }
+
+  .docs-copy__button {
+    display: none;
+  }
+
+  .docs-footer {
+    color: #14211d;
+    background: none;
+  }
+
+  .docs-footer::before {
+    content: none;
+  }
+}

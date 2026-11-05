@@ -9,16 +9,29 @@
 <meta name="docs-version" content="0.3.0">
 <link rel="stylesheet" href="../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../assets/docs.css">
+<link rel="stylesheet" href="../docs/theme/helmet.css">
 <link rel="alternate" type="text/markdown" href="upgrading.md">
 <script src="../assets/docs.js" defer></script>
 </head>
 <body>
 <a class="wsu-skip-link" href="#main">Skip to content</a>
-<header class="docs-header">
-  <a class="docs-header__brand" href="../docs/index.html">HELMET</a>
-  <span><a class="docs-header__home" rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> <a class="docs-header__home" href="../index.html">Back to HELMET</a></span>
-</header>
-<div class="docs-layout docs-layout--toc">
+<header class="site-header">
+  <div class="site-header__row">
+    <a class="brand" href="../index.html">
+      <img src="../brand/helmet-avatar-256.png" width="34" height="34" alt="">
+      <span class="brand__name">HELMET</span>
+      <span class="brand__version">0.3.0</span>
+    </a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="../index.html#playbook">Playbook</a>
+      <a href="../index.html#quick-start">Quick start</a>
+      <a href="../index.html#huddle">Agents</a>
+      <a href="../index.html#depth-chart">Depth chart</a>
+      <a href="../docs/index.html" aria-current="page">Docs</a>
+      <a href="https://proof.apps.wayne.edu/helmet/">Proof</a>
+    </nav>
+  </div>
+</header><div class="docs-layout docs-layout--toc">
   <details class="docs-menu">
     <summary>Menu</summary>
     <nav class="docs-nav" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../docs/index.html">Overview</a></li><li><a href="../docs/install.html">Install</a></li><li><a href="../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../docs/guides/headers.html">The headers</a></li><li><a href="../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../docs/guides/session.html">The session</a></li><li><a href="../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../docs/guides/metrics.html">Metrics</a></li><li><a href="../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../docs/reference/configuration.html">Environment variables</a></li><li><a href="../docs/reference/api.html">API</a></li><li><a href="../docs/reference/proof.html">Proof</a></li></ul></li><li><a href="../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../docs/upgrading.html" aria-current="page">Upgrading</a></li><li><a href="../docs/changelog.html">Changelog</a></li></ul></nav>
@@ -222,7 +235,7 @@ suite pins the adapter behavior in <code>tests/Laravel/SecurityHeadersTest.php</
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../docs/troubleshooting.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Troubleshooting</span></a><a class="docs-pager__link docs-pager__link--next" href="../docs/changelog.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Changelog</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#0-3-0-2026-11-03">0.3.0 (2026-11-03)</a></li><li class="docs-toc__item--sub"><a href="#breaking">Breaking</a></li><li class="docs-toc__item--sub"><a href="#deprecated">Deprecated</a></li><li class="docs-toc__item--sub"><a href="#steps">Steps</a></li><li class="docs-toc__item--sub"><a href="#how-to-verify">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-6-2026-11-02">0.2.6 (2026-11-02)</a></li><li class="docs-toc__item"><a href="#0-2-5-2026-10-29">0.2.5 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-4-2026-10-29">0.2.4 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-3-2026-10-29">0.2.3 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-2-2026-10-29">0.2.2 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-1-2026-10-29">0.2.1 (2026-10-29)</a></li><li class="docs-toc__item--sub"><a href="#breaking-1">Breaking</a></li><li class="docs-toc__item--sub"><a href="#deprecated-1">Deprecated</a></li><li class="docs-toc__item--sub"><a href="#steps-1">Steps</a></li><li class="docs-toc__item--sub"><a href="#how-to-verify-1">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-0-2026-10-29">0.2.0 (2026-10-29)</a></li><li class="docs-toc__item--sub"><a href="#breaking-2">Breaking</a></li><li class="docs-toc__item--sub"><a href="#deprecated-2">Deprecated</a></li><li class="docs-toc__item--sub"><a href="#steps-2">Steps</a></li><li class="docs-toc__item--sub"><a href="#how-to-verify-2">How to verify</a></li><li class="docs-toc__item"><a href="#0-1-0-2026-10-27">0.1.0 (2026-10-27)</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#0-3-0-2026-11-03">0.3.0 (2026-11-03)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-6-2026-11-02">0.2.6 (2026-11-02)</a></li><li class="docs-toc__item"><a href="#0-2-5-2026-10-29">0.2.5 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-4-2026-10-29">0.2.4 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-3-2026-10-29">0.2.3 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-2-2026-10-29">0.2.2 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-1-2026-10-29">0.2.1 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-1">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-1">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-1">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-1">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-0-2026-10-29">0.2.0 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-2">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-2">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-2">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-2">How to verify</a></li><li class="docs-toc__item"><a href="#0-1-0-2026-10-27">0.1.0 (2026-10-27)</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.0</span></span>

@@ -43,9 +43,13 @@ composer require waynestate/playbook
 
 ### Fetch the values file directly[#](https://helmet.apps.wayne.edu/docs/guides/wsu-values.html#fetch-the-values-file-directly)
 
+curl
+
 ```bash
 curl --fail -H "PRIVATE-TOKEN: $GITLAB_TOKEN" "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" -o .env.playbook
 ```
+
+powershell
 
 ```powershell
 Invoke-WebRequest -Headers @{ 'PRIVATE-TOKEN' = $env:GITLAB_TOKEN } -Uri "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" -OutFile .env.playbook

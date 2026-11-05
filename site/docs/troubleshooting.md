@@ -14,9 +14,13 @@ This page lists the symptoms HELMET's README, CHANGELOG and test suite justify, 
 
 Before anything else, ask the load balancer's question and confirm the floor is on:
 
+linux
+
 ```bash
 curl -sI http://localhost/up
 ```
+
+windows
 
 ```powershell
 Invoke-WebRequest http://localhost/up
