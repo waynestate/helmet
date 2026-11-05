@@ -1,4 +1,8 @@
 {
+    "theme": {
+        "css": "theme/helmet.css",
+        "header": "_header.html"
+    },
     "blocks": {
         "env": {
             "type": "env",

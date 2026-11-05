@@ -1,0 +1,23 @@
+<!--
+  The docs pages wear the front page's sideline header (site/index.html). The docs builder puts the header element
+  below in place of its generic one on every page, rewrites the relative links (written as if from site/) to the
+  page's depth, fills the version placeholder and marks the Docs link aria-current. Styles: docs/theme/helmet.css.
+  Keep the links in step with the front page's header nav, same order, same words. Same team, same jersey.
+-->
+<header class="site-header">
+  <div class="site-header__row">
+    <a class="brand" href="index.html">
+      <img src="brand/helmet-avatar-256.png" width="34" height="34" alt="">
+      <span class="brand__name">{{project}}</span>
+      <span class="brand__version">{{version}}</span>
+    </a>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html#playbook">Playbook</a>
+      <a href="index.html#quick-start">Quick start</a>
+      <a href="index.html#huddle">Agents</a>
+      <a href="index.html#depth-chart">Depth chart</a>
+      <a href="docs/index.html">Docs</a>
+      <a href="https://proof.apps.wayne.edu/helmet/">Proof</a>
+    </nav>
+  </div>
+</header>
