@@ -306,6 +306,40 @@ final class SecurityHeadersTest extends TestCase
         $response->assertHeader('X-Content-Type-Options', 'nosniff');
     }
 
+    /**
+     * H14: an aborted request (403) must carry the baseline security headers,
+     * not just a bare error page. The middleware sits outside the router, so
+     * the exception handler renders the 403 body and the middleware still
+     * stamps the headers on the way out.
+     */
+    public function testAbortedRequestCarriesTheBaselineHeaders(): void
+    {
+        $this->app['router']->get('/forbidden', static function (): never {
+            abort(403);
+        })->middleware('web');
+
+        $response = $this->get('/forbidden');
+
+        $response->assertStatus(403);
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
+        $response->assertHeader('Content-Security-Policy');
+    }
+
+    /**
+     * H14: under the default global scope the middleware runs before routing,
+     * so even a 404 for a path with no matching route carries the baseline
+     * headers. This is the documented reason to prefer the global scope over
+     * the web group.
+     */
+    public function testUnmatchedRouteCarriesTheBaselineHeadersUnderGlobalScope(): void
+    {
+        $response = $this->get('/no-such-route');
+
+        $response->assertStatus(404);
+        $response->assertHeader('X-Content-Type-Options', 'nosniff');
+        $response->assertHeader('Content-Security-Policy');
+    }
+
     public function testRouteCanReadTheNonceThatTheHeaderCarries(): void
     {
         $this->defineNonceCapturingRoute('/test');
