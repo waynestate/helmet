@@ -170,6 +170,31 @@ Keep the same rules as `/up`: a short body, `no-store`, and no detail about whic
 > [!TIP]
 > Vite's dev runtime reads a `<meta property="csp-nonce" nonce="...">` tag to nonce the CSS and preload tags it adds after page load. Print `helmet_csp_nonce_meta($helmet['nonce'])` in the `<head>` of every page, with the same nonce `helmet_boot()` returned. The nonce is escaped, so a nonce with a quote cannot break out of the attribute.
 
+## Raw PHP with a Vue (Vite) build
+
+A raw PHP app that serves a built Vue/Vite SPA gives the bundler HELMET's nonce in two steps. At build time, set Vite's `html.cspNonce` to a placeholder:
+
+```js
+// vite.config.js
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+    html: {
+        cspNonce: 'CSP_NONCE_SLOT_FOR_HELMET',
+    },
+});
+```
+
+On every request, replace the placeholder with the nonce `helmet_boot()` returned before you echo the page:
+
+```php
+echo helmet_csp_nonce_swap(file_get_contents('dist/index.html'), $helmet['nonce']);
+```
+
+`helmet_csp_nonce_swap()` replaces every occurrence of the placeholder with the nonce, HTML-escaped exactly the way `helmet_csp_nonce_meta()` escapes it. A placeholder shorter than 16 characters throws, so it cannot collide with page text, an empty nonce throws, and a page that carries no placeholder is returned unchanged.
+
+One more setting keeps the CSP honest: Vite inlines small assets as `data:` URIs by default. The default policy already allows `data:` in `font-src` and `img-src`, so inlined fonts and images pass; if you would rather not inline at all, set `build.assetsInlineLimit: 0`.
+
 ## Related
 
 - [Quick start](quick-start.md)

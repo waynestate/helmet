@@ -432,6 +432,39 @@ if (!function_exists('helmet_csp_nonce_meta')) {
     }
 }
 
+if (!function_exists('helmet_csp_nonce_swap')) {
+    /**
+     * Swap a build-time CSP nonce placeholder for the response nonce.
+     *
+     * A raw PHP app that serves a built Vue (Vite) page sets Vite's
+     * html.cspNonce to a placeholder at build time. On every request, pass
+     * the built page and the nonce helmet_boot() returned, and every
+     * occurrence of the placeholder comes back as the nonce, HTML-escaped
+     * exactly like helmet_csp_nonce_meta() escapes it, so the tags Vite
+     * wrote carry the same value the CSP header sends.
+     *
+     * It is a pure function: no output, no headers, no globals. When the
+     * placeholder does not occur in the page, the page is returned
+     * unchanged, so a page without a bundle still works.
+     *
+     * @throws \InvalidArgumentException If "placeholder" is shorter than 16
+     *         characters (a short one would collide with page text), or if
+     *         "nonce" is empty.
+     */
+    function helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'CSP_NONCE_SLOT_FOR_HELMET'): string
+    {
+        if (strlen($placeholder) < 16) {
+            throw new \InvalidArgumentException('helmet_csp_nonce_swap() "placeholder" must be at least 16 characters.');
+        }
+
+        if ($nonce === '') {
+            throw new \InvalidArgumentException('helmet_csp_nonce_swap() "nonce" must not be empty.');
+        }
+
+        return str_replace($placeholder, htmlspecialchars($nonce, ENT_QUOTES | ENT_HTML5, 'UTF-8'), $html);
+    }
+}
+
 if (!function_exists('helmet_metrics')) {
     /**
      * Build the /metrics response for a framework-free PHP app.
