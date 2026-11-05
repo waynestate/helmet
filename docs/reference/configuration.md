@@ -11,6 +11,46 @@ Every `HELMET_` environment variable the package reads, its meaning, its default
 
 The Laravel adapter reads every value through `Waynestate\Helmet\Support\Setting::get()`. The real environment wins (getenv, then `$_ENV`, then `$_SERVER`); an empty string counts as not set, so a blank value falls through to the next source. When the environment has no value for the key, the private `waynestate/playbook` package (Playbook) supplies it, if it is installed. When neither has it, null comes back and the default in the table applies. Playbook is optional by design: the package never requires it, it only looks for the class. That is how a WSU value can arrive at an app without this public repo naming a single one of them.
 
+## The config keys
+
+Every value above lands in the `helmet` config repo, and every other part of the package reads it through `config()`. This lists every key, one level deep; the environment variable that fills each one is in [The variables](#the-variables) below. Publish the config (`php artisan vendor:publish --tag=helmet-config`) to edit a key directly instead of through the environment.
+
+| Key | Meaning |
+| --- | --- |
+| `preset` | The platform preset name that fills `proxies` (see [Platform presets](#platform-presets)). Read from `HELMET_PRESET`, else from Playbook; null when no preset is named. An unknown name throws at boot, even when `HELMET_PROXIES` is set. |
+| `proxies` | The trusted proxies (IPs or CIDR ranges) that may set `X-Forwarded-Proto`. Filled from `HELMET_PROXIES`; only an unset variable falls back to the `preset` list. Empty trusts nobody. |
+| `scope` | Where the `SecurityHeaders` middleware runs: `global` (the default) adds it to the kernel's global middleware, `web` keeps it in the `web` group only. Set with `HELMET_SCOPE`. |
+| `csp` | The Content-Security-Policy as a policy array keyed by directive, merged over the core default per directive; a directive you set replaces the default's, one you leave out keeps it, and one set to null is removed. Filled from `HELMET_CSP` when it parses as a non-empty JSON array. |
+| `csp_report_uri` | The CSP report destination: an absolute https URL with a host, or a path relative to the page's origin that starts with a single slash. null sends no reporting directives. Set with `HELMET_CSP_REPORT_URI`. |
+| `csp_report_only` | true sends the policy as `Content-Security-Policy-Report-Only`, observing violations without blocking them. Set with `HELMET_CSP_REPORT_ONLY`. |
+| `csp_trusted_types` | The Trusted Types directives, appended to the report-only header only, never the enforcing one. Off by default. |
+| `csp_trusted_types.enabled` | Whether the Trusted Types directives are appended. Set with `HELMET_CSP_TRUSTED_TYPES_ENABLED`. |
+| `csp_trusted_types.policies` | The Trusted Types policy names, default `["default"]`. Filled from `HELMET_CSP_TRUSTED_TYPES_POLICIES` (comma-separated). |
+| `coop` | The Cross-Origin-Opener-Policy value, default `same-origin`; null sends no COOP header. Set with `HELMET_COOP`. |
+| `corp` | The Cross-Origin-Resource-Policy value; null (the default) sends no CORP header. Set with `HELMET_CORP`. |
+| `permissions_policy` | The Permissions-Policy feature map: each feature maps to its allowlist, and an empty allowlist denies the feature. The default is a deny list; an empty map sends no header. Filled from `HELMET_PERMISSIONS_POLICY` when it parses as JSON. |
+| `hsts` | The Strict-Transport-Security max-age in seconds, sent on HTTPS responses only. Set with `HELMET_HSTS_MAX_AGE`. |
+| `hsts_include_subdomains` | Whether the HSTS header carries the `includeSubDomains` directive. Set with `HELMET_HSTS_INCLUDE_SUBDOMAINS`. |
+| `hsts_preload` | Whether the HSTS header carries the `preload` directive. Preload is hard to undo, so enable it only when every subdomain serves HTTPS. Set with `HELMET_HSTS_PRELOAD`. |
+| `no_store` | The `Cache-Control: no-store` setting. Off by default. |
+| `no_store.enabled` | Whether the `no-store` header is sent on matching responses. Set with `HELMET_NO_STORE_ENABLED`. |
+| `no_store.paths` | Path prefixes that carry `no-store`; empty means every response. Filled from `HELMET_NO_STORE_PATHS` (comma-separated). |
+| `session` | The session cookie settings that `helmet_boot()` applies when a raw PHP app boots through it; the Laravel adapter leaves the framework's session configuration alone. |
+| `session.secure` | The session cookie Secure flag: `auto` (the default) follows the request's HTTPS detection, `always` forces it for apps whose TLS terminates in front of the app. Set with `HELMET_SESSION_SECURE`. |
+| `ribbon` | Whether the environment ribbon is injected into HTML responses in non-production environments. Set with `HELMET_RIBBON`. |
+| `policy_path` | The path to a CREED `policy.json` the ribbon reads for version warnings; null means no warning and no file read. Set with `HELMET_POLICY_PATH`. |
+| `dev_origin` | The Vite dev server origin, used in `local` only while the dev server is running; it overrides the hot file. Set with `HELMET_DEV_ORIGIN`. |
+| `warn_debug` | Whether the Laravel adapter writes the `helmet.debug_enabled_in_production` warning when the app boots with debug enabled in production. Set with `HELMET_WARN_DEBUG`. |
+| `metrics` | The `/metrics` endpoint, in the Prometheus text exposition format. Off by default. |
+| `metrics.enabled` | Whether the endpoint is on. Set with `HELMET_METRICS_ENABLED`. |
+| `metrics.token` | The bearer token a scraper must present (`Authorization: Bearer <token>`); compared with `hash_equals`. Set with `HELMET_METRICS_TOKEN`. |
+| `metrics.allow` | Client IPs or CIDR ranges allowed to read the endpoint without a token. Filled from `HELMET_METRICS_ALLOW` (comma-separated). |
+| `csrf` | The request-forgery guard. Off by default. |
+| `csrf.enabled` | Whether the guard is on. Set with `HELMET_CSRF_ENABLED`. |
+| `csrf.allow_same_site` | Whether `Sec-Fetch-Site: same-site` passes. Off by default because sibling subdomains are still same-site. Set with `HELMET_CSRF_ALLOW_SAME_SITE`. |
+| `csrf.trusted_origins` | Origins that may make state-changing requests to the app. Filled from `HELMET_CSRF_TRUSTED_ORIGINS` (comma-separated). |
+| `csrf.except` | Paths that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. Filled from `HELMET_CSRF_EXCEPT` (comma-separated). |
+
 ## Platform presets
 
 A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app. The presets live in `Waynestate\Helmet\Platform\Presets`:

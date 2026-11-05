@@ -63,7 +63,7 @@ an address that belongs to the platform, not the app. The presets live in
 | `citadel` | the Docker bridge gateway to the HA-Proxy front (see "Running off Citadel") |
 | `docker` | none: a plain Docker network with no front proxy |
 
-Raw PHP passes the preset name:
+Raw PHP passes the preset name in the `preset` option:
 
 ```php
 $helmet = helmet_boot([
@@ -207,6 +207,21 @@ $helmet = helmet_boot([
 // $helmet['request_id'] is the ID stamped on this process's log records.
 ```
 
+Every other `helmet_boot()` option is covered in its own section below:
+`csp` (Customizing the CSP), `csp_report_uri` and `csp_report_only`
+(CSP reports), `coop`, `corp` and `permissions_policy` (Cross-origin
+isolation and feature policy), `hsts_max_age`, `hsts_include_subdomains`
+and `hsts_preload` (Configuring HSTS), `no_store` (the no-store rows of
+[Raw PHP and Laravel agree](#raw-php-and-laravel-agree)), `csrf`
+(The request-forgery guard), `health_path` (Health check without a front
+controller), `session` (The session, secure mode) and `error_handler`
+(A generic error page).
+
+The `log` option configures that logger: `channel` names it, `stream` is a
+stream or a file path, and `level` sets the minimum level. Set `request_id`
+to reuse an ID you already have (8 to 64 letters, digits, dots, underscores
+or dashes); otherwise HELMET generates one for the process.
+
 Each record is one JSON line:
 
 ```json
@@ -255,7 +270,7 @@ the request ID so the rest of the app can use them.
 
 A raw PHP app has no framework to catch an uncaught exception, so PHP may print
 the message, the file path and a stack trace to the visitor. Turn on the
-opt-in handler and the visitor gets a short, fixed "Something went wrong"
+opt-in `error_handler` and the visitor gets a short, fixed "Something went wrong"
 page with status 500 and `Cache-Control: no-store`, while the full detail
 (class, message, file, line and trace) goes to the log at `error` level:
 
@@ -890,9 +905,9 @@ the new name and starts a fresh one.
 Citadel, HA-Proxy ends TLS before the request reaches PHP, so the request
 looks plain even though the client connected over HTTPS; there, set
 `HELMET_SESSION_SECURE=always` so the cookie keeps its `Secure` flag. In
-Laravel the value lands in `helmet.session.secure`; in raw PHP pass
-`'session' => ['secure' => 'always']` to `helmet_boot()`, and a Laravel app
-that boots through `helmet_boot()` can hand it
+Laravel the value lands in `helmet.session.secure`; in raw PHP pass the
+`session` option, `'session' => ['secure' => 'always']`, to `helmet_boot()`,
+and a Laravel app that boots through `helmet_boot()` can hand it
 `config('helmet.session.secure')`. The cookie name still follows the request,
 so it never takes the `__Host-` prefix on a plain-HTTP request, and plain
 HTTP development keeps `auto`.
