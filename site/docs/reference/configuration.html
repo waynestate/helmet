@@ -226,6 +226,12 @@
 <td>config/helmet.php</td>
 </tr>
 <tr>
+<td>HELMET_WARN_BROAD_PROXIES</td>
+<td>true makes HELMET log one helmet.broad_trusted_proxy warning at boot when the trusted-proxy list holds a broad entry (an IPv4 range shorter than /16 or an IPv6 range shorter than /48).</td>
+<td>true</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
 <td>HELMET_WARN_DEBUG</td>
 <td>true makes the Laravel adapter log one warning when the app boots with debug enabled in production.</td>
 <td>true</td>

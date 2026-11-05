@@ -37,6 +37,8 @@ With neither a preset nor a list, no address is trusted, so forwarded headers su
 > [!WARNING]
 > List only the address the front proxy connects from, never a whole private range. A broad range such as `10.0.0.0/8` also trusts other containers on the same network, and any of them could then set `X-Forwarded-Proto`.
 
+When the list does hold a broad entry, an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`, HELMET writes one `helmet.broad_trusted_proxy` warning at boot so the range is hard to miss in the logs. Set `HELMET_WARN_BROAD_PROXIES=false` (or pass `warn_broad_proxies: false` to `helmet_boot()`) once you have reviewed the range and accepted it.
+
 ## Resolving the client IP
 
 The same trust list drives `ClientIp::resolve()`. When the peer is a trusted proxy, the client IP is read from `X-Forwarded-For` right to left (closest proxy first), and the walk stops at the first untrusted hop, so a client-chosen entry behind that hop can never be returned. Two failure rules keep it honest:

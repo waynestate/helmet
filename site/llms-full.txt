@@ -209,7 +209,7 @@ Each record is one JSON line:
 
 **Security events.**
 
-Three warnings carry HELMET's security events, and a logger that throws never
+Four warnings carry HELMET's security events, and a logger that throws never
 changes the answer: the `403` still goes out, the resolved client IP is still
 the peer, and the boot still finishes.
 
@@ -218,6 +218,7 @@ the peer, and the boot still finishes.
 | `helmet.request_refused` | the request-forgery guard answers `403` | `event` (`request_refused`), `method` (upper case), `path` (no query string), `sec_fetch_site` (`same-origin`, `same-site`, `cross-site`, `none`, `other`, or null when the header is absent), `origin_present` (bool) |
 | `helmet.forwarded_for_rejected` | `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry | `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`), `peer` (the trusted peer address) |
 | `helmet.debug_enabled_in_production` | the Laravel adapter boots with `app.debug` true in the production environment | `event` (`debug_enabled_in_production`) |
+| `helmet.broad_trusted_proxy` | the app boots with a broad entry in its trusted-proxy list (an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`) | `event` (`broad_trusted_proxy`), `entries` (the broad entries, as configured) |
 
 Never logged: the Origin value, cookies, Authorization, the `X-Forwarded-For`
 header, or the bad entry. The helmet takes the hit and reports it, without
@@ -232,9 +233,12 @@ Use a platform preset (for example `citadel`, which trusts the Docker bridge
 gateway), or list only the address the front proxy connects from, never a
 whole private range. A broad range such as `10.0.0.0/8` also trusts other
 containers on the same network, and any of them could then set
-`X-Forwarded-Proto`. An explicitly empty `HELMET_PROXIES` means trust
-nobody, even when a preset is set; only an unset variable falls back to the
-preset.
+`X-Forwarded-Proto`. When the list does hold a broad entry, an IPv4 range
+shorter than `/16` or an IPv6 range shorter than `/48`, `helmet_boot()` writes
+one `helmet.broad_trusted_proxy` warning through the configured logger; set
+`warn_broad_proxies` to `false` to silence it. An explicitly empty
+`HELMET_PROXIES` means trust nobody, even when a preset is set; only an unset
+variable falls back to the preset.
 
 The `citadel` preset trusts the container bridge gateway address, which is
 only correct while the app's port is not published to the host network,
@@ -469,7 +473,11 @@ its last value when the request comes from a trusted proxy. A single value
 is left alone, and requests from untrusted peers are ignored as before.
 
 As in the raw PHP section, use a preset or list only the address your front
-proxy connects from, never a whole private range.
+proxy connects from, never a whole private range. When the resolved list does
+hold a broad entry, an IPv4 range shorter than `/16` or an IPv6 range shorter
+than `/48`, the provider writes one `helmet.broad_trusted_proxy` warning at
+boot; set `HELMET_WARN_BROAD_PROXIES=false` to silence it once you have
+reviewed the range.
 
 Keep `/up` for liveness only; readiness checks (database, cache) belong on a separate `/ready` route (see [Readiness is a separate check](#readiness-is-a-separate-check)).
 
@@ -483,6 +491,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | `HELMET_SCOPE` | `helmet.scope` | `global` | `global` puts `SecurityHeaders` in the kernel's global middleware; `web` keeps it in the `web` group only. `InjectRibbon` always stays in `web`. |
 | `HELMET_PRESET` | `helmet.preset` | none | A platform preset name (`citadel` or `docker`) that supplies the trusted proxies. Read from the environment, else from Playbook (see [WSU values (Playbook)](#wsu-values-playbook)). `HELMET_PROXIES` wins when both are set. An unknown name throws, even when `HELMET_PROXIES` is set. |
 | `HELMET_PROXIES` | `helmet.proxies` | none | Comma-separated IPs or CIDR ranges allowed to set `X-Forwarded-Proto`. Wins over `HELMET_PRESET`. Also copied to `trustedproxy.proxies` when the app has not set it. An explicitly empty value (`HELMET_PROXIES=`) trusts nobody, even when `HELMET_PRESET` is set; only an unset variable falls back to the preset. |
+| `HELMET_WARN_BROAD_PROXIES` | `helmet.warn_broad_proxies` | `true` | Set `false` to silence the `helmet.broad_trusted_proxy` boot warning when the trusted-proxy list holds a broad entry (an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`). |
 | `HELMET_CSP` | `helmet.csp` | the core default policy | A JSON policy array, merged over the default (see below). Empty or invalid JSON keeps the default. |
 | `HELMET_HSTS_MAX_AGE` | `helmet.hsts` | `31536000` | The HSTS `max-age` in seconds, sent on HTTPS only. It must not be negative. |
 | `HELMET_HSTS_INCLUDE_SUBDOMAINS` | `helmet.hsts_include_subdomains` | `true` | Set `false` to omit the HSTS `includeSubDomains` directive. |
@@ -1435,6 +1444,7 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Added: `helmet.broad_trusted_proxy` (warning, logged once at boot when the resolved trusted-proxy list holds a broad entry, an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`, with `event` and `entries` in the context), so a whole-network trust is hard to miss in the logs; `TrustedProxies::broadEntries()` does the detection, both the Laravel provider and the raw PHP `helmet_boot()` emit it through the configured logger, and a failing logger never breaks the boot. Opt out with `helmet.warn_broad_proxies` (env `HELMET_WARN_BROAD_PROXIES`, default true) or `warn_broad_proxies: false` in `helmet_boot()`. Tests: `tests/Proxy/BroadEntriesTest.php`, `tests/Laravel/BroadProxyWarningTest.php`, `tests/FunctionsBroadProxyTest.php`; BEST_PRACTICES H21 is now `Partly enforced`.
 - Docs: README and the raw PHP guide gain "Readiness is a separate check": `/up` stays liveness-only, dependency checks go on a separate `/ready` path with a short timeout and a fixed 503 body, and Laravel apps keep them out of the `DiagnosingHealth` listener; BEST_PRACTICES H34 is `Documented`.
 - Added: a Grafana dashboard for the HELMET metrics (`docs/grafana/helmet.json`, uid `helmet-fleet`) with panels for apps reporting, HELMET and PHP versions in use, PHP support status, apps by instance, and scrape health; it imports into any Grafana through a `DS_PROMETHEUS` datasource input, and `tests/Support/GrafanaDashboardTest.php` pins its shape. The metrics guide gains a "Graph it in Grafana" section with a sample `scrape_configs` stanza. `docs/` was never export-ignored, so the dashboard already ships in the dist archive.
 - Added: the docs site. `bin/docs-site.php` (Squire's shared builder) turns `docs/` into `site/docs/`: the Overview page carries the README opening and a generated table of every `HELMET_` environment variable the package reads. `composer docs` rebuilds it, `composer ci` checks it through `composer docs:check`, and the front page links it.
@@ -1930,6 +1940,8 @@ With neither a preset nor a list, no address is trusted, so forwarded headers su
 Warning
 
 List only the address the front proxy connects from, never a whole private range. A broad range such as `10.0.0.0/8` also trusts other containers on the same network, and any of them could then set `X-Forwarded-Proto`.
+
+When the list does hold a broad entry, an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`, HELMET writes one `helmet.broad_trusted_proxy` warning at boot so the range is hard to miss in the logs. Set `HELMET_WARN_BROAD_PROXIES=false` (or pass `warn_broad_proxies: false` to `helmet_boot()`) once you have reviewed the range and accepted it.
 
 ### Resolving the client IP[#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#resolving-the-client-ip)
 
@@ -3379,6 +3391,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_RIBBON | false switches the maintenance ribbon off everywhere. | true | config/helmet.php |
 | HELMET_SCOPE | global puts SecurityHeaders in the kernel's global middleware; web keeps it in the web group only. InjectRibbon always stays in web. | global | config/helmet.php |
 | HELMET_SESSION_SECURE | auto sets the Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. Anything else throws. | auto | config/helmet.php |
+| HELMET_WARN_BROAD_PROXIES | true makes HELMET log one helmet.broad_trusted_proxy warning at boot when the trusted-proxy list holds a broad entry (an IPv4 range shorter than /16 or an IPv6 range shorter than /48). | true | config/helmet.php |
 | HELMET_WARN_DEBUG | true makes the Laravel adapter log one warning when the app boots with debug enabled in production. | true | config/helmet.php |
 
 ### Example .env[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#example-env)

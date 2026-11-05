@@ -31,6 +31,9 @@
 <h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
 <ul>
 <li>
+<p>Added: <code>helmet.broad_trusted_proxy</code> (warning, logged once at boot when the resolved trusted-proxy list holds a broad entry, an IPv4 range shorter than <code>/16</code> or an IPv6 range shorter than <code>/48</code>, with <code>event</code> and <code>entries</code> in the context), so a whole-network trust is hard to miss in the logs; <code>TrustedProxies::broadEntries()</code> does the detection, both the Laravel provider and the raw PHP <code>helmet_boot()</code> emit it through the configured logger, and a failing logger never breaks the boot. Opt out with <code>helmet.warn_broad_proxies</code> (env <code>HELMET_WARN_BROAD_PROXIES</code>, default true) or <code>warn_broad_proxies: false</code> in <code>helmet_boot()</code>. Tests: <code>tests/Proxy/BroadEntriesTest.php</code>, <code>tests/Laravel/BroadProxyWarningTest.php</code>, <code>tests/FunctionsBroadProxyTest.php</code>; BEST_PRACTICES H21 is now <code>Partly enforced</code>.</p>
+</li>
+<li>
 <p>Docs: README and the raw PHP guide gain &quot;Readiness is a separate check&quot;: <code>/up</code> stays liveness-only, dependency checks go on a separate <code>/ready</code> path with a short timeout and a fixed 503 body, and Laravel apps keep them out of the <code>DiagnosingHealth</code> listener; BEST_PRACTICES H34 is <code>Documented</code>.</p>
 </li>
 <li>

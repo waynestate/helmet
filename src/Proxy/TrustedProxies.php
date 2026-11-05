@@ -112,6 +112,41 @@ final class TrustedProxies
     }
 
     /**
+     * The configured entries that are too broad to be safe (H21): CIDR ranges
+     * whose prefix is shorter than /16 for IPv4 or shorter than /48 for IPv6.
+     * Such a range trusts other machines on the same network, any of which
+     * could then set X-Forwarded-Proto.
+     *
+     * Exact addresses and narrower ranges (IPv4 /16 to /32, IPv6 /48 to /128)
+     * are not broad. Returns the matching entries exactly as configured, in
+     * order. This only reports; it never logs or mutates the list.
+     *
+     * @return list<string>
+     */
+    public function broadEntries(): array
+    {
+        $broad = [];
+        foreach ($this->proxies as $proxy) {
+            if (!str_contains($proxy, '/')) {
+                continue;
+            }
+
+            [$subnet, $bits] = explode('/', $proxy, 2);
+            $prefixLen = filter_var($bits, FILTER_VALIDATE_INT);
+            if ($prefixLen === false) {
+                continue;
+            }
+
+            $isIpv4 = filter_var($subnet, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false;
+            if (($isIpv4 && $prefixLen < 16) || (!$isIpv4 && $prefixLen < 48)) {
+                $broad[] = $proxy;
+            }
+        }
+
+        return $broad;
+    }
+
+    /**
      * Validate a CIDR entry: the subnet must be a valid address and the
      * prefix an integer from 1 to 32 (IPv4) or 1 to 128 (IPv6).
      *

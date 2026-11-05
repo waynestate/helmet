@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use ReflectionProperty;
+use Waynestate\Helmet\Proxy\TrustedProxies;
 
 /**
  * The Laravel adapter for HELMET.
@@ -142,6 +143,7 @@ final class HelmetServiceProvider extends ServiceProvider
         // the value is fixed for the life of the process, and a long-lived
         // worker must not log it on every request.
         $this->warnIfDebugInProduction();
+        $this->warnIfBroadTrustedProxies();
     }
 
     /**
@@ -173,6 +175,42 @@ final class HelmetServiceProvider extends ServiceProvider
         try {
             Log::warning('helmet.debug_enabled_in_production', [
                 'event' => 'debug_enabled_in_production',
+            ]);
+        } catch (\Throwable) {
+            // A logging failure must never break the boot.
+        }
+    }
+
+    /**
+     * Write one warning when the resolved trusted-proxy list contains a broad
+     * entry (H21: trust the proxy's address, not its whole network).
+     *
+     * A broad entry is an IPv4 range shorter than /16 or an IPv6 range shorter
+     * than /48; such a range trusts other machines on the same network, any
+     * of which could then set X-Forwarded-Proto. The warning fires once at
+     * boot, not per request. The context carries the event name and the broad
+     * entries, and nothing else. Opt out with helmet.warn_broad_proxies (env
+     * HELMET_WARN_BROAD_PROXIES). A logging failure is swallowed: it must
+     * never break the boot.
+     */
+    private function warnIfBroadTrustedProxies(): void
+    {
+        if ((bool) config('helmet.warn_broad_proxies') !== true) {
+            return;
+        }
+
+        /** @var list<string> $proxyList */
+        $proxyList = (array) config('helmet.proxies');
+        $broad = (new TrustedProxies($proxyList))->broadEntries();
+
+        if ($broad === []) {
+            return;
+        }
+
+        try {
+            Log::warning('helmet.broad_trusted_proxy', [
+                'event' => 'broad_trusted_proxy',
+                'entries' => $broad,
             ]);
         } catch (\Throwable) {
             // A logging failure must never break the boot.

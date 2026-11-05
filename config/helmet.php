@@ -186,6 +186,13 @@ use Waynestate\Helmet\Support\Setting;
  |               boots with app.debug true in the production environment.
  |               On by default. Set with the HELMET_WARN_DEBUG env var.
  |
+ | "warn_broad_proxies"
+ |               Whether the Laravel adapter writes the
+ |               helmet.broad_trusted_proxy warning when the resolved
+ |               trusted-proxy list contains a broad entry (an IPv4 range
+ |               shorter than /16 or an IPv6 range shorter than /48). On by
+ |               default. Set with the HELMET_WARN_BROAD_PROXIES env var.
+ |
  | "metrics"     The /metrics endpoint, in the Prometheus text exposition
 |               format. Off by default. When enabled, a request is served
 |               only if it presents the bearer token or comes from an
@@ -362,6 +369,10 @@ $policyPath = is_string($policyPath) && $policyPath !== '' ? $policyPath : null;
 // APP_DEBUG=true in production should show up in the logs.
 $warnDebug = (bool) env('HELMET_WARN_DEBUG', true);
 
+// The broad-trusted-proxy warning: on by default. A deploy that trusts a
+// whole private range should show up in the logs.
+$warnBroadProxies = (bool) env('HELMET_WARN_BROAD_PROXIES', true);
+
 // The request-forgery guard: off by default. When on, it rejects
 // state-changing requests that are not same-origin (or from a trusted
 // origin).
@@ -439,6 +450,7 @@ return [
     'policy_path' => $policyPath,
     'dev_origin' => env('HELMET_DEV_ORIGIN'),
     'warn_debug' => $warnDebug,
+    'warn_broad_proxies' => $warnBroadProxies,
     'metrics' => [
         'enabled' => $metricsEnabled,
         'token' => $metricsToken,

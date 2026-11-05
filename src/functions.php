@@ -34,7 +34,10 @@ if (!function_exists('helmet_boot')) {
        *    enabled and the request is not same-origin (or from a trusted
        *    origin),
        *  - sends the security headers (including a per-request CSP nonce),
-      *  - sets up a JSON logger (if configured).
+       *  - sets up a JSON logger (if configured),
+       *  - writes one helmet.broad_trusted_proxy warning (through that
+       *    logger, when one was configured) if the trusted-proxy list holds
+       *    a broad range.
      *
      * It reads $_SERVER directly rather than building a PSR-7 request, so it
      * works in plain PHP without a server-request factory.
@@ -45,10 +48,11 @@ if (!function_exists('helmet_boot')) {
      *    Waynestate\Helmet\Platform\Presets), e.g. "citadel" or "docker".
      *  - neither: an empty list, which trusts nothing.
      *
-       * @param array{
-        *     trusted_proxies?: list<string>,
-        *     preset?: string,
-        *     session?: array{secure?: 'auto'|'always'},
+        * @param array{
+         *     trusted_proxies?: list<string>,
+         *     preset?: string,
+         *     warn_broad_proxies?: bool,
+         *     session?: array{secure?: 'auto'|'always'},
        *     csp?: array<string, list<string>|null>,
        *     csp_report_uri?: string,
        *     csp_report_only?: bool,
@@ -143,6 +147,27 @@ if (!function_exists('helmet_boot')) {
             );
             if ($suppliedRequestId !== null && Logging::isValidRequestId($suppliedRequestId)) {
                 $requestId = $suppliedRequestId;
+            }
+        }
+
+        // H21: trust the proxy's address, not its whole network. Warn once at
+        // boot when the trusted-proxy list holds a broad range (an IPv4 range
+        // shorter than /16 or an IPv6 range shorter than /48): such a range
+        // trusts other machines on the same network, any of which could then
+        // set X-Forwarded-Proto. Only through a configured logger, and only
+        // when warn_broad_proxies has not been switched off. A logging failure
+        // never breaks the boot.
+        if (($config['warn_broad_proxies'] ?? true) === true && $logger !== null) {
+            $broad = $proxies->broadEntries();
+            if ($broad !== []) {
+                try {
+                    $logger->warning('helmet.broad_trusted_proxy', [
+                        'event' => 'broad_trusted_proxy',
+                        'entries' => $broad,
+                    ]);
+                } catch (\Throwable) {
+                    // A logging failure must never break the boot.
+                }
             }
         }
 
