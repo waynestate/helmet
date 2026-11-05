@@ -4,6 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Docs: BEST_PRACTICES H45 is `Documented`. `tests/Support/ConfigDocsTest.php` fails when a `helmet_boot()` option or a `config/helmet.php` key is missing from the README or the configuration reference, and both now list every option and key.
 - Docs: BEST_PRACTICES H14 is `Partly enforced` with tests on every path (raw PHP over HTTP, PSR-15 error-middleware order, Laravel aborted and unmatched requests); the README and the PSR-15 guide say to mount HELMET outermost, after the error middleware in a Slim-style app.
 - Added: `tests/Contract/HeaderContractTest.php`, a contract suite that runs the same request and config through raw PHP (`helmet_boot()` in a `php -S` child), the PSR-15 middleware, the Laravel `web` group and a Laravel JSON answer, and asserts the contract headers agree byte for byte apart from the nonce; README section "One contract, every path", BEST_PRACTICES H10 names the suite.
 - Docs: README and the raw PHP guide gain "Readiness is a separate check": `/up` stays liveness-only, dependency checks go on a separate `/ready` path with a short timeout and a fixed 503 body, and Laravel apps keep them out of the `DiagnosingHealth` listener; BEST_PRACTICES H34 is `Documented`.

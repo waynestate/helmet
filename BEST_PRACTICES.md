@@ -360,7 +360,7 @@ HELMET is at 0.3.0. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Read config from the environment or from files that are not committed. In Laravel, call `env()` only inside `config/` files, because it returns `null` once config is cached. Do not commit `.env`.
 - **Why:** Config changes per deploy, and a repository leak should not expose credentials.
 - **Sources:** [Twelve-Factor config](https://12factor.net/config), [Laravel configuration](https://laravel.com/docs/12.x/configuration), [Laravel deployment](https://laravel.com/docs/12.x/deployment)
-- **Stack:** `Not yet`. The handbook chapter on the runtime says no rules are decided yet. A current WSU Laravel app follows this practice by its own convention.
+- **Stack:** `Documented`. Config comes from the environment through `config/helmet.php`, the only place that calls `env()` (`tests/Laravel/NoEnvInSrcTest.php` enforces it); `ConfigDocsTest` keeps every key documented; PROCTOR owns the warnings for `env()` outside `config/` and for a committed `.env`.
 
 ### H46. Show the environment in non-production, never in production
 - **Practice:** Add a visible ribbon on dev and test, and treat an unknown environment as production.
