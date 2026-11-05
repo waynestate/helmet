@@ -44,6 +44,7 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `policy_path` | The path to a CREED `policy.json` the ribbon reads for version warnings; null means no warning and no file read. Set with `HELMET_POLICY_PATH`. |
 | `dev_origin` | The Vite dev server origin, used in `local` only while the dev server is running; it overrides the hot file. Set with `HELMET_DEV_ORIGIN`. |
 | `warn_debug` | Whether the Laravel adapter writes the `helmet.debug_enabled_in_production` warning when the app boots with debug enabled in production. Set with `HELMET_WARN_DEBUG`. |
+| `warn_broad_proxies` | Whether HELMET writes the `helmet.broad_trusted_proxy` warning at boot when the trusted-proxy list holds a broad entry (an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`). Set with `HELMET_WARN_BROAD_PROXIES` (Laravel) or the `warn_broad_proxies` option of `helmet_boot()`. |
 | `metrics` | The `/metrics` endpoint, in the Prometheus text exposition format. Off by default. |
 | `metrics.enabled` | Whether the endpoint is on. Set with `HELMET_METRICS_ENABLED`. |
 | `metrics.token` | The bearer token a scraper must present (`Authorization: Bearer <token>`); compared with `hash_equals`. Set with `HELMET_METRICS_TOKEN`. |
@@ -96,6 +97,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_RIBBON | false switches the maintenance ribbon off everywhere. | true | config/helmet.php |
 | HELMET_SCOPE | global puts SecurityHeaders in the kernel's global middleware; web keeps it in the web group only. InjectRibbon always stays in web. | global | config/helmet.php |
 | HELMET_SESSION_SECURE | auto sets the Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. Anything else throws. | auto | config/helmet.php |
+| HELMET_WARN_BROAD_PROXIES | true makes HELMET log one helmet.broad_trusted_proxy warning at boot when the trusted-proxy list holds a broad entry (an IPv4 range shorter than /16 or an IPv6 range shorter than /48). | true | config/helmet.php |
 | HELMET_WARN_DEBUG | true makes the Laravel adapter log one warning when the app boots with debug enabled in production. | true | config/helmet.php |
 
 ## Example .env[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#example-env)
