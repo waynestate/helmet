@@ -611,12 +611,11 @@ body {
   color: var(--dk-muted);
 }
 
-.docs-tabs__panel > :is(.docs-copy, pre):first-child {
+/* With the tablist up (docs.js), the glass hangs straight off the tabs. */
+.docs-tabs__tablist ~ .docs-tabs__panel > :is(.docs-copy, pre) {
   margin-top: 0;
-}
-
-.docs-tabs__tablist ~ .docs-tabs__panel > :is(.docs-copy, pre):first-child {
   border-top: 3px solid var(--h-green);
+  border-top-left-radius: 0;
 }
 
 /* Task list boxes take the turf green. */
