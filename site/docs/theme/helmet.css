@@ -11,10 +11,12 @@
 
    The pieces, and where each one comes from on the front page:
      header       the slate site header, gold underline under the page you are on
-     page titles  the depth-chart poster: green Graduate caps over a thick rule
+     page titles  the hero's play call in marker over Graduate caps, then the
+                  brand board's wordmark rule: thin line, short gold bar
      h2           the binder tab, a gold tab with a number (never a word)
      sidebar      group labels in the coach's marker, and the "you are here"
-                  ring around the current page, as on the depth chart
+                  ring around the current page, as on the depth chart; on a
+                  phone the menu is a dashed call chip, never a green slab
      code         the scoreboard's black glass, gold Copy tab in the corner
      callouts     the stamp from the play cards (BLOCKS), one per kind
      tables       the depth chart's green unit bars
@@ -87,6 +89,8 @@
   --t-code-ink: var(--h-ink);
   --t-code-bg: rgba(12, 84, 73, 0.09);
   --t-los: rgba(20, 33, 29, 0.2);     /* the dashed line of scrimmage */
+  --t-rule: #cfc7b3;                  /* the board's thin rule under a title */
+  --t-call: var(--h-green);           /* a call chip's dashed border, the menu */
   --t-card: var(--h-paper);
   --t-card-lines: rgba(12, 84, 73, 0.06);
   --t-card-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 0 0 1px rgba(0, 0, 0, 0.08), 0 18px 30px -20px rgba(0, 0, 0, 0.45);
@@ -306,6 +310,8 @@ body {
   pointer-events: none;
 }
 
+/* The phone menu is one of the hero's call chips, not a green slab: a
+   dashed outline that goes solid gold when you hover it or open it. */
 .docs-menu summary {
   display: flex;
   align-items: center;
@@ -318,10 +324,19 @@ body {
   font-weight: 400;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--h-cream);
-  background: var(--h-green);
+  color: var(--t-title);
+  background: var(--t-card);
+  border: 2px dashed var(--t-call);
   border-radius: var(--dk-radius);
   list-style: none;
+  cursor: pointer;
+}
+
+.docs-menu summary:hover,
+.docs-menu[open] summary {
+  border-style: solid;
+  border-color: var(--t-warn-rule);
+  box-shadow: 0 3px 0 rgba(255, 204, 51, 0.35);
 }
 
 .docs-menu summary::-webkit-details-marker {
@@ -332,8 +347,8 @@ body {
   content: "";
   inline-size: 0.5rem;
   block-size: 0.5rem;
-  border-inline-end: 2px solid var(--h-gold);
-  border-block-end: 2px solid var(--h-gold);
+  border-inline-end: 2px solid var(--t-hand);
+  border-block-end: 2px solid var(--t-hand);
   rotate: 45deg;
   translate: 0 -2px;
 }
@@ -372,15 +387,51 @@ body {
   scroll-margin-top: 1.25rem;
 }
 
-/* The page title is the depth-chart poster's: green Graduate caps over a
-   thick green rule. */
+/* The page title is the hero's and the brand board's: a play call in the
+   coach's marker above it ("Play 0" on the front page, "The playbook" here),
+   Graduate caps, then the board's wordmark rule: one thin line across, a
+   short gold bar laid on its left end. No green slab. */
 .docs-article h1 {
-  margin: 0 0 1.6rem;
-  padding-block-end: 0.9rem;
+  position: relative;
+  margin: 0 0 1.75rem;
+  padding-block-end: 1rem;
   font-size: clamp(2.1rem, 1.5rem + 2.4vw, 3.4rem);
   line-height: 1.02;
   color: var(--t-title);
-  border-block-end: 6px solid var(--h-green);
+  border-block-end: 1px solid var(--t-rule);
+}
+
+/* Under a hero image (the Overview), the play call needs room to breathe. */
+.docs-article h1:not(:first-child) {
+  margin-block-start: 2rem;
+}
+
+.docs-article h1::before {
+  content: "The playbook";
+  content: "The playbook" / "";
+  display: block;
+  inline-size: fit-content;
+  margin-block-end: 0.55rem;
+  font-family: var(--h-marker);
+  font-size: clamp(0.95rem, 0.85rem + 0.4vw, 1.15rem);
+  line-height: 1.2;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--t-kicker);
+  rotate: -2deg;
+  transform-origin: left bottom;
+}
+
+.docs-article h1::after {
+  content: "";
+  position: absolute;
+  inset-block-end: -3px;
+  inset-inline-start: 0;
+  inline-size: min(8.5rem, 38%);
+  block-size: 5px;
+  background: var(--h-gold);
+  border-radius: 1px;
+  transform-origin: left;
 }
 
 /* Each section is a binder tab: a gold tab with its number. */
@@ -932,6 +983,8 @@ body {
     --t-code-ink: var(--h-gold-soft);
     --t-code-bg: rgba(238, 240, 230, 0.07);
     --t-los: rgba(238, 240, 230, 0.22);
+    --t-rule: rgba(238, 240, 230, 0.24);
+    --t-call: var(--h-chalk-dim);
     --t-card: var(--h-slate);
     --t-card-lines: rgba(238, 240, 230, 0.05);
     --t-card-shadow: 0 0 0 1px rgba(238, 240, 230, 0.1), 0 18px 30px -20px rgba(0, 0, 0, 0.8);
@@ -986,6 +1039,8 @@ body {
   --t-code-ink: var(--h-gold-soft);
   --t-code-bg: rgba(238, 240, 230, 0.07);
   --t-los: rgba(238, 240, 230, 0.22);
+  --t-rule: rgba(238, 240, 230, 0.24);
+  --t-call: var(--h-chalk-dim);
   --t-card: var(--h-slate);
   --t-card-lines: rgba(238, 240, 230, 0.05);
   --t-card-shadow: 0 0 0 1px rgba(238, 240, 230, 0.1), 0 18px 30px -20px rgba(0, 0, 0, 0.8);
@@ -1112,6 +1167,15 @@ body {
     animation: chalk-in 0.55s steps(9, end) 0.1s both;
   }
 
+  /* Then the gold bar is laid on the rule, as under the board's wordmark. */
+  .docs-article h1::after {
+    animation: bar-in 0.5s var(--h-out) 0.6s both;
+  }
+
+  .docs-menu summary {
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
   .site-nav a {
     transition: background-size 0.25s var(--h-out), color 0.2s;
   }
@@ -1155,6 +1219,11 @@ body {
 @keyframes chalk-in {
   from { clip-path: inset(-10% 100% -20% 0); }
   to { clip-path: inset(-10% -2% -20% 0); }
+}
+
+@keyframes bar-in {
+  from { scale: 0 1; }
+  to { scale: 1 1; }
 }
 
 /* -------------------------------------------------------------- 12. print */
