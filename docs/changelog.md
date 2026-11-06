@@ -11,6 +11,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Security
+
+- The front-page deploy layer moves to Symfony 7.4.23 (symfony/http-foundation and symfony/yaml advisories, including CVE-2026-118514).
+
 ## 0.3.1 (2026-11-05)
 
 No breaks: new boot warning for a broad trusted-proxy list, `helmet_csp_nonce_swap()`, `GenericErrorResponse::clientError()`, a Grafana dashboard, a contract test suite and the docs site, plus docs and deploy-layer refreshes.
