@@ -12,6 +12,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+## 0.3.1 (2026-11-05)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-3-1-2026-11-05)
+
+No breaks: new boot warning for a broad trusted-proxy list, `helmet_csp_nonce_swap()`, `GenericErrorResponse::clientError()`, a Grafana dashboard, a contract test suite and the docs site, plus docs and deploy-layer refreshes.
+
 - Docs: the docs theme sits closer to the front page and the brand board. Page titles carry the hero's play call in the coach's marker ("The playbook") and the board's wordmark rule (one thin line with a short gold bar, laid in after the title is chalked in) in place of the thick green rule, and the phone Menu is one of the hero's dashed call chips (solid gold on hover or open) instead of a solid green bar. Light and dark; motion only with `prefers-reduced-motion: no-preference`.
 - Docs: BEST_PRACTICES H45 is `Documented`. `tests/Support/ConfigDocsTest.php` fails when a `helmet_boot()` option or a `config/helmet.php` key is missing from the README or the configuration reference, and both now list every option and key.
 - Docs: BEST_PRACTICES H14 is `Partly enforced` with tests on every path (raw PHP over HTTP, PSR-15 error-middleware order, Laravel aborted and unmatched requests); the README and the PSR-15 guide say to mount HELMET outermost, after the error middleware in a Slim-style app.

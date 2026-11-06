@@ -8,7 +8,17 @@ generator: Squire agent-ready
 
 # Upgrading[#](https://helmet.apps.wayne.edu/docs/upgrading.html#upgrading)
 
-This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 0.3.0.
+This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 0.3.1.
+
+## 0.3.1 (2026-11-05)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-3-1-2026-11-05)
+
+No breaks: a boot warning for a broad trusted-proxy list (`helmet.broad_trusted_proxy`), `helmet_csp_nonce_swap()` and `GenericErrorResponse::clientError()`, and the rest of the release is docs and deploy-layer refreshes. Upgrade with:
+
+```
+composer update waynestate/helmet
+```
+
+---
 
 ## 0.3.0 (2026-11-03)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-3-0-2026-11-03)
 
