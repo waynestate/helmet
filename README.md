@@ -1094,6 +1094,10 @@ the stack's coding standard: `phpstan.neon` includes
 `vendor/waynestate/pinstripe/phpstan/raw.neon`, and `pint.json` uses the same
 `per` preset Pinstripe ships.
 
+The site gets the same treatment as the headers: `scripts/a11y.sh` (or `scripts/a11y.ps1`) runs axe-core in
+Playwright over `site/index.html` and every page under `site/docs/`, in light and dark at 360 px and 1280 px,
+and fails on any WCAG 2.2 AA violation. Run it before you release.
+
 ## Strongly recommended: a git.wayne.edu instance runner
 
 git.wayne.edu has no runners today, so CI for this repo runs on the test
