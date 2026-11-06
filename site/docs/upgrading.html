@@ -45,7 +45,7 @@ section per released version; versions with a break get Breaking, Deprecated, St
 release is 0.3.1.</p>
 <h2 id="0-3-1-2026-11-05">0.3.1 (2026-11-05)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-1-2026-11-05">#</a></h2>
 <p>No breaks: a boot warning for a broad trusted-proxy list (<code>helmet.broad_trusted_proxy</code>), <code>helmet_csp_nonce_swap()</code> and <code>GenericErrorResponse::clientError()</code>, and the rest of the release is docs and deploy-layer refreshes. Upgrade with:</p>
-<pre><code>composer update waynestate/helmet
+<pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
 <h2 id="0-3-0-2026-11-03">0.3.0 (2026-11-03)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-0-2026-11-03">#</a></h2>
@@ -76,7 +76,7 @@ attribute value, or a script, style, textarea or title element no longer receive
 <ol>
 <li>
 <p>Move the constraint in <code>composer.json</code> from <code>^0.2</code> to <code>^0.3</code>, then update:</p>
-<pre><code>composer update waynestate/helmet
+<pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 </li>
 <li>
@@ -97,11 +97,11 @@ Authorization, the header and the bad entry are never logged.</p>
 </li>
 </ol>
 <h3 id="how-to-verify">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify">#</a></h3>
-<pre><code>composer ci
+<pre tabindex="0"><code>composer ci
 </code></pre>
 <p>That runs <code>composer validate --strict</code>, the test suite, Pint, PHPStan, the agent-ready check, <code>composer docs:check</code>
 and <code>composer audit</code>. Then ask the load balancer's question:</p>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: <code>200 ok</code>, the baseline headers, and <code>Strict-Transport-Security</code> on a request that was really HTTPS. The
 suite pins the new behavior in <code>tests/Proxy/ClientIpTest.php</code>, <code>tests/Proxy/HttpsDetectorTest.php</code>,
@@ -112,14 +112,14 @@ suite pins the new behavior in <code>tests/Proxy/ClientIpTest.php</code>, <code>
 <p>No breaks: HTML rewrites (CSP nonce meta, environment ribbon) keep the response's view object, so <code>assertInertia()</code>
 and <code>assertViewHas()</code> work in apps that use HELMET, and the rest of the release is fixes, deploy-layer refreshes and
 docs. Upgrade with:</p>
-<pre><code>composer update waynestate/helmet
+<pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
 <h2 id="0-2-5-2026-10-29">0.2.5 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-5-2026-10-29">#</a></h2>
 <p>No breaks: adds the agent-ready site (prompt blocks, Markdown twins, llms.txt) from Squire's kit and
 <code>HELMET_SESSION_SECURE=always</code>, which keeps the session cookie Secure even when HTTPS is not detected, and moves the
 proof page to a private site that needs a Wayne State sign-in. Upgrade with:</p>
-<pre><code>composer update waynestate/helmet
+<pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
 <h2 id="0-2-4-2026-10-29">0.2.4 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-4-2026-10-29">#</a></h2>
@@ -127,14 +127,14 @@ proof page to a private site that needs a Wayne State sign-in. Upgrade with:</p>
 environment has no value; the config reads it through <code>Waynestate\Helmet\Support\Setting</code>, which checks the
 environment first, then Playbook, then gives up. A missing preset is still not an error, and <code>waynestate/playbook</code>
 is suggested, never required. Upgrade with:</p>
-<pre><code>composer update waynestate/helmet
+<pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
 <h2 id="0-2-3-2026-10-29">0.2.3 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-3-2026-10-29">#</a></h2>
 <p>No breaks: a fix. <code>helmet_boot()</code> removed <code>X-Powered-By</code> only after it had already answered the health check path, so
 a GET or HEAD to <code>/up</code> (the default <code>health_path</code>) still sent the header; the removal now runs before the health
 answer and the request-forgery rejection, so both early exits leave the response clean. Upgrade with:</p>
-<pre><code>composer update waynestate/helmet
+<pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
 <h2 id="0-2-2-2026-10-29">0.2.2 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-2-2026-10-29">#</a></h2>
@@ -144,7 +144,7 @@ inbound header is never trusted for the ID. <code>Logging::create()</code> takes
 caller-supplied ID (8 to 64 letters, digits, dots, underscores or dashes; anything else is ignored), and
 <code>helmet_boot()</code> accepts it as <code>log.request_id</code>, which must be a string, and now also returns the ID as <code>request_id</code>.
 Upgrade with:</p>
-<pre><code>composer update waynestate/helmet
+<pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
 <h2 id="0-2-1-2026-10-29">0.2.1 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-1-2026-10-29">#</a></h2>
@@ -161,7 +161,7 @@ alone, and SESAME reads whatever <code>session_name()</code> returns. <code>Sess
 <ol>
 <li>
 <p>Update the package:</p>
-<pre><code>composer update waynestate/helmet
+<pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 </li>
 <li>
@@ -172,7 +172,7 @@ alone, and SESAME reads whatever <code>session_name()</code> returns. <code>Sess
 </li>
 </ol>
 <h3 id="how-to-verify-1">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-1">#</a></h3>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: the <code>Set-Cookie</code> name is <code>__Host-WSUSESSID</code> on HTTPS and <code>WSUSESSID</code> on HTTP. Pinned in
 <code>tests/Session/SessionHardeningTest.php</code>.</p>
@@ -202,7 +202,7 @@ it refreshed to the new body length after injection, so a stale length cannot cu
 <ol>
 <li>
 <p>Update the package:</p>
-<pre><code>composer update waynestate/helmet
+<pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 </li>
 <li>
@@ -214,10 +214,10 @@ it refreshed to the new body length after injection, so a stale length cannot cu
 </li>
 </ol>
 <h3 id="how-to-verify-2">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-2">#</a></h3>
-<pre><code>composer ci
+<pre tabindex="0"><code>composer ci
 </code></pre>
 <p>Then check the headers:</p>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: <code>200 ok</code>, the baseline headers, and the csp-nonce meta tag in the real <code>&lt;head&gt;</code> of an HTML response. The
 suite pins the adapter behavior in <code>tests/Laravel/SecurityHeadersTest.php</code> and the core in
@@ -225,7 +225,7 @@ suite pins the adapter behavior in <code>tests/Laravel/SecurityHeadersTest.php</
 <hr />
 <h2 id="0-1-0-2026-10-27">0.1.0 (2026-10-27)<a class="docs-heading-link" aria-label="Link to this section" href="#0-1-0-2026-10-27">#</a></h2>
 <p>First tagged release. There is nothing below it to upgrade from: install with</p>
-<pre><code>composer require waynestate/helmet
+<pre tabindex="0"><code>composer require waynestate/helmet
 </code></pre>
 <p>and follow the <a href="guides/quick-start.html">Quick start</a>.</p>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>

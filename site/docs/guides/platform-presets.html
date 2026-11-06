@@ -64,13 +64,13 @@
 <p><code>citadel</code> is the WSU container platform: the app container talks to the HA-Proxy front through the Docker bridge gateway <code>172.18.0.1</code>, the only address allowed to set <code>X-Forwarded-Proto</code>. <code>docker</code> is a plain Docker deployment with no front proxy in front of the app container: nothing is trusted, and HTTPS is detected from the direct connection only.</p>
 <h2 id="passing-a-preset">Passing a preset<a class="docs-heading-link" aria-label="Link to this section" href="#passing-a-preset">#</a></h2>
 <p>Raw PHP passes the preset name:</p>
-<pre><code class="language-php">$helmet = helmet_boot([
+<pre tabindex="0"><code class="language-php">$helmet = helmet_boot([
     'preset' =&gt; 'citadel',
 ]);
 </code></pre>
 <p>Laravel reads it from <code>HELMET_PRESET</code> (Playbook supplies it when the environment has none); an explicit <code>HELMET_PROXIES</code> always wins over the preset.</p>
 <p>Off the WSU platform, skip the preset and pass your own list of the addresses your front proxy connects from:</p>
-<pre><code class="language-php">$helmet = helmet_boot([
+<pre tabindex="0"><code class="language-php">$helmet = helmet_boot([
     'trusted_proxies' =&gt; ['203.0.113.10'],
 ]);
 </code></pre>

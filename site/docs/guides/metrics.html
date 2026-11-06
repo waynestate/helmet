@@ -67,14 +67,14 @@
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>With neither a token nor an allow list set, the endpoint returns <code>404</code> and logs a warning, so a misconfigured app does not hand its metrics to the whole network.</p></aside>
 <h2 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h2>
 <p>The provider registers a <code>Route::helmetMetrics()</code> macro. The route is not created until you call it:</p>
-<pre><code class="language-php">// routes/web.php
+<pre tabindex="0"><code class="language-php">// routes/web.php
 Route::helmetMetrics();                          // GET /metrics, throttle:60,1
 Route::helmetMetrics('/metrics', 'throttle:120,1'); // your own throttle
 Route::helmetMetrics('/metrics', null);           // no throttle
 </code></pre>
 <p>The controller reads <code>helmet.metrics</code> from the published config, resolves the client IP through the same trusted-proxy list the headers use, and renders <code>text/plain; version=0.0.4</code>.</p>
 <h2 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h2>
-<pre><code class="language-php">use function Waynestate\Helmet\helmet_metrics;
+<pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\helmet_metrics;
 
 $result = helmet_metrics([
     'enabled' =&gt; true,
@@ -93,7 +93,7 @@ echo $result['body'];
 <h2 id="graph-it-in-grafana">Graph it in Grafana<a class="docs-heading-link" aria-label="Link to this section" href="#graph-it-in-grafana">#</a></h2>
 <p>The fleet dashboard for these metrics ships in <a rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/docs/grafana/helmet.json"><code>docs/grafana/helmet.json</code></a>: in Grafana, open Dashboards, New, Import, paste the file, and pick your Prometheus data source for the <code>DS_PROMETHEUS</code> input. It shows how many apps report, which HELMET and PHP versions they run, the PHP support status of each app, every reporting instance, and whether Prometheus can reach them.</p>
 <p>A sample scrape config for a Prometheus server, with a bearer token file and example targets:</p>
-<pre><code class="language-yaml">scrape_configs:
+<pre tabindex="0"><code class="language-yaml">scrape_configs:
   - job_name: helmet
     metrics_path: /metrics
     authorization:

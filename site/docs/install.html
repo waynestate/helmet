@@ -44,7 +44,7 @@
 <p>PHP <code>^8.3</code>. <code>composer.json</code> declares no <code>ext-*</code> extensions, so plain PHP 8.3 or newer is enough; Composer pulls the
 rest (Monolog, the PSR interfaces, csp-builder, the Prometheus client and symfony/http-foundation).</p>
 <h2 id="install-1">Install<a class="docs-heading-link" aria-label="Link to this section" href="#install-1">#</a></h2>
-<pre><code>composer require waynestate/helmet
+<pre tabindex="0"><code>composer require waynestate/helmet
 </code></pre>
 <p>The same line works for a raw PHP app, a Laravel app, or a PSR-15 stack: HELMET ships one package for every platform,
 so the adapters come with it, nothing extra to require.</p>
@@ -53,7 +53,7 @@ of HA-Proxy. Off the WSU platform, skip the preset and pass your own list of the
 connects from.</p></aside>
 <h2 id="verify">Verify<a class="docs-heading-link" aria-label="Link to this section" href="#verify">#</a></h2>
 <p>Boot the package as the <a href="guides/quick-start.html">Quick start</a> does, then ask the load balancer's question:</p>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: <code>200 ok</code>, the baseline headers on the response (<code>Content-Security-Policy</code>, <code>X-Content-Type-Options: nosniff</code>,
 <code>X-Frame-Options: SAMEORIGIN</code>, and the rest), and no <code>X-Powered-By</code> header. If <code>/up</code> answers before your code runs,

@@ -43,9 +43,9 @@
 <p>This page lists the symptoms HELMET's README, CHANGELOG and test suite justify, each with its cause, the fix and a check command. If your symptom is not here, start from <a href="install.html">Install</a> and verify <code>/up</code> first; the band's advice applies: short songs, no filler, every part earning its place.</p>
 <h2 id="check-the-baseline-first">Check the baseline first<a class="docs-heading-link" aria-label="Link to this section" href="#check-the-baseline-first">#</a></h2>
 <p>Before anything else, ask the load balancer's question and confirm the floor is on:</p>
-<div class="docs-tabs" data-tabs="linux|windows"><div class="docs-tabs__panel" data-tab-label="linux"><p class="docs-tabs__label">linux</p><pre><code class="language-bash">curl -sI http://localhost/up
+<div class="docs-tabs" data-tabs="linux|windows"><div class="docs-tabs__panel" data-tab-label="linux"><p class="docs-tabs__label">linux</p><pre tabindex="0"><code class="language-bash">curl -sI http://localhost/up
 </code></pre></div>
-<div class="docs-tabs__panel" data-tab-label="windows"><p class="docs-tabs__label">windows</p><pre><code class="language-powershell">Invoke-WebRequest http://localhost/up
+<div class="docs-tabs__panel" data-tab-label="windows"><p class="docs-tabs__label">windows</p><pre tabindex="0"><code class="language-powershell">Invoke-WebRequest http://localhost/up
 </code></pre></div></div>
 <p>Expected: <code>200 ok</code>, the baseline headers on the response (<code>Content-Security-Policy</code>, <code>X-Content-Type-Options: nosniff</code>,
 <code>X-Frame-Options: SAMEORIGIN</code>, and the rest), and no <code>X-Powered-By</code> header. If <code>/up</code> does not answer before your code
@@ -64,7 +64,7 @@ containers on the same network, and any of them could then set <code>X-Forwarded
 <a href="guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a> and
 <a href="guides/platform-presets.html">Platform presets</a>.</p>
 <p>Check:</p>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: <code>Strict-Transport-Security</code> present on a request that arrived over HTTPS through the proxy, and absent for a
 request that was not really secure.</p>
@@ -75,7 +75,7 @@ going silently unused. The only preset names are <code>citadel</code> and <code>
 <p>Fix: correct the value in the environment (or in the Playbook values if Laravel reads it from there), or skip the
 preset and pass your own list of the addresses your front proxy connects from.</p>
 <p>Check:</p>
-<pre><code>composer ci
+<pre tabindex="0"><code>composer ci
 </code></pre>
 <p>The suite includes <code>tests/Platform/PresetsTest.php</code>, which pins the preset names and the unknown-name failure.</p>
 <h3 id="headers-are-missing-on-routes-outside-web-or-on-unmatched-404s-laravel">Headers are missing on routes outside <code>web</code> or on unmatched 404s (Laravel)<a class="docs-heading-link" aria-label="Link to this section" href="#headers-are-missing-on-routes-outside-web-or-on-unmatched-404s-laravel">#</a></h3>
@@ -84,7 +84,7 @@ do not carry its headers. By default the scope is <code>global</code>, so 404s a
 <p>Fix: leave <code>HELMET_SCOPE</code> at its default <code>global</code>, or set it to <code>global</code> again, if you want every response to carry the
 headers.</p>
 <p>Check:</p>
-<pre><code>curl -sI http://localhost/a-page-that-does-not-exist
+<pre tabindex="0"><code>curl -sI http://localhost/a-page-that-does-not-exist
 </code></pre>
 <p>Expected: the baseline headers on the 404 response when the scope is <code>global</code>. The suite pins both scopes in
 <code>tests/Laravel/GlobalScopeTest.php</code> and <code>tests/Laravel/WebScopeTest.php</code>.</p>
@@ -99,7 +99,7 @@ name is safe for it. Laravel apps are unaffected (Laravel names its own cookie).
 cookie unless it is <code>Secure</code>, <code>Path=/</code> and has no <code>Domain</code>. Tell app owners to expect one more sign-in after the
 deploy.</p>
 <p>Check:</p>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: the <code>Set-Cookie</code> name is <code>__Host-WSUSESSID</code> on HTTPS and <code>WSUSESSID</code> on HTTP. The values are pinned in
 <code>tests/Session/SessionHardeningTest.php</code>.</p>
@@ -111,7 +111,7 @@ reaches PHP, so the request looks plain even though the client connected over HT
 development keeps <code>auto</code>. The cookie name still follows the request, so it never takes the <code>__Host-</code> prefix on a
 plain-HTTP request.</p>
 <p>Check:</p>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: the session cookie carries the <code>Secure</code> flag on HTTPS responses. See <a href="guides/session.html">The session</a>.</p>
 <h2 id="the-request-forgery-guard">The request-forgery guard<a class="docs-heading-link" aria-label="Link to this section" href="#the-request-forgery-guard">#</a></h2>
@@ -138,7 +138,7 @@ once a nonce is present, so setting <code>style-src</code> to <code>[&quot;'unsa
 them.</p>
 <p>Fix: keep the nonce, move the styles into files, or give the inline styles a nonce.</p>
 <p>Check:</p>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: the <code>Content-Security-Policy</code> header carries the per-request nonce in <code>style-src</code> and <code>style-src-elem</code>. See
 <a href="guides/csp.html">Customizing the CSP</a>.</p>
@@ -152,10 +152,10 @@ scripts.</p>
 <p>Fix: put scripts in your layout, where <code>@vite</code> and the nonce reach them; remove the second nonce-producing package;
 and do not cache HTML at a layer that shares it across requests, because the nonce changes every request. In raw PHP,
 print the meta tag in <code>&lt;head&gt;</code> with the nonce <code>helmet_boot()</code> returned:</p>
-<pre><code class="language-php">echo helmet_csp_nonce_meta($helmet['nonce']);
+<pre tabindex="0"><code class="language-php">echo helmet_csp_nonce_meta($helmet['nonce']);
 </code></pre>
 <p>Check:</p>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: the nonce in the <code>Content-Security-Policy</code> header matches the <code>helmet.csp_nonce</code> request attribute (in a
 controller, <code>$request-&gt;attributes-&gt;get('helmet.csp_nonce')</code>). The agreement between paths is pinned in
@@ -170,7 +170,7 @@ is not the one <code>helmet_boot()</code> configured, or the app is on a release
 To reuse an ID you already have, set <code>request_id</code> (8 to 64 letters, digits, dots, underscores or dashes);
 <code>Logging::create()</code> takes it as an optional fourth argument, and anything else is ignored.</p>
 <p>Check: send a request and read one line from the log stream. Expected shape:</p>
-<pre><code class="language-json">{&quot;message&quot;:&quot;login&quot;,&quot;context&quot;:{&quot;user&quot;:&quot;alice&quot;},&quot;level&quot;:200,&quot;level_name&quot;:&quot;INFO&quot;,&quot;channel&quot;:&quot;app&quot;,&quot;datetime&quot;:&quot;2026-10-29T12:00:00.000000+00:00&quot;,&quot;extra&quot;:{&quot;request_id&quot;:&quot;9f2c1ab04d5e6f70&quot;}}
+<pre tabindex="0"><code class="language-json">{&quot;message&quot;:&quot;login&quot;,&quot;context&quot;:{&quot;user&quot;:&quot;alice&quot;},&quot;level&quot;:200,&quot;level_name&quot;:&quot;INFO&quot;,&quot;channel&quot;:&quot;app&quot;,&quot;datetime&quot;:&quot;2026-10-29T12:00:00.000000+00:00&quot;,&quot;extra&quot;:{&quot;request_id&quot;:&quot;9f2c1ab04d5e6f70&quot;}}
 </code></pre>
 <p>Pinned in <code>tests/Logging/LoggingTest.php</code>.</p>
 <h3 id="metrics-answers-404-even-though-helmet-metrics-enabled-true"><code>/metrics</code> answers 404 even though <code>HELMET_METRICS_ENABLED=true</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-answers-404-even-though-helmet-metrics-enabled-true">#</a></h3>

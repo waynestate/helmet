@@ -400,6 +400,13 @@
   border-bottom: 1px solid var(--dk-rule);
 }
 
+/* Inline code in a header cell borrows the cell's own colors, so it keeps the
+ * header text's contrast in light and dark themes. */
+.docs-article th code {
+  color: inherit;
+  background: none;
+}
+
 .docs-toc {
   margin-top: var(--dk-gap);
   max-width: var(--dk-prose-max);

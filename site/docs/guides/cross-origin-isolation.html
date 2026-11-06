@@ -48,7 +48,7 @@
 <h2 id="permissions-policy">Permissions-Policy<a class="docs-heading-link" aria-label="Link to this section" href="#permissions-policy">#</a></h2>
 <p><code>Permissions-Policy</code> defaults to a deny list: <code>camera</code>, <code>geolocation</code>, <code>microphone</code>, <code>payment</code> and <code>usb</code> are all denied, so an injected script cannot use a feature the page has switched off. Set <code>permissions_policy</code> (raw PHP) or <code>HELMET_PERMISSIONS_POLICY</code> (Laravel) to a feature map to change it: each feature maps to an allowlist of <code>self</code> and https origins, and an empty allowlist denies the feature. An empty map sends no Permissions-Policy header.</p>
 <h2 id="example">Example<a class="docs-heading-link" aria-label="Link to this section" href="#example">#</a></h2>
-<pre><code class="language-php">$helmet = helmet_boot([
+<pre tabindex="0"><code class="language-php">$helmet = helmet_boot([
     'preset' =&gt; 'citadel',
     'coop' =&gt; 'same-origin-allow-popups',
     'corp' =&gt; 'same-site',

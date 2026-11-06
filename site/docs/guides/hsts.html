@@ -47,7 +47,7 @@
 <p>Roll it out in stages: start with a short <code>max-age</code>, raise it once nothing breaks, and keep <code>includeSubDomains</code> only when every subdomain serves HTTPS.</p>
 <h2 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h2>
 <p>Set <code>hsts_max_age</code> (seconds) and <code>hsts_include_subdomains</code> (raw PHP):</p>
-<pre><code class="language-php">$helmet = helmet_boot([
+<pre tabindex="0"><code class="language-php">$helmet = helmet_boot([
     'preset' =&gt; 'citadel',
     'hsts_max_age' =&gt; 600,
     'hsts_include_subdomains' =&gt; false,
@@ -90,7 +90,7 @@
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed.</p></aside>
 <h2 id="check-the-header">Check the header<a class="docs-heading-link" aria-label="Link to this section" href="#check-the-header">#</a></h2>
 <p>Ask for a response over HTTPS and look at the header line:</p>
-<pre><code>curl -sI https://app.example.edu/
+<pre tabindex="0"><code>curl -sI https://app.example.edu/
 </code></pre>
 <p>Expected: <code>Strict-Transport-Security: max-age=31536000; includeSubDomains</code> by default, or the value you configured. The same request over plain HTTP carries no HSTS header.</p>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>

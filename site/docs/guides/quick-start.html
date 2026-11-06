@@ -45,13 +45,13 @@
 <ol>
 <li>
 <p><strong>Add the package.</strong></p>
-<pre><code>composer require waynestate/helmet
+<pre tabindex="0"><code>composer require waynestate/helmet
 </code></pre>
 <p>Expected: Composer adds <code>waynestate/helmet</code> to <code>composer.json</code> and installs it with its dependencies.</p>
 </li>
 <li>
 <p><strong>Boot it once</strong>, at the top of the front controller, before anything is echoed:</p>
-<pre><code class="language-php">use function Waynestate\Helmet\helmet_boot;
+<pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([
     'preset' =&gt; 'citadel',
@@ -62,14 +62,14 @@ code runs. It returns the nonce, the logger and the request ID.</p>
 </li>
 <li>
 <p><strong>Ask the load balancer's question.</strong></p>
-<pre><code>curl -sI http://localhost/up
+<pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: <code>200 ok</code>, with the baseline headers on the response and no <code>X-Powered-By</code>.</p>
 </li>
 <li>
 <p><strong>Put the nonce in your scripts.</strong> <code>$helmet['nonce']</code> is the per-request CSP nonce: print the meta tag in <code>&lt;head&gt;</code>
 and put the nonce in your <code>&lt;script&gt;</code> tags.</p>
-<pre><code class="language-php">echo helmet_csp_nonce_meta($helmet['nonce']);
+<pre tabindex="0"><code class="language-php">echo helmet_csp_nonce_meta($helmet['nonce']);
 </code></pre>
 <p>Expected: inline scripts tagged with the nonce pass the CSP, because <code>script-src</code> carries the nonce plus
 <code>strict-dynamic</code>.</p>

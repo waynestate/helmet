@@ -43,7 +43,7 @@
 <p>This page walks the Laravel adapter from <code>composer require</code> to a fully wired app: install the adapter, publish the config, trust the proxy, then turn the knobs. The adapter is a service provider, two always-on middlewares, an optional request-forgery guard, and a config file. It only wires and configures: every rule (what the headers say, how a nonce is made, how a CSP is merged, and how a request-forgery check is applied) lives in the core, so Laravel and raw PHP cannot drift apart. The suite runs against Laravel 13 with Orchestra Testbench. Helmet is the band, and the name fits: put it on before you ship.</p>
 <h2 id="install-the-adapter">Install the adapter<a class="docs-heading-link" aria-label="Link to this section" href="#install-the-adapter">#</a></h2>
 <p>Strap It On:</p>
-<pre><code class="language-bash">composer require waynestate/helmet
+<pre tabindex="0"><code class="language-bash">composer require waynestate/helmet
 </code></pre>
 <p>Package discovery registers <code>Waynestate\Helmet\Laravel\HelmetServiceProvider</code>, so there is nothing to add to <code>bootstrap/providers.php</code>. The provider merges the <code>helmet</code> config and joins the HTTP kernel's middleware:</p>
 <ul>
@@ -54,7 +54,7 @@
 <p>They are added through the HTTP kernel, so they survive another package adding to the same group. Set <code>HELMET_SCOPE=web</code> to keep <code>SecurityHeaders</code> in the <code>web</code> group only; then routes outside <code>web</code> and unmatched 404s do not carry its headers.</p>
 <p>At boot the provider also registers two route macros: <code>Route::cspReport()</code> for the CSP report endpoint (<a href="csp.html">Customizing the CSP</a>) and <code>Route::helmetMetrics()</code> for the metrics endpoint (<a href="metrics.html">Metrics</a>). Both macros are always registered, but each route is added only when the app calls it, so both endpoints stay off by default.</p>
 <h2 id="publish-the-config">Publish the config<a class="docs-heading-link" aria-label="Link to this section" href="#publish-the-config">#</a></h2>
-<pre><code class="language-bash">php artisan vendor:publish --tag=helmet-config
+<pre tabindex="0"><code class="language-bash">php artisan vendor:publish --tag=helmet-config
 </code></pre>
 <p>This copies <code>config/helmet.php</code> into your app. Do it: it is the best place to change the CSP, because the policy is a PHP array there, not JSON squeezed into <code>.env</code>. The config file is also the one place HELMET reads the environment (<code>env()</code>, plus <code>HELMET_PRESET</code> through <code>Setting</code>, which also checks Playbook), so <code>php artisan config:cache</code> keeps working.</p>
 <h2 id="trust-the-proxy">Trust the proxy<a class="docs-heading-link" aria-label="Link to this section" href="#trust-the-proxy">#</a></h2>
@@ -205,20 +205,20 @@
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed.</p></aside>
 <h2 id="customizing-the-csp-in-laravel">Customizing the CSP in Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#customizing-the-csp-in-laravel">#</a></h2>
 <p><code>helmet.csp</code> takes the same shape as the raw PHP <code>csp</code> option and follows the same rule: it is merged over the default, per directive. A directive you set replaces the default's, a directive you leave out keeps it, and <code>null</code> removes one. Open the published <code>config/helmet.php</code> and replace the <code>$csp = SecurityHeaders::defaultCspPolicy();</code> line:</p>
-<pre><code class="language-php">$csp = [
+<pre tabindex="0"><code class="language-php">$csp = [
     'img-src' =&gt; [&quot;'self'&quot;, 'data:', 'https://images.example.edu'],
     'form-action' =&gt; null,
 ];
 </code></pre>
 <p>If you would rather use the environment, <code>HELMET_CSP</code> takes the same array as JSON. In a <code>.env</code> file it needs double quotes and escaped inner quotes, which is the reason to publish the config instead:</p>
-<pre><code class="language-ini">HELMET_CSP=&quot;{\&quot;img-src\&quot;:[\&quot;'self'\&quot;,\&quot;data:\&quot;],\&quot;form-action\&quot;:null}&quot;
+<pre tabindex="0"><code class="language-ini">HELMET_CSP=&quot;{\&quot;img-src\&quot;:[\&quot;'self'\&quot;,\&quot;data:\&quot;],\&quot;form-action\&quot;:null}&quot;
 </code></pre>
 <p>Invalid JSON is ignored and the default policy stays, so a typo in the environment cannot loosen the CSP. For the merge rule and report-only mode, see <a href="csp.html">Customizing the CSP</a>.</p>
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>One gotcha when overriding: the policy adds the per-request nonce to <code>style-src</code> and <code>style-src-elem</code>. A browser ignores <code>'unsafe-inline'</code> once a nonce is present, so setting <code>style-src</code> to <code>[&quot;'unsafe-inline'&quot;]</code> does not restore inline styles; it removes them.</p></aside>
 <h2 id="the-nonce-in-blade">The nonce in Blade<a class="docs-heading-link" aria-label="Link to this section" href="#the-nonce-in-blade">#</a></h2>
 <p>The middleware puts the per-request nonce on the request as the attribute <code>helmet.csp_nonce</code>, the same name the PSR-15 middleware uses. It also hands the nonce to Laravel's Vite helper, so <code>@vite</code> needs nothing: the <code>script</code> and <code>style</code> tags it print already carry the nonce the CSP header sends.</p>
 <p>For an inline script, print the nonce from the Vite helper:</p>
-<pre><code class="language-blade">&lt;script nonce=&quot;{{ Vite::cspNonce() }}&quot;&gt;
+<pre tabindex="0"><code class="language-blade">&lt;script nonce=&quot;{{ Vite::cspNonce() }}&quot;&gt;
     // allowed by the nonce, and free to load more scripts (strict-dynamic)
 &lt;/script&gt;
 </code></pre>
@@ -235,7 +235,7 @@
 <li><strong>Do not replace <code>style-src</code> with <code>'unsafe-inline'</code>.</strong> The policy adds the per-request nonce to <code>style-src</code> and <code>style-src-elem</code>, and a browser ignores <code>'unsafe-inline'</code> once a nonce is present. An override that relies on it loses every inline style silently. Keep the nonce, move the styles into files, or give the inline styles a nonce.</li>
 </ul>
 <p>In raw PHP, print the meta tag in <code>&lt;head&gt;</code> with the nonce <code>helmet_boot()</code> returned:</p>
-<pre><code class="language-php">echo helmet_csp_nonce_meta($helmet['nonce']);
+<pre tabindex="0"><code class="language-php">echo helmet_csp_nonce_meta($helmet['nonce']);
 </code></pre>
 <p>The Vite dev server is allowed in the <code>local</code> environment only, and only when it is running (a hot file exists). The origin comes from <code>HELMET_DEV_ORIGIN</code> when set, otherwise from the hot file. It must be <code>http</code> or <code>https</code> on <code>localhost</code>, <code>127.0.0.1</code> or <code>[::1]</code>, with an optional port. An invalid origin is ignored and a warning is logged. In every other environment the dev server origin is never added.</p>
 <h2 id="the-ribbon">The ribbon<a class="docs-heading-link" aria-label="Link to this section" href="#the-ribbon">#</a></h2>

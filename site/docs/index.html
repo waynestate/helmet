@@ -64,10 +64,10 @@ headers, hardens the session, decides whether the request really arrived over HT
 every <code>HELMET_</code> variable the package reads.</li>
 </ul>
 <h2 id="install">Install<a class="docs-heading-link" aria-label="Link to this section" href="#install">#</a></h2>
-<pre><code>composer require waynestate/helmet
+<pre tabindex="0"><code>composer require waynestate/helmet
 </code></pre>
 <p>Then boot it once at the top of the front controller, before anything is echoed:</p>
-<pre><code class="language-php">use function Waynestate\Helmet\helmet_boot;
+<pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([
     'preset' =&gt; 'citadel',

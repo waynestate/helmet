@@ -56,7 +56,7 @@
 <p>A rejected request receives <code>403</code>, <code>Content-Type: text/plain; charset=utf-8</code>, <code>Cache-Control: no-store</code> and the body <code>Forbidden</code>. The answer never echoes request headers.</p>
 <p>When a logger is set, a refused request is also logged as the <code>helmet.request_refused</code> security event. Its context carries <code>event</code> (<code>request_refused</code>), <code>method</code> (upper case), <code>path</code> (no query string), <code>sec_fetch_site</code> (<code>same-origin</code>, <code>same-site</code>, <code>cross-site</code>, <code>none</code>, <code>other</code>, or null when the header is absent), and <code>origin_present</code> (bool). It never carries the Origin value, cookies, Authorization, or any other header value, and a logger that throws never changes the <code>403</code> answer.</p>
 <h2 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h2>
-<pre><code class="language-php">$helmet = helmet_boot([
+<pre tabindex="0"><code class="language-php">$helmet = helmet_boot([
     'preset' =&gt; 'citadel',
     'csrf' =&gt; [
         'enabled' =&gt; true,
@@ -68,7 +68,7 @@
 </code></pre>
 <p><code>helmet_boot()</code> runs the check after the health path and before the security headers. A rejected request stops there.</p>
 <h2 id="psr-15">PSR-15<a class="docs-heading-link" aria-label="Link to this section" href="#psr-15">#</a></h2>
-<pre><code class="language-php">use Waynestate\Helmet\Csrf\RequestForgeryGuard;
+<pre tabindex="0"><code class="language-php">use Waynestate\Helmet\Csrf\RequestForgeryGuard;
 
 $guard = new RequestForgeryGuard(
     $proxies,
@@ -83,7 +83,7 @@ $guard = new RequestForgeryGuard(
 <aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>The constructor validates its configuration. A trusted origin that is not a valid <code>http</code> or <code>https</code> origin, or an <code>except</code> pattern that is not a non-empty string, throws <code>InvalidArgumentException</code> at construction, so a typo fails loudly instead of letting a forged request through.</p></aside>
 <h2 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h2>
 <p>Set the config or the environment:</p>
-<pre><code>HELMET_CSRF_ENABLED=true
+<pre tabindex="0"><code>HELMET_CSRF_ENABLED=true
 HELMET_CSRF_TRUSTED_ORIGINS=https://forms.example.edu
 HELMET_CSRF_EXCEPT=/api/webhooks/*
 </code></pre>
