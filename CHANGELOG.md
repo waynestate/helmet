@@ -30,6 +30,9 @@ No breaks: new boot warning for a broad trusted-proxy list, `helmet_csp_nonce_sw
 
 - Docs: the sample metrics output shows 0.3.0.
 - Added: `GenericErrorResponse::clientError(int $status)` returns a fixed 4xx page (status, headers, body) for client faults, with its own title and sentence for 400, 401, 403, 404, 405, 410 and 429 and the Bad request text for any other 4xx; a status outside the 400s throws `InvalidArgumentException`, and nothing from the request or an exception reaches the body. An app calls it from its router; nothing wires it into `helmet_boot()` automatically.
+- Added: an accessibility gate for the site (axe-core in Playwright, Docker). `scripts/a11y.sh` and `scripts/a11y.ps1` check `site/index.html` and every page under `site/docs/` in light and dark at 360 px and 1280 px, and fail on any WCAG 2.2 AA violation; `tools/a11y/check.mjs` is the runner.
+- Fixed: two violations the new gate found. A code block wider than its box now joins the tab order so a keyboard user can scroll it (axe `scrollable-region-focusable`, WCAG 2.1.1), and table-of-contents sub-items get a full-width link target of at least 24 px (axe `target-size`, WCAG 2.5.8). Both come from syncing the Squire-owned docs kit (`bin/docs-site.php`, `site/assets/docs.css`, `site/assets/docs.js`) to the current stack version, and the docs site and agent-ready files are rebuilt from it.
+- Changed: the docs site renders fenced blocks tagged `tab=` as a labeled tablist (the previous builder ignored the tag and stacked the blocks), and the changelog mirror keeps its top-level heading, per the current shared builder.
 
 ## 0.3.0 (2026-11-03)
 
