@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upgrading | HELMET docs</title>
 <meta name="description" content="How to move an app from one HELMET release to the next.">
-<meta name="docs-version" content="0.3.1">
+<meta name="docs-version" content="0.4.0">
 <link rel="stylesheet" href="../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../assets/docs.css">
 <link rel="stylesheet" href="../docs/theme/helmet.css">
@@ -20,7 +20,7 @@
     <a class="brand" href="../index.html">
       <img src="../brand/helmet-avatar-256.png" width="34" height="34" alt="">
       <span class="brand__name">HELMET</span>
-      <span class="brand__version">0.3.1</span>
+      <span class="brand__version">0.4.0</span>
     </a>
     <nav class="site-nav" aria-label="Site">
       <a href="../index.html#playbook">Playbook</a>
@@ -42,7 +42,12 @@
       <article class="docs-article"><h1 id="upgrading">Upgrading<a class="docs-heading-link" aria-label="Link to this section" href="#upgrading">#</a></h1>
 <p>This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 0.3.1.</p>
+release is 0.4.0.</p>
+<h2 id="0-4-0-2026-11-07">0.4.0 (2026-11-07)<a class="docs-heading-link" aria-label="Link to this section" href="#0-4-0-2026-11-07">#</a></h2>
+<p>No breaks: an ADVISOR module (<code>helmet_headers</code> and <code>helmet_php_support</code>, read-only), opt-in request metrics (<code>HELMET_METRICS_STORAGE</code>), PHP end-of-support and stack-info metrics, <code>extra.http</code> on web request log records, and fixes to the metrics and policy file readers. This is a pre-1.0 minor: apps that pin <code>^0.3</code> stay on 0.3.x until they move their constraint to <code>^0.4</code>. Upgrade with:</p>
+<pre tabindex="0"><code>composer require waynestate/helmet:^0.4
+</code></pre>
+<hr />
 <h2 id="0-3-1-2026-11-05">0.3.1 (2026-11-05)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-1-2026-11-05">#</a></h2>
 <p>No breaks: a boot warning for a broad trusted-proxy list (<code>helmet.broad_trusted_proxy</code>), <code>helmet_csp_nonce_swap()</code> and <code>GenericErrorResponse::clientError()</code>, and the rest of the release is docs and deploy-layer refreshes. Upgrade with:</p>
 <pre tabindex="0"><code>composer update waynestate/helmet
@@ -240,10 +245,10 @@ suite pins the adapter behavior in <code>tests/Laravel/SecurityHeadersTest.php</
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../docs/troubleshooting.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Troubleshooting</span></a><a class="docs-pager__link docs-pager__link--next" href="../docs/changelog.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Changelog</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#0-3-1-2026-11-05">0.3.1 (2026-11-05)</a></li><li class="docs-toc__item"><a href="#0-3-0-2026-11-03">0.3.0 (2026-11-03)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-6-2026-11-02">0.2.6 (2026-11-02)</a></li><li class="docs-toc__item"><a href="#0-2-5-2026-10-29">0.2.5 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-4-2026-10-29">0.2.4 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-3-2026-10-29">0.2.3 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-2-2026-10-29">0.2.2 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-1-2026-10-29">0.2.1 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-1">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-1">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-1">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-1">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-0-2026-10-29">0.2.0 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-2">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-2">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-2">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-2">How to verify</a></li><li class="docs-toc__item"><a href="#0-1-0-2026-10-27">0.1.0 (2026-10-27)</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#0-4-0-2026-11-07">0.4.0 (2026-11-07)</a></li><li class="docs-toc__item"><a href="#0-3-1-2026-11-05">0.3.1 (2026-11-05)</a></li><li class="docs-toc__item"><a href="#0-3-0-2026-11-03">0.3.0 (2026-11-03)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-6-2026-11-02">0.2.6 (2026-11-02)</a></li><li class="docs-toc__item"><a href="#0-2-5-2026-10-29">0.2.5 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-4-2026-10-29">0.2.4 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-3-2026-10-29">0.2.3 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-2-2026-10-29">0.2.2 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-1-2026-10-29">0.2.1 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-1">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-1">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-1">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-1">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-0-2026-10-29">0.2.0 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-2">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-2">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-2">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-2">How to verify</a></li><li class="docs-toc__item"><a href="#0-1-0-2026-10-27">0.1.0 (2026-10-27)</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
-  <span>Documents HELMET <span data-docs-version>0.3.1</span></span>
+  <span>Documents HELMET <span data-docs-version>0.4.0</span></span>
   <span><a rel="noopener" href="https://github.com/waynestate/helmet">Source</a> <a href="upgrading.md">Markdown</a></span>
 </footer>
 </body>
