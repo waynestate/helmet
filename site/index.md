@@ -63,7 +63,7 @@ Each play is one protection and the attack it stops. Laminated, because coffee h
 6. ### Play 00: Victory Formation
    /UP
    Blocks A slow app called dead
-   `GET` or `HEAD /up` answers `200 ok` with `Cache-Control: no-store` before your code runs, so the load balancer sees a live container even while the app is busy.
+   `GET` or `HEAD /up` answers `200 ok` with `Cache-Control: no-store` before your code runs, so the load balancer sees a live container even while the app is busy. Dependency checks go on `/ready`, opt-in, so a database blip never restarts a healthy app.
    `GET /up → 200 ok`
    Take a knee. Still up.
 

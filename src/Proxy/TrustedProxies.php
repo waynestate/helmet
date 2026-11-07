@@ -112,6 +112,15 @@ final class TrustedProxies
     }
 
     /**
+     * How many entries are trusted. The readiness check reports this number
+     * rather than the addresses themselves.
+     */
+    public function count(): int
+    {
+        return count($this->proxies);
+    }
+
+    /**
      * The configured entries that are too broad to be safe (H21): CIDR ranges
      * whose prefix is shorter than /16 for IPv4 or shorter than /48 for IPv6.
      * Such a range trusts other machines on the same network, any of which

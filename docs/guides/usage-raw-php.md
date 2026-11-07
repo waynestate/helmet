@@ -5,7 +5,7 @@ description: An app on raw PHP calls helmet_boot() once at the top of its front 
 
 # Use HELMET in raw PHP
 
-This page boots HELMET in a framework-free PHP app with a single call. Start with [Boot the app](#boot-the-app), then pick up the options your app needs: structured logs, the request-forgery guard, the opt-in error handler, and the standalone health check.
+This page boots HELMET in a framework-free PHP app with a single call. Start with [Boot the app](#boot-the-app), then pick up the options your app needs: structured logs, the request-forgery guard, the opt-in error handler, the standalone health check and the readiness check.
 
 ## Boot the app
 
@@ -142,29 +142,19 @@ Squire's raw template ships this file. The probe only checks that the ball is in
 
 ## Readiness is a separate check
 
-`/up` is liveness: "the process is running". Keep it free of dependency checks. If `/up` fails because the database is down, the platform restarts a healthy app and makes the outage worse. Put dependency checks on a different path, for example `/ready`, and point the load balancer's "send me traffic" probe at that one, not the restart probe.
+`/up` is liveness: "the process is running". Keep it free of dependency checks. If `/up` fails because the database is down, the platform restarts a healthy app and makes the outage worse. Readiness, "send me traffic?", gets its own path. Turn it on with the `readiness` option:
 
 ```php
-<?php // public/ready.php
-declare(strict_types=1);
-
-header('Content-Type: text/plain; charset=utf-8');
-header('Cache-Control: no-store');
-
-try {
-    $pdo = new PDO(getenv('DB_DSN'), getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [
-        PDO::ATTR_TIMEOUT => 2,
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    ]);
-    $pdo->query('SELECT 1');
-    echo 'ready';
-} catch (Throwable) {
-    http_response_code(503);
-    echo 'not ready';
-}
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'readiness' => [
+        'enabled' => true,
+        'checks' => ['database' => static fn (): bool => db_ping()],
+    ],
+]);
 ```
 
-Keep the same rules as `/up`: a short body, `no-store`, and no detail about which dependency failed (log that, do not print it). Give the check a short timeout so a hung database cannot hang the probe. In Laravel, register a separate `/ready` route that runs the checks; do not put them in the `DiagnosingHealth` listener, because that event fires for `/up` and would turn the liveness probe into a readiness probe.
+`GET /ready` then answers JSON, `200` or `503`, with HELMET's own config checks (headers, trusted proxies, debug output) next to yours, and no secrets. A raw app with no front controller answers from `public/ready.php` with `helmet_ready()`. The body, each check, and where each platform's probe should point are in [Readiness](readiness.md).
 ## The nonce in your markup
 
 > [!TIP]

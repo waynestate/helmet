@@ -378,7 +378,7 @@
 <rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
 </svg></div>
     <p class="play-card__blocks"><span class="stamp">Blocks</span> A slow app called dead</p>
-    <p class="play-card__body"><code>GET</code> or <code>HEAD /up</code> answers <code>200 ok</code> with <code>Cache-Control: no-store</code> before your code runs, so the load balancer sees a live container even while the app is busy.</p>
+    <p class="play-card__body"><code>GET</code> or <code>HEAD /up</code> answers <code>200 ok</code> with <code>Cache-Control: no-store</code> before your code runs, so the load balancer sees a live container even while the app is busy. Dependency checks go on <code>/ready</code>, opt-in, so a database blip never restarts a healthy app.</p>
     <p class="play-card__code"><code>GET /up  →  200 ok</code></p>
     <p class="play-card__foot"><span class="play-card__note">Take a knee. Still up.</span>
       <button class="run-btn" type="button" data-run aria-label="Run play 00, Victory Formation, again">Run it</button></p>

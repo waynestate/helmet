@@ -43,7 +43,7 @@ Citadel's HA-Proxy *appends* `X-Forwarded-Proto` instead of replacing it, so a c
 
 As in the [Raw PHP](usage-raw-php.md) path, use a [preset](platform-presets.md) or list only the address your front proxy connects from, never a whole private range. See [Running off Citadel](running-off-citadel.md) for the platform layout.
 
-The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`. The adapter registers no route. Keep `/up` for liveness only: readiness checks (database, cache) belong on a separate `/ready` route, as described in [Readiness is a separate check](usage-raw-php.md#readiness-is-a-separate-check); do not put them in the `DiagnosingHealth` listener, which fires for `/up`.
+The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`. The adapter registers no route. Keep `/up` for liveness only. Readiness checks (database, cache) belong on a separate route: call `Route::helmetReady('/ready', ['database' => DatabaseReady::class])` in `withRouting(then: ...)`, where each check is an invokable class, so `route:cache` keeps working. See [Readiness](readiness.md). Do not put dependency checks in the `DiagnosingHealth` listener, which fires for `/up`.
 
 ## Environment variables
 
@@ -157,6 +157,7 @@ Both paths call `SecurityHeaders::build()`, so for the same request and settings
 | Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
+| Readiness | `readiness` option, answered by `helmet_boot()`, default off | `Route::helmetReady()`, off until called |
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 

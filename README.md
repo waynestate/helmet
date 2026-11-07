@@ -214,7 +214,7 @@ isolation and feature policy), `hsts_max_age`, `hsts_include_subdomains`
 and `hsts_preload` (Configuring HSTS), `no_store` (the no-store rows of
 [Raw PHP and Laravel agree](#raw-php-and-laravel-agree)), `csrf`
 (The request-forgery guard), `health_path` (Health check without a front
-controller), `session` (The session, secure mode) and `error_handler`
+controller), `readiness` (Readiness is a separate check), `session` (The session, secure mode) and `error_handler`
 (A generic error page).
 
 The `log` option configures that logger: `channel` names it, `stream` is a
@@ -351,33 +351,39 @@ is in the air; it does not grade the play.
 #### Readiness is a separate check
 
 `/up` is liveness: "the process is running". Keep it free of dependency checks. If `/up` fails because the database is
-down, the platform restarts a healthy app and makes the outage worse. Put dependency checks on a different path, for
-example `/ready`, and point the load balancer's "send me traffic" probe at that one, not the restart probe.
+down, the platform restarts a healthy app and makes the outage worse. Readiness is the other question, "send me
+traffic?", and HELMET answers it on its own path, `/ready`, off unless you turn it on:
 
 ```php
-<?php // public/ready.php
-declare(strict_types=1);
-
-header('Content-Type: text/plain; charset=utf-8');
-header('Cache-Control: no-store');
-
-try {
-    $pdo = new PDO(getenv('DB_DSN'), getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [
-        PDO::ATTR_TIMEOUT => 2,
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    ]);
-    $pdo->query('SELECT 1');
-    echo 'ready';
-} catch (Throwable) {
-    http_response_code(503);
-    echo 'not ready';
-}
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'readiness' => [
+        'enabled' => true,                       // default false
+        'path' => '/ready',                      // the default; must differ from health_path
+        'checks' => [
+            'database' => static fn (): bool => db_ping(), // true or null passes, false fails
+        ],
+    ],
+]);
 ```
 
-Keep the same rules as `/up`: a short body, `no-store`, and no detail about which dependency failed (log that, do not
-print it). Give the check a short timeout so a hung database cannot hang the probe. In Laravel, register a separate
-`/ready` route that runs the checks; do not put them in the `DiagnosingHealth` listener, because that event fires for
-`/up` and would turn the liveness probe into a readiness probe.
+The answer is JSON, `no-store`, 200 while no check failed and 503 once one did:
+
+```json
+{"status":"ready","checks":{"headers":{"status":"pass","csp":"enforce","style_src_attr":"inline"},"trusted_proxies":{"status":"pass","count":1,"broad":0},"debug_output":{"status":"pass"},"database":{"status":"pass"}}}
+```
+
+HELMET adds three checks of its own config: the header set builds and carries a CSP (and in which mode), how many
+trusted proxies there are and how many are broad (a count, never an address), and whether `display_errors` is on. The
+last two warn and never fail. A check that throws fails, and its message goes to the log
+(`helmet.readiness_check_failed`), never the body. Give your checks a short timeout so a hung database cannot hang the
+probe. No secrets, no addresses, no policy text: the probe is reachable by anyone who can reach the app.
+
+A raw app with no front controller can answer from `public/ready.php` with `helmet_ready()`; PSR-15 apps add the
+`ReadinessCheck` middleware; Laravel apps call `Route::helmetReady()`. Never point the restart (liveness) probe at
+`/ready`, and in Laravel do not put dependency checks in the `DiagnosingHealth` listener, because that event fires for
+`/up`. Where each platform wants which path (Citadel, OpenShift, Coolify, Docker) is in the
+[readiness guide](docs/guides/readiness.md).
 #### Raw PHP with a Vue (Vite) build
 
 A raw PHP app that serves a built Vue/Vite SPA gives the bundler HELMET's
@@ -537,7 +543,7 @@ than `/48`, the provider writes one `helmet.broad_trusted_proxy` warning at
 boot; set `HELMET_WARN_BROAD_PROXIES=false` to silence it once you have
 reviewed the range.
 
-Keep `/up` for liveness only; readiness checks (database, cache) belong on a separate `/ready` route (see [Readiness is a separate check](#readiness-is-a-separate-check)).
+Keep `/up` for liveness only. Readiness checks (database, cache) belong on a separate route: `Route::helmetReady('/ready', ['database' => DatabaseReady::class])` in `bootstrap/app.php` `withRouting(then: ...)`, where each check is an invokable class (so `route:cache` works). See [Readiness is a separate check](#readiness-is-a-separate-check).
 
 The `/up` health route is Laravel's own: keep `health: '/up'` in
 `withRouting()`. The adapter registers no route.
@@ -706,6 +712,7 @@ like this:
 | Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
+| Readiness | `readiness` option, answered by `helmet_boot()`, default off | `Route::helmetReady()`, off until called |
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 

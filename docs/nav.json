@@ -75,6 +75,10 @@
           "path": "guides/csrf"
         },
         {
+          "title": "Readiness",
+          "path": "guides/readiness"
+        },
+        {
           "title": "Metrics",
           "path": "guides/metrics"
         },

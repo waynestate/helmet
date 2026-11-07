@@ -67,6 +67,11 @@ final class HelmetServiceProvider extends ServiceProvider
         // added when the app calls it, so the endpoint stays off by default.
         MetricsRoute::registerMacro();
 
+        // Make Route::helmetReady() available so an app can opt into the
+        // readiness endpoint. The macro is always registered; the route is
+        // only added when the app calls it.
+        ReadinessRoute::registerMacro();
+
         // Laravel's own trusted-proxy setting drives url(), secure cookies and
         // $request->isSecure(). When the app has not set it, follow the same
         // list HELMET uses, so HELMET_PROXIES drives both. An app value (or an
