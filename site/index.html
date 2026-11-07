@@ -388,7 +388,7 @@
 
       <!-- The full header set, as an equipment check. Values are what
            SecurityHeaders::build() sends by default. -->
-      <div class="kit" aria-labelledby="kit-title">
+      <div class="kit" role="group" aria-labelledby="kit-title">
         <div class="kit__head">
           <h3 class="kit__title" id="kit-title">Equipment check: the headers on every response</h3>
           <p class="kit__sub"><code>SecurityHeaders::build()</code> makes these seven for raw PHP and Laravel alike, and a test checks that both send the same names and values. <code>Cross-Origin-Resource-Policy</code> stays on the bench until you turn it on.</p>
@@ -731,12 +731,11 @@ helmet_http_request_duration_seconds_count{
         </div>
       </div>
 
-      <div class="whiteboard" aria-labelledby="squad-title">
+      <div class="whiteboard" role="group" aria-labelledby="squad-title">
         <h2 class="whiteboard__title" id="squad-title">Practice squad</h2>
-        <p class="whiteboard__sub">These are on HELMET's backlog and aren't in 0.3. They suit up when they're ready.</p>
+        <p class="whiteboard__sub">Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on <code>/ready</code> and Gitleaks in CI.</p>
         <ul class="squad">
-          <li>A readiness check, separate from <code>/up</code> (the pattern is in the docs today)</li>
-          <li>Secret scanning in CI, once Preflight tags its component</li>
+          <li>A strict <code>style-src-attr</code> by default, once WayneUI's recipes stop writing inline styles (<code>style_src_attr</code> already reports or blocks them)</li>
           <li>Traded to SESAME: <code>Clear-Site-Data</code> on logout, since SESAME owns sign-out</li>
         </ul>
         <p class="whiteboard__marker" aria-hidden="true">two-a-days &rarr;</p>

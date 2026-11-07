@@ -366,10 +366,9 @@ The CSP stays honest only if the bundle plays along.
 
 ## Practice squad
 
-These are on HELMET's backlog and aren't in 0.3. They suit up when they're ready.
+Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on `/ready` and Gitleaks in CI.
 
-- A readiness check, separate from `/up` (the pattern is in the docs today)
-- Secret scanning in CI, once Preflight tags its component
+- A strict `style-src-attr` by default, once WayneUI's recipes stop writing inline styles (`style_src_attr` already reports or blocks them)
 - Traded to SESAME: `Clear-Site-Data` on logout, since SESAME owns sign-out
 
 Wayne State app stack · 0.1 season
