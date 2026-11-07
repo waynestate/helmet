@@ -10,9 +10,9 @@ generator: Squire agent-ready
 
 # HELMET[#](https://helmet.apps.wayne.edu/docs/#helmet)
 
-![Three members of the band Helmet, two guitarists and a drummer at a Tama kit, tinted blue against a hazy orange and gold backdrop](https://media.tenor.com/WmJKjN9NQqoAAAAM/helmet-band.gif) GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120)
+[Three members of the band Helmet, two guitarists and a drummer at a Tama kit, tinted blue against a hazy orange and gold backdrop](https://media.tenor.com/WmJKjN9NQqoAAAAM/helmet-band.gif) GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120)
 
-![php ^8.3](https://helmet.apps.wayne.edu/docs/readme/badges/php.svg) ![license MIT](https://helmet.apps.wayne.edu/docs/readme/badges/license.svg) ![psr-15: middleware](https://helmet.apps.wayne.edu/docs/readme/badges/psr15.svg) [![GitHub CI](https://github.com/waynestate/helmet/actions/workflows/ci.yml/badge.svg)](https://github.com/waynestate/helmet/actions/workflows/ci.yml)
+![php ^8.3](https://helmet.apps.wayne.edu/docs/readme/badges/php.svg) ![license MIT](https://helmet.apps.wayne.edu/docs/readme/badges/license.svg) ![psr-15: middleware](https://helmet.apps.wayne.edu/docs/readme/badges/psr15.svg) [GitHub CI](https://github.com/waynestate/helmet/actions/workflows/ci.yml)
 
 **Put it on before you ship.** Security headers, a hardened session and an honest proxy check, snapped on before the first page is served.
 

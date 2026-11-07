@@ -14,7 +14,7 @@ This page explains where this repo's CI runs today and why every product in the 
 
 git.wayne.edu has no runners today, so CI for this repo runs on the test GitLab instance. Every product in the stack strongly recommends a git.wayne.edu instance runner.
 
-![Close-up of a man with a mustache and smudged dark eye makeup in front of a purple and gold backdrop, from the Wilma's Rainbow video by the band Helmet](https://media.tenor.com/1dGc4wPaaBQAAAAM/wilmas-rainbow-helmet.gif)
+[Close-up of a man with a mustache and smudged dark eye makeup in front of a purple and gold backdrop, from the Wilma's Rainbow video by the band Helmet](https://media.tenor.com/1dGc4wPaaBQAAAAM/wilmas-rainbow-helmet.gif)
 
 *GIF via [Tenor](https://tenor.com/view/wilmas-rainbow-helmet-wilmas-wilma-rainbow-gif-18685087)*
 
