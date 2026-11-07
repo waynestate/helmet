@@ -250,6 +250,128 @@ final class LoggingTest extends TestCase
         }
     }
 
+    public function testResetPasswordTokenInPathIsMasked(): void
+    {
+        $saved = $this->saveServerKeys(['REQUEST_METHOD', 'REQUEST_URI', 'REMOTE_ADDR']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/reset-password/' . str_repeat('0123456789abcdef', 4);
+        unset($_SERVER['REMOTE_ADDR']);
+
+        try {
+            $file = tempnam(sys_get_temp_dir(), 'helmet_log');
+            $logger = Logging::create('test', $file);
+
+            $logger->info('visit', ['user' => 'alice']);
+
+            $content = (string) file_get_contents($file);
+            unlink($file);
+
+            $record = json_decode($content, true);
+            self::assertIsArray($record);
+            self::assertSame('/reset-password/{redacted}', $record['extra']['http']['path']);
+        } finally {
+            $this->restoreServerKeys($saved);
+        }
+    }
+
+    public function testInviteTokenInPathIsMasked(): void
+    {
+        $saved = $this->saveServerKeys(['REQUEST_METHOD', 'REQUEST_URI', 'REMOTE_ADDR']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/invite/AbC123xyz789AbC123xyz789Q';
+        unset($_SERVER['REMOTE_ADDR']);
+
+        try {
+            $file = tempnam(sys_get_temp_dir(), 'helmet_log');
+            $logger = Logging::create('test', $file);
+
+            $logger->info('visit', ['user' => 'alice']);
+
+            $content = (string) file_get_contents($file);
+            unlink($file);
+
+            $record = json_decode($content, true);
+            self::assertIsArray($record);
+            self::assertSame('/invite/{redacted}', $record['extra']['http']['path']);
+        } finally {
+            $this->restoreServerKeys($saved);
+        }
+    }
+
+    public function testLongSegmentWithoutDigitsIsKept(): void
+    {
+        $saved = $this->saveServerKeys(['REQUEST_METHOD', 'REQUEST_URI', 'REMOTE_ADDR']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/docs/getting-started-with-helmet-and-friends';
+        unset($_SERVER['REMOTE_ADDR']);
+
+        try {
+            $file = tempnam(sys_get_temp_dir(), 'helmet_log');
+            $logger = Logging::create('test', $file);
+
+            $logger->info('visit', ['user' => 'alice']);
+
+            $content = (string) file_get_contents($file);
+            unlink($file);
+
+            $record = json_decode($content, true);
+            self::assertIsArray($record);
+            self::assertSame('/docs/getting-started-with-helmet-and-friends', $record['extra']['http']['path']);
+        } finally {
+            $this->restoreServerKeys($saved);
+        }
+    }
+
+    public function testShortNumericSegmentIsKept(): void
+    {
+        $saved = $this->saveServerKeys(['REQUEST_METHOD', 'REQUEST_URI', 'REMOTE_ADDR']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/users/42/edit';
+        unset($_SERVER['REMOTE_ADDR']);
+
+        try {
+            $file = tempnam(sys_get_temp_dir(), 'helmet_log');
+            $logger = Logging::create('test', $file);
+
+            $logger->info('visit', ['user' => 'alice']);
+
+            $content = (string) file_get_contents($file);
+            unlink($file);
+
+            $record = json_decode($content, true);
+            self::assertIsArray($record);
+            self::assertSame('/users/42/edit', $record['extra']['http']['path']);
+        } finally {
+            $this->restoreServerKeys($saved);
+        }
+    }
+
+    public function testUuidSegmentIsMaskedAcceptedTradeOff(): void
+    {
+        // A UUID is not a secret, but it matches the token shape, so it is
+        // masked anyway; that is an accepted trade-off.
+        $saved = $this->saveServerKeys(['REQUEST_METHOD', 'REQUEST_URI', 'REMOTE_ADDR']);
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/orders/3f2b1c9e-8d7a-4b6c-9e5f-1a2b3c4d5e6f';
+        unset($_SERVER['REMOTE_ADDR']);
+
+        try {
+            $file = tempnam(sys_get_temp_dir(), 'helmet_log');
+            $logger = Logging::create('test', $file);
+
+            $logger->info('visit', ['user' => 'alice']);
+
+            $content = (string) file_get_contents($file);
+            unlink($file);
+
+            $record = json_decode($content, true);
+            self::assertIsArray($record);
+            self::assertSame('/orders/{redacted}', $record['extra']['http']['path']);
+        } finally {
+            $this->restoreServerKeys($saved);
+        }
+    }
+
     /**
      * Save the given $_SERVER keys so a test can restore them afterwards.
      *

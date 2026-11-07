@@ -166,7 +166,8 @@ final class Logging
      * carries the query string, because query strings carry tokens and
      * personal data, and the client address is the peer PHP connected to,
      * which behind a proxy is the proxy's address. No inbound header is
-     * trusted for any of this, same rule as the request ID.
+     * trusted for any of this, same rule as the request ID. Long token-like
+     * path segments are masked.
      */
     public static function addRequestContext(LogRecord $record): LogRecord
     {
@@ -188,6 +189,7 @@ final class Logging
         if (strlen($path) > 512) {
             $path = substr($path, 0, 512);
         }
+        $path = self::maskPathTokens($path);
 
         $ip = $_SERVER['REMOTE_ADDR'] ?? null;
         $clientIp = (is_string($ip) && filter_var($ip, FILTER_VALIDATE_IP) !== false) ? $ip : null;
@@ -235,5 +237,24 @@ final class Logging
         }
 
         return $data;
+    }
+
+    /**
+     * Reset, invite and signed links put secrets in the path, so long
+     * token-like segments are masked.
+     */
+    private static function maskPathTokens(string $path): string
+    {
+        $segments = explode('/', $path);
+        foreach ($segments as $i => $segment) {
+            if (strlen($segment) >= 24
+                && preg_match('/^[A-Za-z0-9._~%+=-]+$/', $segment) === 1
+                && preg_match('/[0-9]/', $segment) === 1
+            ) {
+                $segments[$i] = '{redacted}';
+            }
+        }
+
+        return implode('/', $segments);
     }
 }
