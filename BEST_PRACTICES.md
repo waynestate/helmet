@@ -14,7 +14,7 @@ Each practice ends with exactly one tag.
 
 | Tag | Meaning |
 | --- | --- |
-| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository now has a `.gitlab-ci.yml` that includes the Preflight `php-test` and `composer-audit` components, pinned to one commit. The README says git.wayne.edu has no runners today, so whether that pipeline has ever run was not verified. Treat the tests as run by hand until a pipeline run is on record. |
+| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository's `.gitlab-ci.yml` includes the Preflight `php-test`, `composer-audit` and `proctor` components, pinned to 0.1.4, and its pipelines pass on git.wayne.edu (for example pipeline 4350, 2026-11-07). |
 | `Checked` | PROCTOR or CI warns or fails. |
 | `Documented` | Written down in the README or a design note, with no code behind it. |
 | `Not yet` | A gap. |
@@ -458,7 +458,7 @@ Each of these follows from the research above. Items marked "inferred" depend on
 21. Done. Request ID and context processors, and a redacting formatter.
 22. Done in 0.1.0: tests/FunctionsTest.php:62, test FunctionsTest::testBootReturnsNonceWhenNoSessionActive. A test for `Logging::create()` and for `helmet_boot()` itself.
 23. Done. The version warning is wired into the environment ribbon: when a policy file is configured (`helmet.policy_path` / `HELMET_POLICY_PATH`, or `helmet_ribbon()`'s third argument), the ribbon shows a warning line for each component version that is in its security-only phase or end of life (`src/Ribbon/Ribbon.php`, `src/Policy/VersionWarning.php`). `RibbonTest` covers the active, security-only, end-of-life, no-policy-path and broken-file cases, and `InjectRibbonTest` covers the Laravel wiring.
-24. A proven CI run. The `.gitlab-ci.yml` exists (Preflight `php-test` and `composer-audit`, pinned to 0.1.0), but git.wayne.edu has no runners today. The test matrix already covers 8.3, 8.4 and 8.5 in both `.gitlab-ci.yml` and `.github/workflows/ci.yml`. What remains: get one pipeline run on record and add secret detection.
+24. A proven CI run. The pipeline runs and passes on git.wayne.edu (Preflight 0.1.4 components; the test matrix covers 8.3, 8.4 and 8.5 in `.gitlab-ci.yml` and `.github/workflows/ci.yml`). What remains: add secret detection.
 
 ### Needs Citadel
 
