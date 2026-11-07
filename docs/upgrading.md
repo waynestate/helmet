@@ -7,7 +7,17 @@ description: How to move an app from one HELMET release to the next.
 
 This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 0.3.1.
+release is 0.4.0.
+
+## 0.4.0 (2026-11-07)
+
+No breaks: an ADVISOR module (`helmet_headers` and `helmet_php_support`, read-only), opt-in request metrics (`HELMET_METRICS_STORAGE`), PHP end-of-support and stack-info metrics, `extra.http` on web request log records, and fixes to the metrics and policy file readers. This is a pre-1.0 minor: apps that pin `^0.3` stay on 0.3.x until they move their constraint to `^0.4`. Upgrade with:
+
+```
+composer require waynestate/helmet:^0.4
+```
+
+---
 
 ## 0.3.1 (2026-11-05)
 
