@@ -1556,6 +1556,10 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+#### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
+
+- CI caches Composer downloads per lock file (`.composer-cache`, keyed on `composer.lock` and `deploy/composer.lock`), so a pipeline stops fetching every package from Packagist on every run. Images already come through the Dependency Proxy.
+
 ### 0.4.0 (2026-11-07)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-4-0-2026-11-07)
 
 #### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
@@ -1577,7 +1581,7 @@ All notable changes to this project are documented in this file.
 - Metrics: `helmet_metrics()` read the scraper's token only from `$_SERVER['HTTP_AUTHORIZATION']`, which Apache with mod_php (Citadel's images) never sets, so a correct token got 403 there. It now also reads `REDIRECT_HTTP_AUTHORIZATION` and `getallheaders()` (`BearerToken::fromServer()`). Found by scraping HELMET's own front page in a php:8.5 Apache container.
 - Grafana dashboard: the data source was declared under `inputs`, which Grafana's import ignores, so every panel pointed at an unresolved `${DS_PROMETHEUS}`; it is now `__inputs` (with `__requires`). "Scrape health" joined `up` to `helmet_info`, which drops exactly the targets that are down; it now graphs `up` directly.
 
-#### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
+#### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed-1)
 
 - The canonical repository is git.wayne.edu (ADR-0021); docs, links and package metadata no longer point at the archived nougat copy.
 

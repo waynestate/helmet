@@ -43,6 +43,10 @@
 <h1 id="changelog">Changelog<a class="docs-heading-link" aria-label="Link to this section" href="#changelog">#</a></h1>
 <p>All notable changes to this project are documented in this file.</p>
 <h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
+<h3 id="changed">Changed<a class="docs-heading-link" aria-label="Link to this section" href="#changed">#</a></h3>
+<ul>
+<li>CI caches Composer downloads per lock file (<code>.composer-cache</code>, keyed on <code>composer.lock</code> and <code>deploy/composer.lock</code>), so a pipeline stops fetching every package from Packagist on every run. Images already come through the Dependency Proxy.</li>
+</ul>
 <h2 id="0-4-0-2026-11-07">0.4.0 (2026-11-07)<a class="docs-heading-link" aria-label="Link to this section" href="#0-4-0-2026-11-07">#</a></h2>
 <h3 id="added">Added<a class="docs-heading-link" aria-label="Link to this section" href="#added">#</a></h3>
 <ul>
@@ -63,7 +67,7 @@
 <li>Metrics: <code>helmet_metrics()</code> read the scraper's token only from <code>$_SERVER['HTTP_AUTHORIZATION']</code>, which Apache with mod_php (Citadel's images) never sets, so a correct token got 403 there. It now also reads <code>REDIRECT_HTTP_AUTHORIZATION</code> and <code>getallheaders()</code> (<code>BearerToken::fromServer()</code>). Found by scraping HELMET's own front page in a php:8.5 Apache container.</li>
 <li>Grafana dashboard: the data source was declared under <code>inputs</code>, which Grafana's import ignores, so every panel pointed at an unresolved <code>${DS_PROMETHEUS}</code>; it is now <code>__inputs</code> (with <code>__requires</code>). &quot;Scrape health&quot; joined <code>up</code> to <code>helmet_info</code>, which drops exactly the targets that are down; it now graphs <code>up</code> directly.</li>
 </ul>
-<h3 id="changed">Changed<a class="docs-heading-link" aria-label="Link to this section" href="#changed">#</a></h3>
+<h3 id="changed-1">Changed<a class="docs-heading-link" aria-label="Link to this section" href="#changed-1">#</a></h3>
 <ul>
 <li>The canonical repository is git.wayne.edu (ADR-0021); docs, links and package metadata no longer point at the archived nougat copy.</li>
 </ul>
@@ -372,7 +376,7 @@ the code is just cut from the same cloth now.</p>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../docs/upgrading.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Upgrading</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#unreleased">Unreleased</a></li><li class="docs-toc__item"><a href="#0-4-0-2026-11-07">0.4.0 (2026-11-07)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#added">Added</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#fixed">Fixed</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#changed">Changed</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#security">Security</a></li><li class="docs-toc__item"><a href="#0-3-1-2026-11-05">0.3.1 (2026-11-05)</a></li><li class="docs-toc__item"><a href="#0-3-0-2026-11-03">0.3.0 (2026-11-03)</a></li><li class="docs-toc__item"><a href="#0-2-6-2026-11-02">0.2.6 (2026-11-02)</a></li><li class="docs-toc__item"><a href="#0-2-5-2026-10-29">0.2.5 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-4-2026-10-29">0.2.4 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-3-2026-10-29">0.2.3 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-2-2026-10-29">0.2.2 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-1-2026-10-29">0.2.1 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-0-2026-10-29">0.2.0 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-1-0-2026-10-27">0.1.0 (2026-10-27)</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#unreleased">Unreleased</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#changed">Changed</a></li><li class="docs-toc__item"><a href="#0-4-0-2026-11-07">0.4.0 (2026-11-07)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#added">Added</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#fixed">Fixed</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#changed-1">Changed</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#security">Security</a></li><li class="docs-toc__item"><a href="#0-3-1-2026-11-05">0.3.1 (2026-11-05)</a></li><li class="docs-toc__item"><a href="#0-3-0-2026-11-03">0.3.0 (2026-11-03)</a></li><li class="docs-toc__item"><a href="#0-2-6-2026-11-02">0.2.6 (2026-11-02)</a></li><li class="docs-toc__item"><a href="#0-2-5-2026-10-29">0.2.5 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-4-2026-10-29">0.2.4 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-3-2026-10-29">0.2.3 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-2-2026-10-29">0.2.2 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-1-2026-10-29">0.2.1 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-0-2026-10-29">0.2.0 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-1-0-2026-10-27">0.1.0 (2026-10-27)</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.4.0</span></span>
