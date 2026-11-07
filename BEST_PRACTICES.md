@@ -453,12 +453,12 @@ Each of these follows from the research above. Items marked "inferred" depend on
 16. Done. `build()` sends `Permissions-Policy` with `payment=()` and `usb=()` (`src/Headers/SecurityHeaders.php:75-84`); `testBuildPermissionsPolicyCoversPaymentAndUsb` (`tests/Headers/SecurityHeadersTest.php:181`) covers it.
 17. Done. COOP and CORP headers, tested against WayneUI assets.
 18. Done. A client-IP function that walks the forwarded list from the right.
-19. A readiness endpoint, separate from `/up`.
-20. A global error handler that logs details and shows a generic page.
+19. Documented, not shipped as code (H34). `/up` stays liveness-only, and the README and the raw PHP guide show a separate `/ready` path for dependency checks (short timeout, fixed 503 body, `no-store`). Dependency checks are app-specific, so the pattern is the app's to wire; whether HELMET should ship a readiness helper is an open scope question.
+20. Done, opt-in. `helmet_boot(['error_handler' => ['enabled' => true]])` installs a handler that logs the detail and serves the fixed 500 page from `GenericErrorResponse::build()`, and `GenericErrorResponse::clientError()` gives the fixed 4xx pages (`src/Error/GenericErrorResponse.php`, `src/functions.php`, `tests/Error/GenericErrorResponseTest.php`, `tests/FunctionsErrorHeadersTest.php`). Laravel apps keep the framework's handler (H41, H43).
 21. Done. Request ID and context processors, and a redacting formatter.
 22. Done in 0.1.0: tests/FunctionsTest.php:62, test FunctionsTest::testBootReturnsNonceWhenNoSessionActive. A test for `Logging::create()` and for `helmet_boot()` itself.
 23. Done. The version warning is wired into the environment ribbon: when a policy file is configured (`helmet.policy_path` / `HELMET_POLICY_PATH`, or `helmet_ribbon()`'s third argument), the ribbon shows a warning line for each component version that is in its security-only phase or end of life (`src/Ribbon/Ribbon.php`, `src/Policy/VersionWarning.php`). `RibbonTest` covers the active, security-only, end-of-life, no-policy-path and broken-file cases, and `InjectRibbonTest` covers the Laravel wiring.
-24. A proven CI run. The pipeline runs and passes on git.wayne.edu (Preflight 0.1.4 components; the test matrix covers 8.3, 8.4 and 8.5 in `.gitlab-ci.yml` and `.github/workflows/ci.yml`). What remains: add secret detection.
+24. Done. A proven CI run: pipeline 4350 on git.wayne.edu passed on 2026-11-07 with the Preflight 0.1.4 components, and the test matrix covers 8.3, 8.4 and 8.5 in `.gitlab-ci.yml` and `.github/workflows/ci.yml` (see the `Enforced` row at the top). Still to add, separately: secret detection, which waits on a Preflight tag that ships its secret-detection component.
 
 ### Needs Citadel
 

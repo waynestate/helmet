@@ -79,6 +79,10 @@
           "path": "guides/metrics"
         },
         {
+          "title": "Your coding agent (ADVISOR)",
+          "path": "guides/advisor"
+        },
+        {
           "title": "Strongly recommended: a git.wayne.edu instance runner",
           "path": "guides/instance-runner"
         }

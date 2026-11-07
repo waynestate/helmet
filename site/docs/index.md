@@ -22,6 +22,7 @@ HELMET is the Wayne State app stack's baseline runtime: one small framework-free
 
 - **New here?** The [Quick start](https://helmet.apps.wayne.edu/docs/guides/quick-start.html) puts a raw PHP app behind the baseline in four steps.
 - **Installing it now?** [Install](https://helmet.apps.wayne.edu/docs/install.html) has the requirements, the Composer line and the verify step.
+- **Working with a coding agent?** [Your coding agent (ADVISOR)](https://helmet.apps.wayne.edu/docs/guides/advisor.html) gives it two read-only tools: the headers HELMET sends and why, and how long the app's PHP floor stays supported.
 - **Looking for a setting or a function?** The Reference group starts with [Environment variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html), every `HELMET_` variable the package reads.
 
 ## Install[#](https://helmet.apps.wayne.edu/docs/#install)

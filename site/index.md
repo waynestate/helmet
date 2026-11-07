@@ -317,6 +317,8 @@ Output: the changes as a diff per file, then how to check the headers locally, t
 
 The prompts are plain text in the page, so an agent that reads [this page as Markdown](https://helmet.apps.wayne.edu/index.md) or [llms.txt](https://helmet.apps.wayne.edu/llms.txt) gets all five without the buttons. Nobody runs the ball without a helmet.
 
+Already wearing HELMET? Load its [ADVISOR module](https://helmet.apps.wayne.edu/docs/guides/advisor.html) and your agent gets two read-only calls from the booth: `helmet_headers` says why each header and CSP directive is there, and `helmet_php_support` says how long your PHP floor has left. HELMET reports; PROCTOR decides.
+
 ## The film room
 
 What HELMET writes down while the game is on, so you can watch the tape afterwards.
@@ -366,9 +368,9 @@ The CSP stays honest only if the bundle plays along.
 
 These are on HELMET's backlog and aren't in 0.3. They suit up when they're ready.
 
-- A readiness check, separate from `/up`
-- A `Clear-Site-Data` helper for logout
-- A global error handler: detail in the log, a generic page for the user
+- A readiness check, separate from `/up` (the pattern is in the docs today)
+- Secret scanning in CI, once Preflight tags its component
+- Traded to SESAME: `Clear-Site-Data` on logout, since SESAME owns sign-out
 
 Wayne State app stack · 0.1 season
 

@@ -47,6 +47,23 @@ File `src/Ribbon/functions.php`, namespace `Waynestate\Helmet\Ribbon`:
 
 A convenience helper for raw PHP apps: it creates a `Ribbon` for the given environment, which you render with its `html()` method and inject near the top of the page. When a policy path is given, the ribbon also shows a version warning for the running PHP version from CREED's policy.json; a missing, unreadable or invalid policy file produces no warning and never breaks the page.
 
+## Advisor[#](https://helmet.apps.wayne.edu/docs/reference/api.html#advisor)
+
+### `Advisor\HelmetModule` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#advisor-helmetmodule)
+
+`final class HelmetModule implements Module` in `src/Advisor/HelmetModule.php`. HELMET's [ADVISOR](https://helmet.apps.wayne.edu/docs/guides/advisor.html) module: two read-only tools, `helmet_headers` and `helmet_php_support`, that answer from HELMET's own code, in-process, about an app inside the project root. It loads only inside ADVISOR (`waynestate/advisor` is a suggestion, never a requirement) when the app's `modules.json` names it.
+
+| Member | Signature |
+| --- | --- |
+| `TOOL` | `public const TOOL = 'helmet';` |
+| `VERDICT` | `public const VERDICT = 'HELMET reports; PROCTOR decides.';` |
+| `NONCE_PLACEHOLDER` | `public const NONCE_PLACEHOLDER = 'PerRequestNonce';` |
+| `__construct()` | `public function __construct(private readonly ModuleContext $context)` |
+| `id()` | `public function id(): string` |
+| `tools()` | `public function tools(): array` |
+| `resources()` | `public function resources(): array` |
+| `prompts()` | `public function prompts(): array` |
+
 ## Csrf[#](https://helmet.apps.wayne.edu/docs/reference/api.html#csrf)
 
 ### `Csrf\RequestForgeryGuard` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#csrf-requestforgeryguard)
@@ -94,6 +111,17 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | `buildCoop()` | `public static function buildCoop(string $value): string` |
 | `buildCorp()` | `public static function buildCorp(string $value): string` |
 | `buildPermissionsPolicy()` | `public static function buildPermissionsPolicy(array $policy): ?string` |
+
+### `Headers\HeaderReasons` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers-headerreasons)
+
+`final class HeaderReasons` in `src/Headers/HeaderReasons.php`. Why HELMET sends each header and each CSP directive, a sentence or two apiece, kept next to the policy it explains. The ADVISOR tool `helmet_headers` and the docs read it, and a test fails when a header or directive is added without a reason.
+
+| Member | Signature |
+| --- | --- |
+| `directive()` | `public static function directive(string $directive): ?string` |
+| `header()` | `public static function header(string $header): ?string` |
+| `directives()` | `public static function directives(): array` |
+| `headers()` | `public static function headers(): array` |
 
 ### `Headers\SecurityHeadersMiddleware` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers-securityheadersmiddleware)
 

@@ -3,6 +3,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://helmet.apps.wayne.edu/</loc></url>
   <url><loc>https://helmet.apps.wayne.edu/docs/changelog.html</loc></url>
+  <url><loc>https://helmet.apps.wayne.edu/docs/guides/advisor.html</loc></url>
   <url><loc>https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html</loc></url>
   <url><loc>https://helmet.apps.wayne.edu/docs/guides/csp.html</loc></url>
   <url><loc>https://helmet.apps.wayne.edu/docs/guides/csrf.html</loc></url>
