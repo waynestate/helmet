@@ -401,7 +401,7 @@ What keeps the code honest
 
 Starters, deploys, sign-in and upgrades
 
-- [Sourdough](https://sourdough.apps.wayne.edu/) Starts a new app. Raw PHP today; Blade and Inertia/Vue come later.
+- [Sourdough](https://sourdough.apps.wayne.edu/) Starts a new app in any of the five formations, from raw PHP to Inertia and Vue.
 - [Squire](https://squire.apps.wayne.edu/) The deploy kit for Citadel: build.sh, a release script and local runs on the same images.
 - [Drawbridge](https://drawbridge.apps.wayne.edu/) next Signs people in through Entra ID before they reach a Citadel app.
 - [Booster](https://booster.apps.wayne.edu/) Upgrades PHP 7 to 8 and Laravel one version at a time.

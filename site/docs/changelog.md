@@ -12,6 +12,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+### Fixed[#](https://helmet.apps.wayne.edu/docs/changelog.html#fixed)
+
+- The front page roster says Sourdough starts all five app shapes, from raw PHP to Inertia and Vue; it no longer says Blade and Inertia come later.
+
 ## 0.4.0 (2026-11-07)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-4-0-2026-11-07)
 
 ### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
@@ -25,7 +29,7 @@ All notable changes to this project are documented in this file.
 - Docs: the Metrics guide covers what each metric means, how labels stay bounded, picking a store, turning metrics on for one site (Laravel and raw PHP), the scrape config and PromQL; troubleshooting covers a 403 on Apache, empty request panels and an `unknown` support status.
 - Grafana dashboard (`docs/grafana/helmet.json`): `job` and `instance` variables on every query, and new panels for targets down, days to PHP end of support, stack packages, requests by route group and by status class, latency p50 and p95, p95 by route group, server errors, metrics storage and CSP violations by directive. Checked by importing it into Grafana 12 through the API against a local Prometheus scraping three HELMET apps, one per store. Scrape health is a state timeline (up or down per target) and the version panels are bar charts.
 
-### Fixed[#](https://helmet.apps.wayne.edu/docs/changelog.html#fixed)
+### Fixed[#](https://helmet.apps.wayne.edu/docs/changelog.html#fixed-1)
 
 - Metrics: `helmet_php_version_status` looked up the full PHP release (`8.3.12`) in CREED's policy, which names versions by major.minor (`8.3`), so every real app reported `unknown`. It now looks up major.minor.
 - Policy: `JsonFilePolicySource` read each component as a flat version map, but CREED's `policy.json` (and its schema) keeps the versions under `versions`, so against the real file the ribbon never warned and the PHP support metrics said `unknown`. It now reads both shapes, skips a version with no `security_until`, and treats one with no `active_until` as security-only.
