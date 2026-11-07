@@ -30,6 +30,8 @@ headers, hardens the session, decides whether the request really arrived over HT
 
 - **New here?** The [Quick start](guides/quick-start.md) puts a raw PHP app behind the baseline in four steps.
 - **Installing it now?** [Install](install.md) has the requirements, the Composer line and the verify step.
+- **Working with a coding agent?** [Your coding agent (ADVISOR)](guides/advisor.md) gives it two read-only tools:
+  the headers HELMET sends and why, and how long the app's PHP floor stays supported.
 - **Looking for a setting or a function?** The Reference group starts with [Environment variables](reference/configuration.md),
   every `HELMET_` variable the package reads.
 

@@ -25,6 +25,7 @@ Every page below is Markdown. The HTML pages send the same Markdown to a client 
 
 - [HELMET: Put it on before you ship.](https://helmet.apps.wayne.edu/index.md): HELMET is a small PHP package that sends the security headers and a nonce-based CSP, hardens the session, checks the proxy, answers /up and writes JSON logs. Raw PHP, Laravel and PSR-15 apps all use the same core.
 - [Changelog | HELMET docs](https://helmet.apps.wayne.edu/docs/changelog.md): All notable changes to this project.
+- [Use HELMET from your coding agent (ADVISOR) | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/advisor.md): Install the ADVISOR module so a coding agent can ask HELMET which headers it sends and why, and how long the app's PHP floor stays supported, with the two read-only tools helmet_headers and helmet_php_support.
 - [Cross-origin isolation and feature policy | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.md): Three more headers round out the baseline: Cross-Origin-Opener-Policy and Permissions-Policy are on by default, Cross-Origin-Resource-Policy is opt-in.
 - [Customizing the CSP | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/csp.md): A csp policy passed to helmet_boot() or the middleware is merged over the default, per directive.
 - [The request-forgery guard | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/csrf.md): SameSite=Lax is a layer, not a wall: the optional request-forgery guard checks state-changing requests before they reach the app.

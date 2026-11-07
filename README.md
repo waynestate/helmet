@@ -1071,6 +1071,31 @@ the scrape config and the queries.
 The endpoint is the only place in HELMET that says "I am still here" without
 saying "here is your page". A lullaby, in a way.
 
+## Use HELMET from your coding agent (ADVISOR)
+
+HELMET ships an [ADVISOR](https://github.com/waynestate/advisor) module, so a coding agent can ask HELMET
+questions from its sandbox. Install ADVISOR in the app (`composer require --dev waynestate/advisor`) and name the module
+in the app's `modules.json`:
+
+```json
+{
+    "modules": [
+        "Waynestate\\Helmet\\Advisor\\HelmetModule"
+    ]
+}
+```
+
+The agent gains two read-only tools. Each takes one argument, a path inside the project, runs in-process (no
+subprocess, no network, nothing written) and never reads `.env`.
+
+| Tool | What it answers |
+| --- | --- |
+| `helmet_headers` | The headers and CSP HELMET sends, each with the reason it is there, how the app is wired to HELMET (locked version, a published `config/helmet.php` and whether it was edited, a `helmet_boot()` call) and the settings that change the answer. |
+| `helmet_php_support` | The support status of the app's PHP floor (from `require.php` in `composer.json`) and of every PHP version the constraint allows, from the CREED policy ADVISOR bundles, read with HELMET's own policy code. |
+
+Every answer names its source. HELMET reports; PROCTOR decides. The
+[ADVISOR guide](docs/guides/advisor.md) has the full answer shapes.
+
 ## Proof
 
 Proof runs against real Wayne State applications are on a private site, [proof.apps.wayne.edu/helmet](https://proof.apps.wayne.edu/helmet/), behind a Wayne State employee sign-in.
@@ -1137,7 +1162,7 @@ Matters too, which is why the core stays small enough to read in an afternoon.
 <div align="center"><img src="docs/readme/board.jpg" width="100%" alt="HELMET's brand board: the helmet mark on a Wayne State green tile, the app icon, horizontal and stacked lockups reading 'Put it on before you ship.', the mark on light and dark, the palette of WSU green, gold, cream and berry (site accent only), Inter type, favicons at 64, 32 and 16 px, clear space, do and don't, and a response-headers mockup."></div>
 </details>
 
-<div align="center"><b>Same team, every snap</b><br><sub>WayneUI and the stack. HELMET plays the line.</sub></div>
+<div align="center"><b>Same team, every snap</b><br><sub>WayneUI and the stack. HELMET plays the line, and reads its playbook to ADVISOR's booth through two read-only tools.</sub></div>
 
 <div align="center">
   <a href="https://github.com/waynestate/wayne-ui" title="WayneUI"><img src="docs/readme/cast/wayneui.png" width="40" alt="WayneUI"></a>
