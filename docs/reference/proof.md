@@ -5,7 +5,7 @@ description: Proof runs against real Wayne State applications are on a private s
 
 # Proof and tests
 
-How HELMET is proven against real Wayne State applications, and how to run its test suite on a machine with no PHP. Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/MAINTAINING.md).
+How HELMET is proven against real Wayne State applications, and how to run its test suite on a machine with no PHP. Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://github.com/waynestate/helmet/blob/HEAD/MAINTAINING.md).
 
 ## Last run
 

@@ -31,9 +31,9 @@ answers the load balancer's `/up` ping, and writes structured logs.
 
 ## Where the code lives
 
-The canonical repository is on nougat: [enterprise-apps/helmet](https://nougat.snu.gs/enterprise-apps/helmet). git.wayne.edu and GitHub ([waynestate/helmet](https://github.com/waynestate/helmet)) are read-only mirrors of it.
-Open issues and merge requests on nougat, not on the mirrors.
-This moves to git.wayne.edu once it has CI runners. Nougat is the head this helmet fits; the mirrors are mannequins.
+The canonical repository is [git.wayne.edu/enterprise-apps/helmet](https://git.wayne.edu/enterprise-apps/helmet) (clone over SSH as `git@git.wayne.edu:enterprise-apps/helmet.git`, or HTTPS as `https://git.wayne.edu/enterprise-apps/helmet.git`). Open issues and merge requests there; tags are made there, by the maintainer, with an approver.
+GitHub ([waynestate/helmet](https://github.com/waynestate/helmet)) is a read-only push mirror of it. Nobody pushes to the mirror; Packagist and npm read from it.
+git.wayne.edu is the head this helmet fits; the mirror is the mannequin.
 
 It is the floor, not the ceiling. An app on raw PHP calls `helmet_boot()` once
 at the top of its front controller and is done. An app on Laravel or a PSR-15
@@ -1134,7 +1134,7 @@ Matters too, which is why the core stays small enough to read in an afternoon.
   <a href="https://github.com/waynestate/pinstripe" title="Pinstripe"><img src="docs/readme/cast/pinstripe.png" width="40" alt="Pinstripe"></a>
   <a href="https://github.com/waynestate/booster" title="Booster"><img src="docs/readme/cast/booster.png" width="40" alt="Booster"></a>
   <a href="https://github.com/waynestate/rollcall" title="Rollcall"><img src="docs/readme/cast/rollcall.png" width="40" alt="Rollcall"></a>
-  <a href="https://nougat.snu.gs/enterprise-apps/drawbridge" title="Drawbridge"><img src="docs/readme/cast/drawbridge.png" width="40" alt="Drawbridge"></a>
+  <a href="https://git.wayne.edu/enterprise-apps/drawbridge" title="Drawbridge"><img src="docs/readme/cast/drawbridge.png" width="40" alt="Drawbridge"></a>
   <a href="https://github.com/waynestate/advisor" title="ADVISOR"><img src="docs/readme/cast/advisor.png" width="40" alt="ADVISOR"></a>
   <a href="https://github.com/waynestate/weld" title="WELD"><img src="docs/readme/cast/weld.png" width="40" alt="WELD"></a>
 </div>
