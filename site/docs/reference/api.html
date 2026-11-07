@@ -774,7 +774,7 @@
 </tbody>
 </table></div>
 <h3 id="metrics-bearertoken"><code>Metrics\BearerToken</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-bearertoken">#</a></h3>
-<p><code>final class BearerToken</code> in <code>src/Metrics/BearerToken.php</code>. Extracts the bearer token from an authorization header value, or returns null when there is none.</p>
+<p><code>final class BearerToken</code> in <code>src/Metrics/BearerToken.php</code>. Extracts the bearer token from an authorization header value, or returns null when there is none. <code>fromServer()</code> finds the header for a framework-free app: <code>HTTP_AUTHORIZATION</code>, then <code>REDIRECT_HTTP_AUTHORIZATION</code>, then <code>getallheaders()</code>, because Apache with mod_php keeps it out of <code>$_SERVER</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -786,6 +786,10 @@
 <tr>
 <td><code>from()</code></td>
 <td><code>public static function from(?string $authorizationHeader): ?string</code></td>
+</tr>
+<tr>
+<td><code>fromServer()</code></td>
+<td><code>public static function fromServer(array $server, ?array $headers = null): ?string</code></td>
 </tr>
 </tbody>
 </table></div>
@@ -852,7 +856,7 @@
 </tbody>
 </table></div>
 <h3 id="policy-jsonfilepolicysource"><code>Policy\JsonFilePolicySource</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-jsonfilepolicysource">#</a></h3>
-<p><code>final class JsonFilePolicySource implements PolicySource</code> in <code>src/Policy/JsonFilePolicySource.php</code>. Reads a CREED-format policy file: a JSON object with a <code>schema_version</code> and a <code>components</code> object. It throws <code>PolicyReadException</code> on any problem it finds: a missing or unreadable file, invalid JSON, a schema_version it does not know, or a missing <code>components</code> object. Callers that must not throw (such as the version warning at request time) catch <code>PolicyReadException</code>.</p>
+<p><code>final class JsonFilePolicySource implements PolicySource</code> in <code>src/Policy/JsonFilePolicySource.php</code>. Reads a CREED-format policy file: a JSON object with a <code>schema_version</code> and a <code>components</code> object, each component's versions under <code>versions</code> (CREED's schema) or, in an older flat file, directly on the component. A version with no <code>security_until</code> is skipped; one with no <code>active_until</code> counts as security-only. It throws <code>PolicyReadException</code> on any problem it finds: a missing or unreadable file, invalid JSON, a schema_version it does not know, or a missing <code>components</code> object. Callers that must not throw (such as the version warning at request time) catch <code>PolicyReadException</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -906,6 +910,10 @@
 <tr>
 <td><code>status()</code></td>
 <td><code>public function status(string $component, string $version): string</code></td>
+</tr>
+<tr>
+<td><code>securityUntil()</code></td>
+<td><code>public function securityUntil(string $component, string $version): ?DateTimeImmutable</code></td>
 </tr>
 </tbody>
 </table></div>

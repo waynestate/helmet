@@ -205,12 +205,14 @@ final class Metrics
     }
 
     /**
-     * The installed package version, or "unknown" when it cannot be read.
+     * The installed package version as tagged ("0.3.1", the same form
+     * wsu_stack_info uses, not Composer's normalized "0.3.1.0"), or
+     * "unknown" when it cannot be read.
      */
     private function installedVersion(): string
     {
         try {
-            $version = InstalledVersions::getVersion('waynestate/helmet');
+            $version = InstalledVersions::getPrettyVersion('waynestate/helmet');
         } catch (OutOfBoundsException) {
             return 'unknown';
         }

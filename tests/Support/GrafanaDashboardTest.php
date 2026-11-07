@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Waynestate\Helmet\Tests\Support;
 
 use PHPUnit\Framework\TestCase;
+use Waynestate\Helmet\Metrics\RequestMetrics;
 
 /**
  * The fleet dashboard ships in docs/grafana/helmet.json so a Grafana with a
@@ -13,6 +14,21 @@ use PHPUnit\Framework\TestCase;
 final class GrafanaDashboardTest extends TestCase
 {
     private const DASHBOARD = __DIR__ . '/../../docs/grafana/helmet.json';
+
+    /**
+     * Every metric name HELMET exposes, and Prometheus' own up.
+     */
+    private const METRICS = [
+        'helmet_info',
+        'helmet_php_version_status',
+        'helmet_php_eol_timestamp_seconds',
+        'helmet_metrics_storage_up',
+        'helmet_http_request_duration_seconds_count',
+        'helmet_http_request_duration_seconds_bucket',
+        'helmet_csp_violations_total',
+        'wsu_stack_info',
+        'up',
+    ];
 
     /**
      * @return array<string, mixed>
@@ -30,6 +46,19 @@ final class GrafanaDashboardTest extends TestCase
         return $decoded;
     }
 
+    /**
+     * The panels that query Prometheus (rows and text panels do not).
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function queryPanels(): array
+    {
+        return array_values(array_filter(
+            $this->dashboard()['panels'],
+            static fn(array $panel): bool => !in_array($panel['type'], ['row', 'text'], true),
+        ));
+    }
+
     public function testDashboardIsValidJson(): void
     {
         $dashboard = $this->dashboard();
@@ -38,42 +67,62 @@ final class GrafanaDashboardTest extends TestCase
         self::assertSame('HELMET fleet', $dashboard['title']);
         self::assertSame('helmet-fleet', $dashboard['uid']);
         self::assertSame(['helmet', 'wsu'], $dashboard['tags']);
+        self::assertNull($dashboard['id'], 'an exported dashboard carries no instance id');
+    }
 
-        $inputs = $dashboard['inputs'];
-        self::assertIsArray($inputs);
-        self::assertContainsEquals(
-            ['name' => 'DS_PROMETHEUS', 'type' => 'datasource', 'pluginId' => 'prometheus'],
+    /**
+     * Grafana's import screen only asks for a data source when the file
+     * declares it under __inputs (the export format). Under any other key the
+     * ${DS_PROMETHEUS} placeholders stay unresolved and every panel fails.
+     */
+    public function testTheDataSourceIsAnImportInput(): void
+    {
+        $dashboard = $this->dashboard();
+
+        self::assertArrayNotHasKey('inputs', $dashboard);
+        self::assertSame(
+            [['name' => 'DS_PROMETHEUS', 'type' => 'datasource', 'pluginId' => 'prometheus']],
             array_map(
-                static function (array $input): array {
-                    return [
-                        'name' => $input['name'],
-                        'type' => $input['type'],
-                        'pluginId' => $input['pluginId'],
-                    ];
-                },
-                $inputs,
+                static fn(array $input): array => [
+                    'name' => $input['name'],
+                    'type' => $input['type'],
+                    'pluginId' => $input['pluginId'],
+                ],
+                $dashboard['__inputs'],
             ),
         );
+
+        foreach ($this->queryPanels() as $panel) {
+            self::assertSame('${DS_PROMETHEUS}', $panel['datasource']['uid'], sprintf('panel "%s"', $panel['title']));
+            foreach ($panel['targets'] as $target) {
+                self::assertSame('${DS_PROMETHEUS}', $target['datasource']['uid'], sprintf('panel "%s"', $panel['title']));
+            }
+        }
     }
 
     public function testDashboardHasTheExpectedPanelTitles(): void
     {
-        $titles = [];
-
-        foreach ($this->dashboard()['panels'] as $panel) {
-            $titles[] = $panel['title'];
-        }
-
+        $titles = array_map(static fn(array $panel): string => $panel['title'], $this->queryPanels());
         sort($titles);
 
         self::assertSame(
             [
                 'Apps by instance',
                 'Apps reporting',
+                'CSP violations by directive',
+                'Days to PHP end of support',
                 'HELMET versions in use',
+                'Latency p50 and p95',
+                'Metrics storage',
                 'PHP support status',
                 'PHP versions in use',
+                'Requests by route group',
+                'Requests by status class',
                 'Scrape health',
+                'Server errors',
+                'Stack packages',
+                'Targets down',
+                'p95 latency by route group',
             ],
             $titles,
         );
@@ -81,19 +130,58 @@ final class GrafanaDashboardTest extends TestCase
 
     public function testEveryPanelQueriesOnlyHelmetMetricsOrUp(): void
     {
-        foreach ($this->dashboard()['panels'] as $panel) {
+        foreach ($this->queryPanels() as $panel) {
             self::assertNotEmpty($panel['targets'], sprintf('panel "%s" has no targets', $panel['title']));
 
             foreach ($panel['targets'] as $target) {
                 $expr = (string) $target['expr'];
+                preg_match_all('/\b([a-z_][a-z0-9_]*)\s*\{/', $expr, $matches);
 
-                self::assertMatchesRegularExpression(
-                    '/helmet_info|helmet_php_version_status|\bup\b/',
-                    $expr,
-                    sprintf('panel "%s" query does not use a HELMET metric or up: %s', $panel['title'], $expr),
-                );
+                self::assertNotEmpty($matches[1], sprintf('panel "%s" selects no metric: %s', $panel['title'], $expr));
+                foreach ($matches[1] as $metric) {
+                    self::assertContains($metric, self::METRICS, sprintf('panel "%s" queries an unknown metric: %s', $panel['title'], $expr));
+                }
             }
         }
+    }
+
+    /**
+     * Every query honors the job and instance variables, so one dashboard
+     * serves the whole fleet or one app.
+     */
+    public function testEveryQueryIsFilteredByJobAndInstance(): void
+    {
+        $names = array_map(static fn(array $var): string => $var['name'], $this->dashboard()['templating']['list']);
+        self::assertSame(['job', 'instance'], $names);
+
+        foreach ($this->queryPanels() as $panel) {
+            foreach ($panel['targets'] as $target) {
+                self::assertStringContainsString('job=~"$job", instance=~"$instance"', (string) $target['expr'], $panel['title']);
+            }
+        }
+    }
+
+    /**
+     * A target that is down has no helmet_info, so joining up against it
+     * hides exactly the targets the panel exists to show.
+     */
+    public function testScrapeHealthShowsDownTargets(): void
+    {
+        foreach ($this->queryPanels() as $panel) {
+            foreach ($panel['targets'] as $target) {
+                $expr = (string) $target['expr'];
+                if (preg_match('/\bup\{/', $expr) === 1) {
+                    self::assertStringNotContainsString('helmet_info', $expr, $panel['title']);
+                }
+            }
+        }
+    }
+
+    public function testTheLatencyBucketsMatchTheCode(): void
+    {
+        // The dashboard's quantiles are only as good as the buckets; this
+        // pins the pair so a bucket change is a deliberate, visible one.
+        self::assertSame([0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0], RequestMetrics::BUCKETS);
     }
 
     public function testDashboardCarriesNoHostnamesOrAddresses(): void

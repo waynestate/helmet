@@ -576,7 +576,7 @@ if (!function_exists('helmet_metrics')) {
         $proxies = new TrustedProxies($proxyList);
 
         $clientIp = ClientIp::resolve($_SERVER, $proxies, $config['logger'] ?? null);
-        $requestToken = BearerToken::from($_SERVER['HTTP_AUTHORIZATION'] ?? null);
+        $requestToken = BearerToken::fromServer($_SERVER);
 
         $gate = new MetricsGate(
             true,

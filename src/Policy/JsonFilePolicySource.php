@@ -80,6 +80,46 @@ final class JsonFilePolicySource implements PolicySource
             throw new PolicyReadException("The policy file is missing a 'components' object: {$this->path}");
         }
 
-        return $components;
+        $normalized = [];
+        foreach ($components as $component => $entry) {
+            if (is_string($component) && is_array($entry)) {
+                $normalized[$component] = self::versions($entry);
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * The support dates of one component, keyed by version.
+     *
+     * CREED's policy (policy.schema.json) keeps them under "versions" next
+     * to room for more keys; an older, flat file put the versions straight
+     * on the component. Both are read. Every date in CREED's schema is
+     * optional, so a version without a security_until date is skipped (there
+     * is no end to measure), and one without active_until is treated as
+     * security-only for its whole life.
+     *
+     * @param array<array-key, mixed> $entry
+     *
+     * @return array<string, array{active_until: string, security_until: string}>
+     */
+    private static function versions(array $entry): array
+    {
+        $versions = is_array($entry['versions'] ?? null) ? $entry['versions'] : $entry;
+
+        $dates = [];
+        foreach ($versions as $version => $support) {
+            if (!is_array($support) || !is_string($support['security_until'] ?? null)) {
+                continue;
+            }
+            $activeUntil = $support['active_until'] ?? null;
+            $dates[(string) $version] = [
+                'active_until' => is_string($activeUntil) ? $activeUntil : '1970-01-01',
+                'security_until' => $support['security_until'],
+            ];
+        }
+
+        return $dates;
     }
 }

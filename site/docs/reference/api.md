@@ -323,11 +323,12 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 
 ### `Metrics\BearerToken` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-bearertoken)
 
-`final class BearerToken` in `src/Metrics/BearerToken.php`. Extracts the bearer token from an authorization header value, or returns null when there is none.
+`final class BearerToken` in `src/Metrics/BearerToken.php`. Extracts the bearer token from an authorization header value, or returns null when there is none. `fromServer()` finds the header for a framework-free app: `HTTP_AUTHORIZATION`, then `REDIRECT_HTTP_AUTHORIZATION`, then `getallheaders()`, because Apache with mod_php keeps it out of `$_SERVER`.
 
 | Member | Signature |
 | --- | --- |
 | `from()` | `public static function from(?string $authorizationHeader): ?string` |
+| `fromServer()` | `public static function fromServer(array $server, ?array $headers = null): ?string` |
 
 ## Platform[#](https://helmet.apps.wayne.edu/docs/reference/api.html#platform)
 
@@ -362,7 +363,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 
 ### `Policy\JsonFilePolicySource` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#policy-jsonfilepolicysource)
 
-`final class JsonFilePolicySource implements PolicySource` in `src/Policy/JsonFilePolicySource.php`. Reads a CREED-format policy file: a JSON object with a `schema_version` and a `components` object. It throws `PolicyReadException` on any problem it finds: a missing or unreadable file, invalid JSON, a schema_version it does not know, or a missing `components` object. Callers that must not throw (such as the version warning at request time) catch `PolicyReadException`.
+`final class JsonFilePolicySource implements PolicySource` in `src/Policy/JsonFilePolicySource.php`. Reads a CREED-format policy file: a JSON object with a `schema_version` and a `components` object, each component's versions under `versions` (CREED's schema) or, in an older flat file, directly on the component. A version with no `security_until` is skipped; one with no `active_until` counts as security-only. It throws `PolicyReadException` on any problem it finds: a missing or unreadable file, invalid JSON, a schema_version it does not know, or a missing `components` object. Callers that must not throw (such as the version warning at request time) catch `PolicyReadException`.
 
 | Member | Signature |
 | --- | --- |
@@ -385,6 +386,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `UNKNOWN` | `public const UNKNOWN = 'unknown';` |
 | `__construct()` | `public function __construct(private readonly DateTimeInterface $now, private readonly array $components)` |
 | `status()` | `public function status(string $component, string $version): string` |
+| `securityUntil()` | `public function securityUntil(string $component, string $version): ?DateTimeImmutable` |
 
 ### `Policy\VersionWarning` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#policy-versionwarning)
 
