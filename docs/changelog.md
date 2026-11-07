@@ -14,6 +14,7 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - The Proof page records its last run.
+- Logging: every web request record carries `extra.http` (method, path without the query string, client address as PHP saw it).
 
 ### Changed
 
