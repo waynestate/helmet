@@ -170,6 +170,18 @@
 <td>Client IPs or CIDR ranges allowed to read the endpoint without a token. Filled from <code>HELMET_METRICS_ALLOW</code> (comma-separated).</td>
 </tr>
 <tr>
+<td><code>metrics.storage</code></td>
+<td>The store the request metrics share between PHP workers: <code>apcu</code>, <code>redis</code> or <code>sqlite</code>. null (the default) leaves request metrics off and the endpoint reports the request-free gauges only. Set with <code>HELMET_METRICS_STORAGE</code>. See <a href="../guides/metrics.html">Metrics</a>.</td>
+</tr>
+<tr>
+<td><code>metrics.redis_url</code></td>
+<td>For <code>redis</code>: <code>redis://[:password@]host[:port][/database]</code>; null means <code>redis://127.0.0.1:6379</code>. Set with <code>HELMET_METRICS_REDIS_URL</code>.</td>
+</tr>
+<tr>
+<td><code>metrics.sqlite_path</code></td>
+<td>For <code>sqlite</code>: the database file; null means <code>helmet-metrics.sqlite</code> in the system temp folder. Set with <code>HELMET_METRICS_SQLITE_PATH</code>.</td>
+</tr>
+<tr>
 <td><code>csrf</code></td>
 <td>The request-forgery guard. Off by default.</td>
 </tr>
@@ -327,6 +339,24 @@
 <td>config/helmet.php</td>
 </tr>
 <tr>
+<td>HELMET_METRICS_REDIS_URL</td>
+<td>For HELMET_METRICS_STORAGE=redis: redis://[:password@]host[:port][/database].</td>
+<td>redis://127.0.0.1:6379</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_METRICS_SQLITE_PATH</td>
+<td>For HELMET_METRICS_STORAGE=sqlite: the database file.</td>
+<td>helmet-metrics.sqlite in the system temp folder</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_METRICS_STORAGE</td>
+<td>apcu, redis or sqlite turns on the request metrics (counts and latency by route group, CSP violations) and names the store every PHP worker shares; unset leaves them off. Needs HELMET_METRICS_ENABLED.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
 <td>HELMET_METRICS_TOKEN</td>
 <td>Bearer token the scraper sends as Authorization: Bearer <token>; compared with hash_equals.</td>
 <td>none</td>
@@ -352,7 +382,7 @@
 </tr>
 <tr>
 <td>HELMET_POLICY_PATH</td>
-<td>Path to a CREED policy.json; the ribbon then shows a version warning for the running PHP (and, in Laravel, framework) version. A missing or invalid file never breaks the page.</td>
+<td>Path to a CREED policy.json; the ribbon then shows a version warning for the running PHP (and, in Laravel, framework) version, and /metrics reports the PHP support status and end date. A missing or invalid file never breaks the page.</td>
 <td>none</td>
 <td>config/helmet.php</td>
 </tr>

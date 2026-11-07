@@ -10,6 +10,8 @@ use Illuminate\Support\Facades\Log;
 use Waynestate\Helmet\Metrics\BearerToken;
 use Waynestate\Helmet\Metrics\Metrics;
 use Waynestate\Helmet\Metrics\MetricsGate;
+use Waynestate\Helmet\Policy\JsonFilePolicySource;
+use Waynestate\Helmet\Policy\PolicyReadException;
 use Waynestate\Helmet\Policy\PolicySource;
 use Waynestate\Helmet\Proxy\ClientIp;
 use Waynestate\Helmet\Proxy\IpAllowList;
@@ -32,7 +34,9 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  *
  * The client IP is resolved through the helmet.proxies trusted-proxy list, so
  * a spoofed X-Forwarded-For from an untrusted peer cannot grant access. When
- * the app binds a PolicySource, the PHP version status metric is included.
+ * the app binds a PolicySource, or sets helmet.policy_path, the PHP support
+ * metrics are included; when helmet.metrics names a shared storage, so are
+ * the request metrics.
  */
 final class MetricsController
 {
@@ -70,11 +74,34 @@ final class MetricsController
             return new Response('', $decision->status());
         }
 
-        $policy = app()->bound(PolicySource::class) ? app(PolicySource::class) : null;
-        $metrics = new Metrics(null, $policy, null, null);
+        $metrics = new Metrics(null, $this->policy(), null, null, app(RequestMetricsBinding::class)->get());
 
         return new Response($metrics->render(), 200, [
             'Content-Type' => Metrics::mimeType(),
         ]);
+    }
+
+    /**
+     * The policy for the PHP support metrics: a PolicySource the app bound,
+     * else the helmet.policy_path file the ribbon reads, else none. An
+     * unreadable policy file leaves the metrics out rather than failing the
+     * scrape.
+     */
+    private function policy(): ?PolicySource
+    {
+        if (app()->bound(PolicySource::class)) {
+            return app(PolicySource::class);
+        }
+
+        $path = config('helmet.policy_path');
+        if (!is_string($path) || $path === '') {
+            return null;
+        }
+
+        try {
+            return new JsonFilePolicySource($path);
+        } catch (PolicyReadException) {
+            return null;
+        }
     }
 }

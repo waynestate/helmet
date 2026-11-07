@@ -59,6 +59,19 @@ final class VersionStatus
         return self::EOL;
     }
 
+    /**
+     * The last day of security support for the given component version, or
+     * null when the component or version is not in the policy.
+     */
+    public function securityUntil(string $component, string $version): ?DateTimeImmutable
+    {
+        if (!isset($this->components[$component][$version])) {
+            return null;
+        }
+
+        return $this->parseDate($this->components[$component][$version]['security_until']);
+    }
+
     private function parseDate(string $date): DateTimeImmutable
     {
         return new DateTimeImmutable($date);

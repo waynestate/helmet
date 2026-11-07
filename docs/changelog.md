@@ -14,6 +14,12 @@ All notable changes to this project are documented in this file.
 ### Added
 
 - The Proof page records its last run.
+- Metrics: opt-in request metrics. `HELMET_METRICS_STORAGE` (`apcu`, `redis` or `sqlite`, each one of promphp's own adapters) turns on `helmet_http_request_duration_seconds`, a histogram by route group, method and status class whose `_count` is the request count, and `helmet_csp_violations_total` by directive (Laravel's CSP report endpoint counts each report it logs). Every label is bounded by HELMET, never by the client: unknown routes, methods and directives fold into `other`. Laravel gains the `RecordRequestMetrics` global middleware, added only when metrics are enabled with a store; raw PHP gains `helmet_metrics_track()` and `helmet_metrics_env()`. Off by default: an app that sets nothing behaves exactly as before.
+- Metrics: `helmet_php_eol_timestamp_seconds` (the end of security support for the running PHP, from CREED's policy; days left is `(helmet_php_eol_timestamp_seconds - time()) / 86400`), `wsu_stack_info{package,version}` for every installed `waynestate/*` package (ADR-0011), and `helmet_metrics_storage_up`, so a store outage shows on the dashboard while the info metrics keep answering. Laravel's `/metrics` reads `helmet.policy_path` when no `PolicySource` is bound.
+
+### Fixed
+
+- Metrics: `helmet_php_version_status` looked up the full PHP release (`8.3.12`) in CREED's policy, which names versions by major.minor (`8.3`), so every real app reported `unknown`. It now looks up major.minor.
 
 ### Changed
 

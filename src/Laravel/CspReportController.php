@@ -139,6 +139,16 @@ final class CspReportController
             $this->hostOf($blockedUri),
             $this->pathOf($documentUri),
         ));
+
+        // With request metrics on, count it too: helmet_csp_violations_total,
+        // by directive only (a known directive name or "other"), so a forged
+        // report cannot mint a time series. A counter that cannot tick must
+        // not turn the browser's report into an error.
+        try {
+            app(RequestMetricsBinding::class)->get()?->cspViolation($directive);
+        } catch (\Throwable) {
+            // The violation is already in the log.
+        }
     }
 
     /**
