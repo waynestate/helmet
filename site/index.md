@@ -340,12 +340,15 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
    Point `HELMET_POLICY_PATH` at CREED's `policy.json` and the ribbon warns about a PHP or Laravel version in its security-only phase or past end of life. An active or unknown version gets no warning, and a missing file never breaks the page.
 3. ### Metrics, off by default
    ```
-   # HELP helmet_info HELMET is running.
    # TYPE helmet_info gauge
-   helmet_info{php_version="8.4",
-    helmet_version="0.3.0"} 1
+   helmet_info{php_version="8.5.12",
+    helmet_version="0.3.1"} 1
+   helmet_php_eol_timestamp_seconds{
+    php_minor="8.5"} 1893369600
+   helmet_http_request_duration_seconds_count{
+    route="docs",method="GET",status="2xx"} 412
    ```
-   A Prometheus endpoint you turn on with `HELMET_METRICS_ENABLED`. It needs a bearer token or an IP allow list; with neither, it answers `404` and logs a warning. Nothing scrapes it yet.
+   A Prometheus endpoint you turn on with `HELMET_METRICS_ENABLED`: versions and PHP end of support, and, once you name a store, requests by route group and CSP violations. It needs a bearer token or an IP allow list; with neither, it answers `404`. The Grafana dashboard is ready for the day something scrapes it.
 4. ### The ribbon
    In local, dev, testing and staging, Laravel apps get `<div class="helmet-ribbon">` right after `<body>`, so nobody mistakes the scrimmage for the game. It never shows in production or on JSON responses. No Aftertaste.
 

@@ -134,7 +134,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -143,8 +143,9 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value_and_name",
-        "wideLayout": true
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false
       },
       "targets": [
         {
@@ -201,7 +202,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -210,8 +211,9 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value_and_name",
-        "wideLayout": true
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false
       },
       "targets": [
         {
@@ -317,7 +319,7 @@
       "options": {
         "colorMode": "value",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -327,7 +329,8 @@
           "values": false
         },
         "textMode": "value_and_name",
-        "wideLayout": true
+        "wideLayout": true,
+        "showPercentChange": false
       },
       "targets": [
         {
@@ -393,7 +396,7 @@
           "color": {
             "mode": "thresholds"
           },
-          "unit": "d",
+          "unit": "suffix: days",
           "decimals": 0,
           "thresholds": {
             "mode": "absolute",
@@ -425,7 +428,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -434,8 +437,9 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value_and_name",
-        "wideLayout": true
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false
       },
       "targets": [
         {
@@ -463,10 +467,17 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "#2E8B57"
           },
           "unit": "short",
-          "min": 0
+          "min": 0,
+          "decimals": 0,
+          "custom": {
+            "fillOpacity": 70,
+            "lineWidth": 0,
+            "axisSoftMin": 0
+          }
         },
         "overrides": []
       },
@@ -478,16 +489,18 @@
       },
       "id": 6,
       "options": {
-        "displayMode": "basic",
         "orientation": "horizontal",
-        "showUnfilled": true,
-        "valueMode": "color",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "xField": "helmet_version",
+        "showValue": "always",
+        "barWidth": 0.6,
+        "groupWidth": 0.7,
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
         }
       },
       "targets": [
@@ -498,14 +511,28 @@
           },
           "editorMode": "code",
           "expr": "count by (helmet_version) (helmet_info{job=~\"$job\", instance=~\"$instance\"})",
-          "legendFormat": "{{helmet_version}}",
+          "legendFormat": "",
           "refId": "A",
           "instant": true,
-          "range": false
+          "range": false,
+          "format": "table"
         }
       ],
       "title": "HELMET versions in use",
-      "type": "bargauge"
+      "type": "barchart",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "apps"
+            }
+          }
+        }
+      ]
     },
     {
       "datasource": {
@@ -516,10 +543,17 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "fixed",
+            "fixedColor": "#2E8B57"
           },
           "unit": "short",
-          "min": 0
+          "min": 0,
+          "decimals": 0,
+          "custom": {
+            "fillOpacity": 70,
+            "lineWidth": 0,
+            "axisSoftMin": 0
+          }
         },
         "overrides": []
       },
@@ -531,16 +565,18 @@
       },
       "id": 7,
       "options": {
-        "displayMode": "basic",
         "orientation": "horizontal",
-        "showUnfilled": true,
-        "valueMode": "color",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
+        "xField": "php_version",
+        "showValue": "always",
+        "barWidth": 0.6,
+        "groupWidth": 0.7,
+        "legend": {
+          "showLegend": false,
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
         }
       },
       "targets": [
@@ -551,14 +587,28 @@
           },
           "editorMode": "code",
           "expr": "count by (php_version) (helmet_info{job=~\"$job\", instance=~\"$instance\"})",
-          "legendFormat": "{{php_version}}",
+          "legendFormat": "",
           "refId": "A",
           "instant": true,
-          "range": false
+          "range": false,
+          "format": "table"
         }
       ],
       "title": "PHP versions in use",
-      "type": "bargauge"
+      "type": "barchart",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "apps"
+            }
+          }
+        }
+      ]
     },
     {
       "datasource": {
@@ -623,7 +673,20 @@
         }
       ],
       "title": "Stack packages",
-      "type": "table"
+      "type": "table",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "apps"
+            }
+          }
+        }
+      ]
     },
     {
       "type": "row",
@@ -1068,7 +1131,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -1077,8 +1140,9 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value_and_name",
-        "wideLayout": true
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false
       },
       "targets": [
         {
@@ -1087,7 +1151,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "editorMode": "code",
-          "expr": "sum(increase(helmet_http_request_duration_seconds_count{job=~\"$job\", instance=~\"$instance\", status=\"5xx\"}[$__range])) / sum(increase(helmet_http_request_duration_seconds_count{job=~\"$job\", instance=~\"$instance\"}[$__range]))",
+          "expr": "(sum(increase(helmet_http_request_duration_seconds_count{job=~\"$job\", instance=~\"$instance\", status=\"5xx\"}[$__range])) or vector(0)) / sum(increase(helmet_http_request_duration_seconds_count{job=~\"$job\", instance=~\"$instance\"}[$__range]))",
           "legendFormat": "5xx",
           "refId": "A",
           "instant": true,
@@ -1151,7 +1215,7 @@
       "options": {
         "colorMode": "background",
         "graphMode": "none",
-        "justifyMode": "auto",
+        "justifyMode": "center",
         "orientation": "auto",
         "reduceOptions": {
           "calcs": [
@@ -1160,8 +1224,9 @@
           "fields": "",
           "values": false
         },
-        "textMode": "value_and_name",
-        "wideLayout": true
+        "textMode": "value",
+        "wideLayout": true,
+        "showPercentChange": false
       },
       "targets": [
         {
@@ -1276,42 +1341,48 @@
         "type": "prometheus",
         "uid": "${DS_PROMETHEUS}"
       },
-      "description": "1 when Prometheus reached the target, 0 when it did not. A gap means the target left the scrape config.",
+      "description": "Whether Prometheus reached each target. A gap means the target left the scrape config.",
       "fieldConfig": {
         "defaults": {
           "color": {
-            "mode": "palette-classic"
+            "mode": "thresholds"
           },
           "unit": "short",
-          "min": 0,
-          "custom": {
-            "drawStyle": "line",
-            "lineWidth": 2,
-            "fillOpacity": 0,
-            "gradientMode": "opacity",
-            "showPoints": "never",
-            "spanNulls": false,
-            "axisSoftMin": 0,
-            "stacking": {
-              "mode": "none",
-              "group": "A"
-            }
-          },
-          "max": 1,
           "decimals": 0,
+          "custom": {
+            "fillOpacity": 80,
+            "lineWidth": 0
+          },
           "mappings": [
             {
               "type": "value",
               "options": {
                 "0": {
-                  "text": "down"
+                  "text": "down",
+                  "color": "#E02F44",
+                  "index": 0
                 },
                 "1": {
-                  "text": "up"
+                  "text": "up",
+                  "color": "#2E8B57",
+                  "index": 1
                 }
               }
             }
-          ]
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#E02F44",
+                "value": null
+              },
+              {
+                "color": "#2E8B57",
+                "value": 1
+              }
+            ]
+          }
         },
         "overrides": []
       },
@@ -1323,14 +1394,17 @@
       },
       "id": 19,
       "options": {
+        "showValue": "never",
+        "mergeValues": true,
+        "rowHeight": 0.8,
+        "alignValue": "left",
         "legend": {
           "displayMode": "list",
           "placement": "bottom",
-          "showLegend": true
+          "showLegend": false
         },
         "tooltip": {
-          "mode": "multi",
-          "sort": "asc"
+          "mode": "single"
         }
       },
       "targets": [
@@ -1347,7 +1421,7 @@
         }
       ],
       "title": "Scrape health",
-      "type": "timeseries"
+      "type": "state-timeline"
     },
     {
       "datasource": {

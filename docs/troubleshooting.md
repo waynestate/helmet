@@ -224,6 +224,40 @@ Fix: choose at least one way to prove who is asking: `HELMET_METRICS_TOKEN` (a b
 Check: scrape the endpoint with the token and expect the `helmet_info` gauge with the PHP and HELMET versions. Pinned
 in `tests/Metrics/MetricsGateTest.php` and `tests/Metrics/BearerTokenTest.php`. See [Metrics](guides/metrics.md).
 
+### `/metrics` answers 403 on Apache even with the right token
+
+Cause: Apache with mod_php does not copy the `Authorization` header into `$_SERVER`, so a release before this one
+never saw the token and denied the scrape.
+
+Fix: upgrade. HELMET now reads the token from `HTTP_AUTHORIZATION`, then `REDIRECT_HTTP_AUTHORIZATION`, then the
+request headers themselves. No `.htaccess` rewrite is needed.
+
+Check: scrape with the token and expect `200` and `helmet_info`. Pinned in `tests/Metrics/BearerTokenTest.php`.
+
+### The request panels are empty, or `helmet_metrics_storage_up` is 0
+
+Cause: request and CSP metrics only count when `HELMET_METRICS_STORAGE` names a store (`apcu`, `redis` or
+`sqlite`). Unset, the endpoint serves the version and policy gauges only, on purpose. When it is set but the store
+cannot be used (the extension is missing, Redis is unreachable, the SQLite file is not writable), the app logs
+`metrics_storage_unusable` or `metrics_record_failed`, keeps serving pages, and reports `helmet_metrics_storage_up 0`.
+
+Fix: set the store, and make sure its extension is loaded (`php -m` lists `apcu`, `redis` or `pdo_sqlite`) and, for
+Redis, that `HELMET_METRICS_REDIS_URL` points where the app can reach.
+
+Check: load a page, then scrape: `helmet_http_request_duration_seconds_count` appears and
+`helmet_metrics_storage_up` is `1`. Pinned in `tests/Metrics/MetricsStorageTest.php` and
+`tests/FunctionsMetricsRequestsTest.php`. See [Pick a store](guides/metrics.md#pick-a-store).
+
+### `helmet_php_version_status` says `unknown`
+
+Cause: no policy is set, or the policy has no entry for the running PHP release. Status is looked up by major and
+minor version (`8.5`), in either the flat shape or CREED's `versions` shape.
+
+Fix: set `HELMET_POLICY_PATH` to a CREED `policy.json` that lists the release.
+
+Check: scrape and expect `helmet_php_version_status{status="active"} 1` (or `security`, or `eol`). Pinned in
+`tests/Policy/JsonFilePolicySourceTest.php`.
+
 ## Related
 
 - [Install](install.md)
