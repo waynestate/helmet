@@ -1,6 +1,6 @@
 ---
 title: "Strongly recommended: a git.wayne.edu instance runner | HELMET docs"
-description: "git.wayne.edu has no runners today, so CI for this repo runs on the test GitLab instance, and every product in the stack strongly recommends a git.wayne.edu instance runner."
+description: "git.wayne.edu now has an instance runner, and HELMET's CI runs on it. Every product in the stack still strongly recommends a git.wayne.edu instance runner, so that capacity stays there."
 url: https://helmet.apps.wayne.edu/docs/guides/instance-runner.html
 llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
@@ -12,7 +12,7 @@ This page explains where this repo's CI runs today and why every product in the 
 
 ## The goal[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#the-goal)
 
-git.wayne.edu has no runners today, so CI for this repo runs on the test GitLab instance. Every product in the stack strongly recommends a git.wayne.edu instance runner.
+git.wayne.edu now has an instance runner, and HELMET's CI runs on it. Every product in the stack still strongly recommends a git.wayne.edu instance runner, so that capacity stays there.
 
 [Close-up of a man with a mustache and smudged dark eye makeup in front of a purple and gold backdrop, from the Wilma's Rainbow video by the band Helmet](https://media.tenor.com/1dGc4wPaaBQAAAAM/wilmas-rainbow-helmet.gif)
 
