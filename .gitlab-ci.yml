@@ -1,5 +1,5 @@
 # HELMET's pipeline, built from the Preflight components on this GitLab.
-# Pinned to Preflight 0.1.4. Never use ~latest.
+# Pinned to Preflight releases (0.1.4; secret-detection, new in 0.2.0, at 0.2.0). Never use ~latest.
 # HELMET requires PHP ^8.3, so the test matrix starts at 8.3.
 # composer ci is the contract: every check runs from the "ci" script in composer.json.
 # Docker Hub images go through the GitLab Dependency Proxy to avoid the anonymous pull limit.
@@ -19,6 +19,13 @@ include:
       proctor_command: vendor/bin/proctor check --policy=vendor/waynestate/creed/policy/policy.json --format=codequality
       allow_failure: true
       image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/php:8.4-cli-trixie@sha256:9cf851bc2c1b37c3e59dfd677a3c3e56d485af5a47c93f629424bb039eafcb69"
+  # HELMET-5: Gitleaks over the checked-out tree, through Preflight's component
+  # (first released in 0.2.0). It fails the pipeline on a finding; --redact
+  # keeps the secret itself out of the log and the gitleaks.json artifact.
+  # Same image and digest as the component default, through the proxy.
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.2.0
+    inputs:
+      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
 
 # WayneUI strict copies: PROCTOR runs on the project root so it sees site/assets/wayne-ui/.
 # The setting extra.proctor."wayneui.copies" = "fail" in composer.json makes a stale copy fail.

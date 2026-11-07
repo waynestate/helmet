@@ -1087,6 +1087,25 @@ the scrape config and the queries.
 The endpoint is the only place in HELMET that says "I am still here" without
 saying "here is your page". A lullaby, in a way.
 
+## Secret scanning
+
+HELMET cannot help once a key is committed, so the stack scans for secrets
+with [Gitleaks](https://github.com/gitleaks/gitleaks), a maintained scanner,
+instead of a home-made one. HELMET's pipeline includes Preflight's
+`secret-detection` component, and an app adds the same include:
+
+```yaml
+include:
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.2.0
+    inputs:
+      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+```
+
+A finding fails the pipeline, and the match is redacted in the log. The
+[Secret scanning guide](docs/guides/secret-scanning.md) has the same scan for
+your machine (PowerShell and sh), the history scan, and what to do when it
+finds something: rotate first.
+
 ## Use HELMET from your coding agent (ADVISOR)
 
 HELMET ships an [ADVISOR](https://github.com/waynestate/advisor) module, so a coding agent can ask HELMET

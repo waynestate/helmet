@@ -1073,6 +1073,25 @@ the scrape config and the queries.
 The endpoint is the only place in HELMET that says "I am still here" without
 saying "here is your page". A lullaby, in a way.
 
+### Secret scanning
+
+HELMET cannot help once a key is committed, so the stack scans for secrets
+with [Gitleaks](https://github.com/gitleaks/gitleaks), a maintained scanner,
+instead of a home-made one. HELMET's pipeline includes Preflight's
+`secret-detection` component, and an app adds the same include:
+
+```yaml
+include:
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.2.0
+    inputs:
+      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+```
+
+A finding fails the pipeline, and the match is redacted in the log. The
+[Secret scanning guide](https://github.com/waynestate/helmet/blob/HEAD/docs/guides/secret-scanning.md) has the same scan for
+your machine (PowerShell and sh), the history scan, and what to do when it
+finds something: rotate first.
+
 ### Use HELMET from your coding agent (ADVISOR)
 
 HELMET ships an [ADVISOR](https://github.com/waynestate/advisor) module, so a coding agent can ask HELMET
@@ -1624,6 +1643,7 @@ All notable changes to this project are documented in this file.
 
 - Readiness (HELMET-7): a "send me traffic?" answer on its own path, `/ready`, apart from the liveness answer on `/up`, which is unchanged. `Health\Readiness` runs named checks and answers JSON, `no-store`, 200 while none failed and 503 once one did. HELMET's own checks report config sanity: `headers` (the header set builds and carries a CSP, in `enforce` or `report-only` mode), `trusted_proxies` (a count and a broad count, never an address; warns when empty or broad) and `debug_output` (warns when on). App checks join by name; one that throws fails, and its message goes to the log as `helmet.readiness_check_failed`, never the body. Raw PHP gains the `readiness` option to `helmet_boot()` (off by default, validated on every request) and `helmet_ready()` for a `public/ready.php`; PSR-15 gains the `ReadinessCheck` middleware; Laravel gains `Route::helmetReady()` (invokable check classes, so `route:cache` works; no throttle by default). New docs guide: "Readiness", with probe settings for Citadel, OpenShift, Coolify and Docker. An app that sets nothing behaves exactly as before.
 - Inline style attributes (HELMET-17, ADR-0001, Proposed): a `style_src_attr` option (`helmet_boot()`, the last `SecurityHeadersMiddleware` argument, Laravel `csp_style_src_attr` / `HELMET_CSP_STYLE_SRC_ATTR`). `inline`, the default, sends exactly what earlier releases sent (`style-src-attr 'unsafe-inline'`, which WayneUI's recipes need). `report` keeps enforcing it and adds `Content-Security-Policy-Report-Only: style-src-attr 'none'` (plus the app's report destination), so the browser names each inline style attribute a strict policy would block. `none` sends `style-src-attr 'none'`. Both only replace HELMET's own allowance: an app that sets `style-src-attr` in `csp` keeps its value. An unknown mode throws at boot. The readiness report names the mode. New docs: "Inline style attributes" in the CSP guide, and the ADR under Decisions.
+- Secret scanning (HELMET-5): HELMET's pipeline includes Preflight's `secret-detection` component (0.2.0), which runs Gitleaks v8.30.1, pinned by digest and pulled through the Dependency Proxy, over the tree; a finding fails the pipeline and the match is redacted. HELMET writes no scanner of its own. New docs guide: "Secret scanning", with the include for an app, the same scan on a developer machine (PowerShell and sh), a history scan, and what to do with a finding. HELMET's tree and its full history scan clean.
 - ADVISOR module (`Waynestate\Helmet\Advisor\HelmetModule`): a coding agent that runs ADVISOR gains two read-only tools. `helmet_headers` returns the headers and CSP HELMET sends, built by `SecurityHeaders::build()`, each header and directive with its reason, plus how the app folder is wired to HELMET and the settings that change the answer. `helmet_php_support` reads the PHP constraint from the app's `composer.json` and reports the support status of its floor, and of every version it allows, from the CREED policy ADVISOR bundles, read with HELMET's own `JsonFilePolicySource` and `VersionStatus`. Both take one path inside the project, run in-process, write nothing and never read `.env`. `waynestate/advisor` is a dev dependency and a suggestion, never a requirement. New docs guide: "Your coding agent (ADVISOR)".
 - `Headers\HeaderReasons`: one reason per header and CSP directive, next to the policy; a test fails when one is added without a reason.
 - The Proof page records its last run.
@@ -2837,6 +2857,96 @@ The helmet comes off the platform, not the app.
 - [WSU values (Playbook)](https://helmet.apps.wayne.edu/docs/guides/wsu-values.html)
 - [HTTPS, and why the proxy list matters](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html)
 - [Environment variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html)
+
+---
+
+Source: https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html
+
+## Secret scanning[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#secret-scanning)
+
+HELMET hardens what an app sends. It cannot help once a database password or an API key is in the repository: every clone, fork and CI cache has it, and deleting the line later does not take it out of history. So the stack scans for secrets with a maintained tool, [Gitleaks](https://github.com/gitleaks/gitleaks), instead of writing a scanner of its own. Gitleaks ships a few hundred rules for real token formats (cloud keys, Git hosting tokens, private keys, JWTs, database URLs with a password) and is kept current by people who do only that.
+
+The pipeline runs it on every push, and a finding fails the pipeline. You can run the same scan before you push.
+
+### In CI: Preflight's component[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#in-ci-preflight-s-component)
+
+Add one include to the app's `.gitlab-ci.yml`:
+
+```yaml
+include:
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.2.0
+    inputs:
+      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+```
+
+That is the whole job. It runs `gitleaks dir` over the checked-out tree with Gitleaks' built-in rules plus a path allowlist for `vendor/` and `node_modules/` (a CI cache can restore them, and they are not your code), redacts every match so the log and the `gitleaks.json` artifact show the rule, file and line but never the value, and fails the pipeline on a finding. The `image` input sends the pull through the GitLab Dependency Proxy, pinned by digest, so the Docker Hub rate limit never fails your pipeline; the digest is a multi-arch list, so it runs on an arm64 runner too.
+
+HELMET's own pipeline runs exactly this include. Every input (stage, job name, your own `.gitleaks.toml`, `allow_failure`) is in [Preflight's secret-detection guide](https://git.wayne.edu/enterprise-apps/preflight/-/blob/main/docs/guides/component-secret-detection.md).
+
+Note
+
+The job scans the tree, not history: it answers "is a secret in what we are about to ship?". To check the history once, run the history scan below on your machine.
+
+### On your machine[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#on-your-machine)
+
+The same image and the same rules, with Docker. Run from the project root.
+
+Linux and macOS:
+
+```sh
+cat > /tmp/gitleaks.toml <<'TOML'
+[extend]
+useDefault = true
+
+[allowlist]
+paths = ['''(^|/)vendor/''', '''(^|/)node_modules/''']
+TOML
+
+docker run --rm -v "$PWD:/repo:ro" -v /tmp/gitleaks.toml:/gitleaks.toml:ro \
+  zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+  dir --redact --no-banner --config=/gitleaks.toml /repo
+```
+
+Windows (PowerShell):
+
+```powershell
+$config = Join-Path $env:TEMP 'gitleaks.toml'
+@'
+[extend]
+useDefault = true
+
+[allowlist]
+paths = ['''(^|/)vendor/''', '''(^|/)node_modules/''']
+'@ | Set-Content -Path $config -Encoding ascii
+
+docker run --rm -v "${PWD}:/repo:ro" -v "${config}:/gitleaks.toml:ro" `
+  zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f `
+  dir --redact --no-banner --config=/gitleaks.toml /repo
+```
+
+Exit code 0 is clean; 1 means a rule matched, and the output names the file and line. The mount is read-only, so the scan cannot change your tree.
+
+To scan every commit instead of the tree, swap `dir` for `git` and let Git read the repository (the safe-directory line is needed because the mount belongs to another user inside the container):
+
+```sh
+docker run --rm -v "$PWD:/repo:ro" --entrypoint sh \
+  zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+  -c 'git config --global --add safe.directory "*" && gitleaks git --redact --no-banner --log-opts="--all" /repo'
+```
+
+### When it finds something[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#when-it-finds-something)
+
+1. **Treat the secret as leaked.** Rotate it first, at the service that issued it. Removing the line does not un-leak it: the value is in history, in every clone and in CI caches.
+2. Move the value out of the code, into the environment (`.env`, which stays out of Git, or the platform's secret store), and read it with `getenv()` or `env()` in config.
+3. Only then decide whether history needs rewriting. That is a coordinated, destructive change for every clone; ask the repository owner.
+
+A false positive (a test fixture, an example key in docs) is allowlisted in review, like code: add its fingerprint (`file:rule:line`, from the job log or the artifact) to a `.gitleaksignore` at the project root, or commit your own `.gitleaks.toml` and set the component's `config_path`. Prefer a fixture that does not look like a secret at all.
+
+### What HELMET's own scan found[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#what-helmet-s-own-scan-found)
+
+The first run of this job's rules over HELMET's tree and its full history (359 commits) found nothing, so HELMET carries no `.gitleaksignore`. A planted fake cloud key in a scratch copy of the tree was caught (exit 1), so the job does fail when it should. Both runs are recorded on the [Proof](https://helmet.apps.wayne.edu/docs/reference/proof.html) page.
+
+Helmet the band had a song called "Unsung". A committed secret should stay that way.
 
 ---
 

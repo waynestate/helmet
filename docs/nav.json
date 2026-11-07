@@ -83,6 +83,10 @@
           "path": "guides/metrics"
         },
         {
+          "title": "Secret scanning",
+          "path": "guides/secret-scanning"
+        },
+        {
           "title": "Your coding agent (ADVISOR)",
           "path": "guides/advisor"
         },
