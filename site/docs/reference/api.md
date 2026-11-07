@@ -24,6 +24,9 @@ File `src/functions.php`, namespace `Waynestate\Helmet`:
 | `helmet_csp_nonce_meta()` | `function helmet_csp_nonce_meta(string $nonce): string` |
 | `helmet_csp_nonce_swap()` | `function helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'CSP_NONCE_SLOT_FOR_HELMET'): string` |
 | `helmet_metrics()` | `function helmet_metrics(array $config): array` |
+| `helmet_metrics_env()` | `function helmet_metrics_env(): array` |
+| `helmet_metrics_requests()` | `function helmet_metrics_requests(array $config): ?RequestMetrics` |
+| `helmet_metrics_track()` | `function helmet_metrics_track(array $config): RequestTimer` |
 
 What each one returns, from the docblocks:
 
@@ -31,7 +34,10 @@ What each one returns, from the docblocks:
 - `helmet_up_response()` and `helmet_forbidden_response()` return the answer as data, `array{status: int, headers: array<string, string>, body: string}`, without sending anything; the caller sends it. `helmet_up()` and `helmet_forbidden()` send the same answers (200, body "ok", and 403, body "Forbidden") and exit, so a small public file can answer a probe that never reaches `helmet_boot()`.
 - `helmet_csp_nonce_meta()` builds the `<meta property="csp-nonce">` tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in `<head>` of every page, with the same nonce `helmet_boot()` returned; the nonce is escaped so a quote cannot break out of the attribute.
 - `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder (default `CSP_NONCE_SLOT_FOR_HELMET`, the value a built Vue/Vite page carries where Vite's `html.cspNonce` stood) with the nonce, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws `\InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged.
-- `helmet_metrics()` builds the `/metrics` answer as data, `array{status: int, content_type: string, body: string}`. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning.
+- `helmet_metrics()` builds the `/metrics` answer as data, `array{status: int, content_type: string, body: string}`. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning. With `storage` set, the request metrics are read back from that store and added to the body.
+- `helmet_metrics_env()` reads the `HELMET_METRICS_*` variables (and `HELMET_POLICY_PATH`, as a `policy` source) the same way the Laravel config does, through `Setting::get()`, and returns them as a config array for `helmet_metrics()` and `helmet_metrics_track()`. Everything is off when nothing is set.
+- `helmet_metrics_requests()` returns the `RequestMetrics` recorder when `enabled` is true and `storage` names a shared store, else null. A store that cannot be used here is logged through `logger` and treated as off.
+- `helmet_metrics_track()` starts a `RequestTimer` for this request and records it once at shutdown (so a page that ends with `exit` is counted). It is inert when request metrics are off.
 
 File `src/Ribbon/functions.php`, namespace `Waynestate\Helmet\Ribbon`:
 
@@ -192,6 +198,27 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 | --- | --- |
 | `__invoke()` | `public function __invoke(Request $request): Response` |
 
+The PHP support metrics come from a bound `PolicySource`, else from `helmet.policy_path`. The request metrics come from `RequestMetricsBinding` when `helmet.metrics.storage` is set.
+
+### `Laravel\RecordRequestMetrics` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-recordrequestmetrics)
+
+`final class RecordRequestMetrics` in `src/Laravel/RecordRequestMetrics.php`. The outermost global middleware, added by the provider only when `helmet.metrics.enabled` is true and `helmet.metrics.storage` names a store. It records in `terminate()`, after the response is sent. The route group is the route name, else its URI template, else `unmatched`; the path is never a label.
+
+| Member | Signature |
+| --- | --- |
+| `handle()` | `public function handle(Request $request, Closure $next): mixed` |
+| `terminate()` | `public function terminate(Request $request, Response $response): void` |
+| `routeGroup()` | `public static function routeGroup(Request $request): string` |
+
+### `Laravel\RequestMetricsBinding` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-requestmetricsbinding)
+
+`final class RequestMetricsBinding` in `src/Laravel/RequestMetricsBinding.php`. A container singleton that builds the `RequestMetrics` recorder from `helmet.metrics` once and memoizes it (or its absence), for the middleware, `MetricsController` and `CspReportController`, which counts each violation it logs.
+
+| Member | Signature |
+| --- | --- |
+| `configured()` | `public static function configured(): bool` |
+| `get()` | `public function get(): ?RequestMetrics` |
+
 ### `Laravel\MetricsRoute` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-metricsroute)
 
 `final class MetricsRoute` in `src/Laravel/MetricsRoute.php`. Registers the `Route::helmetMetrics()` macro and the GET route it creates. The route is a plain GET to `MetricsController` and carries no authentication of its own: the controller enforces the bearer token and the client IP allow list from the `helmet.metrics` config. It is throttled by default because, even protected, it is a public URL that a scraper or a curious client can hit; pass `null` as the second argument to register it without a throttle.
@@ -222,13 +249,54 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 
 ### `Metrics\Metrics` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-metrics)
 
-`final class Metrics` in `src/Metrics/Metrics.php`. Framework-free builder of the metrics payload: it knows nothing about Laravel, raw PHP, or any web framework. It builds a CollectorRegistry, registers the HELMET info metric (and, when a policy source is given, the PHP version status metric), and renders the result in the Prometheus text exposition format. The default storage adapter is InMemory, which is correct for a request scope: each request builds its own registry and renders it once. Pass an APCng adapter (`Prometheus\Storage\APCng`) to share counters across requests on a long-running process.
+`final class Metrics` in `src/Metrics/Metrics.php`. Framework-free builder of the metrics payload: it knows nothing about Laravel, raw PHP, or any web framework. It builds a CollectorRegistry of request-free gauges (`helmet_info`, `wsu_stack_info` and, when a policy source is given, `helmet_php_version_status` and `helmet_php_eol_timestamp_seconds`, looked up by the running PHP's major.minor), adds the request metrics when a `RequestMetrics` is given (with `helmet_metrics_storage_up`, 0 when the store did not answer), and renders the result in the Prometheus text exposition format. The request-free gauges stay in an InMemory registry built for each scrape, so a stale label never outlives a restart.
 
 | Member | Signature |
 | --- | --- |
-| `__construct()` | `public function __construct(?Adapter $storage = null, ?PolicySource $policy = null, ?DateTimeInterface $now = null, ?string $version = null)` |
+| `__construct()` | `public function __construct(?Adapter $storage = null, ?PolicySource $policy = null, ?DateTimeInterface $now = null, ?string $version = null, ?RequestMetrics $requests = null, ?array $stackPackages = null)` |
 | `render()` | `public function render(): string` |
 | `mimeType()` | `public static function mimeType(): string` |
+| `phpMinor()` | `public static function phpMinor(): string` |
+
+### `Metrics\RequestMetrics` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-requestmetrics)
+
+`final class RequestMetrics` in `src/Metrics/RequestMetrics.php`. The opt-in request metrics on shared storage: `helmet_http_request_duration_seconds` (a histogram by `route`, `method` and `status` class; its `_count` is the request count) and `helmet_csp_violations_total` (by `directive`). Every label is bounded by HELMET: a route group must match `^[a-z0-9._/{}:-]{1,64}$` or becomes `other`, a method outside the standard verbs is `OTHER`, a status is its class (`2xx`), and a directive outside the CSP Level 3 list is `other`.
+
+| Member | Signature |
+| --- | --- |
+| `BUCKETS` | `public const array BUCKETS = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0];` |
+| `UNMATCHED` | `public const string UNMATCHED = 'unmatched';` |
+| `__construct()` | `public function __construct(Adapter $storage)` |
+| `observe()` | `public function observe(string $route, string $method, int $status, float $seconds): void` |
+| `cspViolation()` | `public function cspViolation(string $directive): void` |
+| `samples()` | `public function samples(): array` |
+| `routeLabel()` | `public static function routeLabel(string $route): string` |
+| `methodLabel()` | `public static function methodLabel(string $method): string` |
+| `statusLabel()` | `public static function statusLabel(int $status): string` |
+| `directiveLabel()` | `public static function directiveLabel(string $directive): string` |
+
+### `Metrics\MetricsStorage` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-metricsstorage)
+
+`final class MetricsStorage` in `src/Metrics/MetricsStorage.php`. Picks the shared store for the request metrics from promphp's own adapters: `apcu` (APCng), `redis` (ext-redis) or `sqlite` (PDO). Anything else means no request metrics. A store that is named but cannot be used throws `MetricsStorageException`.
+
+| Member | Signature |
+| --- | --- |
+| `DRIVERS` | `public const array DRIVERS = ['apcu', 'redis', 'sqlite'];` |
+| `isOn()` | `public static function isOn(?string $driver): bool` |
+| `create()` | `public static function create(?string $driver, ?string $redisUrl = null, ?string $sqlitePath = null): ?Adapter` |
+| `defaultSqlitePath()` | `public static function defaultSqlitePath(): string` |
+| `redisOptions()` | `public static function redisOptions(string $url): array` |
+
+### `Metrics\RequestTimer` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-requesttimer)
+
+`final class RequestTimer` in `src/Metrics/RequestTimer.php`. Times one raw PHP request and records it once. The route group defaults to `app`; a recording failure is logged and swallowed, because the page has already been served.
+
+| Member | Signature |
+| --- | --- |
+| `off()` | `public static function off(): self` |
+| `isOn()` | `public function isOn(): bool` |
+| `route()` | `public function route(string $group): self` |
+| `finish()` | `public function finish(?int $status = null, ?float $now = null): void` |
 
 ### `Metrics\MetricsGate` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-metricsgate)
 
@@ -255,11 +323,12 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 
 ### `Metrics\BearerToken` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-bearertoken)
 
-`final class BearerToken` in `src/Metrics/BearerToken.php`. Extracts the bearer token from an authorization header value, or returns null when there is none.
+`final class BearerToken` in `src/Metrics/BearerToken.php`. Extracts the bearer token from an authorization header value, or returns null when there is none. `fromServer()` finds the header for a framework-free app: `HTTP_AUTHORIZATION`, then `REDIRECT_HTTP_AUTHORIZATION`, then `getallheaders()`, because Apache with mod_php keeps it out of `$_SERVER`.
 
 | Member | Signature |
 | --- | --- |
 | `from()` | `public static function from(?string $authorizationHeader): ?string` |
+| `fromServer()` | `public static function fromServer(array $server, ?array $headers = null): ?string` |
 
 ## Platform[#](https://helmet.apps.wayne.edu/docs/reference/api.html#platform)
 
@@ -294,7 +363,7 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 
 ### `Policy\JsonFilePolicySource` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#policy-jsonfilepolicysource)
 
-`final class JsonFilePolicySource implements PolicySource` in `src/Policy/JsonFilePolicySource.php`. Reads a CREED-format policy file: a JSON object with a `schema_version` and a `components` object. It throws `PolicyReadException` on any problem it finds: a missing or unreadable file, invalid JSON, a schema_version it does not know, or a missing `components` object. Callers that must not throw (such as the version warning at request time) catch `PolicyReadException`.
+`final class JsonFilePolicySource implements PolicySource` in `src/Policy/JsonFilePolicySource.php`. Reads a CREED-format policy file: a JSON object with a `schema_version` and a `components` object, each component's versions under `versions` (CREED's schema) or, in an older flat file, directly on the component. A version with no `security_until` is skipped; one with no `active_until` counts as security-only. It throws `PolicyReadException` on any problem it finds: a missing or unreadable file, invalid JSON, a schema_version it does not know, or a missing `components` object. Callers that must not throw (such as the version warning at request time) catch `PolicyReadException`.
 
 | Member | Signature |
 | --- | --- |
@@ -317,6 +386,7 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 | `UNKNOWN` | `public const UNKNOWN = 'unknown';` |
 | `__construct()` | `public function __construct(private readonly DateTimeInterface $now, private readonly array $components)` |
 | `status()` | `public function status(string $component, string $version): string` |
+| `securityUntil()` | `public function securityUntil(string $component, string $version): ?DateTimeImmutable` |
 
 ### `Policy\VersionWarning` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#policy-versionwarning)
 

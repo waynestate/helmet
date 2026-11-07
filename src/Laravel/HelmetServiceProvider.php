@@ -42,6 +42,13 @@ final class HelmetServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/helmet.php', 'helmet');
+
+        // The request-metrics recorder, built on first use and memoized, so
+        // the middleware and both report endpoints share one.
+        $this->app->singleton(
+            RequestMetricsBinding::class,
+            static fn($app): RequestMetricsBinding => new RequestMetricsBinding($app->make('log')),
+        );
     }
 
     public function boot(): void
@@ -112,6 +119,13 @@ final class HelmetServiceProvider extends ServiceProvider
             // safe and earliest. Running it twice is a no-op: after the
             // first pass the header carries a single value.
             $kernel->prependMiddleware(ForwardedProtoNormalizer::class);
+
+            // RecordRequestMetrics is opt-in: it joins only when the metrics
+            // endpoint is enabled and names a shared storage. Prepended last,
+            // so it is the outermost middleware and times the whole request.
+            if (RequestMetricsBinding::configured()) {
+                $kernel->prependMiddleware(RecordRequestMetrics::class);
+            }
 
             // SecurityHeaders runs in the global middleware when scope is
             // "global" (the default), so every response - including 404s and

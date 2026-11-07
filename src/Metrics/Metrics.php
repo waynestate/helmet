@@ -19,14 +19,17 @@ use Waynestate\Helmet\Policy\VersionStatus;
  * Builds the HELMET /metrics payload.
  *
  * Framework-free: this class knows nothing about Laravel, raw PHP, or any web
- * framework. It builds a CollectorRegistry, registers the HELMET info metric
- * (and, when a policy source is given, the PHP version status metric), and
- * renders the result in the Prometheus text exposition format.
+ * framework. It builds a CollectorRegistry of request-free gauges (the
+ * HELMET info metric, the stack package versions and, when a policy source is
+ * given, the PHP support status and end date), adds the request metrics from
+ * shared storage when a RequestMetrics is given, and renders the result in
+ * the Prometheus text exposition format.
  *
- * The default storage adapter is InMemory, which is correct for a request
- * scope: each request builds its own registry and renders it once. Pass an
- * APCng adapter (see Prometheus\Storage\APCng) to share counters across
- * requests on a long-running process.
+ * The request-free gauges always live in an InMemory registry built for this
+ * scrape: they are facts about the running code, so they need no storage, and
+ * a stale label (last week's PHP version) can never outlive a restart. Only
+ * the counters that must add up across requests (RequestMetrics) live in
+ * shared storage.
  */
 final class Metrics
 {
@@ -35,24 +38,38 @@ final class Metrics
      */
     private const NAMESPACE = 'helmet';
 
+    /**
+     * The package prefix wsu_stack_info reports on.
+     */
+    private const STACK_PREFIX = 'waynestate/';
+
     private CollectorRegistry $registry;
 
     private RenderTextFormat $renderer;
 
     /**
-     * @param Adapter|null $storage  The storage adapter. Defaults to InMemory.
-     * @param PolicySource|null $policy  When given, the PHP version status
-     *        metric is registered from it.
+     * @param Adapter|null $storage  The storage for the request-free gauges.
+     *        Defaults to InMemory, which is right for them.
+     * @param PolicySource|null $policy  When given, the PHP version status and
+     *        end-of-support metrics are registered from it.
      * @param DateTimeInterface|null $now  The clock for the version status
      *        metric. Defaults to now.
      * @param string|null $version  The HELMET version for the info metric.
      *        Defaults to the installed package version.
+     * @param RequestMetrics|null $requests  The request metrics to add to the
+     *        payload, read from their shared storage. null when request
+     *        metrics are off.
+     * @param array<string, string>|null $stackPackages  The stack packages
+     *        and versions for wsu_stack_info. Defaults to every installed
+     *        waynestate/* package.
      */
     public function __construct(
         ?Adapter $storage = null,
         ?PolicySource $policy = null,
         ?DateTimeInterface $now = null,
         ?string $version = null,
+        private readonly ?RequestMetrics $requests = null,
+        ?array $stackPackages = null,
     ) {
         // registerDefaultMetrics is false: promphp's default php_info gauge
         // would duplicate the PHP version that helmet_info already carries.
@@ -60,9 +77,10 @@ final class Metrics
         $this->renderer = new RenderTextFormat();
 
         $this->registerInfo($version ?? $this->installedVersion());
+        $this->registerStackInfo($stackPackages ?? $this->installedStackPackages());
 
         if ($policy !== null) {
-            $this->registerPhpVersionStatus($policy, $now ?? new DateTimeImmutable('now'));
+            $this->registerPhpSupport($policy, $now ?? new DateTimeImmutable('now'));
         }
     }
 
@@ -71,7 +89,24 @@ final class Metrics
      */
     public function render(): string
     {
-        return $this->renderer->render($this->registry->getMetricFamilySamples());
+        $requestSamples = [];
+        if ($this->requests !== null) {
+            // A storage outage must not take the info metrics down with it:
+            // the scrape still answers, and helmet_metrics_storage_up says 0.
+            $storageUp = 1.0;
+            try {
+                $requestSamples = $this->requests->samples();
+            } catch (\Throwable) {
+                $storageUp = 0.0;
+            }
+            $this->registry->getOrRegisterGauge(
+                self::NAMESPACE,
+                'metrics_storage_up',
+                'Whether the request-metrics storage answered this scrape (1) or not (0).',
+            )->set($storageUp);
+        }
+
+        return $this->renderer->render([...$this->registry->getMetricFamilySamples(), ...$requestSamples]);
     }
 
     /**
@@ -80,6 +115,15 @@ final class Metrics
     public static function mimeType(): string
     {
         return RenderTextFormat::MIME_TYPE;
+    }
+
+    /**
+     * The policy key for the running PHP: its major.minor ("8.3"), which is
+     * how CREED's policy names PHP versions.
+     */
+    public static function phpMinor(): string
+    {
+        return PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
     }
 
     /**
@@ -98,32 +142,99 @@ final class Metrics
     }
 
     /**
+     * wsu_stack_info: a gauge of 1 per installed stack package, labelled with
+     * the package and its version (ADR-0011), so one dashboard can map which
+     * app runs which version of every stack part. Omitted when none are
+     * installed.
+     *
+     * @param array<string, string> $packages
+     */
+    private function registerStackInfo(array $packages): void
+    {
+        if ($packages === []) {
+            return;
+        }
+
+        ksort($packages);
+        $gauge = $this->registry->registerGauge(
+            'wsu',
+            'stack_info',
+            'A Wayne State stack package is installed.',
+            ['package', 'version'],
+        );
+        foreach ($packages as $package => $version) {
+            $gauge->set(1.0, [$package, $version]);
+        }
+    }
+
+    /**
      * helmet_php_version_status: a gauge of 1, labelled with the support
      * status of the running PHP version against the policy.
+     *
+     * helmet_php_eol_timestamp_seconds: the end of security support for the
+     * running PHP version, as a Unix timestamp. Prometheus convention is to
+     * expose the date and let the query do the arithmetic, so "days left" is
+     * (helmet_php_eol_timestamp_seconds - time()) / 86400. Omitted when the
+     * policy does not know this PHP version.
      */
-    private function registerPhpVersionStatus(PolicySource $policy, DateTimeInterface $now): void
+    private function registerPhpSupport(PolicySource $policy, DateTimeInterface $now): void
     {
-        $status = (new VersionStatus($now, $policy->components()))->status('php', PHP_VERSION);
-        $gauge = $this->registry->registerGauge(
+        $versions = new VersionStatus($now, $policy->components());
+        $minor = self::phpMinor();
+
+        $status = $this->registry->registerGauge(
             self::NAMESPACE,
             'php_version_status',
             'Support status of the running PHP version against the policy.',
             ['status'],
         );
-        $gauge->set(1.0, [$status]);
+        $status->set(1.0, [$versions->status('php', $minor)]);
+
+        $securityUntil = $versions->securityUntil('php', $minor);
+        if ($securityUntil === null) {
+            return;
+        }
+
+        $eol = $this->registry->registerGauge(
+            self::NAMESPACE,
+            'php_eol_timestamp_seconds',
+            'End of security support for the running PHP version, from the policy (Unix time).',
+            ['php_minor'],
+        );
+        $eol->set((float) $securityUntil->getTimestamp(), [$minor]);
     }
 
     /**
-     * The installed package version, or "unknown" when it cannot be read.
+     * The installed package version as tagged ("0.3.1", the same form
+     * wsu_stack_info uses, not Composer's normalized "0.3.1.0"), or
+     * "unknown" when it cannot be read.
      */
     private function installedVersion(): string
     {
         try {
-            $version = InstalledVersions::getVersion('waynestate/helmet');
+            $version = InstalledVersions::getPrettyVersion('waynestate/helmet');
         } catch (OutOfBoundsException) {
             return 'unknown';
         }
 
         return $version ?? 'unknown';
+    }
+
+    /**
+     * Every installed waynestate/* package with its pretty version.
+     *
+     * @return array<string, string>
+     */
+    private function installedStackPackages(): array
+    {
+        $packages = [];
+        foreach (InstalledVersions::getInstalledPackages() as $package) {
+            if (!str_starts_with($package, self::STACK_PREFIX)) {
+                continue;
+            }
+            $packages[$package] = InstalledVersions::getPrettyVersion($package) ?? 'unknown';
+        }
+
+        return $packages;
     }
 }

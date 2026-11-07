@@ -995,22 +995,37 @@ Laravel app and a raw PHP app with the same settings make the same decision.
 
 ## Metrics
 
-HELMET can expose a Prometheus metrics endpoint. It is off by default and
-stays off until you turn it on. No Prometheus scraper is wired yet; the
-endpoint is there for when one is.
+HELMET can expose a Prometheus metrics endpoint, built on
+[promphp/prometheus_client_php](https://github.com/PromPHP/prometheus_client_php).
+It is off by default and stays off until you turn it on.
+
+It reports the PHP and HELMET versions (`helmet_info`), the installed
+`waynestate/*` packages (`wsu_stack_info`), the PHP support status and the
+end-of-support date from a CREED policy, and, when you give it a store,
+request counts and latency by route group, method and status class, plus CSP
+violations by directive. Labels are bounded by HELMET: route groups the app
+names, never raw paths, and `other` for anything it will not accept.
 
 ### Enable it
 
-Set `HELMET_METRICS_ENABLED=true` and choose at least one way to prove who is
-asking:
-
 | Variable | What it does |
 | --- | --- |
+| `HELMET_METRICS_ENABLED` | `true` turns the endpoint on. |
 | `HELMET_METRICS_TOKEN` | A bearer token. The scraper sends `Authorization: Bearer <token>`. Compared with `hash_equals`. |
 | `HELMET_METRICS_ALLOW` | Comma-separated IPs or CIDR ranges allowed to scrape without a token. |
+| `HELMET_METRICS_STORAGE` | `apcu`, `redis` or `sqlite` turns on request and CSP metrics. Unset: version and policy gauges only. |
+| `HELMET_METRICS_REDIS_URL` | `redis://[:password@]host[:port][/db]` for the `redis` store. |
+| `HELMET_METRICS_SQLITE_PATH` | The file for the `sqlite` store (default: the system temp directory). |
+| `HELMET_POLICY_PATH` | A CREED `policy.json`, for the PHP support status and end-of-support gauges. |
 
-With neither set the endpoint returns `404` and logs a warning, so a
-misconfigured app does not hand its metrics to the whole network.
+With neither a token nor an allow list set the endpoint returns `404` and
+logs a warning, so a misconfigured app does not hand its metrics to the whole
+network.
+
+PHP workers share no memory, so request counts need a store every worker can
+reach: APCu (fastest, per server), Redis (shared, survives restarts) or SQLite
+(no extension beyond PDO, per server, for small and medium traffic). The
+[Metrics guide](docs/guides/metrics.md#pick-a-store) has the trade-offs.
 
 ### Laravel
 
@@ -1024,32 +1039,34 @@ Route::helmetMetrics('/metrics', 'throttle:120,1'); // your own throttle
 Route::helmetMetrics('/metrics', null);           // no throttle
 ```
 
-The controller reads `helmet.metrics` from the published config, resolves the
-client IP through the same trusted-proxy list the headers use, and renders
-`text/plain; version=0.0.4`.
+With `HELMET_METRICS_STORAGE` set, a terminable middleware at the front of
+the global stack times every request and records it after the response is
+sent. `Route::cspReport()` counts violations by directive.
 
 ### Raw PHP
 
 ```php
 use function Waynestate\Helmet\helmet_metrics;
+use function Waynestate\Helmet\helmet_metrics_env;
+use function Waynestate\Helmet\helmet_metrics_track;
 
-$result = helmet_metrics([
-    'enabled' => true,
-    'token'   => 's3cret',
-    'allow'   => ['10.0.0.0/8'],
-    'preset'  => 'citadel',
-]);
+$config = helmet_metrics_env(); // HELMET_METRICS_* and HELMET_POLICY_PATH
 
-http_response_code($result['status']);
-header('Content-Type: ' . $result['content_type']);
-echo $result['body'];
+if ($path === '/metrics') {
+    $result = helmet_metrics(['preset' => 'citadel'] + $config);
+    http_response_code($result['status']);
+    header('Content-Type: ' . $result['content_type']);
+    echo $result['body'];
+    exit;
+}
+
+helmet_metrics_track($config)->route('page'); // a group you name, never the raw path
 ```
 
-The response carries a `helmet_info` gauge with the PHP and HELMET versions,
-and a `helmet_php_version_status` gauge when a `PolicySource` is available.
-No personal data in labels; labels stay low-cardinality.
-
-A Grafana dashboard for these metrics ships in [`docs/grafana/helmet.json`](docs/grafana/helmet.json), ready to import as soon as a Prometheus server exists.
+A Grafana dashboard for every metric ships in [`docs/grafana/helmet.json`](docs/grafana/helmet.json),
+ready to import as soon as a Prometheus server exists. The
+[Metrics guide](docs/guides/metrics.md) covers turning it on for one site,
+the scrape config and the queries.
 
 The endpoint is the only place in HELMET that says "I am still here" without
 saying "here is your page". A lullaby, in a way.

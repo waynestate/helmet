@@ -217,6 +217,24 @@ use Waynestate\Helmet\Support\Setting;
 |                       HELMET_METRICS_ALLOW (comma-separated). Empty by
 |                       default.
 |
+|               "metrics.storage"
+|                       Where the request metrics (counts and latency by
+|                       route group, CSP violations) are kept between
+|                       requests: "apcu", "redis" or "sqlite". null (the
+|                       default) leaves request metrics off; the endpoint
+|                       then reports the request-free gauges only. Set with
+|                       the HELMET_METRICS_STORAGE env var.
+|
+|               "metrics.redis_url"
+|                       For "redis": redis://[:password@]host[:port][/db].
+|                       null means redis://127.0.0.1:6379. Set with the
+|                       HELMET_METRICS_REDIS_URL env var.
+|
+|               "metrics.sqlite_path"
+|                       For "sqlite": the database file. null means
+|                       helmet-metrics.sqlite in the system temp folder.
+|                       Set with the HELMET_METRICS_SQLITE_PATH env var.
+|
 | "csrf"        The request-forgery guard. Off by default. When enabled, a
 |               state-changing request (anything other than GET, HEAD and
 |               OPTIONS) is rejected with 403 unless Sec-Fetch-Site says
@@ -361,6 +379,16 @@ if (is_string($metricsAllow) && $metricsAllow !== '') {
     }
 }
 
+// Request metrics need storage every worker shares; none means off.
+$metricsStorage = env('HELMET_METRICS_STORAGE');
+$metricsStorage = is_string($metricsStorage) && $metricsStorage !== '' ? strtolower($metricsStorage) : null;
+
+$metricsRedisUrl = env('HELMET_METRICS_REDIS_URL');
+$metricsRedisUrl = is_string($metricsRedisUrl) && $metricsRedisUrl !== '' ? $metricsRedisUrl : null;
+
+$metricsSqlitePath = env('HELMET_METRICS_SQLITE_PATH');
+$metricsSqlitePath = is_string($metricsSqlitePath) && $metricsSqlitePath !== '' ? $metricsSqlitePath : null;
+
 // An empty string from env means "not set", so normalize it to null.
 $policyPath = env('HELMET_POLICY_PATH');
 $policyPath = is_string($policyPath) && $policyPath !== '' ? $policyPath : null;
@@ -455,6 +483,9 @@ return [
         'enabled' => $metricsEnabled,
         'token' => $metricsToken,
         'allow' => $metricsAllowList,
+        'storage' => $metricsStorage,
+        'redis_url' => $metricsRedisUrl,
+        'sqlite_path' => $metricsSqlitePath,
     ],
     'csrf' => [
         'enabled' => $csrfEnabled,

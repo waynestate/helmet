@@ -80,6 +80,18 @@
                     "true exposes the /metrics endpoint; with neither a token nor an allow list it returns 404 and logs a warning.",
                     "false"
                 ],
+                "HELMET_METRICS_REDIS_URL": [
+                    "For HELMET_METRICS_STORAGE=redis: redis://[:password@]host[:port][/database].",
+                    "redis://127.0.0.1:6379"
+                ],
+                "HELMET_METRICS_SQLITE_PATH": [
+                    "For HELMET_METRICS_STORAGE=sqlite: the database file.",
+                    "helmet-metrics.sqlite in the system temp folder"
+                ],
+                "HELMET_METRICS_STORAGE": [
+                    "apcu, redis or sqlite turns on the request metrics (counts and latency by route group, CSP violations) and names the store every PHP worker shares; unset leaves them off. Needs HELMET_METRICS_ENABLED.",
+                    "none"
+                ],
                 "HELMET_METRICS_TOKEN": [
                     "Bearer token the scraper sends as Authorization: Bearer <token>; compared with hash_equals.",
                     "none"
@@ -97,7 +109,7 @@
                     "the default deny list"
                 ],
                 "HELMET_POLICY_PATH": [
-                    "Path to a CREED policy.json; the ribbon then shows a version warning for the running PHP (and, in Laravel, framework) version. A missing or invalid file never breaks the page.",
+                    "Path to a CREED policy.json; the ribbon then shows a version warning for the running PHP (and, in Laravel, framework) version, and /metrics reports the PHP support status and end date. A missing or invalid file never breaks the page.",
                     "none"
                 ],
                 "HELMET_PRESET": [

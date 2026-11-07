@@ -50,4 +50,37 @@ final class BearerTokenTest extends TestCase
     {
         self::assertNull(BearerToken::from('Bearer secret extra'));
     }
+
+    public function testFromServerReadsHttpAuthorization(): void
+    {
+        self::assertSame('fpm', BearerToken::fromServer(['HTTP_AUTHORIZATION' => 'Bearer fpm'], []));
+    }
+
+    public function testFromServerReadsTheRedirectCopy(): void
+    {
+        self::assertSame('rewritten', BearerToken::fromServer(['REDIRECT_HTTP_AUTHORIZATION' => 'Bearer rewritten'], []));
+    }
+
+    /**
+     * Apache with mod_php (Citadel's images) keeps the header out of
+     * $_SERVER entirely; only getallheaders() has it. Seen in a php:8.5
+     * Apache container: the scrape got 403 with the right token.
+     */
+    public function testFromServerFallsBackToTheRequestHeadersAnyCase(): void
+    {
+        self::assertSame('modphp', BearerToken::fromServer([], ['Host' => 'app', 'authorization' => 'Bearer modphp']));
+    }
+
+    public function testFromServerPrefersTheServerVariable(): void
+    {
+        self::assertSame('server', BearerToken::fromServer(
+            ['HTTP_AUTHORIZATION' => 'Bearer server'],
+            ['Authorization' => 'Bearer header'],
+        ));
+    }
+
+    public function testFromServerIsNullWithNoHeaderAnywhere(): void
+    {
+        self::assertNull(BearerToken::fromServer(['HTTP_AUTHORIZATION' => ''], ['Host' => 'app']));
+    }
 }

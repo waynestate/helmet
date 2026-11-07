@@ -49,6 +49,9 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `metrics.enabled` | Whether the endpoint is on. Set with `HELMET_METRICS_ENABLED`. |
 | `metrics.token` | The bearer token a scraper must present (`Authorization: Bearer <token>`); compared with `hash_equals`. Set with `HELMET_METRICS_TOKEN`. |
 | `metrics.allow` | Client IPs or CIDR ranges allowed to read the endpoint without a token. Filled from `HELMET_METRICS_ALLOW` (comma-separated). |
+| `metrics.storage` | The store the request metrics share between PHP workers: `apcu`, `redis` or `sqlite`. null (the default) leaves request metrics off and the endpoint reports the request-free gauges only. Set with `HELMET_METRICS_STORAGE`. See [Metrics](https://helmet.apps.wayne.edu/docs/guides/metrics.html). |
+| `metrics.redis_url` | For `redis`: `redis://[:password@]host[:port][/database]`; null means `redis://127.0.0.1:6379`. Set with `HELMET_METRICS_REDIS_URL`. |
+| `metrics.sqlite_path` | For `sqlite`: the database file; null means `helmet-metrics.sqlite` in the system temp folder. Set with `HELMET_METRICS_SQLITE_PATH`. |
 | `csrf` | The request-forgery guard. Off by default. |
 | `csrf.enabled` | Whether the guard is on. Set with `HELMET_CSRF_ENABLED`. |
 | `csrf.allow_same_site` | Whether `Sec-Fetch-Site: same-site` passes. Off by default because sibling subdomains are still same-site. Set with `HELMET_CSRF_ALLOW_SAME_SITE`. |
@@ -87,11 +90,14 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_HSTS_PRELOAD | true appends preload to HSTS; requires a year of max-age and includeSubDomains, and is hard to undo. | false | config/helmet.php |
 | HELMET_METRICS_ALLOW | Comma-separated IPs or CIDR ranges allowed to scrape /metrics without a token. | none | config/helmet.php |
 | HELMET_METRICS_ENABLED | true exposes the /metrics endpoint; with neither a token nor an allow list it returns 404 and logs a warning. | false | config/helmet.php |
+| HELMET_METRICS_REDIS_URL | For HELMET_METRICS_STORAGE=redis: redis://\[:password@\]host\[:port\]\[/database\]. | redis://127.0.0.1:6379 | config/helmet.php |
+| HELMET_METRICS_SQLITE_PATH | For HELMET_METRICS_STORAGE=sqlite: the database file. | helmet-metrics.sqlite in the system temp folder | config/helmet.php |
+| HELMET_METRICS_STORAGE | apcu, redis or sqlite turns on the request metrics (counts and latency by route group, CSP violations) and names the store every PHP worker shares; unset leaves them off. Needs HELMET_METRICS_ENABLED. | none | config/helmet.php |
 | HELMET_METRICS_TOKEN | Bearer token the scraper sends as Authorization: Bearer ; compared with hash_equals. | none | config/helmet.php |
 | HELMET_NO_STORE_ENABLED | true sends Cache-Control: no-store on matching responses. | false | config/helmet.php |
 | HELMET_NO_STORE_PATHS | Comma-separated path prefixes that carry no-store; empty means every response. | none | config/helmet.php |
 | HELMET_PERMISSIONS_POLICY | JSON feature map for the Permissions-Policy header; the default is a deny list and an empty object sends no header. | the default deny list | config/helmet.php |
-| HELMET_POLICY_PATH | Path to a CREED policy.json; the ribbon then shows a version warning for the running PHP (and, in Laravel, framework) version. A missing or invalid file never breaks the page. | none | config/helmet.php |
+| HELMET_POLICY_PATH | Path to a CREED policy.json; the ribbon then shows a version warning for the running PHP (and, in Laravel, framework) version, and /metrics reports the PHP support status and end date. A missing or invalid file never breaks the page. | none | config/helmet.php |
 | HELMET_PRESET | Platform preset name (citadel or docker) that supplies the trusted proxies; read from the environment, else from Playbook. HELMET_PROXIES wins when both are set; an unknown name throws. | none | config/helmet.php |
 | HELMET_PROXIES | Comma-separated IPs or CIDR ranges allowed to set X-Forwarded-Proto; wins over HELMET_PRESET and is copied to trustedproxy.proxies when the app has not set it. An explicitly empty value trusts nobody. | none | config/helmet.php |
 | HELMET_RIBBON | false switches the maintenance ribbon off everywhere. | true | config/helmet.php |

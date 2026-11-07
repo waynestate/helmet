@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Metrics | HELMET docs</title>
-<meta name="description" content="HELMET can expose a Prometheus metrics endpoint, off by default and gated by a bearer token or an IP allow list.">
+<meta name="description" content="HELMET can expose a Prometheus metrics endpoint with version, PHP support, request and CSP metrics. Off by default, gated by a bearer token or an IP allow list, with a Grafana dashboard to import.">
 <meta name="docs-version" content="0.3.1">
 <link rel="stylesheet" href="../../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../../assets/docs.css">
@@ -40,12 +40,88 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="metrics">Metrics<a class="docs-heading-link" aria-label="Link to this section" href="#metrics">#</a></h1>
-<p>This page is for the opt-in Prometheus metrics endpoint: how to turn it on, how to gate access, and what the response carries. Read it before you expose <code>/metrics</code>, then pick the section that matches your stack.</p>
-<p>HELMET can expose a Prometheus metrics endpoint. It is off by default and stays off until you turn it on. No Prometheus scraper is wired yet; the endpoint is there for when one is.</p>
+<p>This page is for the opt-in Prometheus metrics endpoint: what it reports, how to turn it on for one site, how to gate it,
+where request counts are kept, and how to graph the result in Grafana. Read it before you expose <code>/metrics</code>.</p>
+<p>HELMET can expose a Prometheus metrics endpoint. It is off by default and stays off until you turn it on. HELMET does
+not write the exposition format by hand: it uses <a rel="noopener" href="https://github.com/PromPHP/prometheus_client_php">promphp/prometheus_client_php</a>
+and keeps its own layer to naming, label bounding and access control.</p>
 <h2 id="the-goal">The goal<a class="docs-heading-link" aria-label="Link to this section" href="#the-goal">#</a></h2>
-<p>Expose a single endpoint that reports the PHP and HELMET versions, gated so only an authorized scraper can read it. The endpoint speaks Prometheus exposition format, uses no personal data in labels, and keeps labels low-cardinality.</p>
+<p>One endpoint per app that answers three questions for a fleet dashboard: is it up, is it current (PHP and HELMET
+versions, and how long until its PHP release loses security support), and how is it doing (requests, latency, errors
+and CSP violations). Labels never carry personal data or raw paths, so the number of series stays small no matter
+what the internet sends.</p>
+<h2 id="what-it-reports">What it reports<a class="docs-heading-link" aria-label="Link to this section" href="#what-it-reports">#</a></h2>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Type</th>
+<th>Labels</th>
+<th>Needs a store</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>helmet_info</code></td>
+<td>gauge, always 1</td>
+<td><code>php_version</code>, <code>helmet_version</code></td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>wsu_stack_info</code></td>
+<td>gauge, always 1</td>
+<td><code>package</code>, <code>version</code> (each installed <code>waynestate/*</code> package)</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>helmet_php_version_status</code></td>
+<td>gauge, 1 for the current status</td>
+<td><code>status</code> (<code>active</code>, <code>security</code>, <code>eol</code>, <code>unknown</code>)</td>
+<td>no, needs a policy</td>
+</tr>
+<tr>
+<td><code>helmet_php_eol_timestamp_seconds</code></td>
+<td>gauge</td>
+<td><code>php_minor</code> (for example <code>8.5</code>)</td>
+<td>no, needs a policy</td>
+</tr>
+<tr>
+<td><code>helmet_metrics_storage_up</code></td>
+<td>gauge, 1 or 0</td>
+<td>none</td>
+<td>only shown when a store is set</td>
+</tr>
+<tr>
+<td><code>helmet_http_request_duration_seconds</code></td>
+<td>histogram (<code>_bucket</code>, <code>_sum</code>, <code>_count</code>)</td>
+<td><code>route</code>, <code>method</code>, <code>status</code></td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>helmet_csp_violations_total</code></td>
+<td>counter</td>
+<td><code>directive</code></td>
+<td>yes</td>
+</tr>
+</tbody>
+</table></div>
+<p>The first four are built fresh on every scrape, so they need nothing shared between PHP workers. The last two count
+across requests and need a store (see <a href="#pick-a-store">Pick a store</a>).</p>
+<p>The policy is the CREED <code>policy.json</code> (set <code>HELMET_POLICY_PATH</code>). Status is looked up by PHP major and minor version, so
+PHP 8.5.12 reads the <code>8.5</code> entry. The end-of-support date is exposed as a Unix timestamp, which is the Prometheus way;
+the dashboard turns it into days.</p>
+<h3 id="how-labels-stay-small">How labels stay small<a class="docs-heading-link" aria-label="Link to this section" href="#how-labels-stay-small">#</a></h3>
+<p>HELMET bounds every label before it reaches the store, and anything it will not accept becomes <code>other</code>:</p>
+<ul>
+<li><code>route</code> is a <strong>route group the app names</strong>, never the raw path. Laravel apps get the route name, else the URI
+template (<code>users/{user}</code>), else <code>unmatched</code> (a request no route took, usually a 404). Raw PHP apps pass their own
+group. Values must be lowercase letters, digits and <code>. _ / { } : -</code>, 64 characters at most.</li>
+<li><code>method</code> is one of the standard HTTP verbs, else <code>OTHER</code>.</li>
+<li><code>status</code> is the class (<code>2xx</code>, <code>3xx</code>, <code>4xx</code>, <code>5xx</code>), never the exact code.</li>
+<li><code>directive</code> is a CSP Level 3 directive name, else <code>other</code>, so a forged report cannot mint a new series.</li>
+</ul>
+<p>The request count is the histogram's <code>_count</code> series; there is no separate counter to keep in sync.</p>
 <h2 id="enable-it">Enable it<a class="docs-heading-link" aria-label="Link to this section" href="#enable-it">#</a></h2>
-<p>Set <code>HELMET_METRICS_ENABLED=true</code> and choose at least one way to prove who is asking:</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -55,6 +131,10 @@
 </thead>
 <tbody>
 <tr>
+<td><code>HELMET_METRICS_ENABLED</code></td>
+<td><code>true</code> turns the endpoint on. Off when unset.</td>
+</tr>
+<tr>
 <td><code>HELMET_METRICS_TOKEN</code></td>
 <td>A bearer token. The scraper sends <code>Authorization: Bearer &lt;token&gt;</code>. Compared with <code>hash_equals</code>.</td>
 </tr>
@@ -62,50 +142,157 @@
 <td><code>HELMET_METRICS_ALLOW</code></td>
 <td>Comma-separated IPs or CIDR ranges allowed to scrape without a token.</td>
 </tr>
+<tr>
+<td><code>HELMET_METRICS_STORAGE</code></td>
+<td><code>apcu</code>, <code>redis</code> or <code>sqlite</code> turns on request and CSP metrics. Unset means version and policy gauges only.</td>
+</tr>
+<tr>
+<td><code>HELMET_METRICS_REDIS_URL</code></td>
+<td><code>redis://[:password@]host[:port][/db]</code> when the store is <code>redis</code>.</td>
+</tr>
+<tr>
+<td><code>HELMET_METRICS_SQLITE_PATH</code></td>
+<td>The database file when the store is <code>sqlite</code>. Defaults to <code>helmet-metrics.sqlite</code> in the system temp directory.</td>
+</tr>
+<tr>
+<td><code>HELMET_POLICY_PATH</code></td>
+<td>Path to a CREED <code>policy.json</code>, for the PHP support status and end-of-support gauges.</td>
+</tr>
 </tbody>
 </table></div>
-<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>With neither a token nor an allow list set, the endpoint returns <code>404</code> and logs a warning, so a misconfigured app does not hand its metrics to the whole network.</p></aside>
-<h2 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h2>
-<p>The provider registers a <code>Route::helmetMetrics()</code> macro. The route is not created until you call it:</p>
+<aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>With neither a token nor an allow list set, the endpoint returns <code>404</code> and logs a warning, so a misconfigured app
+does not hand its metrics to the whole network.</p></aside>
+<p>The token is read from the <code>Authorization</code> header wherever the server puts it: <code>HTTP_AUTHORIZATION</code>,
+<code>REDIRECT_HTTP_AUTHORIZATION</code>, or the request headers themselves. That last one matters on Apache with mod_php,
+which keeps the header out of <code>$_SERVER</code>.</p>
+<h2 id="pick-a-store">Pick a store<a class="docs-heading-link" aria-label="Link to this section" href="#pick-a-store">#</a></h2>
+<p>PHP shares nothing between requests, so a request counter kept in memory would count to 1 and vanish. Request and CSP
+metrics need a store that every worker in the app can reach. HELMET does not pick one for you.</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Store</th>
+<th>Use it when</th>
+<th>Limits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>apcu</code></td>
+<td>The app runs under PHP-FPM or Apache mod_php with the APCu extension. Fastest.</td>
+<td>Per server: each container or VM counts on its own (Prometheus sums them). Lost on restart. Not shared with the CLI. Needs <code>ext-apcu</code>.</td>
+</tr>
+<tr>
+<td><code>redis</code></td>
+<td>Several containers serve one app, or the counts should survive a restart.</td>
+<td>Needs <code>ext-redis</code> and a Redis the app can reach. A slow Redis adds its round trip to every request.</td>
+</tr>
+<tr>
+<td><code>sqlite</code></td>
+<td>No APCu and no Redis, for example a stock PHP Apache image.</td>
+<td>Per server, like APCu. Every request takes a short write lock, so it suits small and medium traffic, not a busy API. A file in the temp directory is lost with the container. Needs <code>ext-pdo_sqlite</code>.</td>
+</tr>
+</tbody>
+</table></div>
+<p>Counters that reset on restart are fine: Prometheus's <code>rate()</code> and <code>increase()</code> handle resets. If the store breaks, the
+page still renders: the failure is logged once per request (<code>metrics_storage_unusable</code> or <code>metrics_record_failed</code>),
+the version gauges keep answering, and <code>helmet_metrics_storage_up</code> drops to <code>0</code> so the dashboard shows it.</p>
+<h2 id="turn-it-on-for-one-site">Turn it on for one site<a class="docs-heading-link" aria-label="Link to this section" href="#turn-it-on-for-one-site">#</a></h2>
+<h3 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h3>
+<p>Set the variables, then register the routes you want. Nothing is created until you call the macro:</p>
+<pre tabindex="0"><code class="language-dotenv">HELMET_METRICS_ENABLED=true
+HELMET_METRICS_TOKEN=&lt;a long random string, from your secret store&gt;
+HELMET_METRICS_STORAGE=apcu
+HELMET_POLICY_PATH=/path/to/creed/policy.json
+</code></pre>
 <pre tabindex="0"><code class="language-php">// routes/web.php
-Route::helmetMetrics();                          // GET /metrics, throttle:60,1
+Route::helmetMetrics();                             // GET /metrics, throttle:60,1
 Route::helmetMetrics('/metrics', 'throttle:120,1'); // your own throttle
-Route::helmetMetrics('/metrics', null);           // no throttle
+Route::cspReport();                                 // POST /csp-report, counts violations by directive
 </code></pre>
-<p>The controller reads <code>helmet.metrics</code> from the published config, resolves the client IP through the same trusted-proxy list the headers use, and renders <code>text/plain; version=0.0.4</code>.</p>
-<h2 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h2>
+<p>With <code>HELMET_METRICS_STORAGE</code> set, the provider adds a terminable middleware to the front of the global stack, so it
+times the whole request (including your other middleware) and records after the response has been sent. Without it the
+middleware is not registered at all. The controller reads <code>helmet.metrics</code> from the published config and resolves the
+client IP through the same trusted-proxy list the headers use.</p>
+<h3 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h3>
+<p>Put this at the top of the front controller, after the autoloader:</p>
 <pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\helmet_metrics;
+use function Waynestate\Helmet\helmet_metrics_env;
+use function Waynestate\Helmet\helmet_metrics_track;
 
-$result = helmet_metrics([
-    'enabled' =&gt; true,
-    'token'   =&gt; 's3cret',
-    'allow'   =&gt; ['10.0.0.0/8'],
-    'preset'  =&gt; 'citadel',
-]);
+$config = helmet_metrics_env();   // reads HELMET_METRICS_* and HELMET_POLICY_PATH
+$path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 
-http_response_code($result['status']);
-header('Content-Type: ' . $result['content_type']);
-echo $result['body'];
+if ($path === '/metrics') {
+    $result = helmet_metrics(['preset' =&gt; 'citadel'] + $config);
+    http_response_code($result['status']);
+    header('Content-Type: ' . $result['content_type']);
+    echo $result['body'];
+    exit;
+}
+
+// Name the route group yourself; never pass the raw path.
+$group = str_starts_with($path, '/reports') ? 'reports' : 'page';
+helmet_metrics_track($config)-&gt;route($group);
 </code></pre>
-<h2 id="what-the-response-carries">What the response carries<a class="docs-heading-link" aria-label="Link to this section" href="#what-the-response-carries">#</a></h2>
-<p>The response carries a <code>helmet_info</code> gauge with the PHP and HELMET versions, and a <code>helmet_php_version_status</code> gauge when a <code>PolicySource</code> is available. No personal data in labels; labels stay low-cardinality.</p>
-<p>The endpoint is the only place in HELMET that says &quot;I am still here&quot; without saying &quot;here is your page&quot;. A lullaby, in a way.</p>
+<p><code>helmet_metrics_track()</code> starts the clock at <code>REQUEST_TIME_FLOAT</code> and records once at shutdown, so a page that ends
+with <code>exit</code> is still counted, with whatever status code it sent. It does nothing when request metrics are off, so the
+same front controller works with or without a store.</p>
+<p>To count CSP violations in raw PHP, call <code>helmet_metrics_requests($config)?-&gt;cspViolation($directive)</code> from the
+handler that receives your reports.</p>
+<h3 id="check-it">Check it<a class="docs-heading-link" aria-label="Link to this section" href="#check-it">#</a></h3>
+<pre tabindex="0"><code class="language-bash">curl -s -H &quot;Authorization: Bearer $HELMET_METRICS_TOKEN&quot; https://your-app.example.test/metrics | head
+</code></pre>
+<p>Expect <code>helmet_info</code> first. Without the token you should get <code>403</code>; with metrics off, <code>404</code>.</p>
 <h2 id="graph-it-in-grafana">Graph it in Grafana<a class="docs-heading-link" aria-label="Link to this section" href="#graph-it-in-grafana">#</a></h2>
-<p>The fleet dashboard for these metrics ships in <a rel="noopener" href="https://github.com/waynestate/helmet/blob/HEAD/docs/grafana/helmet.json"><code>docs/grafana/helmet.json</code></a>: in Grafana, open Dashboards, New, Import, paste the file, and pick your Prometheus data source for the <code>DS_PROMETHEUS</code> input. It shows how many apps report, which HELMET and PHP versions they run, the PHP support status of each app, every reporting instance, and whether Prometheus can reach them.</p>
-<p>A sample scrape config for a Prometheus server, with a bearer token file and example targets:</p>
+<p>The fleet dashboard ships in <a rel="noopener" href="https://git.wayne.edu/enterprise-apps/helmet/-/blob/main/docs/grafana/helmet.json"><code>docs/grafana/helmet.json</code></a>.
+In Grafana, open Dashboards, New, Import, upload the file, and pick your Prometheus data source for the
+<code>DS_PROMETHEUS</code> input. It has three rows:</p>
+<ul>
+<li><strong>Fleet</strong>: apps reporting, targets down, PHP support status, days to PHP end of support, the HELMET and PHP
+versions in use, and the stack packages each app runs.</li>
+<li><strong>Requests</strong>: request rate by route group and by status class, p50 and p95 latency, p95 per route group, the
+share of 5xx answers, store health, and CSP violations by directive. Empty until an app sets a store.</li>
+<li><strong>Scrape</strong>: whether Prometheus reached each target over time, and every reporting instance with its versions.</li>
+</ul>
+<p><code>job</code> and <code>instance</code> variables at the top narrow every panel. The dashboard was checked against a local Prometheus and
+Grafana with three apps on APCu, SQLite and Redis, in light and dark themes.</p>
+<p>A scrape config for one app, with the token kept in a file:</p>
 <pre tabindex="0"><code class="language-yaml">scrape_configs:
   - job_name: helmet
     metrics_path: /metrics
+    scheme: https
     authorization:
       credentials_file: /etc/prometheus/secrets/helmet-token
     static_configs:
       - targets:
-          - app-one.example.test:80
-          - app-two.example.test:80
+          - your-app.example.test
 </code></pre>
-<p>WSU has no Prometheus server yet (decision D-024), so the dashboard is ready, not live: it graphs as soon as a server exists and scrapes <code>/metrics</code>.</p>
+<p>Queries worth keeping:</p>
+<pre tabindex="0"><code class="language-promql"># Days until each app's PHP release loses security support
+min by (instance) ((helmet_php_eol_timestamp_seconds - time()) / 86400)
+
+# Requests per second by route group (the histogram's _count is the request count)
+sum by (route) (rate(helmet_http_request_duration_seconds_count[5m]))
+
+# p95 latency
+histogram_quantile(0.95, sum by (le) (rate(helmet_http_request_duration_seconds_bucket[5m])))
+</code></pre>
+<p>WSU has no Prometheus server yet (decision D-024), so the dashboard is ready, not live: it graphs as soon as a server
+exists and scrapes <code>/metrics</code>. The stack's own sites turn it on first.</p>
+<h2 id="limits">Limits<a class="docs-heading-link" aria-label="Link to this section" href="#limits">#</a></h2>
+<ul>
+<li>HELMET reports; it does not alert. Alert rules belong with the Prometheus server.</li>
+<li>Request metrics start at the front controller. A static file the web server answers on its own is never counted.</li>
+<li>The status gauge says <code>unknown</code> when no policy is set or the policy has no entry for the running PHP release.</li>
+</ul>
+<p>The endpoint is the only place in HELMET that says &quot;I am still here&quot; without saying &quot;here is your page&quot;. A lullaby,
+in a way. A helmet with a heart-rate monitor, if you like.</p>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>
+<li><a href="csp.html">Customizing the CSP</a></li>
+<li><a href="platform-presets.html">Platform presets</a></li>
+<li><a href="../reference/configuration.html">Environment variables</a></li>
 <li><a href="session.html">The session</a></li>
 <li><a href="csrf.html">The request-forgery guard</a></li>
 </ul>
@@ -113,7 +300,7 @@ echo $result['body'];
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/csrf.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">The request-forgery guard</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/instance-runner.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Strongly recommended: a git.wayne.edu instance runner</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#the-goal">The goal</a></li><li class="docs-toc__item"><a href="#enable-it">Enable it</a></li><li class="docs-toc__item"><a href="#laravel">Laravel</a></li><li class="docs-toc__item"><a href="#raw-php">Raw PHP</a></li><li class="docs-toc__item"><a href="#what-the-response-carries">What the response carries</a></li><li class="docs-toc__item"><a href="#graph-it-in-grafana">Graph it in Grafana</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#the-goal">The goal</a></li><li class="docs-toc__item"><a href="#what-it-reports">What it reports</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-labels-stay-small">How labels stay small</a></li><li class="docs-toc__item"><a href="#enable-it">Enable it</a></li><li class="docs-toc__item"><a href="#pick-a-store">Pick a store</a></li><li class="docs-toc__item"><a href="#turn-it-on-for-one-site">Turn it on for one site</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel">Laravel</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#raw-php">Raw PHP</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#check-it">Check it</a></li><li class="docs-toc__item"><a href="#graph-it-in-grafana">Graph it in Grafana</a></li><li class="docs-toc__item"><a href="#limits">Limits</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.1</span></span>

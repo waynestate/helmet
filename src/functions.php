@@ -12,14 +12,21 @@ use Waynestate\Helmet\Logging\Logging;
 use Waynestate\Helmet\Metrics\BearerToken;
 use Waynestate\Helmet\Metrics\Metrics;
 use Waynestate\Helmet\Metrics\MetricsGate;
+use Waynestate\Helmet\Metrics\MetricsStorage;
+use Waynestate\Helmet\Metrics\MetricsStorageException;
+use Waynestate\Helmet\Metrics\RequestMetrics;
+use Waynestate\Helmet\Metrics\RequestTimer;
 use Waynestate\Helmet\Platform\Presets;
 use Waynestate\Helmet\Platform\UnknownPresetException;
+use Waynestate\Helmet\Policy\JsonFilePolicySource;
+use Waynestate\Helmet\Policy\PolicyReadException;
 use Waynestate\Helmet\Policy\PolicySource;
 use Waynestate\Helmet\Proxy\ClientIp;
 use Waynestate\Helmet\Proxy\HttpsDetector;
 use Waynestate\Helmet\Proxy\IpAllowList;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 use Waynestate\Helmet\Session\SessionHardening;
+use Waynestate\Helmet\Support\Setting;
 
 if (!function_exists('helmet_boot')) {
     /**
@@ -518,7 +525,14 @@ if (!function_exists('helmet_metrics')) {
      *     policy?: PolicySource|null,
      *     version?: string|null,
      *     logger?: LoggerInterface|null,
+     *     storage?: string|null,
+     *     redis_url?: string|null,
+     *     sqlite_path?: string|null,
      * } $config
+     *
+     * When "storage" names a shared store, the request metrics recorded by
+     * helmet_metrics_track() are read back from it and added to the body
+     * (see helmet_metrics_requests()).
      *
      * @return array{status: int, content_type: string, body: string}
      *
@@ -562,7 +576,7 @@ if (!function_exists('helmet_metrics')) {
         $proxies = new TrustedProxies($proxyList);
 
         $clientIp = ClientIp::resolve($_SERVER, $proxies, $config['logger'] ?? null);
-        $requestToken = BearerToken::from($_SERVER['HTTP_AUTHORIZATION'] ?? null);
+        $requestToken = BearerToken::fromServer($_SERVER);
 
         $gate = new MetricsGate(
             true,
@@ -593,6 +607,7 @@ if (!function_exists('helmet_metrics')) {
             $config['policy'] ?? null,
             null,
             $config['version'] ?? null,
+            helmet_metrics_requests($config),
         );
 
         return [
@@ -600,5 +615,148 @@ if (!function_exists('helmet_metrics')) {
             'content_type' => Metrics::mimeType(),
             'body' => $metrics->render(),
         ];
+    }
+}
+
+if (!function_exists('helmet_metrics_env')) {
+    /**
+     * The metrics settings from the environment, for a framework-free app.
+     *
+     * Reads the same HELMET_METRICS_* variables the Laravel config reads (the
+     * environment first, then waynestate/playbook when it is installed), so
+     * one set of variables drives both paths. Merge your own keys on top:
+     *
+     *     helmet_metrics(['preset' => 'citadel'] + helmet_metrics_env());
+     *
+     * HELMET_POLICY_PATH, when set and readable, becomes the "policy" source
+     * for the PHP support metrics; an unreadable policy is left out rather
+     * than failing the scrape.
+     *
+     * @return array{
+     *     enabled: bool,
+     *     token: string|null,
+     *     allow: list<string>,
+     *     storage: string|null,
+     *     redis_url: string|null,
+     *     sqlite_path: string|null,
+     *     policy: PolicySource|null,
+     * }
+     */
+    function helmet_metrics_env(): array
+    {
+        $allow = [];
+        foreach (explode(',', Setting::get('HELMET_METRICS_ALLOW') ?? '') as $entry) {
+            $entry = trim($entry);
+            if ($entry !== '') {
+                $allow[] = $entry;
+            }
+        }
+
+        $policy = null;
+        $policyPath = Setting::get('HELMET_POLICY_PATH');
+        if ($policyPath !== null) {
+            try {
+                $policy = new JsonFilePolicySource($policyPath);
+            } catch (PolicyReadException) {
+                $policy = null;
+            }
+        }
+
+        return [
+            'enabled' => filter_var(Setting::get('HELMET_METRICS_ENABLED') ?? 'false', FILTER_VALIDATE_BOOLEAN),
+            'token' => Setting::get('HELMET_METRICS_TOKEN'),
+            'allow' => $allow,
+            'storage' => Setting::get('HELMET_METRICS_STORAGE'),
+            'redis_url' => Setting::get('HELMET_METRICS_REDIS_URL'),
+            'sqlite_path' => Setting::get('HELMET_METRICS_SQLITE_PATH'),
+            'policy' => $policy,
+        ];
+    }
+}
+
+if (!function_exists('helmet_metrics_requests')) {
+    /**
+     * The request-metrics recorder for a metrics config, or null when request
+     * metrics are off.
+     *
+     * Request metrics are on when "enabled" is true and "storage" names one
+     * of the shared stores ("apcu", "redis", "sqlite"; see MetricsStorage).
+     * A store that cannot be used here is logged (through "logger", when
+     * given) and treated as off: a metrics problem never breaks a page.
+     *
+     * @param array{
+     *     enabled?: bool,
+     *     storage?: string|null,
+     *     redis_url?: string|null,
+     *     sqlite_path?: string|null,
+     *     logger?: LoggerInterface|null,
+     * } $config
+     */
+    function helmet_metrics_requests(array $config): ?RequestMetrics
+    {
+        if (($config['enabled'] ?? false) !== true || !MetricsStorage::isOn($config['storage'] ?? null)) {
+            return null;
+        }
+
+        try {
+            $storage = MetricsStorage::create(
+                $config['storage'] ?? null,
+                $config['redis_url'] ?? null,
+                $config['sqlite_path'] ?? null,
+            );
+        } catch (MetricsStorageException $e) {
+            ($config['logger'] ?? null)?->warning($e->getMessage(), ['event' => 'metrics_storage_unusable']);
+
+            return null;
+        }
+
+        return $storage === null ? null : new RequestMetrics($storage);
+    }
+}
+
+if (!function_exists('helmet_metrics_track')) {
+    /**
+     * Count and time this request, for a framework-free app.
+     *
+     * Call it near the top of the front controller with the same config you
+     * give helmet_metrics(). It returns a RequestTimer that records the
+     * request once, at shutdown, so a page that ends with exit is counted
+     * too. Name the route group when you know it:
+     *
+     *     $timer = helmet_metrics_track(helmet_metrics_env());
+     *     $timer->route('asset');
+     *
+     * The clock starts at REQUEST_TIME_FLOAT, when the web server handed the
+     * request to PHP. When request metrics are off (the default) the timer
+     * is inert and nothing is registered.
+     *
+     * @param array{
+     *     enabled?: bool,
+     *     storage?: string|null,
+     *     redis_url?: string|null,
+     *     sqlite_path?: string|null,
+     *     logger?: LoggerInterface|null,
+     * } $config
+     */
+    function helmet_metrics_track(array $config): RequestTimer
+    {
+        $metrics = helmet_metrics_requests($config);
+        if ($metrics === null) {
+            return RequestTimer::off();
+        }
+
+        $startedAt = $_SERVER['REQUEST_TIME_FLOAT'] ?? null;
+        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        $timer = new RequestTimer(
+            $metrics,
+            is_float($startedAt) || is_int($startedAt) ? (float) $startedAt : microtime(true),
+            is_string($method) ? $method : 'GET',
+            $config['logger'] ?? null,
+        );
+        register_shutdown_function(static function () use ($timer): void {
+            $timer->finish();
+        });
+
+        return $timer;
     }
 }

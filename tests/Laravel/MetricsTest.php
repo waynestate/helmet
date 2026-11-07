@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Laravel;
 
+use Illuminate\Contracts\Http\Kernel;
+use Illuminate\Foundation\Http\Kernel as FoundationKernel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Waynestate\Helmet\Laravel\MetricsRoute;
+use Waynestate\Helmet\Laravel\RecordRequestMetrics;
 
 /**
  * The opt-in metrics endpoint.
@@ -162,6 +165,45 @@ final class MetricsTest extends TestCase
         ]);
 
         $response->assertStatus(403);
+    }
+
+    public function testRequestMetricsMiddlewareIsNotInstalledByDefault(): void
+    {
+        $kernel = $this->app->make(Kernel::class);
+        self::assertInstanceOf(FoundationKernel::class, $kernel);
+
+        self::assertNotContains(RecordRequestMetrics::class, $this->globalMiddlewareList($kernel));
+        self::assertNull(config('helmet.metrics.storage'));
+    }
+
+    public function testThePolicyPathFeedsThePhpSupportMetrics(): void
+    {
+        Route::helmetMetrics();
+        $this->setMetricsConfig(['enabled' => true, 'token' => 'secret', 'allow' => []]);
+        $this->app['config']->set('helmet.policy_path', dirname(__DIR__) . '/fixtures/policy.json');
+
+        $response = $this->call('GET', '/metrics', [], [], [], [
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_AUTHORIZATION' => 'Bearer secret',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertSee('helmet_php_version_status{status=', false);
+    }
+
+    public function testAnUnreadablePolicyPathLeavesThePhpSupportMetricsOut(): void
+    {
+        Route::helmetMetrics();
+        $this->setMetricsConfig(['enabled' => true, 'token' => 'secret', 'allow' => []]);
+        $this->app['config']->set('helmet.policy_path', dirname(__DIR__) . '/fixtures/no-such-policy.json');
+
+        $response = $this->call('GET', '/metrics', [], [], [], [
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_AUTHORIZATION' => 'Bearer secret',
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertDontSee('helmet_php_version_status', false);
     }
 
     /**

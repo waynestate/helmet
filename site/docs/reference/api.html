@@ -83,6 +83,18 @@
 <td><code>helmet_metrics()</code></td>
 <td><code>function helmet_metrics(array $config): array</code></td>
 </tr>
+<tr>
+<td><code>helmet_metrics_env()</code></td>
+<td><code>function helmet_metrics_env(): array</code></td>
+</tr>
+<tr>
+<td><code>helmet_metrics_requests()</code></td>
+<td><code>function helmet_metrics_requests(array $config): ?RequestMetrics</code></td>
+</tr>
+<tr>
+<td><code>helmet_metrics_track()</code></td>
+<td><code>function helmet_metrics_track(array $config): RequestTimer</code></td>
+</tr>
 </tbody>
 </table></div>
 <p>What each one returns, from the docblocks:</p>
@@ -91,7 +103,10 @@
 <li><code>helmet_up_response()</code> and <code>helmet_forbidden_response()</code> return the answer as data, <code>array{status: int, headers: array&lt;string, string&gt;, body: string}</code>, without sending anything; the caller sends it. <code>helmet_up()</code> and <code>helmet_forbidden()</code> send the same answers (200, body &quot;ok&quot;, and 403, body &quot;Forbidden&quot;) and exit, so a small public file can answer a probe that never reaches <code>helmet_boot()</code>.</li>
 <li><code>helmet_csp_nonce_meta()</code> builds the <code>&lt;meta property=&quot;csp-nonce&quot;&gt;</code> tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in <code>&lt;head&gt;</code> of every page, with the same nonce <code>helmet_boot()</code> returned; the nonce is escaped so a quote cannot break out of the attribute.</li>
 <li><code>helmet_csp_nonce_swap()</code> replaces every occurrence of the placeholder (default <code>CSP_NONCE_SLOT_FOR_HELMET</code>, the value a built Vue/Vite page carries where Vite's <code>html.cspNonce</code> stood) with the nonce, HTML-escaped exactly like <code>helmet_csp_nonce_meta()</code> escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws <code>\InvalidArgumentException</code>, as does an empty nonce, and a page without the placeholder is returned unchanged.</li>
-<li><code>helmet_metrics()</code> builds the <code>/metrics</code> answer as data, <code>array{status: int, content_type: string, body: string}</code>. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning.</li>
+<li><code>helmet_metrics()</code> builds the <code>/metrics</code> answer as data, <code>array{status: int, content_type: string, body: string}</code>. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning. With <code>storage</code> set, the request metrics are read back from that store and added to the body.</li>
+<li><code>helmet_metrics_env()</code> reads the <code>HELMET_METRICS_*</code> variables (and <code>HELMET_POLICY_PATH</code>, as a <code>policy</code> source) the same way the Laravel config does, through <code>Setting::get()</code>, and returns them as a config array for <code>helmet_metrics()</code> and <code>helmet_metrics_track()</code>. Everything is off when nothing is set.</li>
+<li><code>helmet_metrics_requests()</code> returns the <code>RequestMetrics</code> recorder when <code>enabled</code> is true and <code>storage</code> names a shared store, else null. A store that cannot be used here is logged through <code>logger</code> and treated as off.</li>
+<li><code>helmet_metrics_track()</code> starts a <code>RequestTimer</code> for this request and records it once at shutdown (so a page that ends with <code>exit</code> is counted). It is inert when request metrics are off.</li>
 </ul>
 <p>File <code>src/Ribbon/functions.php</code>, namespace <code>Waynestate\Helmet\Ribbon</code>:</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
@@ -447,6 +462,51 @@
 </tr>
 </tbody>
 </table></div>
+<p>The PHP support metrics come from a bound <code>PolicySource</code>, else from <code>helmet.policy_path</code>. The request metrics come from <code>RequestMetricsBinding</code> when <code>helmet.metrics.storage</code> is set.</p>
+<h3 id="laravel-recordrequestmetrics"><code>Laravel\RecordRequestMetrics</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-recordrequestmetrics">#</a></h3>
+<p><code>final class RecordRequestMetrics</code> in <code>src/Laravel/RecordRequestMetrics.php</code>. The outermost global middleware, added by the provider only when <code>helmet.metrics.enabled</code> is true and <code>helmet.metrics.storage</code> names a store. It records in <code>terminate()</code>, after the response is sent. The route group is the route name, else its URI template, else <code>unmatched</code>; the path is never a label.</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>handle()</code></td>
+<td><code>public function handle(Request $request, Closure $next): mixed</code></td>
+</tr>
+<tr>
+<td><code>terminate()</code></td>
+<td><code>public function terminate(Request $request, Response $response): void</code></td>
+</tr>
+<tr>
+<td><code>routeGroup()</code></td>
+<td><code>public static function routeGroup(Request $request): string</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="laravel-requestmetricsbinding"><code>Laravel\RequestMetricsBinding</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-requestmetricsbinding">#</a></h3>
+<p><code>final class RequestMetricsBinding</code> in <code>src/Laravel/RequestMetricsBinding.php</code>. A container singleton that builds the <code>RequestMetrics</code> recorder from <code>helmet.metrics</code> once and memoizes it (or its absence), for the middleware, <code>MetricsController</code> and <code>CspReportController</code>, which counts each violation it logs.</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>configured()</code></td>
+<td><code>public static function configured(): bool</code></td>
+</tr>
+<tr>
+<td><code>get()</code></td>
+<td><code>public function get(): ?RequestMetrics</code></td>
+</tr>
+</tbody>
+</table></div>
 <h3 id="laravel-metricsroute"><code>Laravel\MetricsRoute</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-metricsroute">#</a></h3>
 <p><code>final class MetricsRoute</code> in <code>src/Laravel/MetricsRoute.php</code>. Registers the <code>Route::helmetMetrics()</code> macro and the GET route it creates. The route is a plain GET to <code>MetricsController</code> and carries no authentication of its own: the controller enforces the bearer token and the client IP allow list from the <code>helmet.metrics</code> config. It is throttled by default because, even protected, it is a public URL that a scraper or a curious client can hit; pass <code>null</code> as the second argument to register it without a throttle.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
@@ -514,7 +574,7 @@
 </table></div>
 <h2 id="metrics">Metrics<a class="docs-heading-link" aria-label="Link to this section" href="#metrics">#</a></h2>
 <h3 id="metrics-metrics"><code>Metrics\Metrics</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metrics">#</a></h3>
-<p><code>final class Metrics</code> in <code>src/Metrics/Metrics.php</code>. Framework-free builder of the metrics payload: it knows nothing about Laravel, raw PHP, or any web framework. It builds a CollectorRegistry, registers the HELMET info metric (and, when a policy source is given, the PHP version status metric), and renders the result in the Prometheus text exposition format. The default storage adapter is InMemory, which is correct for a request scope: each request builds its own registry and renders it once. Pass an APCng adapter (<code>Prometheus\Storage\APCng</code>) to share counters across requests on a long-running process.</p>
+<p><code>final class Metrics</code> in <code>src/Metrics/Metrics.php</code>. Framework-free builder of the metrics payload: it knows nothing about Laravel, raw PHP, or any web framework. It builds a CollectorRegistry of request-free gauges (<code>helmet_info</code>, <code>wsu_stack_info</code> and, when a policy source is given, <code>helmet_php_version_status</code> and <code>helmet_php_eol_timestamp_seconds</code>, looked up by the running PHP's major.minor), adds the request metrics when a <code>RequestMetrics</code> is given (with <code>helmet_metrics_storage_up</code>, 0 when the store did not answer), and renders the result in the Prometheus text exposition format. The request-free gauges stay in an InMemory registry built for each scrape, so a stale label never outlives a restart.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -525,7 +585,7 @@
 <tbody>
 <tr>
 <td><code>__construct()</code></td>
-<td><code>public function __construct(?Adapter $storage = null, ?PolicySource $policy = null, ?DateTimeInterface $now = null, ?string $version = null)</code></td>
+<td><code>public function __construct(?Adapter $storage = null, ?PolicySource $policy = null, ?DateTimeInterface $now = null, ?string $version = null, ?RequestMetrics $requests = null, ?array $stackPackages = null)</code></td>
 </tr>
 <tr>
 <td><code>render()</code></td>
@@ -534,6 +594,122 @@
 <tr>
 <td><code>mimeType()</code></td>
 <td><code>public static function mimeType(): string</code></td>
+</tr>
+<tr>
+<td><code>phpMinor()</code></td>
+<td><code>public static function phpMinor(): string</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="metrics-requestmetrics"><code>Metrics\RequestMetrics</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-requestmetrics">#</a></h3>
+<p><code>final class RequestMetrics</code> in <code>src/Metrics/RequestMetrics.php</code>. The opt-in request metrics on shared storage: <code>helmet_http_request_duration_seconds</code> (a histogram by <code>route</code>, <code>method</code> and <code>status</code> class; its <code>_count</code> is the request count) and <code>helmet_csp_violations_total</code> (by <code>directive</code>). Every label is bounded by HELMET: a route group must match <code>^[a-z0-9._/{}:-]{1,64}$</code> or becomes <code>other</code>, a method outside the standard verbs is <code>OTHER</code>, a status is its class (<code>2xx</code>), and a directive outside the CSP Level 3 list is <code>other</code>.</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>BUCKETS</code></td>
+<td><code>public const array BUCKETS = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0];</code></td>
+</tr>
+<tr>
+<td><code>UNMATCHED</code></td>
+<td><code>public const string UNMATCHED = 'unmatched';</code></td>
+</tr>
+<tr>
+<td><code>__construct()</code></td>
+<td><code>public function __construct(Adapter $storage)</code></td>
+</tr>
+<tr>
+<td><code>observe()</code></td>
+<td><code>public function observe(string $route, string $method, int $status, float $seconds): void</code></td>
+</tr>
+<tr>
+<td><code>cspViolation()</code></td>
+<td><code>public function cspViolation(string $directive): void</code></td>
+</tr>
+<tr>
+<td><code>samples()</code></td>
+<td><code>public function samples(): array</code></td>
+</tr>
+<tr>
+<td><code>routeLabel()</code></td>
+<td><code>public static function routeLabel(string $route): string</code></td>
+</tr>
+<tr>
+<td><code>methodLabel()</code></td>
+<td><code>public static function methodLabel(string $method): string</code></td>
+</tr>
+<tr>
+<td><code>statusLabel()</code></td>
+<td><code>public static function statusLabel(int $status): string</code></td>
+</tr>
+<tr>
+<td><code>directiveLabel()</code></td>
+<td><code>public static function directiveLabel(string $directive): string</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="metrics-metricsstorage"><code>Metrics\MetricsStorage</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsstorage">#</a></h3>
+<p><code>final class MetricsStorage</code> in <code>src/Metrics/MetricsStorage.php</code>. Picks the shared store for the request metrics from promphp's own adapters: <code>apcu</code> (APCng), <code>redis</code> (ext-redis) or <code>sqlite</code> (PDO). Anything else means no request metrics. A store that is named but cannot be used throws <code>MetricsStorageException</code>.</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DRIVERS</code></td>
+<td><code>public const array DRIVERS = ['apcu', 'redis', 'sqlite'];</code></td>
+</tr>
+<tr>
+<td><code>isOn()</code></td>
+<td><code>public static function isOn(?string $driver): bool</code></td>
+</tr>
+<tr>
+<td><code>create()</code></td>
+<td><code>public static function create(?string $driver, ?string $redisUrl = null, ?string $sqlitePath = null): ?Adapter</code></td>
+</tr>
+<tr>
+<td><code>defaultSqlitePath()</code></td>
+<td><code>public static function defaultSqlitePath(): string</code></td>
+</tr>
+<tr>
+<td><code>redisOptions()</code></td>
+<td><code>public static function redisOptions(string $url): array</code></td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="metrics-requesttimer"><code>Metrics\RequestTimer</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-requesttimer">#</a></h3>
+<p><code>final class RequestTimer</code> in <code>src/Metrics/RequestTimer.php</code>. Times one raw PHP request and records it once. The route group defaults to <code>app</code>; a recording failure is logged and swallowed, because the page has already been served.</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Member</th>
+<th>Signature</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>off()</code></td>
+<td><code>public static function off(): self</code></td>
+</tr>
+<tr>
+<td><code>isOn()</code></td>
+<td><code>public function isOn(): bool</code></td>
+</tr>
+<tr>
+<td><code>route()</code></td>
+<td><code>public function route(string $group): self</code></td>
+</tr>
+<tr>
+<td><code>finish()</code></td>
+<td><code>public function finish(?int $status = null, ?float $now = null): void</code></td>
 </tr>
 </tbody>
 </table></div>
@@ -598,7 +774,7 @@
 </tbody>
 </table></div>
 <h3 id="metrics-bearertoken"><code>Metrics\BearerToken</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-bearertoken">#</a></h3>
-<p><code>final class BearerToken</code> in <code>src/Metrics/BearerToken.php</code>. Extracts the bearer token from an authorization header value, or returns null when there is none.</p>
+<p><code>final class BearerToken</code> in <code>src/Metrics/BearerToken.php</code>. Extracts the bearer token from an authorization header value, or returns null when there is none. <code>fromServer()</code> finds the header for a framework-free app: <code>HTTP_AUTHORIZATION</code>, then <code>REDIRECT_HTTP_AUTHORIZATION</code>, then <code>getallheaders()</code>, because Apache with mod_php keeps it out of <code>$_SERVER</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -610,6 +786,10 @@
 <tr>
 <td><code>from()</code></td>
 <td><code>public static function from(?string $authorizationHeader): ?string</code></td>
+</tr>
+<tr>
+<td><code>fromServer()</code></td>
+<td><code>public static function fromServer(array $server, ?array $headers = null): ?string</code></td>
 </tr>
 </tbody>
 </table></div>
@@ -676,7 +856,7 @@
 </tbody>
 </table></div>
 <h3 id="policy-jsonfilepolicysource"><code>Policy\JsonFilePolicySource</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-jsonfilepolicysource">#</a></h3>
-<p><code>final class JsonFilePolicySource implements PolicySource</code> in <code>src/Policy/JsonFilePolicySource.php</code>. Reads a CREED-format policy file: a JSON object with a <code>schema_version</code> and a <code>components</code> object. It throws <code>PolicyReadException</code> on any problem it finds: a missing or unreadable file, invalid JSON, a schema_version it does not know, or a missing <code>components</code> object. Callers that must not throw (such as the version warning at request time) catch <code>PolicyReadException</code>.</p>
+<p><code>final class JsonFilePolicySource implements PolicySource</code> in <code>src/Policy/JsonFilePolicySource.php</code>. Reads a CREED-format policy file: a JSON object with a <code>schema_version</code> and a <code>components</code> object, each component's versions under <code>versions</code> (CREED's schema) or, in an older flat file, directly on the component. A version with no <code>security_until</code> is skipped; one with no <code>active_until</code> counts as security-only. It throws <code>PolicyReadException</code> on any problem it finds: a missing or unreadable file, invalid JSON, a schema_version it does not know, or a missing <code>components</code> object. Callers that must not throw (such as the version warning at request time) catch <code>PolicyReadException</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -730,6 +910,10 @@
 <tr>
 <td><code>status()</code></td>
 <td><code>public function status(string $component, string $version): string</code></td>
+</tr>
+<tr>
+<td><code>securityUntil()</code></td>
+<td><code>public function securityUntil(string $component, string $version): ?DateTimeImmutable</code></td>
 </tr>
 </tbody>
 </table></div>
@@ -922,7 +1106,7 @@
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/reference/configuration.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Environment variables</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/reference/proof.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Proof</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#global-functions">Global functions</a></li><li class="docs-toc__item"><a href="#csrf">Csrf</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#csrf-requestforgeryguard">Csrf\RequestForgeryGuard</a></li><li class="docs-toc__item"><a href="#error">Error</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#error-genericerrorresponse">Error\GenericErrorResponse</a></li><li class="docs-toc__item"><a href="#headers">Headers</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-securityheaders">Headers\SecurityHeaders</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-securityheadersmiddleware">Headers\SecurityHeadersMiddleware</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-invalidcspreporturiexception">Headers\InvalidCspReportUriException</a></li><li class="docs-toc__item"><a href="#health">Health</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#health-healthcheck">Health\HealthCheck</a></li><li class="docs-toc__item"><a href="#laravel">Laravel</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-helmetserviceprovider">Laravel\HelmetServiceProvider</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-securityheaders">Laravel\SecurityHeaders</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-requestforgeryguard">Laravel\RequestForgeryGuard</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-forwardedprotonormalizer">Laravel\ForwardedProtoNormalizer</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-injectribbon">Laravel\InjectRibbon</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-cspreportcontroller">Laravel\CspReportController</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-cspreportroute">Laravel\CspReportRoute</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-metricscontroller">Laravel\MetricsController</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-metricsroute">Laravel\MetricsRoute</a></li><li class="docs-toc__item"><a href="#logging">Logging</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#logging-logging">Logging\Logging</a></li><li class="docs-toc__item"><a href="#metrics">Metrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metrics">Metrics\Metrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsgate">Metrics\MetricsGate</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsdecision">Metrics\MetricsDecision</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-bearertoken">Metrics\BearerToken</a></li><li class="docs-toc__item"><a href="#platform">Platform</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#platform-presets">Platform\Presets</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#platform-unknownpresetexception">Platform\UnknownPresetException</a></li><li class="docs-toc__item"><a href="#policy">Policy</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-policysource">Policy\PolicySource</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-jsonfilepolicysource">Policy\JsonFilePolicySource</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-policyreadexception">Policy\PolicyReadException</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-versionstatus">Policy\VersionStatus</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-versionwarning">Policy\VersionWarning</a></li><li class="docs-toc__item"><a href="#proxy">Proxy</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-clientip">Proxy\ClientIp</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-httpsdetector">Proxy\HttpsDetector</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-ipallowlist">Proxy\IpAllowList</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-trustedproxies">Proxy\TrustedProxies</a></li><li class="docs-toc__item"><a href="#ribbon">Ribbon</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#ribbon-ribbon">Ribbon\Ribbon</a></li><li class="docs-toc__item"><a href="#session">Session</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#session-sessionhardening">Session\SessionHardening</a></li><li class="docs-toc__item"><a href="#support">Support</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#support-setting">Support\Setting</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#global-functions">Global functions</a></li><li class="docs-toc__item"><a href="#csrf">Csrf</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#csrf-requestforgeryguard">Csrf\RequestForgeryGuard</a></li><li class="docs-toc__item"><a href="#error">Error</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#error-genericerrorresponse">Error\GenericErrorResponse</a></li><li class="docs-toc__item"><a href="#headers">Headers</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-securityheaders">Headers\SecurityHeaders</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-securityheadersmiddleware">Headers\SecurityHeadersMiddleware</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-invalidcspreporturiexception">Headers\InvalidCspReportUriException</a></li><li class="docs-toc__item"><a href="#health">Health</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#health-healthcheck">Health\HealthCheck</a></li><li class="docs-toc__item"><a href="#laravel">Laravel</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-helmetserviceprovider">Laravel\HelmetServiceProvider</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-securityheaders">Laravel\SecurityHeaders</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-requestforgeryguard">Laravel\RequestForgeryGuard</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-forwardedprotonormalizer">Laravel\ForwardedProtoNormalizer</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-injectribbon">Laravel\InjectRibbon</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-cspreportcontroller">Laravel\CspReportController</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-cspreportroute">Laravel\CspReportRoute</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-metricscontroller">Laravel\MetricsController</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-recordrequestmetrics">Laravel\RecordRequestMetrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-requestmetricsbinding">Laravel\RequestMetricsBinding</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-metricsroute">Laravel\MetricsRoute</a></li><li class="docs-toc__item"><a href="#logging">Logging</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#logging-logging">Logging\Logging</a></li><li class="docs-toc__item"><a href="#metrics">Metrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metrics">Metrics\Metrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-requestmetrics">Metrics\RequestMetrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsstorage">Metrics\MetricsStorage</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-requesttimer">Metrics\RequestTimer</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsgate">Metrics\MetricsGate</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsdecision">Metrics\MetricsDecision</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-bearertoken">Metrics\BearerToken</a></li><li class="docs-toc__item"><a href="#platform">Platform</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#platform-presets">Platform\Presets</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#platform-unknownpresetexception">Platform\UnknownPresetException</a></li><li class="docs-toc__item"><a href="#policy">Policy</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-policysource">Policy\PolicySource</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-jsonfilepolicysource">Policy\JsonFilePolicySource</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-policyreadexception">Policy\PolicyReadException</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-versionstatus">Policy\VersionStatus</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-versionwarning">Policy\VersionWarning</a></li><li class="docs-toc__item"><a href="#proxy">Proxy</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-clientip">Proxy\ClientIp</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-httpsdetector">Proxy\HttpsDetector</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-ipallowlist">Proxy\IpAllowList</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-trustedproxies">Proxy\TrustedProxies</a></li><li class="docs-toc__item"><a href="#ribbon">Ribbon</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#ribbon-ribbon">Ribbon\Ribbon</a></li><li class="docs-toc__item"><a href="#session">Session</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#session-sessionhardening">Session\SessionHardening</a></li><li class="docs-toc__item"><a href="#support">Support</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#support-setting">Support\Setting</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.1</span></span>
