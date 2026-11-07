@@ -31,6 +31,7 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
+- Docs: BEST_PRACTICES re-checked for 1.0 (HELMET-1, third pass): H34 is `Enforced` (the readiness check), H58 is `Checked` (Gitleaks through Preflight), H5 is `Documented` (the `style_src_attr` mode, with the default left to ADR-0001), backlog items 19, 24 and 31 are closed or moved, and the new "Third pass (2026-11-07)" section records the quoted-source fix, the accessibility gate and what is still unverified.
 - The canonical repository is git.wayne.edu (ADR-0021); docs, links and package metadata no longer point at the archived nougat copy.
 
 ### Security

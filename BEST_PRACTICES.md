@@ -1,6 +1,6 @@
 # HELMET best practices
 
-Checked against primary sources on 2026-10-27. A second pass the same day added practices H51 to H58 and corrected several statements. See "Second pass (2026-10-27)" near the end.
+Checked against primary sources on 2026-10-27. A second pass the same day added practices H51 to H58 and corrected several statements. A third pass on 2026-11-07 re-tagged H5, H34 and H58 after the readiness check, the `style_src_attr` flag and secret scanning landed. See "Second pass (2026-10-27)" and "Third pass (2026-11-07)" near the end.
 
 ## What this covers
 
@@ -14,12 +14,12 @@ Each practice ends with exactly one tag.
 
 | Tag | Meaning |
 | --- | --- |
-| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository's `.gitlab-ci.yml` includes the Preflight `php-test`, `composer-audit` and `proctor` components, pinned to 0.1.4, and its pipelines pass on git.wayne.edu (for example pipeline 4350, 2026-11-07). |
+| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository's `.gitlab-ci.yml` includes the Preflight `php-test`, `composer-audit` and `proctor` components, pinned to 0.1.4, and its pipelines pass on git.wayne.edu (for example pipeline 4350, 2026-11-07). The `secret-detection` and `a11y` components, first released in Preflight 0.2.0, are pinned to 0.2.0; no pipeline has run them on HELMET yet (the branch is not pushed), so the local runs on the Proof page are their evidence for now. |
 | `Checked` | PROCTOR or CI warns or fails. |
 | `Documented` | Written down in the README or a design note, with no code behind it. |
 | `Not yet` | A gap. |
 
-HELMET is at 0.3.1. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life.
+HELMET's last release is 0.3.1, and the Unreleased work heads for 1.0. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life. Since 0.3.1: a readiness check on `/ready` (H34), a `style_src_attr` mode for the one `'unsafe-inline'` left in the default policy (H5, ADR-0001), Gitleaks in CI (H58) and an accessibility gate on the front page and docs.
 
 ---
 
@@ -54,7 +54,7 @@ HELMET is at 0.3.1. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Move inline scripts and styles to files, or allow them by nonce or hash.
 - **Why:** `'unsafe-inline'` lets any injected inline code run, which removes most of the policy's value for that directive.
 - **Sources:** [MDN CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP), [OWASP CSP](https://cheatsheetseries.owasp.org/cheatsheets/Content_Security_Policy_Cheat_Sheet.html)
-- **Stack:** `Not yet`. The default policy keeps `'unsafe-inline'` on `style-src-attr` only (`src/Headers/SecurityHeaders.php:42-49`), so inline `style` attributes still work without a nonce, while `<style>` elements and stylesheets do not carry it. The nonce is now bound to `script-src`, `style-src` and `style-src-elem` when those directives are present (`src/Headers/SecurityHeaders.php:128-132`), so an app can allow Vite-injected `<style>` tags by nonce instead of by `'unsafe-inline'`. `testDefaultPolicyKeepsUnsafeInlineOnlyOnStyleSrcAttr` (`tests/Headers/SecurityHeadersTest.php:24`) and `testBuildCspNoncesTheStyleDirectives` (`tests/Headers/SecurityHeadersTest.php:50`) cover the two halves. See the gap list.
+- **Stack:** `Documented`. The default policy keeps `'unsafe-inline'` on `style-src-attr` only (`src/Headers/SecurityHeaders.php:57-63`), so inline `style` attributes still work without a nonce, while `<style>` elements and stylesheets do not carry it. The default stays there on purpose: WayneUI's raw PHP and Blade recipes set inline `style` attributes, and they break without it. What is new is a way off it. The `style_src_attr` option (`HELMET_CSP_STYLE_SRC_ATTR` in Laravel) takes `inline` (the default, unchanged), `report` (keep enforcing, and add a `Content-Security-Policy-Report-Only: style-src-attr 'none'` probe that reports every inline style attribute to the same endpoint) or `none` (block them) (`src/Headers/SecurityHeaders.php:31`, `:378`, `:409`, `:423`). An app-set `style-src-attr` wins in every mode. `StyleSrcAttrTest` (`tests/Headers/StyleSrcAttrTest.php`, `tests/Laravel/StyleSrcAttrTest.php`) covers the modes, the probe and the precedence. Whether the default moves to `report` or `none` is ADR-0001 (`docs/adr/0001-style-src-attr.md`, Proposed), so the tag is `Documented` until that is decided. The nonce is now bound to `script-src`, `style-src` and `style-src-elem` when those directives are present (`src/Headers/SecurityHeaders.php:128-132`), so an app can allow Vite-injected `<style>` tags by nonce instead of by `'unsafe-inline'`. `testDefaultPolicyKeepsUnsafeInlineOnlyOnStyleSrcAttr` (`tests/Headers/SecurityHeadersTest.php:24`) and `testBuildCspNoncesTheStyleDirectives` (`tests/Headers/SecurityHeadersTest.php:50`) cover the two halves. See the gap list.
 
 ### H6. Use `frame-ancestors`, and keep `X-Frame-Options` for old browsers
 - **Practice:** Send `frame-ancestors 'self'` (or `'none'` if the app is never framed) and `X-Frame-Options` with a matching value.
@@ -282,7 +282,7 @@ HELMET is at 0.3.1. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Put dependency checks, such as the database or a cache, on a different endpoint from the liveness check.
 - **Why:** A failed dependency should take an app out of rotation, not kill it.
 - **Sources:** [Kubernetes probes](https://kubernetes.io/docs/concepts/configuration/liveness-readiness-startup-probes/), [Laravel deployment](https://laravel.com/docs/12.x/deployment)
-- **Stack:** `Documented`. HELMET ships only the liveness endpoint (`/up`, `helmet_up()`) and keeps it free of dependency checks on purpose. The README section "Readiness is a separate check" shows a separate `/ready` path for dependency checks (a short timeout, a 503 with a fixed body, `no-store`, no detail) and warns against Laravel's `DiagnosingHealth` event for this, because that event fires for `/up`. No code or test enforces it; the pattern is the app's to wire.
+- **Stack:** `Enforced`. `/up` stays liveness-only. Readiness is a separate, opt-in check: `Health\Readiness` runs named checks (HELMET's own config sanity checks from `Readiness::standard()`, plus any the app adds, such as a database ping) and answers `200 ready` or `503 not ready` with a fixed, `no-store` body that names each check's result and never its detail (`src/Health/Readiness.php`). A throwing check fails and is logged; its message stays out of the body. The raw PHP path turns it on with `helmet_boot(['readiness' => ...])` or `helmet_ready()` (`src/functions.php:228`, `:480`), and Laravel with `Route::helmetReady()` (`src/Laravel/ReadinessRoute.php`). It never rides on Laravel's `DiagnosingHealth` event, which fires for `/up`. `ReadinessTest` (core and Laravel), `ReadinessCheckTest` and `FunctionsReadinessTest` cover it, including `testLivenessStillAnswersUp` and `testTheBodyNeverCarriesAddressesOrThePolicy`.
 
 ### H35. Keep the response tiny, uncached and free of detail
 - **Practice:** Return a short body, `Cache-Control: no-store`, and no version or configuration detail.
@@ -412,7 +412,7 @@ HELMET is at 0.3.1. The Laravel adapter and the environment ribbon are built, an
 - **Practice:** Run secret detection on every pipeline for every project in the stack, in addition to the dependency audit.
 - **Why:** H45 says to keep secrets out of git. A scanner is how you find the ones that got in anyway. GitLab's secret detection docs list it for the Free, Premium and Ultimate tiers. The same docs say Dependency Scanning is Ultimate-tier, so on a lower tier `composer audit` is the dependency check. WSU's GitLab tier was not checked.
 - **Sources:** [GitLab Secret Detection](https://docs.gitlab.com/user/application_security/secret_detection/), [GitLab Dependency Scanning](https://docs.gitlab.com/user/application_security/dependency_scanning/)
-- **Stack:** `Not yet`. HELMET's pipeline includes `php-test` and `composer-audit` only. Whether Preflight offers a secret-detection component was not checked.
+- **Stack:** `Checked`. HELMET's pipeline includes Preflight's `secret-detection` component, pinned to 0.2.0, which runs Gitleaks v8.30.1 (pinned by digest, pulled through the Dependency Proxy) over the checked-out tree with redacted output, and fails the pipeline on a finding. HELMET writes no scanner of its own. `SecretScanJobTest` (`tests/Support/SecretScanJobTest.php`) keeps the include pinned, blocking and on the proxy. The same rules found nothing in the tree or in the full history (359 commits), and caught a planted fake key; see the Proof page and `docs/guides/secret-scanning.md`, which also gives the local command. The tree scan does not cover history, so a history scan stays a manual step.
 
 ---
 
@@ -432,7 +432,7 @@ HELMET is at 0.3.1. The Laravel adapter and the environment ribbon are built, an
 
 Each of these follows from the research above. Items marked "inferred" depend on how Citadel's network works and need confirming.
 
-1. Done. `'unsafe-inline'` was narrowed to `style-src-attr` only (not `style-src-elem`), and the exception is documented in `defaultCspPolicy()`: WayneUI's static path inlines a few style attributes, which `style-src-attr` governs, while `<style>` tags (`style-src-elem`) do not need it.
+1. Done. `'unsafe-inline'` was narrowed to `style-src-attr` only (not `style-src-elem`), and the exception is documented in `defaultCspPolicy()`: WayneUI's static path inlines a few style attributes, which `style-src-attr` governs, while `<style>` tags (`style-src-elem`) do not need it. The `style_src_attr` option now lets an app report on that allowance or drop it; changing the default is ADR-0001 (H5).
 2. Done. `defaultCspPolicy()` now sets `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` (`src/Headers/SecurityHeaders.php:56-58`); `testDefaultPolicyIncludesHardeningDirectives` covers it.
 3. Done. `buildCsp()` calls `setStrictDynamic('script-src', true)` (`src/Headers/SecurityHeaders.php:136`), so the nonce is paired with `strict-dynamic`; `testBuildCspAddsStrictDynamicAlongsideNonce` covers it.
 4. Done in 0.1.0: src/functions.php:116, test FunctionsTest::testBootThrowsWhenSessionAlreadyActive. `helmet_boot()` used to skip session hardening without a word when a session was already active, which contradicted the README line "It refuses to run once a session is active" (`README.md:695-697`); it now throws (`src/Session/SessionHardening.php:63-65`).
@@ -453,12 +453,12 @@ Each of these follows from the research above. Items marked "inferred" depend on
 16. Done. `build()` sends `Permissions-Policy` with `payment=()` and `usb=()` (`src/Headers/SecurityHeaders.php:75-84`); `testBuildPermissionsPolicyCoversPaymentAndUsb` (`tests/Headers/SecurityHeadersTest.php:181`) covers it.
 17. Done. COOP and CORP headers, tested against WayneUI assets.
 18. Done. A client-IP function that walks the forwarded list from the right.
-19. Documented, not shipped as code (H34). `/up` stays liveness-only, and the README and the raw PHP guide show a separate `/ready` path for dependency checks (short timeout, fixed 503 body, `no-store`). Dependency checks are app-specific, so the pattern is the app's to wire; whether HELMET should ship a readiness helper is an open scope question.
+19. Done (H34). HELMET ships an opt-in readiness check on `/ready`, apart from `/up`: its own config sanity checks plus the app's named checks, with a fixed 200 or 503 body and `no-store` (`src/Health/Readiness.php`, `helmet_ready()`, `Route::helmetReady()`; `docs/guides/readiness.md`).
 20. Done, opt-in. `helmet_boot(['error_handler' => ['enabled' => true]])` installs a handler that logs the detail and serves the fixed 500 page from `GenericErrorResponse::build()`, and `GenericErrorResponse::clientError()` gives the fixed 4xx pages (`src/Error/GenericErrorResponse.php`, `src/functions.php`, `tests/Error/GenericErrorResponseTest.php`, `tests/FunctionsErrorHeadersTest.php`). Laravel apps keep the framework's handler (H41, H43).
 21. Done. Request ID and context processors, and a redacting formatter.
 22. Done in 0.1.0: tests/FunctionsTest.php:62, test FunctionsTest::testBootReturnsNonceWhenNoSessionActive. A test for `Logging::create()` and for `helmet_boot()` itself.
 23. Done. The version warning is wired into the environment ribbon: when a policy file is configured (`helmet.policy_path` / `HELMET_POLICY_PATH`, or `helmet_ribbon()`'s third argument), the ribbon shows a warning line for each component version that is in its security-only phase or end of life (`src/Ribbon/Ribbon.php`, `src/Policy/VersionWarning.php`). `RibbonTest` covers the active, security-only, end-of-life, no-policy-path and broken-file cases, and `InjectRibbonTest` covers the Laravel wiring.
-24. Done. A proven CI run: pipeline 4350 on git.wayne.edu passed on 2026-11-07 with the Preflight 0.1.4 components, and the test matrix covers 8.3, 8.4 and 8.5 in `.gitlab-ci.yml` and `.github/workflows/ci.yml` (see the `Enforced` row at the top). Still to add, separately: secret detection, which waits on a Preflight tag that ships its secret-detection component.
+24. Done. A proven CI run: pipeline 4350 on git.wayne.edu passed on 2026-11-07 with the Preflight 0.1.4 components, and the test matrix covers 8.3, 8.4 and 8.5 in `.gitlab-ci.yml` and `.github/workflows/ci.yml` (see the `Enforced` row at the top). Secret detection followed once Preflight 0.2.0 shipped its component (H58); its first pipeline run is still owed.
 
 ### Needs Citadel
 
@@ -473,7 +473,7 @@ Items 28 to 37 continue the numbering above.
 28. Done. The Laravel middleware passes the nonce to Vite via `Vite::useCspNonce()` (`src/Laravel/SecurityHeaders.php:124`) and sets the `helmet.csp_nonce` request attribute (`src/Laravel/SecurityHeaders.php:119`); the default policy allows `data:` in `font-src` and `img-src` (`src/Headers/SecurityHeaders.php:53-54`); the raw PHP path returns the `csp-nonce` meta tag via `helmet_csp_nonce_meta()` (`src/functions.php:429-431`), and H51 documents the `html.cspNonce` placeholder swap.
 29. Done. Trusted Types in Report-Only mode for JS-framework apps (H52), after Report-Only mode exists (item 14).
 30. Done. CSP reporting through `Reporting-Endpoints` plus `report-to`, with `report-uri` as the fallback, and a report endpoint that accepts `application/reports+json` (H7, item 14).
-31. A `Clear-Site-Data` logout helper, or a note for the auth library (H53).
+31. Moved to SESAME, which owns logout and sends `Clear-Site-Data` there (H53). HELMET keeps no logout helper.
 32. Done. The opt-in request-forgery guard gives the raw PHP, PSR-15 and Laravel paths an `Origin` and `Sec-Fetch-Site` check (H54): `helmet_boot()` accepts a `csrf` option, `RequestForgeryGuard` is the PSR-15 middleware, and the Laravel adapter registers it when `helmet.csrf.enabled` is true.
 33. Done. The Laravel adapter copies `helmet.proxies` to `trustedproxy.proxies` when the app has not set them and narrows the trusted headers to `X-Forwarded-For` and `X-Forwarded-Proto` through `TrustProxies::withHeaders()` (`src/Laravel/HelmetServiceProvider.php:65-67`, `src/Laravel/HelmetServiceProvider.php:80-86`; `src/Platform/Presets.php:39-42`); `testProviderNarrowsTheTrustedHeaderSet` (`tests/Laravel/TrustedHeadersTest.php:36`) and `testForwardedPortIsNotTrusted` (`tests/Laravel/TrustedHeadersTest.php:47`) cover it (H55).
 34. Done. `composer.json` sets `config.audit.abandoned` to `report` explicitly, with no ignores; the Preflight `composer-audit` component runs `composer audit --locked` in CI and `composer ci` ends in `@composer audit` (H56).
@@ -546,7 +546,7 @@ A second reviewer re-checked the first pass against primary sources and the code
 
 ### Added
 
-- Eight practices: H51 (one nonce shared with the Vite bundler), H52 (Trusted Types in Report-Only mode), H53 (`Clear-Site-Data` on logout), H54 (CSRF defense beside `SameSite`), H55 (restrict the forwarded headers Laravel trusts), H56 (set the Composer audit policy), H57 (test on every supported PHP version), H58 (secret detection in CI). Since that pass, H51, H52, H54 and H55 are `Enforced`, H56 and H57 are `Checked`; H53 and H58 remain gaps.
+- Eight practices: H51 (one nonce shared with the Vite bundler), H52 (Trusted Types in Report-Only mode), H53 (`Clear-Site-Data` on logout), H54 (CSRF defense beside `SameSite`), H55 (restrict the forwarded headers Laravel trusts), H56 (set the Composer audit policy), H57 (test on every supported PHP version), H58 (secret detection in CI). Since that pass, H51, H52, H54 and H55 are `Enforced`, H56, H57 and H58 are `Checked`, H34 is `Enforced`, H5 is `Documented` pending ADR-0001, and H53 is owned by SESAME.
 - Extra evidence on existing practices, with no tag change: prior art from one US university baseline (H13, H17), OWASP's current HSTS value (H17), failure stories for forwarded-header trust (H18), session fixation (H26) and liveness probes (H33), NIST SP 800-63B-4 session rules (H29, H30, H31), the session ID size check (H32), and a re-check of the PHP support dates (H47).
 - Ten backlog items, numbered 28 to 37, and a rewrite of item 24.
 - Twenty-two sources, numbered 26 to 47.
@@ -569,6 +569,31 @@ The nonce quote from MDN, the PHP 8.4 `sid_length` and `sid_bits_per_character` 
 - Whether `csp-builder` can emit `strict-dynamic`, or the `Reporting-Endpoints` header, was not tested.
 - No Monolog or `paragonie/csp-builder` advisory was found, but the search was weak, so that is not a clean bill.
 - The primary advisories for CVE-2026-55584 and CVE-2026-33492 were not opened. The CVE-2026-11335 detail is from a search summary only.
-- Which PHP versions the Preflight `php-test` component runs, and whether Preflight has a secret-detection component, were not read.
+- Which PHP versions the Preflight `php-test` component runs was not read. (Preflight's secret-detection component was read on 2026-11-07; see the third pass.)
 - The 2016 Google CSP study figure (94.72%) came from a search summary of the paper.
 - No code was run. PHP is not installed here, and the tests were not executed on 8.4 or 8.5.
+
+## Third pass (2026-11-07)
+
+A re-check against the code on the 1.0 branch, after four backlog items landed. Each claim below has a test or a recorded run behind it.
+
+### Re-tagged
+
+- **H5** moves from `Not yet` to `Documented`. The default is unchanged (`style-src-attr 'unsafe-inline'`), but the `style_src_attr` option offers `report` and `none`, and ADR-0001 sets out the choice of default.
+- **H34** moves from `Documented` to `Enforced`. The readiness check is code with tests, not a pattern for the app to copy.
+- **H58** moves from `Not yet` to `Checked`. Preflight's `secret-detection` component runs Gitleaks on every pipeline and fails on a finding.
+
+### Found while doing it
+
+- **Quoted CSP sources.** `csp-builder` treats an unknown source as a host. Before this pass, `'unsafe-eval'`, `'wasm-unsafe-eval'`, `'unsafe-hashes'`, `'report-sample'` and quoted hashes in an app's `csp` came out mangled (for example `https://'unsafe-hashes'`), so the browser ignored them. `SecurityHeaders` now maps each keyword to the builder's own setting, routes hashes and nonces through the builder's hash and nonce calls, and throws on any other quoted token instead of sending a broken policy (`tests/Headers/CspSourcesTest.php`). This tightens what HELMET accepts: an app with a typo in a quoted source now fails at boot.
+- **Accessibility.** axe-core 4.14 flagged `aria-labelledby` on two plain `div`s on the front page (`aria-prohibited-attr`); they now carry `role="group"`. The front page and every docs page pass WCAG 2.2 AA in both gates (HELMET's `scripts/a11y.sh` and Preflight's `a11y` component, light and dark, narrow and wide), with motion off under `prefers-reduced-motion`. The counts are on the Proof page.
+
+### Verified
+
+- Preflight 0.2.0's `secret-detection` and `a11y` components were read at the tag and run locally against HELMET (Gitleaks on the tree, the history and a planted key; the a11y checker on the built site).
+- `composer ci` passes on a clean copy of the branch (the counts are on the Proof page).
+
+### Not verified
+
+- No pipeline on git.wayne.edu has run the two 0.2.0 components on HELMET yet.
+- The `report` probe's reports were checked in the header tests only; no browser was driven to send one.
