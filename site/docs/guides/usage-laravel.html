@@ -334,7 +334,7 @@
 </tr>
 </tbody>
 </table></div>
-<p>For session hardening in Laravel, use the framework's own session config: set <code>secure</code>, <code>http_only</code>, and <code>same_site</code> in <code>config/session.php</code> rather than expecting the adapter to apply raw-PHP <code>SessionHardening</code>. For structured logs, use Laravel's log channels, for example the <code>stderr</code> channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events (<a rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet#security-events">Security events</a>) are written through the Log facade with the same message and context, and the third, <code>helmet.debug_enabled_in_production</code>, is written by the Laravel adapter at boot. The check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: <code>app.debug</code> must be the boolean <code>true</code>, and the environment must be exactly <code>production</code>. Opt out with <code>helmet.warn_debug</code> (env <code>HELMET_WARN_DEBUG</code>); a logging failure is swallowed and never breaks the boot.</p>
+<p>For session hardening in Laravel, use the framework's own session config: set <code>secure</code>, <code>http_only</code>, and <code>same_site</code> in <code>config/session.php</code> rather than expecting the adapter to apply raw-PHP <code>SessionHardening</code>. For structured logs, use Laravel's log channels, for example the <code>stderr</code> channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events (<a rel="noopener" href="https://github.com/waynestate/helmet#security-events">Security events</a>) are written through the Log facade with the same message and context, and the third, <code>helmet.debug_enabled_in_production</code>, is written by the Laravel adapter at boot. The check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: <code>app.debug</code> must be the boolean <code>true</code>, and the environment must be exactly <code>production</code>. Opt out with <code>helmet.warn_debug</code> (env <code>HELMET_WARN_DEBUG</code>); a logging failure is swallowed and never breaks the boot.</p>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>
 <li><a href="headers.html">The headers</a></li>
@@ -357,7 +357,7 @@
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.1</span></span>
-  <span><a rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet">Source</a> Mirrors: <a rel="noopener" href="https://git.wayne.edu/enterprise-apps/helmet">git.wayne.edu</a> <a rel="noopener" href="https://github.com/waynestate/helmet">GitHub</a> <a href="usage-laravel.md">Markdown</a></span>
+  <span><a rel="noopener" href="https://github.com/waynestate/helmet">Source</a> <a href="usage-laravel.md">Markdown</a></span>
 </footer>
 </body>
 </html>

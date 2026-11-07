@@ -67,7 +67,7 @@ The endpoint is the only place in HELMET that says "I am still here" without say
 
 ## Graph it in Grafana[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#graph-it-in-grafana)
 
-The fleet dashboard for these metrics ships in [`docs/grafana/helmet.json`](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/docs/grafana/helmet.json): in Grafana, open Dashboards, New, Import, paste the file, and pick your Prometheus data source for the `DS_PROMETHEUS` input. It shows how many apps report, which HELMET and PHP versions they run, the PHP support status of each app, every reporting instance, and whether Prometheus can reach them.
+The fleet dashboard for these metrics ships in [`docs/grafana/helmet.json`](https://github.com/waynestate/helmet/blob/HEAD/docs/grafana/helmet.json): in Grafana, open Dashboards, New, Import, paste the file, and pick your Prometheus data source for the `DS_PROMETHEUS` input. It shows how many apps report, which HELMET and PHP versions they run, the PHP support status of each app, every reporting instance, and whether Prometheus can reach them.
 
 A sample scrape config for a Prometheus server, with a bearer token file and example targets:
 

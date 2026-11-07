@@ -8,7 +8,7 @@ The README and the Markdown twin of every page, joined. The index is https://hel
 
 ## README
 
-Source: https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/README.md
+Source: https://github.com/waynestate/helmet/blob/HEAD/README.md
 
 ## HELMET
 
@@ -19,8 +19,8 @@ the first page is served.
 
 Checks: `composer ci` (the same command runs on GitLab and GitHub).
 Two mirrors, one command: the only thing in this repo that plays both sides is the CI.
-Front page: [`site/index.html`](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/site/index.html), the playbook, as static files ([`site/README.md`](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/site/README.md)).
-On Citadel it is served by the raw-PHP deploy layer in [`deploy/`](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/deploy/): a Squire kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
+Front page: [`site/index.html`](https://github.com/waynestate/helmet/blob/HEAD/site/index.html), the playbook, as static files ([`site/README.md`](https://github.com/waynestate/helmet/blob/HEAD/site/README.md)).
+On Citadel it is served by the raw-PHP deploy layer in [`deploy/`](https://github.com/waynestate/helmet/blob/HEAD/deploy/): a Squire kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
 Documentation: [helmet.apps.wayne.edu/docs/](https://helmet.apps.wayne.edu/docs/) carries the overview and the environment variables the package reads, with more pages on the way.
 
 HELMET is the Wayne State app stack's baseline runtime. One small
@@ -31,9 +31,9 @@ answers the load balancer's `/up` ping, and writes structured logs.
 
 ### Where the code lives
 
-The canonical repository is on nougat: [enterprise-apps/helmet](https://nougat.snu.gs/enterprise-apps/helmet). git.wayne.edu and GitHub ([waynestate/helmet](https://github.com/waynestate/helmet)) are read-only mirrors of it.
-Open issues and merge requests on nougat, not on the mirrors.
-This moves to git.wayne.edu once it has CI runners. Nougat is the head this helmet fits; the mirrors are mannequins.
+The canonical repository is [git.wayne.edu/enterprise-apps/helmet](https://git.wayne.edu/enterprise-apps/helmet) (clone over SSH as `git@git.wayne.edu:enterprise-apps/helmet.git`, or HTTPS as `https://git.wayne.edu/enterprise-apps/helmet.git`). Open issues and merge requests there; tags are made there, by the maintainer, with an approver.
+GitHub ([waynestate/helmet](https://github.com/waynestate/helmet)) is a read-only push mirror of it. Nobody pushes to the mirror; Packagist and npm read from it.
+git.wayne.edu is the head this helmet fits; the mirror is the mannequin.
 
 It is the floor, not the ceiling. An app on raw PHP calls `helmet_boot()` once
 at the top of its front controller and is done. An app on Laravel or a PSR-15
@@ -429,7 +429,7 @@ $middleware = [
 ];
 ```
 
-Order matters: `SecurityHeadersMiddleware` must be the outermost layer, so the error page your error middleware builds also carries the headers. In a Slim-style app, where the middleware added last runs first, add it after the error middleware; see [the PSR-15 guide](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/docs/guides/usage-psr15.md#put-helmet-outermost).
+Order matters: `SecurityHeadersMiddleware` must be the outermost layer, so the error page your error middleware builds also carries the headers. In a Slim-style app, where the middleware added last runs first, add it after the error middleware; see [the PSR-15 guide](https://github.com/waynestate/helmet/blob/HEAD/docs/guides/usage-psr15.md#put-helmet-outermost).
 
 `SecurityHeadersMiddleware` sets the request attribute `helmet.csp_nonce` so a
 downstream handler can read the same nonce the CSP header carries.
@@ -1035,7 +1035,7 @@ The response carries a `helmet_info` gauge with the PHP and HELMET versions,
 and a `helmet_php_version_status` gauge when a `PolicySource` is available.
 No personal data in labels; labels stay low-cardinality.
 
-A Grafana dashboard for these metrics ships in [`docs/grafana/helmet.json`](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/docs/grafana/helmet.json), ready to import as soon as a Prometheus server exists.
+A Grafana dashboard for these metrics ships in [`docs/grafana/helmet.json`](https://github.com/waynestate/helmet/blob/HEAD/docs/grafana/helmet.json), ready to import as soon as a Prometheus server exists.
 
 The endpoint is the only place in HELMET that says "I am still here" without
 saying "here is your page". A lullaby, in a way.
@@ -1046,7 +1046,7 @@ Proof runs against real Wayne State applications are on a private site, [proof.a
 
 ### Tests
 
-Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/MAINTAINING.md).
+Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://github.com/waynestate/helmet/blob/HEAD/MAINTAINING.md).
 
 No PHP on the machine? Fine. Docker runs the suite. PowerShell:
 
@@ -1512,6 +1512,10 @@ All notable changes to this project are documented in this file.
 #### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
 
 - The Proof page records its last run.
+
+#### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
+
+- The canonical repository is git.wayne.edu (ADR-0021); docs, links and package metadata no longer point at the archived nougat copy.
 
 #### Security[#](https://helmet.apps.wayne.edu/docs/changelog.html#security)
 
@@ -2094,11 +2098,11 @@ WayneUI and the stack. HELMET plays the line.
 - [Pinstripe](https://github.com/waynestate/pinstripe)
 - [Booster](https://github.com/waynestate/booster)
 - [Rollcall](https://github.com/waynestate/rollcall)
-- [Drawbridge](https://nougat.snu.gs/enterprise-apps/drawbridge)
+- [Drawbridge](https://git.wayne.edu/enterprise-apps/drawbridge)
 - [ADVISOR](https://github.com/waynestate/advisor)
 - [WELD](https://github.com/waynestate/weld)
 
-Images are regenerated from the front page by [`scripts/readme-art`](https://nougat.snu.gs/enterprise-apps/helmet). Chalk dust included.
+Images are regenerated from the front page by [`scripts/readme-art`](https://github.com/waynestate/helmet). Chalk dust included.
 
 ### Related[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#related)
 
@@ -2172,7 +2176,7 @@ The endpoint is the only place in HELMET that says "I am still here" without say
 
 ### Graph it in Grafana[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#graph-it-in-grafana)
 
-The fleet dashboard for these metrics ships in [`docs/grafana/helmet.json`](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/docs/grafana/helmet.json): in Grafana, open Dashboards, New, Import, paste the file, and pick your Prometheus data source for the `DS_PROMETHEUS` input. It shows how many apps report, which HELMET and PHP versions they run, the PHP support status of each app, every reporting instance, and whether Prometheus can reach them.
+The fleet dashboard for these metrics ships in [`docs/grafana/helmet.json`](https://github.com/waynestate/helmet/blob/HEAD/docs/grafana/helmet.json): in Grafana, open Dashboards, New, Import, paste the file, and pick your Prometheus data source for the `DS_PROMETHEUS` input. It shows how many apps report, which HELMET and PHP versions they run, the PHP support status of each app, every reporting instance, and whether Prometheus can reach them.
 
 A sample scrape config for a Prometheus server, with a bearer token file and example targets:
 
@@ -2573,7 +2577,7 @@ Both paths call `SecurityHeaders::build()`, so for the same request and settings
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
-For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events ([Security events](https://nougat.snu.gs/enterprise-apps/helmet#security-events)) are written through the Log facade with the same message and context, and the third, `helmet.debug_enabled_in_production`, is written by the Laravel adapter at boot. The check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: `app.debug` must be the boolean `true`, and the environment must be exactly `production`. Opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`); a logging failure is swallowed and never breaks the boot.
+For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events ([Security events](https://github.com/waynestate/helmet#security-events)) are written through the Log facade with the same message and context, and the third, `helmet.debug_enabled_in_production`, is written by the Laravel adapter at boot. The check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: `app.debug` must be the boolean `true`, and the environment must be exactly `production`. Opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`); a logging failure is swallowed and never breaks the boot.
 
 ### Related[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#related)
 
@@ -3583,7 +3587,7 @@ Source: https://helmet.apps.wayne.edu/docs/reference/proof.html
 
 ## Proof and tests[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof-and-tests)
 
-How HELMET is proven against real Wayne State applications, and how to run its test suite on a machine with no PHP. Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/MAINTAINING.md).
+How HELMET is proven against real Wayne State applications, and how to run its test suite on a machine with no PHP. Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://github.com/waynestate/helmet/blob/HEAD/MAINTAINING.md).
 
 ### Last run[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#last-run)
 

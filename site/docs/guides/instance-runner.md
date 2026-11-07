@@ -45,11 +45,11 @@ WayneUI and the stack. HELMET plays the line.
 - [Pinstripe](https://github.com/waynestate/pinstripe)
 - [Booster](https://github.com/waynestate/booster)
 - [Rollcall](https://github.com/waynestate/rollcall)
-- [Drawbridge](https://nougat.snu.gs/enterprise-apps/drawbridge)
+- [Drawbridge](https://git.wayne.edu/enterprise-apps/drawbridge)
 - [ADVISOR](https://github.com/waynestate/advisor)
 - [WELD](https://github.com/waynestate/weld)
 
-Images are regenerated from the front page by [`scripts/readme-art`](https://nougat.snu.gs/enterprise-apps/helmet). Chalk dust included.
+Images are regenerated from the front page by [`scripts/readme-art`](https://github.com/waynestate/helmet). Chalk dust included.
 
 ## Related[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#related)
 

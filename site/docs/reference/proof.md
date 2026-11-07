@@ -8,7 +8,7 @@ generator: Squire agent-ready
 
 # Proof and tests[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof-and-tests)
 
-How HELMET is proven against real Wayne State applications, and how to run its test suite on a machine with no PHP. Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/MAINTAINING.md).
+How HELMET is proven against real Wayne State applications, and how to run its test suite on a machine with no PHP. Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://github.com/waynestate/helmet/blob/HEAD/MAINTAINING.md).
 
 ## Last run[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#last-run)
 
