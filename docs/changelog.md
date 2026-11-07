@@ -11,6 +11,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- The Proof page records its last run.
+
 ### Security
 
 - The front-page deploy layer moves to Symfony 7.4.23 (symfony/http-foundation and symfony/yaml advisories, including CVE-2026-118514).

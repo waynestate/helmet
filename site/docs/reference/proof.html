@@ -41,6 +41,56 @@
     <main id="main">
       <article class="docs-article"><h1 id="proof-and-tests">Proof and tests<a class="docs-heading-link" aria-label="Link to this section" href="#proof-and-tests">#</a></h1>
 <p>How HELMET is proven against real Wayne State applications, and how to run its test suite on a machine with no PHP. Maintainers: how to build, test and release this project, and where its data comes from, is in <a rel="noopener" href="https://nougat.snu.gs/enterprise-apps/helmet/blob/HEAD/MAINTAINING.md">MAINTAINING.md</a>.</p>
+<h2 id="last-run">Last run<a class="docs-heading-link" aria-label="Link to this section" href="#last-run">#</a></h2>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Date</th>
+<th>Commit</th>
+<th>Result</th>
+<th>Duration</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>composer ci</code> (validate, tests, Pint, PHPStan, agent-ready, docs, audit)</td>
+<td>2026-11-07</td>
+<td>8a79b46</td>
+<td>pass: 585 tests, 1537 assertions; Pint 86 files; PHPStan 36 files clean; 0 vulnerabilities</td>
+<td>02:40</td>
+</tr>
+<tr>
+<td>Header contract suite (<code>tests/Contract</code>)</td>
+<td>2026-11-07</td>
+<td>8a79b46</td>
+<td>pass: 3 tests, 196 assertions</td>
+<td>00:13</td>
+</tr>
+<tr>
+<td>Test suite on PHP 8.5 (<code>php:8.5-cli</code>)</td>
+<td>2026-11-07</td>
+<td>8a79b46</td>
+<td>pass: 585 tests, 1537 assertions</td>
+<td>00:56</td>
+</tr>
+<tr>
+<td>Test suite on PHP 8.4 (<code>php:8.4-cli</code>)</td>
+<td>2026-11-07</td>
+<td>8a79b46</td>
+<td>pass: 585 tests, 1537 assertions</td>
+<td>01:32</td>
+</tr>
+<tr>
+<td>Test suite on PHP 8.3 (<code>php:8.3-cli</code>)</td>
+<td>2026-11-07</td>
+<td>8a79b46</td>
+<td>pass: 585 tests, 1537 assertions</td>
+<td>01:21</td>
+</tr>
+</tbody>
+</table></div>
+<p>To refresh this table, run <code>composer ci</code> and the Docker commands below on the commit you want to record, then copy the summary lines into the rows. The proof runs against real Wayne State applications are not in the table: they live on the private site behind a Wayne State employee sign-in, so they cannot run on a developer machine.</p>
 <h2 id="proof">Proof<a class="docs-heading-link" aria-label="Link to this section" href="#proof">#</a></h2>
 <p>Proof runs against real Wayne State applications live on a private site, <a rel="noopener" href="https://proof.apps.wayne.edu/helmet/">proof.apps.wayne.edu/helmet</a>, behind a Wayne State employee sign-in.</p>
 <h2 id="tests">Tests<a class="docs-heading-link" aria-label="Link to this section" href="#tests">#</a></h2>
@@ -67,7 +117,7 @@ docker run --rm -v &quot;$PWD:/app&quot; -w /app php:8.3-cli vendor/bin/phpunit
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/reference/api.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">API</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/troubleshooting.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Troubleshooting</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#proof">Proof</a></li><li class="docs-toc__item"><a href="#tests">Tests</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#last-run">Last run</a></li><li class="docs-toc__item"><a href="#proof">Proof</a></li><li class="docs-toc__item"><a href="#tests">Tests</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.3.1</span></span>

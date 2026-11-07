@@ -12,6 +12,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
+
+- The Proof page records its last run.
+
 ### Security[#](https://helmet.apps.wayne.edu/docs/changelog.html#security)
 
 - The front-page deploy layer moves to Symfony 7.4.23 (symfony/http-foundation and symfony/yaml advisories, including CVE-2026-118514).
