@@ -110,6 +110,15 @@
       ]
     },
     {
+      "title": "Decisions",
+      "items": [
+        {
+          "title": "ADR-0001: Inline style attributes in the CSP",
+          "path": "adr/0001-style-src-attr"
+        }
+      ]
+    },
+    {
       "title": "Troubleshooting",
       "path": "troubleshooting"
     },

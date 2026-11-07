@@ -91,6 +91,17 @@ use Waynestate\Helmet\Support\Setting;
 |                       An invalid policy name throws
 |                       \InvalidArgumentException when the headers are built.
 |
+| "csp_style_src_attr"
+|               The inline style attribute mode (HELMET-17): "inline" (the
+|               default) keeps style-src-attr 'unsafe-inline', which WayneUI's
+|               recipes need; "report" keeps it and adds a report-only probe
+|               with style-src-attr 'none', so the browser names each inline
+|               style attribute a strict policy would block; "none" blocks
+|               them. An app that sets style-src-attr in "csp" keeps its own
+|               value. Any other value throws \InvalidArgumentException when
+|               the headers are built. Set with the
+|               HELMET_CSP_STYLE_SRC_ATTR env var.
+|
 | "coop"        The Cross-Origin-Opener-Policy value: "same-origin" (the
 |               default), "same-origin-allow-popups", "noopener-allow-popups"
 |               or "unsafe-none". null sends no COOP header. Set with the
@@ -324,6 +335,12 @@ $cspReportUri = is_string($cspReportUri) && $cspReportUri !== '' ? $cspReportUri
 
 $cspReportOnly = (bool) env('HELMET_CSP_REPORT_ONLY', false);
 
+// The inline style attribute mode: "inline" by default. An empty value means
+// "not set"; anything else is passed through and checked when the headers
+// are built, so a typo fails loudly.
+$cspStyleSrcAttr = env('HELMET_CSP_STYLE_SRC_ATTR');
+$cspStyleSrcAttr = is_string($cspStyleSrcAttr) && trim($cspStyleSrcAttr) !== '' ? strtolower(trim($cspStyleSrcAttr)) : 'inline';
+
 // Trusted Types: off by default. The policy names default to ["default"]; a
 // non-empty HELMET_CSP_TRUSTED_TYPES_POLICIES replaces them, but a value that
 // parses to nothing keeps the default so the header never goes empty.
@@ -461,6 +478,7 @@ return [
         'enabled' => $cspTrustedTypesEnabled,
         'policies' => $cspTrustedTypesPolicies,
     ],
+    'csp_style_src_attr' => $cspStyleSrcAttr,
     'coop' => $coop,
     'corp' => $corp,
     'permissions_policy' => $permissionsPolicy,

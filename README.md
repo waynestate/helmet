@@ -208,7 +208,7 @@ $helmet = helmet_boot([
 ```
 
 Every other `helmet_boot()` option is covered in its own section below:
-`csp` (Customizing the CSP), `csp_report_uri` and `csp_report_only`
+`csp` and `style_src_attr` (Customizing the CSP), `csp_report_uri` and `csp_report_only`
 (CSP reports), `coop`, `corp` and `permissions_policy` (Cross-origin
 isolation and feature policy), `hsts_max_age`, `hsts_include_subdomains`
 and `hsts_preload` (Configuring HSTS), `no_store` (the no-store rows of
@@ -768,6 +768,15 @@ $helmet = helmet_boot([
     ],
 ]);
 ```
+
+The one `'unsafe-inline'` in the default is on `style-src-attr`, for WayneUI's
+inline `style="..."` attributes. The `style_src_attr` option (Laravel:
+`HELMET_CSP_STYLE_SRC_ATTR`) chooses how strict to be: `inline` (the default,
+unchanged), `report` (keep it and add a report-only probe with
+`style-src-attr 'none'`) or `none` (block inline style attributes). An app that
+sets `style-src-attr` in `csp` keeps its own value. See
+[Inline style attributes](docs/guides/csp.md#inline-style-attributes) and
+[ADR-0001](docs/adr/0001-style-src-attr.md).
 
 ### Configuring HSTS
 

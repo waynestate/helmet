@@ -202,7 +202,7 @@ $helmet = helmet_boot([
 ```
 
 Every other `helmet_boot()` option is covered in its own section below:
-`csp` (Customizing the CSP), `csp_report_uri` and `csp_report_only`
+`csp` and `style_src_attr` (Customizing the CSP), `csp_report_uri` and `csp_report_only`
 (CSP reports), `coop`, `corp` and `permissions_policy` (Cross-origin
 isolation and feature policy), `hsts_max_age`, `hsts_include_subdomains`
 and `hsts_preload` (Configuring HSTS), `no_store` (the no-store rows of
@@ -754,6 +754,15 @@ $helmet = helmet_boot([
     ],
 ]);
 ```
+
+The one `'unsafe-inline'` in the default is on `style-src-attr`, for WayneUI's
+inline `style="..."` attributes. The `style_src_attr` option (Laravel:
+`HELMET_CSP_STYLE_SRC_ATTR`) chooses how strict to be: `inline` (the default,
+unchanged), `report` (keep it and add a report-only probe with
+`style-src-attr 'none'`) or `none` (block inline style attributes). An app that
+sets `style-src-attr` in `csp` keeps its own value. See
+[Inline style attributes](https://github.com/waynestate/helmet/blob/HEAD/docs/guides/csp.md#inline-style-attributes) and
+[ADR-0001](https://github.com/waynestate/helmet/blob/HEAD/docs/adr/0001-style-src-attr.md).
 
 #### Configuring HSTS
 
@@ -1555,6 +1564,54 @@ Starters, deploys, sign-in and upgrades
 
 ---
 
+Source: https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html
+
+## ADR-0001: Inline style attributes in the CSP[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#adr-0001-inline-style-attributes-in-the-csp)
+
+Status: Proposed (HELMET-17). The flag ships; the default is Adam's call.
+
+### Context[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#context)
+
+HELMET's default CSP keeps exactly one `'unsafe-inline'`: on `style-src-attr`, the directive that governs `style="..."` attributes and nothing else. `<style>` elements and stylesheets (`style-src-elem`) need the nonce or an allowed origin, and scripts never get `'unsafe-inline'`.
+
+The allowance is there because WayneUI sets inline style attributes. At the WayneUI commit HELMET tracks, six of its PHP partials, ten of its example pages and its Vue skeleton loader write `style="..."`, several of them with values computed per call (a skeleton's width and height, a block's spacing). A browser that enforces `style-src-attr 'none'` drops those attributes silently: the page still loads, but spacing and placeholders are wrong, and nobody gets an error. HELMET's own front page leans on the same thing, about 140 inline custom properties that time its motion.
+
+What an inline style attribute can do to an attacker's benefit is narrow but real: with an HTML injection and no script, `style` can overlay or hide content (a fake login over the real one), and CSS can leak some attribute values through background requests where `img-src` allows them. It cannot run script. The nonce, `strict-dynamic` and the absence of `'unsafe-inline'` on `script-src` are what stop script injection, and they are unchanged.
+
+### Options[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#options)
+
+| Option | What it does | Cost |
+| --- | --- | --- |
+| 1. Keep `'unsafe-inline'` (today) | WayneUI pages render as designed | the overlay and CSS-leak risks above stay open to any HTML injection |
+| 2. `'none'` by default | blocks every inline style attribute | breaks WayneUI layouts silently, in every app at once, on upgrade |
+| 3. `'unsafe-hashes'` plus hashes | allows only known attribute values | needs a hash per distinct value; WayneUI's computed values (widths, spacing) make the list endless, and every WayneUI release would change it |
+| 4. Report first, then decide | enforce today's policy, and send a report-only probe with `style-src-attr 'none'` | one more header; reports need a report destination to be useful outside the browser console |
+| 5. WayneUI moves to classes | WayneUI replaces inline styles with utility classes or CSS custom properties set from a nonce'd stylesheet | WayneUI's work, on WayneUI's schedule; computed sizes need a different technique |
+
+### Decision (proposed)[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#decision-proposed)
+
+Ship options 1, 2 and 4 as one setting and keep option 1 as the default for 1.0:
+
+- `style_src_attr` in `helmet_boot()`, `csp_style_src_attr` / `HELMET_CSP_STYLE_SRC_ATTR` in Laravel, and the last constructor argument of `SecurityHeadersMiddleware`: `inline` (default, today's header byte for byte), `report` or `none`.
+- `report` keeps the enforced policy and adds `Content-Security-Policy-Report-Only: style-src-attr 'none'` (plus the app's report destination, when it has one), so the browser names each attribute a strict policy would block, and nothing else. On an app that already runs its whole policy report-only, the one report-only header carries `'none'` instead.
+- `none` sends `style-src-attr 'none'`.
+- Both only replace HELMET's default allowance. An app that sets `style-src-attr` itself in `csp` keeps its own value, so the setting never overrides a decision the app already made.
+- The readiness report names the mode (`checks.headers.style_src_attr`), so a fleet scrape shows which apps run strict.
+- Ask WayneUI (option 5) to move its inline styles to classes or nonce'd custom properties. When WayneUI's recipes render under `'none'`, flip HELMET's default to `report` in one minor release and to `none` in the next major.
+
+### Consequences[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#consequences)
+
+Good: no app changes on upgrade; an app with no WayneUI inline styles (an API, a page that uses only WayneUI's stylesheet) can go strict with one variable today; `report` lets any app see its own exposure without risk; the path to a strict default is written down.
+
+Bad: the default still allows inline style attributes, so BEST_PRACTICES H5 stays `Documented`, not `Enforced`. Two policies on one response (`report` mode) are harder to read in DevTools, and the probe reports only reach a server when the app has a CSP report URI.
+
+### Decisions for Adam[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#decisions-for-adam)
+
+1. Keep `inline` as the 1.0 default (recommended), or ship 1.0 with `report`.
+2. Whether to open the WayneUI request (option 5) now.
+
+---
+
 Source: https://helmet.apps.wayne.edu/docs/changelog.html
 
 ## Changelog[#](https://helmet.apps.wayne.edu/docs/changelog.html#changelog)
@@ -1566,6 +1623,7 @@ All notable changes to this project are documented in this file.
 #### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
 
 - Readiness (HELMET-7): a "send me traffic?" answer on its own path, `/ready`, apart from the liveness answer on `/up`, which is unchanged. `Health\Readiness` runs named checks and answers JSON, `no-store`, 200 while none failed and 503 once one did. HELMET's own checks report config sanity: `headers` (the header set builds and carries a CSP, in `enforce` or `report-only` mode), `trusted_proxies` (a count and a broad count, never an address; warns when empty or broad) and `debug_output` (warns when on). App checks join by name; one that throws fails, and its message goes to the log as `helmet.readiness_check_failed`, never the body. Raw PHP gains the `readiness` option to `helmet_boot()` (off by default, validated on every request) and `helmet_ready()` for a `public/ready.php`; PSR-15 gains the `ReadinessCheck` middleware; Laravel gains `Route::helmetReady()` (invokable check classes, so `route:cache` works; no throttle by default). New docs guide: "Readiness", with probe settings for Citadel, OpenShift, Coolify and Docker. An app that sets nothing behaves exactly as before.
+- Inline style attributes (HELMET-17, ADR-0001, Proposed): a `style_src_attr` option (`helmet_boot()`, the last `SecurityHeadersMiddleware` argument, Laravel `csp_style_src_attr` / `HELMET_CSP_STYLE_SRC_ATTR`). `inline`, the default, sends exactly what earlier releases sent (`style-src-attr 'unsafe-inline'`, which WayneUI's recipes need). `report` keeps enforcing it and adds `Content-Security-Policy-Report-Only: style-src-attr 'none'` (plus the app's report destination), so the browser names each inline style attribute a strict policy would block. `none` sends `style-src-attr 'none'`. Both only replace HELMET's own allowance: an app that sets `style-src-attr` in `csp` keeps its value. An unknown mode throws at boot. The readiness report names the mode. New docs: "Inline style attributes" in the CSP guide, and the ADR under Decisions.
 - ADVISOR module (`Waynestate\Helmet\Advisor\HelmetModule`): a coding agent that runs ADVISOR gains two read-only tools. `helmet_headers` returns the headers and CSP HELMET sends, built by `SecurityHeaders::build()`, each header and directive with its reason, plus how the app folder is wired to HELMET and the settings that change the answer. `helmet_php_support` reads the PHP constraint from the app's `composer.json` and reports the support status of its floor, and of every version it allows, from the CREED policy ADVISOR bundles, read with HELMET's own `JsonFilePolicySource` and `VersionStatus`. Both take one path inside the project, run in-process, write nothing and never read `.env`. `waynestate/advisor` is a dev dependency and a suggestion, never a requirement. New docs guide: "Your coding agent (ADVISOR)".
 - `Headers\HeaderReasons`: one reason per header and CSP directive, next to the policy; a test fails when one is added without a reason.
 - The Proof page records its last run.
@@ -1577,6 +1635,7 @@ All notable changes to this project are documented in this file.
 
 #### Fixed[#](https://helmet.apps.wayne.edu/docs/changelog.html#fixed)
 
+- CSP: a quoted source in the `csp` option other than `'self'`, `'none'` and `'unsafe-inline'` was handed to the policy builder as a host, so `'sha256-...'` came out as `https://'sha256-...' http://'sha256-...' 'sha256-...'` and `'unsafe-eval'`, `'unsafe-hashes'`, `'wasm-unsafe-eval'`, `'report-sample'` and `'strict-dynamic'` the same way, none of which a browser accepts. Hashes, fixed nonces, every CSP keyword and the `https:`, `mediastream:` and `filesystem:` schemes now come out as written. An unknown quoted source (a typo such as `'unsafe-inlined'`) now throws `\InvalidArgumentException` when the headers are built, instead of shipping a token the browser ignores: check your `csp` / `HELMET_CSP` before you upgrade.
 - Metrics: `helmet_php_version_status` looked up the full PHP release (`8.3.12`) in CREED's policy, which names versions by major.minor (`8.3`), so every real app reported `unknown`. It now looks up major.minor.
 - Policy: `JsonFilePolicySource` read each component as a flat version map, but CREED's `policy.json` (and its schema) keeps the versions under `versions`, so against the real file the ribbon never warned and the PHP support metrics said `unknown`. It now reads both shapes, skips a version with no `security_until`, and treats one with no `active_until` as security-only.
 - Metrics: `helmet_info`'s `helmet_version` is the tagged version (`0.3.1`), the same form `wsu_stack_info` uses, not Composer's normalized `0.3.1.0`.
@@ -1840,6 +1899,28 @@ $helmet = helmet_boot([
 
 In Laravel the same array goes in `helmet.csp` (published config) or `HELMET_CSP` (JSON in the environment); see [Laravel](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html). The merge rule is identical on both paths, because both call the same core function.
 
+### Inline style attributes[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes)
+
+The default keeps one allowance: `style-src-attr 'unsafe-inline'`, because WayneUI's partials and examples set `style="..."` attributes (spacing, skeleton sizes) that a stricter policy drops without a word. It covers the attribute only; `<style>` blocks and stylesheets still need the nonce or an allowed origin. One setting chooses how strict to be:
+
+| Mode | Raw PHP / PSR-15 | Laravel | What the browser gets |
+| --- | --- | --- | --- |
+| `inline` (default) | `'style_src_attr' => 'inline'` | `HELMET_CSP_STYLE_SRC_ATTR=inline` | `style-src-attr 'unsafe-inline'`, as before |
+| `report` | `'style_src_attr' => 'report'` | `HELMET_CSP_STYLE_SRC_ATTR=report` | the same enforced policy, plus `Content-Security-Policy-Report-Only: style-src-attr 'none'` |
+| `none` | `'style_src_attr' => 'none'` | `HELMET_CSP_STYLE_SRC_ATTR=none` | `style-src-attr 'none'`: inline style attributes are blocked |
+
+Start with `report`. The browser console (and your report endpoint, when `csp_report_uri` is set) then names each attribute a strict policy would block, without blocking any. When the list is empty, switch to `none`. For PSR-15 the mode is the last argument of `SecurityHeadersMiddleware`.
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'csp_report_uri' => '/csp-report',
+    'style_src_attr' => 'report',
+]);
+```
+
+The setting only replaces HELMET's own allowance: if you set `style-src-attr` yourself in `csp`, your value wins in every mode. An unknown mode throws at boot. Why the default stays `inline` for now, and what would change it, is in [ADR-0001](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html).
+
 ### Reporting setup[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#reporting-setup)
 
 By default the policy is enforced: a violation is blocked. To see what would be blocked before you enforce it, or to keep collecting reports after you do, point the policy at a report endpoint.
@@ -2023,7 +2104,7 @@ Milquetoast is a Helmet song. It is not a Content-Security-Policy.
 Where each piece comes from:
 
 - `default-src`, `style-src`, `style-src-attr`, `script-src`, `font-src`, `img-src` and `connect-src` come from the raw PHP recipe.
-- `style-src-elem` comes from the Laravel/Blade recipe. It does not carry `'unsafe-inline'`; only `style-src-attr` does, and only for the inline `style="..."` attributes the recipes rely on (block spacing). `style-src-attr` governs only the style attribute, not `<style>` elements or stylesheets, so this is the narrowest allowance that keeps those recipes working.
+- `style-src-elem` comes from the Laravel/Blade recipe. It does not carry `'unsafe-inline'`; only `style-src-attr` does, and only for the inline `style="..."` attributes the recipes rely on (block spacing). `style-src-attr` governs only the style attribute, not `<style>` elements or stylesheets, so this is the narrowest allowance that keeps those recipes working. An app that does not need it can report on it or block it with one setting: see [Inline style attributes](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes).
 - `frame-ancestors 'self'` covers clickjacking at the CSP layer.
 - `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` close the base-tag, plugin and form-targeting gaps that `default-src` alone does not cover in every browser.
 - `data:` appears on `font-src` and `img-src`: Vite and Vue inline small fonts as `data:` URIs, and the nonce does not cover font sources.
@@ -4035,6 +4116,7 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `csp_trusted_types` | The Trusted Types directives, appended to the report-only header only, never the enforcing one. Off by default. |
 | `csp_trusted_types.enabled` | Whether the Trusted Types directives are appended. Set with `HELMET_CSP_TRUSTED_TYPES_ENABLED`. |
 | `csp_trusted_types.policies` | The Trusted Types policy names, default `["default"]`. Filled from `HELMET_CSP_TRUSTED_TYPES_POLICIES` (comma-separated). |
+| `csp_style_src_attr` | The inline style attribute mode: `inline` (the default) keeps `style-src-attr 'unsafe-inline'` for WayneUI's recipes, `report` adds a report-only probe with `style-src-attr 'none'`, and `none` blocks inline style attributes. An app that sets `style-src-attr` in `csp` keeps its own value. Set with `HELMET_CSP_STYLE_SRC_ATTR`. See [Inline style attributes](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes). |
 | `coop` | The Cross-Origin-Opener-Policy value, default `same-origin`; null sends no COOP header. Set with `HELMET_COOP`. |
 | `corp` | The Cross-Origin-Resource-Policy value; null (the default) sends no CORP header. Set with `HELMET_CORP`. |
 | `permissions_policy` | The Permissions-Policy feature map: each feature maps to its allowlist, and an empty allowlist denies the feature. The default is a deny list; an empty map sends no header. Filled from `HELMET_PERMISSIONS_POLICY` when it parses as JSON. |
@@ -4084,6 +4166,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_CSP | JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default. | the core default policy | config/helmet.php |
 | HELMET_CSP_REPORT_ONLY | true sends the policy as Content-Security-Policy-Report-Only, observing violations without blocking them. | false | config/helmet.php |
 | HELMET_CSP_REPORT_URI | URL browsers POST CSP violation reports to; adds report-uri and report-to to the policy plus a Reporting-Endpoints header. Must be https. | none | config/helmet.php |
+| HELMET_CSP_STYLE_SRC_ATTR | Inline style attribute mode: inline keeps style-src-attr 'unsafe-inline' for WayneUI's recipes, report adds a report-only probe with 'none', none blocks inline style attributes. | inline | config/helmet.php |
 | HELMET_CSP_TRUSTED_TYPES_ENABLED | true appends Trusted Types directives to the report-only CSP header. | false | config/helmet.php |
 | HELMET_CSP_TRUSTED_TYPES_POLICIES | Comma-separated Trusted Types policy names; replaces the default list. | \["default"\] | config/helmet.php |
 | HELMET_CSRF_ALLOW_SAME_SITE | true lets Sec-Fetch-Site: same-site pass; off by default because sibling subdomains are still same-site. | false | config/helmet.php |

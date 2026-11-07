@@ -38,7 +38,7 @@ final class ReadinessController
                     false,
                 ),
                 $reportOnly,
-                'inline',
+                SecurityHeaders::styleSrcAttr(),
                 $this->headersRegistered(),
             )
             ->withTrustedProxies(new TrustedProxies($proxyList))

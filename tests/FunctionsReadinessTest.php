@@ -97,6 +97,33 @@ final class FunctionsReadinessTest extends TestCase
         self::assertSame('report-only', $body['checks']['headers']['csp']);
     }
 
+    public function testTheStyleSrcAttrModeIsReported(): void
+    {
+        $run = $this->boot('/ready', "['trusted_proxies' => ['127.0.0.1'], 'style_src_attr' => 'report', 'readiness' => ['enabled' => true]]");
+
+        /** @var array{checks: array<string, array<string, mixed>>} $body */
+        $body = json_decode($run['stdout'], true, 512, JSON_THROW_ON_ERROR);
+        self::assertSame('report', $body['checks']['headers']['style_src_attr']);
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function badStyleSrcAttr(): iterable
+    {
+        yield 'unknown mode' => ["'strict'"];
+        yield 'not a string' => ['false'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('badStyleSrcAttr')]
+    public function testABadStyleSrcAttrFailsAtBoot(string $value): void
+    {
+        $run = $this->boot('/', "['trusted_proxies' => ['127.0.0.1'], 'style_src_attr' => " . $value . ']');
+
+        self::assertSame(9, $run['exit'], $run['stdout'] . $run['stderr']);
+        self::assertStringContainsString('style', $run['stderr']);
+    }
+
     public function testAFailingAppCheckIsNotReady(): void
     {
         $run = $this->boot(

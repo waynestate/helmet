@@ -149,7 +149,20 @@ final class SecurityHeaders
             $hstsPreload,
             $trustedTypesEnabled,
             $trustedTypesPolicies,
+            self::styleSrcAttr(),
         );
+    }
+
+    /**
+     * The inline style attribute mode from config('helmet.csp_style_src_attr'),
+     * "inline" when unset. An unknown value is passed through, so build()
+     * throws on it rather than quietly falling back.
+     */
+    public static function styleSrcAttr(): string
+    {
+        $mode = config('helmet.csp_style_src_attr');
+
+        return is_string($mode) && $mode !== '' ? $mode : 'inline';
     }
 
     /**

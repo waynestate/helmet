@@ -67,6 +67,7 @@ if (!function_exists('helmet_boot')) {
        *     csp_report_uri?: string,
        *     csp_report_only?: bool,
        *     csp_trusted_types?: array{enabled?: bool, policies?: list<string>},
+       *     style_src_attr?: 'inline'|'report'|'none',
        *     coop?: string|null,
        *     corp?: string|null,
        *     permissions_policy?: array<string, list<string>>|null,
@@ -338,6 +339,14 @@ if (!function_exists('helmet_boot')) {
             }
         }
 
+        // HELMET-17: the inline style attribute mode. "inline" (the default)
+        // keeps style-src-attr 'unsafe-inline' for WayneUI's recipes.
+        $styleSrcAttr = $config['style_src_attr'] ?? 'inline';
+        // @phpstan-ignore function.alreadyNarrowedType (the docblock says string, but a caller may pass a non-string at runtime)
+        if (!is_string($styleSrcAttr)) {
+            throw new \InvalidArgumentException('helmet_boot() "style_src_attr" must be "inline", "report" or "none".');
+        }
+
         $noStore = $config['no_store'] ?? null;
         $noStoreEnabled = false;
         $noStorePaths = [];
@@ -372,6 +381,7 @@ if (!function_exists('helmet_boot')) {
             $config['hsts_preload'] ?? false,
             $trustedTypesEnabled,
             $trustedTypesPolicies,
+            $styleSrcAttr,
         );
 
         foreach ($headers as $name => $value) {
@@ -387,7 +397,7 @@ if (!function_exists('helmet_boot')) {
                 $proxies,
                 static fn(): array => $headers,
                 ($config['csp_report_only'] ?? false) === true,
-                'inline',
+                $styleSrcAttr,
                 $logger,
             );
             foreach ($readinessChecks as $checkName => $check) {

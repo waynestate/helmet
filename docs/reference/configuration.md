@@ -26,6 +26,7 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `csp_trusted_types` | The Trusted Types directives, appended to the report-only header only, never the enforcing one. Off by default. |
 | `csp_trusted_types.enabled` | Whether the Trusted Types directives are appended. Set with `HELMET_CSP_TRUSTED_TYPES_ENABLED`. |
 | `csp_trusted_types.policies` | The Trusted Types policy names, default `["default"]`. Filled from `HELMET_CSP_TRUSTED_TYPES_POLICIES` (comma-separated). |
+| `csp_style_src_attr` | The inline style attribute mode: `inline` (the default) keeps `style-src-attr 'unsafe-inline'` for WayneUI's recipes, `report` adds a report-only probe with `style-src-attr 'none'`, and `none` blocks inline style attributes. An app that sets `style-src-attr` in `csp` keeps its own value. Set with `HELMET_CSP_STYLE_SRC_ATTR`. See [Inline style attributes](../guides/csp.md#inline-style-attributes). |
 | `coop` | The Cross-Origin-Opener-Policy value, default `same-origin`; null sends no COOP header. Set with `HELMET_COOP`. |
 | `corp` | The Cross-Origin-Resource-Policy value; null (the default) sends no CORP header. Set with `HELMET_CORP`. |
 | `permissions_policy` | The Permissions-Policy feature map: each feature maps to its allowlist, and an empty allowlist denies the feature. The default is a deny list; an empty map sends no header. Filled from `HELMET_PERMISSIONS_POLICY` when it parses as JSON. |
@@ -76,6 +77,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_CSP | JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default. | the core default policy | config/helmet.php |
 | HELMET_CSP_REPORT_ONLY | true sends the policy as Content-Security-Policy-Report-Only, observing violations without blocking them. | false | config/helmet.php |
 | HELMET_CSP_REPORT_URI | URL browsers POST CSP violation reports to; adds report-uri and report-to to the policy plus a Reporting-Endpoints header. Must be https. | none | config/helmet.php |
+| HELMET_CSP_STYLE_SRC_ATTR | Inline style attribute mode: inline keeps style-src-attr 'unsafe-inline' for WayneUI's recipes, report adds a report-only probe with 'none', none blocks inline style attributes. | inline | config/helmet.php |
 | HELMET_CSP_TRUSTED_TYPES_ENABLED | true appends Trusted Types directives to the report-only CSP header. | false | config/helmet.php |
 | HELMET_CSP_TRUSTED_TYPES_POLICIES | Comma-separated Trusted Types policy names; replaces the default list. | ["default"] | config/helmet.php |
 | HELMET_CSRF_ALLOW_SAME_SITE | true lets Sec-Fetch-Site: same-site pass; off by default because sibling subdomains are still same-site. | false | config/helmet.php |
