@@ -11,6 +11,9 @@
 *.bat text eol=crlf
 *.cmd text eol=crlf
 
+# The vendored Preflight a11y checker must stay byte-stable (tests/A11yCheckerPinTest.php).
+tools/a11y/check.mjs text eol=lf
+
 # Not part of the package.
 /tests            export-ignore
 /composer.lock    export-ignore
