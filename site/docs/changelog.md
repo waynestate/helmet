@@ -14,6 +14,7 @@ All notable changes to this project are documented in this file.
 
 ### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
 
+- Added: a real-browser check (`tools/a11y/corp-check.mjs`) proves the `corp` opt-in: own assets load, another origin's embed is blocked (H13).
 - Added: a test keeps BEST_PRACTICES.md honest: one tag per practice, every Enforced practice names a test, and every test it names exists.
 - Added: a test pins that a bad config makes `helmet_boot()` throw before any security header is sent (H14's last uncovered corner, on purpose: HELMET fails loudly instead of half-applying).
 

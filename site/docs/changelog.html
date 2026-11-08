@@ -45,6 +45,7 @@
 <h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
 <h3 id="added">Added<a class="docs-heading-link" aria-label="Link to this section" href="#added">#</a></h3>
 <ul>
+<li>Added: a real-browser check (<code>tools/a11y/corp-check.mjs</code>) proves the <code>corp</code> opt-in: own assets load, another origin's embed is blocked (H13).</li>
 <li>Added: a test keeps BEST_PRACTICES.md honest: one tag per practice, every Enforced practice names a test, and every test it names exists.</li>
 <li>Added: a test pins that a bad config makes <code>helmet_boot()</code> throw before any security header is sent (H14's last uncovered corner, on purpose: HELMET fails loudly instead of half-applying).</li>
 </ul>
