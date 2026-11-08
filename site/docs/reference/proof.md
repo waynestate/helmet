@@ -24,17 +24,17 @@ To refresh this table, run `composer ci` and the Docker commands below on the co
 
 ## Accessibility[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#accessibility)
 
-The front page and every docs page are checked with [axe-core](https://github.com/dequelabs/axe-core) in a real Chromium, through Playwright, at WCAG 2.2 AA, in light and dark. Two gates, both blocking:
+The front page and every docs page are checked with [axe-core](https://github.com/dequelabs/axe-core) in a real Chromium, through Playwright, at WCAG 2.2 AA, in light and dark, at 320 px and 1280 px, with the WCAG 1.4.10 reflow check. Two gates, both blocking, and both running the same checker, so they cannot drift apart:
 
-- **Local, before a release:** `scripts/a11y.sh` (Linux, macOS, Git Bash) or `scripts/a11y.ps1` (Windows) runs `tools/a11y/check.mjs` in Docker at 360 px and 1280 px, with reduced motion, so scroll reveals never hide content from the check.
-- **In the pipeline:** Preflight's `a11y` component (0.3.0) over the same pages at 320 px and 1280 px, with the WCAG 1.4.10 reflow check at 320 px.
+- **Local, before a release:** `scripts/a11y.sh` (Linux, macOS, Git Bash) or `scripts/a11y.ps1` (Windows) runs `tools/a11y/check.mjs` in Docker. That file is a byte-for-byte copy of Preflight's a11y checker at the tag the pipeline pins (0.3.1), and `tests/A11yCheckerPinTest.php` fails `composer ci` if it drifts. Reduced motion is on, so scroll reveals never hide content from the check.
+- **In the pipeline:** Preflight's `a11y` component (0.3.1) over the same pages.
 
-Last run, 2026-11-07, on the branch that adds readiness, secret scanning and the style-src-attr mode (29 pages):
+Last run, 2026-11-08, on the branch that vendors Preflight's checker into the local gate (29 pages):
 
 | Gate | Checks | Result |
 | --- | --- | --- |
-| `scripts/a11y.sh` (axe-core 4.10, 360 and 1280 px) | 116 | 0 violations |
-| Preflight `a11y` 0.2.0 checker, run locally (axe-core 4.14, 320 and 1280 px, reflow) | 116 | 0 violations; 116 items to review by hand |
+| `scripts/a11y.sh` (Preflight's checker, axe-core 4.14.0, 320 and 1280 px, reflow) | 116 | 0 violations; 116 items to review by hand |
+| `scripts/a11y.ps1` (the same checker, Windows twin) | 116 | 0 violations; 116 items to review by hand |
 
 The items to review are axe-core's "incomplete" results: it cannot compute contrast for text over a gradient or a background image (the gold underline bar on the header links and the brand name on the textured header). They were checked by hand in Chrome: light text `#eef0e6` on the header's `#0f1f18` is about 15:1, well past the 4.5:1 AA floor, and the gradient sits under the text, not behind it. The same run found two `aria-labelledby` attributes on plain `div`s on the front page (the headers list and the practice squad), where ARIA does not allow a name; both now carry `role="group"`. Keyboard focus shows a 3 px gold outline on every link and button, and the motion only runs with `prefers-reduced-motion: no-preference`.
 

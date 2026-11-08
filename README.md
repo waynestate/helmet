@@ -1184,11 +1184,12 @@ the stack's coding standard: `phpstan.neon` includes
 `vendor/waynestate/pinstripe/phpstan/raw.neon`, and `pint.json` uses the same
 `per` preset Pinstripe ships.
 
-The site gets the same treatment as the headers: `scripts/a11y.sh` (or `scripts/a11y.ps1`) runs axe-core in
-Playwright over `site/index.html` and every page under `site/docs/`, in light and dark at 360 px and 1280 px,
-and fails on any WCAG 2.2 AA violation. Run it before you release. The pipeline runs Preflight's `a11y` component over the
-same pages, a step stricter (axe-core 4.14, 320 px with the reflow check), and a violation fails it. What axe-core cannot
-decide (text over a gradient or a background image) is checked by hand; see
+The site gets the same treatment as the headers: `scripts/a11y.sh` (or `scripts/a11y.ps1`) runs Preflight's own
+a11y checker (vendored in `tools/a11y/check.mjs` from the tag CI pins, byte for byte, and held there by a test)
+over `site/index.html` and every page under `site/docs/`, in light and dark at 320 px and 1280 px, with the
+WCAG 1.4.10 reflow check, and fails on any WCAG 2.2 AA violation. Run it before you release: it checks the same
+thing the pipeline's `a11y` job checks, so a page that passes here passes there. What axe-core cannot decide
+(text over a gradient or a background image) is checked by hand; see
 [Accessibility](docs/reference/proof.md#accessibility) on the Proof page.
 
 ## Strongly recommended: a git.wayne.edu instance runner
