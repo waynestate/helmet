@@ -16,7 +16,7 @@ The only platform fact HELMET needs is the address of whatever stands in front o
 
 | Platform | What sits in front | `HELMET_PROXIES` | Where logs go |
 | --- | --- | --- | --- |
-| Citadel | HA-Proxy | use the `citadel` preset (`172.18.0.1`) | `php://stderr` |
+| Citadel | HA-Proxy | use the `citadel` preset (`172.18.0.1`) | a file you set, such as `/var/log/app/helmet.log` (the preset sets proxies only) |
 | OpenShift | the OpenShift router | the router's pod network CIDR, from your cluster admin | `php://stderr` |
 | Coolify | Traefik or Caddy | the Docker network of the proxy | `php://stderr` |
 | Raw Docker behind a compose proxy | your proxy service | the compose network's subnet | `php://stderr` |
