@@ -20,6 +20,7 @@ All notable changes to this project are documented in this file.
 
 ### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
 
+- Changed: CI caches Composer and npm downloads under a fixed key, so a lock change downloads only what changed (D-072).
 - Fixed: the ten drifted citations in BEST_PRACTICES.md now name the tests that hold them: H10 (the two HeaderContractTest path-agreement tests), H28 (the cited `testBootThrowsWhenSessionActive` is really `testBootThrowsWhenSessionAlreadyActive`), H30 and H31 (the SessionHardeningTest name, lifetime and ini tests), H35 (the /up status and body tests), H36, H38, H39 and H40 (the LoggingTest redaction, request-id and context tests), and H54 (the core, Laravel and boot-level request-forgery tests).
 - Fixed: BEST_PRACTICES.md and the Proof page record the first green pipeline on the Preflight 0.3.0 pins (pipeline 4680), say ADR-0001 is accepted, and name the 0.3.0 pins.
 - Fixed: the docs menu closes with Escape and hands focus back to its button (docs kit synced from Squire).
