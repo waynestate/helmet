@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file.
 
 ### Changed
 
+- Changed: the deploy layer requires PROCTOR ^0.8 (locked 0.8.0).
 - The front page's deploy layer (`deploy/`) requires HELMET `^1.0` (was `^0.4`) and locks 1.0.0, so the site runs the release it describes.
 
 ## 1.0.0 (2026-11-08)
