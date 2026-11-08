@@ -1,10 +1,11 @@
 {
   "name": "helmet-a11y",
-  "description": "Site accessibility gate: axe-core (WCAG 2.2 AA) in a real Chromium browser.",
+  "description": "Site gates in a real Chromium browser: axe-core (WCAG 2.2 AA) and the CORP opt-in (H13).",
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node check.mjs"
+    "check": "node check.mjs",
+    "corp": "node corp-check.mjs"
   },
   "dependencies": {
     "@axe-core/playwright": "4.10.1",
