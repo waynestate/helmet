@@ -150,12 +150,12 @@
 <h2 id="tests">Tests<a class="docs-heading-link" aria-label="Link to this section" href="#tests">#</a></h2>
 <p>The header contract suite (<code>vendor/bin/phpunit tests/Contract</code>) runs one request through raw PHP, PSR-15, Laravel HTML and Laravel JSON and checks that the security headers agree on every path.</p>
 <p>No PHP on the machine? Fine. Docker runs the suite.</p>
-<div class="docs-tabs" data-tabs="windows|linux"><div class="docs-tabs__panel" data-tab-label="windows"><p class="docs-tabs__label">windows</p><pre tabindex="0"><code class="language-bash">docker run --rm -v &quot;${PWD}:/app&quot; -w /app composer:2 composer install --no-interaction
+<div class="docs-tabs" data-tabs="windows|linux"><div class="docs-tabs__panel" data-tab-label="windows"><p class="docs-tabs__label">windows</p><pre tabindex="0"><code class="language-bash">docker run --rm -v &quot;${PWD}:/app&quot; -v stack-composer-cache:/tmp/cache -w /app composer:2 composer install --no-interaction
 docker run --rm -v &quot;${PWD}:/app&quot; -w /app php:8.5-cli vendor/bin/phpunit
 docker run --rm -v &quot;${PWD}:/app&quot; -w /app php:8.4-cli vendor/bin/phpunit
 docker run --rm -v &quot;${PWD}:/app&quot; -w /app php:8.3-cli vendor/bin/phpunit
 </code></pre></div>
-<div class="docs-tabs__panel" data-tab-label="linux"><p class="docs-tabs__label">linux</p><pre tabindex="0"><code class="language-bash">docker run --rm -v &quot;$PWD:/app&quot; -w /app composer:2 composer install --no-interaction
+<div class="docs-tabs__panel" data-tab-label="linux"><p class="docs-tabs__label">linux</p><pre tabindex="0"><code class="language-bash">docker run --rm -v &quot;$PWD:/app&quot; -v stack-composer-cache:/tmp/cache -w /app composer:2 composer install --no-interaction
 docker run --rm -v &quot;$PWD:/app&quot; -w /app php:8.5-cli vendor/bin/phpunit
 docker run --rm -v &quot;$PWD:/app&quot; -w /app php:8.4-cli vendor/bin/phpunit
 docker run --rm -v &quot;$PWD:/app&quot; -w /app php:8.3-cli vendor/bin/phpunit
