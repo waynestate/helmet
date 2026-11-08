@@ -51,6 +51,7 @@
 </ul>
 <h3 id="changed">Changed<a class="docs-heading-link" aria-label="Link to this section" href="#changed">#</a></h3>
 <ul>
+<li>Changed: CI saves its Composer and npm caches even when a job fails, so a retry after a dropped download fetches only what is missing (D-072).</li>
 <li>Changed: CI caches Composer and npm downloads under a fixed key, so a lock change downloads only what changed (D-072).</li>
 <li>Fixed: the ten drifted citations in BEST_PRACTICES.md now name the tests that hold them: H10 (the two HeaderContractTest path-agreement tests), H28 (the cited <code>testBootThrowsWhenSessionActive</code> is really <code>testBootThrowsWhenSessionAlreadyActive</code>), H30 and H31 (the SessionHardeningTest name, lifetime and ini tests), H35 (the /up status and body tests), H36, H38, H39 and H40 (the LoggingTest redaction, request-id and context tests), and H54 (the core, Laravel and boot-level request-forgery tests).</li>
 <li>Fixed: BEST_PRACTICES.md and the Proof page record the first green pipeline on the Preflight 0.3.0 pins (pipeline 4680), say ADR-0001 is accepted, and name the 0.3.0 pins.</li>
