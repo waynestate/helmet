@@ -15,7 +15,7 @@ Add one include to the app's `.gitlab-ci.yml`:
 
 ```yaml
 include:
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.3.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.3.1
     inputs:
       image: "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
 ```
