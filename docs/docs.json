@@ -29,7 +29,7 @@
                     "false"
                 ],
                 "HELMET_CSP_REPORT_URI": [
-                    "URL browsers POST CSP violation reports to; adds report-uri and report-to to the policy plus a Reporting-Endpoints header. Must be https.",
+                    "URL browsers POST CSP violation reports to; adds report-uri and report-to to the policy plus a Reporting-Endpoints header. An absolute URL must be https with a host, or a path relative to the page's origin that starts with a single slash.",
                     "none"
                 ],
                 "HELMET_CSP_TRUSTED_TYPES_ENABLED": [
