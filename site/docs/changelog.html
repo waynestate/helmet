@@ -58,6 +58,7 @@
 </ul>
 <h3 id="changed">Changed<a class="docs-heading-link" aria-label="Link to this section" href="#changed">#</a></h3>
 <ul>
+<li>The front page's deploy layer (<code>deploy/</code>) runs Squire's kit 0.6.0 (was 0.5.0): <code>scripts/release.sh</code> asks PROCTOR's deploy gate for a go or no-go on each release (a report, not a stop, unless <code>SQUIRE_PROCTOR=enforce</code>), and <code>.env.squire.example</code> lists the new setting. The layer's pins move to HELMET <code>^0.4</code> (locked 0.4.0) and PROCTOR <code>^0.7</code> (locked 0.7.0).</li>
 <li>Docs: the Docker commands in the README and docs mount the shared <code>stack-composer-cache</code> volume, so Composer downloads are cached between runs.</li>
 <li>Docs: BEST_PRACTICES re-checked for 1.0 (HELMET-1, third pass): H34 is <code>Enforced</code> (the readiness check), H58 is <code>Checked</code> (Gitleaks through Preflight), H5 is <code>Documented</code> (the <code>style_src_attr</code> mode, with the default left to ADR-0001), backlog items 19, 24 and 31 are closed or moved, and the new &quot;Third pass (2026-11-07)&quot; section records the quoted-source fix, the accessibility gate and what is still unverified.</li>
 <li>CI caches Composer downloads per lock file (<code>.composer-cache</code>, keyed on <code>composer.lock</code> and <code>deploy/composer.lock</code>), so a pipeline stops fetching every package from Packagist on every run. Images already come through the Dependency Proxy.</li>
