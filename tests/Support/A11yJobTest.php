@@ -49,13 +49,21 @@ final class A11yJobTest extends TestCase
         self::assertStringNotContainsString('allow_failure: true', $this->block());
     }
 
+    /**
+     * The local gate covers the same ground as the pipeline: every HTML file
+     * under site/ is the front page plus the docs pages the component checks,
+     * at WCAG 2.2 AA, in both color schemes, at 320 and 1280 px.
+     */
     public function testTheLocalGateCoversTheSamePages(): void
     {
         foreach (['scripts/a11y.sh', 'scripts/a11y.ps1'] as $script) {
             $text = file_get_contents(dirname(__DIR__, 2) . '/' . $script);
             self::assertIsString($text);
-            self::assertStringContainsString('--page=index.html', $text, $script);
-            self::assertStringContainsString("docs/**/*.html", $text, $script);
+            self::assertStringContainsString('"siteDir": "site"', $text, $script);
+            self::assertStringContainsString('"pages": ["**/*.html"]', $text, $script);
+            self::assertStringContainsString('"wcag22aa"', $text, $script);
+            self::assertStringContainsString('"colorSchemes": ["light", "dark"]', $text, $script);
+            self::assertStringContainsString('"widths": [320, 1280]', $text, $script);
         }
     }
 }
