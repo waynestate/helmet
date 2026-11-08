@@ -12,6 +12,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
+
+- Added: a test pins that a bad config makes `helmet_boot()` throw before any security header is sent (H14's last uncovered corner, on purpose: HELMET fails loudly instead of half-applying).
+
 ### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
 
 - Fixed: BEST_PRACTICES.md and the Proof page record the first green pipeline on the Preflight 0.3.0 pins (pipeline 4680), say ADR-0001 is accepted, and name the 0.3.0 pins.
@@ -26,7 +30,7 @@ All notable changes to this project are documented in this file.
 
 1.0 notes: from 1.0 HELMET follows semantic versioning, so a `^1.0` constraint gets no breaking change, with one default change announced here. Before you move from `^0.4`, know two things. An unknown quoted source in the CSP (a typo such as `'unsafe-inlined'` in the `csp` option or `HELMET_CSP`) now throws `\InvalidArgumentException` at boot, when the headers are built, instead of shipping a token the browser ignores, so boot the app once on a test host before you deploy. And `style_src_attr` stays `inline` by default: the policy still sends `style-src-attr 'unsafe-inline'` until WayneUI drops its inline `style` attributes. A later 1.x minor then moves the default to `none`; set `style_src_attr` to `inline` to keep today's header, or run `report` now to see what `none` would block. That plan is the decision recorded in [ADR-0001](https://github.com/waynestate/helmet/-/blob/main/docs/adr/0001-style-src-attr.md). Upgrade with `composer require waynestate/helmet:^1.0`.
 
-### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
+### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added-1)
 
 - Readiness (HELMET-7): a "send me traffic?" answer on its own path, `/ready`, apart from the liveness answer on `/up`, which is unchanged. `Health\Readiness` runs named checks and answers JSON, `no-store`, 200 while none failed and 503 once one did. HELMET's own checks report config sanity: `headers` (the header set builds and carries a CSP, in `enforce` or `report-only` mode), `trusted_proxies` (a count and a broad count, never an address; warns when empty or broad) and `debug_output` (warns when on). App checks join by name; one that throws fails, and its message goes to the log as `helmet.readiness_check_failed`, never the body. Raw PHP gains the `readiness` option to `helmet_boot()` (off by default, validated on every request) and `helmet_ready()` for a `public/ready.php`; PSR-15 gains the `ReadinessCheck` middleware; Laravel gains `Route::helmetReady()` (invokable check classes, so `route:cache` works; no throttle by default). New docs guide: "Readiness", with probe settings for Citadel, OpenShift, Coolify and Docker. An app that sets nothing behaves exactly as before.
 - Inline style attributes (HELMET-17, ADR-0001): a `style_src_attr` option (`helmet_boot()`, the last `SecurityHeadersMiddleware` argument, Laravel `csp_style_src_attr` / `HELMET_CSP_STYLE_SRC_ATTR`). `inline`, the default, sends exactly what earlier releases sent (`style-src-attr 'unsafe-inline'`, which WayneUI's recipes need). `report` keeps enforcing it and adds `Content-Security-Policy-Report-Only: style-src-attr 'none'` (plus the app's report destination), so the browser names each inline style attribute a strict policy would block. `none` sends `style-src-attr 'none'`. Both only replace HELMET's own allowance: an app that sets `style-src-attr` in `csp` keeps its value. An unknown mode throws at boot. The readiness report names the mode. New docs: "Inline style attributes" in the CSP guide, and the ADR under Decisions.
@@ -51,7 +55,7 @@ All notable changes to this project are documented in this file.
 
 ## 0.4.0 (2026-11-07)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-4-0-2026-11-07)
 
-### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added-1)
+### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added-2)
 
 - ADVISOR module (`Waynestate\Helmet\Advisor\HelmetModule`): a coding agent that runs ADVISOR gains two read-only tools. `helmet_headers` returns the headers and CSP HELMET sends, built by `SecurityHeaders::build()`, each header and directive with its reason, plus how the app folder is wired to HELMET and the settings that change the answer. `helmet_php_support` reads the PHP constraint from the app's `composer.json` and reports the support status of its floor, and of every version it allows, from the CREED policy ADVISOR bundles, read with HELMET's own `JsonFilePolicySource` and `VersionStatus`. Both take one path inside the project, run in-process, write nothing and never read `.env`. `waynestate/advisor` is a dev dependency and a suggestion, never a requirement. New docs guide: "Your coding agent (ADVISOR)".
 - `Headers\HeaderReasons`: one reason per header and CSP directive, next to the policy; a test fails when one is added without a reason.

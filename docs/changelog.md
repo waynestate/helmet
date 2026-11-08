@@ -11,6 +11,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Added: a test pins that a bad config makes `helmet_boot()` throw before any security header is sent (H14's last uncovered corner, on purpose: HELMET fails loudly instead of half-applying).
+
 ### Changed
 
 - Fixed: BEST_PRACTICES.md and the Proof page record the first green pipeline on the Preflight 0.3.0 pins (pipeline 4680), say ADR-0001 is accepted, and name the 0.3.0 pins.
