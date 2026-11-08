@@ -52,7 +52,7 @@
 <li><code>RequestForgeryGuard</code> is opt-in. When <code>helmet.csrf.enabled</code> is true, it joins the <code>web</code> group after <code>InjectRibbon</code> and applies the check in <a href="csrf.html">The request-forgery guard</a>.</li>
 </ul>
 <p>They are added through the HTTP kernel, so they survive another package adding to the same group. Set <code>HELMET_SCOPE=web</code> to keep <code>SecurityHeaders</code> in the <code>web</code> group only; then routes outside <code>web</code> and unmatched 404s do not carry its headers.</p>
-<p>At boot the provider also registers two route macros: <code>Route::cspReport()</code> for the CSP report endpoint (<a href="csp.html">Customizing the CSP</a>) and <code>Route::helmetMetrics()</code> for the metrics endpoint (<a href="metrics.html">Metrics</a>). Both macros are always registered, but each route is added only when the app calls it, so both endpoints stay off by default.</p>
+<p>At boot the provider also registers three route macros: <code>Route::cspReport()</code> for the CSP report endpoint (<a href="csp.html">Customizing the CSP</a>), <code>Route::helmetMetrics()</code> for the metrics endpoint (<a href="metrics.html">Metrics</a>) and <code>Route::helmetReady()</code> for the readiness endpoint (<a href="readiness.html">Readiness</a>). All three macros are always registered, but each route is added only when the app calls it, so all three endpoints stay off by default.</p>
 <h2 id="publish-the-config">Publish the config<a class="docs-heading-link" aria-label="Link to this section" href="#publish-the-config">#</a></h2>
 <pre tabindex="0"><code class="language-bash">php artisan vendor:publish --tag=helmet-config
 </code></pre>
@@ -162,7 +162,7 @@
 <td><code>HELMET_CSP_REPORT_URI</code></td>
 <td><code>helmet.csp_report_uri</code></td>
 <td>none</td>
-<td>The URL browsers POST CSP violation reports to. Adds <code>report-uri</code> and <code>report-to</code> to the policy and a <code>Reporting-Endpoints</code> header. Must be <code>https</code>.</td>
+<td>The URL browsers POST CSP violation reports to. Adds <code>report-uri</code> and <code>report-to</code> to the policy and a <code>Reporting-Endpoints</code> header. An absolute URL must be <code>https</code> with a host; a single-slash path relative to the page's origin is valid too.</td>
 </tr>
 <tr>
 <td><code>HELMET_CSP_REPORT_ONLY</code></td>

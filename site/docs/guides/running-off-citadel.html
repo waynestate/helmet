@@ -57,7 +57,7 @@
 <td>Citadel</td>
 <td>HA-Proxy</td>
 <td>use the <code>citadel</code> preset (<code>172.18.0.1</code>)</td>
-<td><code>/var/log/app/helmet.log</code>, the preset's file path</td>
+<td><code>php://stderr</code></td>
 </tr>
 <tr>
 <td>OpenShift</td>
@@ -79,6 +79,7 @@
 </tr>
 </tbody>
 </table></div>
+<p>A preset names trusted proxies only, never a log path, so on every platform the app points its log stream at <code>php://stderr</code> and the container runtime collects the lines.</p>
 <h2 id="the-citadel-caveat">The citadel caveat<a class="docs-heading-link" aria-label="Link to this section" href="#the-citadel-caveat">#</a></h2>
 <p>One caveat about the <code>citadel</code> row: <code>172.18.0.1</code> is the Docker bridge gateway, and the <code>citadel</code> preset is safe only when the front proxy reaches the app over that bridge. A published app port that is source-NATed to the gateway address would make a direct client look like the proxy, so the platform must not publish the app's port.</p>
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>If the platform publishes the app's port, a direct client can appear to come from the gateway address and set <code>X-Forwarded-Proto</code>. Keep the app's port unpublished while you use the <code>citadel</code> preset.</p></aside>

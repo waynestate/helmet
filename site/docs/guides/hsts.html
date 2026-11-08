@@ -54,7 +54,7 @@
 ]);
 </code></pre>
 <h2 id="middleware-and-laravel">Middleware and Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#middleware-and-laravel">#</a></h2>
-<p>In the PSR-15 middleware, pass the last two constructor arguments of <code>SecurityHeadersMiddleware</code>. In Laravel, use the environment variables below; the config keys are <code>helmet.hsts</code>, <code>helmet.hsts_include_subdomains</code> and <code>helmet.hsts_preload</code>.</p>
+<p>In the PSR-15 middleware, pass them to the <code>SecurityHeadersMiddleware</code> constructor: <code>hstsMaxAge</code> is the fifth argument, <code>hstsIncludeSubDomains</code> the sixth and <code>hstsPreload</code> the twelfth; named arguments avoid the counting. In Laravel, use the environment variables below; the config keys are <code>helmet.hsts</code>, <code>helmet.hsts_include_subdomains</code> and <code>helmet.hsts_preload</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>

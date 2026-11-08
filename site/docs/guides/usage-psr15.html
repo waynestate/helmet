@@ -72,7 +72,7 @@ $middleware = [
 <li>exposes the nonce to the application as the <code>helmet.csp_nonce</code> request attribute,</li>
 <li>removes the <code>X-Powered-By</code> header.</li>
 </ul>
-<p>The headers are sent even when the inner handler throws. When no-store is enabled and the request path matches (<code>noStorePaths</code> is empty for every response) and the response carries no <code>Cache-Control</code> header, the middleware adds <code>Cache-Control: no-store</code>.</p>
+<p>The headers are attached to whatever response comes back through the middleware. When no-store is enabled and the request path matches (<code>noStorePaths</code> is empty for every response) and the response carries no <code>Cache-Control</code> header, the middleware adds <code>Cache-Control: no-store</code>. What happens when the inner handler throws depends on <code>rethrow</code>; see <a href="#errors-and-rethrow">Errors and rethrow</a>.</p>
 <h2 id="errors-and-rethrow">Errors and rethrow<a class="docs-heading-link" aria-label="Link to this section" href="#errors-and-rethrow">#</a></h2>
 <p>By default the middleware rethrows, so the framework's error handler still runs and produces the error page, and the middleware attaches the headers only to responses that come back through it; pass <code>rethrow: false</code> (and a PSR-17 <code>ResponseFactory</code>) to make the middleware itself return a <code>500</code> carrying the same headers. The raw PHP path needs no such flag: <code>helmet_boot()</code> sends the headers before your code runs, so they are already on the wire by the time an exception can happen.</p>
 <p>The <code>500</code> response carries <code>Content-Type: text/plain; charset=utf-8</code>. If <code>rethrow</code> is false and no <code>ResponseFactory</code> was passed, the middleware throws a <code>\RuntimeException</code> when it needs to build the <code>500</code>.</p>
@@ -168,9 +168,14 @@ $middleware = [
 <td><code>[]</code></td>
 <td>path prefixes that carry no-store, or empty for every response</td>
 </tr>
+<tr>
+<td><code>styleSrcAttr</code></td>
+<td><code>'inline'</code></td>
+<td>the inline style attribute mode: <code>inline</code> (keeps <code>style-src-attr 'unsafe-inline'</code>), <code>report</code> or <code>none</code></td>
+</tr>
 </tbody>
 </table></div>
-<aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>The cross-origin isolation settings are validated at construction, not per request: a bad <code>coop</code>, <code>corp</code>, <code>permissionsPolicy</code> or <code>trustedTypesPolicies</code> value is a config error, and it fails where the app starts, not on the first request, with an <code>\InvalidArgumentException</code>.</p></aside>
+<aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>These settings are validated at construction, not per request: a bad <code>coop</code>, <code>corp</code>, <code>permissionsPolicy</code>, <code>trustedTypesPolicies</code> or <code>styleSrcAttr</code> value is a config error, and it fails where the app starts, not on the first request, with an <code>\InvalidArgumentException</code>.</p></aside>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>
 <li><a href="quick-start.html">Quick start</a></li>

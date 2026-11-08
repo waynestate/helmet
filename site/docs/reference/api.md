@@ -100,13 +100,15 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 
 | Member | Signature |
 | --- | --- |
+| `STYLE_SRC_ATTR_MODES` | `public const array STYLE_SRC_ATTR_MODES = ['inline', 'report', 'none'];` |
 | `defaultCspPolicy()` | `public static function defaultCspPolicy(): array` |
 | `defaultPermissionsPolicy()` | `public static function defaultPermissionsPolicy(): array` |
 | `generateNonce()` | `public static function generateNonce(): string` |
 | `buildCsp()` | `public static function buildCsp(array $policy, string $nonce, ?string $reportUri = null): string` |
 | `validateReportUri()` | `public static function validateReportUri(string $uri): string` |
 | `mergePolicies()` | `public static function mergePolicies(array $default, array $custom): array` |
-| `build()` | `public static function build(array $policy, string $nonce, bool $isHttps, int $hstsMaxAge = 31536000, bool $hstsIncludeSubDomains = true, ?string $cspReportUri = null, bool $cspReportOnly = false, ?string $coop = 'same-origin', ?string $corp = null, ?array $permissionsPolicy = null, bool $hstsPreload = false, bool $trustedTypesEnabled = false, array $trustedTypesPolicies = ['default']): array` |
+| `build()` | `public static function build(array $policy, string $nonce, bool $isHttps, int $hstsMaxAge = 31536000, bool $hstsIncludeSubDomains = true, ?string $cspReportUri = null, bool $cspReportOnly = false, ?string $coop = 'same-origin', ?string $corp = null, ?array $permissionsPolicy = null, bool $hstsPreload = false, bool $trustedTypesEnabled = false, array $trustedTypesPolicies = ['default'], string $styleSrcAttr = 'inline'): array` |
+| `validateStyleSrcAttr()` | `public static function validateStyleSrcAttr(string $mode): string` |
 | `buildHsts()` | `public static function buildHsts(int $maxAge = 31536000, bool $includeSubDomains = true, bool $preload = false): string` |
 | `buildTrustedTypes()` | `public static function buildTrustedTypes(array $policies): string` |
 | `noStoreApplies()` | `public static function noStoreApplies(bool $enabled, string $path, array $paths): bool` |
@@ -127,11 +129,11 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 
 ### `Headers\SecurityHeadersMiddleware` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers-securityheadersmiddleware)
 
-`final class SecurityHeadersMiddleware implements MiddlewareInterface` in `src/Headers/SecurityHeadersMiddleware.php`. PSR-15 middleware that sends HELMET's security headers. It decides whether the request is HTTPS from the trusted-proxy list, builds the headers (including a per-request CSP nonce), exposes the nonce to the application as the `helmet.csp_nonce` request attribute, and removes the `X-Powered-By` header. The headers are sent even when the inner handler throws; by default the middleware rethrows so the framework's error handler still runs, and with `rethrow` false it returns a 500 response carrying the same headers.
+`final class SecurityHeadersMiddleware implements MiddlewareInterface` in `src/Headers/SecurityHeadersMiddleware.php`. PSR-15 middleware that sends HELMET's security headers. It decides whether the request is HTTPS from the trusted-proxy list, builds the headers (including a per-request CSP nonce), exposes the nonce to the application as the `helmet.csp_nonce` request attribute, and removes the `X-Powered-By` header. When the inner handler throws, the default `rethrow` true lets the exception pass through to the framework's error handler, whose response carries no security headers; with `rethrow` false the middleware itself returns a 500 response carrying the same headers.
 
 | Member | Signature |
 | --- | --- |
-| `__construct()` | `public function __construct(private readonly TrustedProxies $proxies, ?array $cspPolicy = null, private readonly bool $rethrow = true, private readonly ?ResponseFactoryInterface $responseFactory = null, private readonly int $hstsMaxAge = 31536000, private readonly bool $hstsIncludeSubDomains = true, private readonly ?string $cspReportUri = null, private readonly bool $cspReportOnly = false, private readonly ?string $coop = 'same-origin', private readonly ?string $corp = null, private readonly ?array $permissionsPolicy = null, private readonly bool $hstsPreload = false, private readonly bool $trustedTypesEnabled = false, private readonly array $trustedTypesPolicies = ['default'], private readonly bool $noStoreEnabled = false, private readonly array $noStorePaths = [])` |
+| `__construct()` | `public function __construct(private readonly TrustedProxies $proxies, ?array $cspPolicy = null, private readonly bool $rethrow = true, private readonly ?ResponseFactoryInterface $responseFactory = null, private readonly int $hstsMaxAge = 31536000, private readonly bool $hstsIncludeSubDomains = true, private readonly ?string $cspReportUri = null, private readonly bool $cspReportOnly = false, private readonly ?string $coop = 'same-origin', private readonly ?string $corp = null, private readonly ?array $permissionsPolicy = null, private readonly bool $hstsPreload = false, private readonly bool $trustedTypesEnabled = false, private readonly array $trustedTypesPolicies = ['default'], private readonly bool $noStoreEnabled = false, private readonly array $noStorePaths = [], private readonly string $styleSrcAttr = 'inline')` |
 | `process()` | `public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface` |
 
 ### `Headers\InvalidCspReportUriException` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers-invalidcspreporturiexception)
@@ -160,6 +162,9 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | Member | Signature |
 | --- | --- |
 | `DEFAULT_PATH` | `public const string DEFAULT_PATH = '/ready';` |
+| `PASS` | `public const string PASS = 'pass';` |
+| `WARN` | `public const string WARN = 'warn';` |
+| `FAIL` | `public const string FAIL = 'fail';` |
 | `__construct()` | `public function __construct(private readonly ?LoggerInterface $logger = null)` |
 | `standard()` | `public static function standard(TrustedProxies $proxies, callable $buildHeaders, bool $cspReportOnly = false, string $styleSrcAttr = 'inline', ?LoggerInterface $logger = null): self` |
 | `displayErrorsOn()` | `public static function displayErrorsOn(): bool` |
@@ -200,6 +205,7 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 | --- | --- |
 | `handle()` | `public function handle(Request $request, Closure $next): Response` |
 | `configuredHeaders()` | `public static function configuredHeaders(array $policy, string $nonce, bool $isHttps): array` |
+| `styleSrcAttr()` | `public static function styleSrcAttr(): string` |
 
 `configuredHeaders()` builds the header set from the `helmet` config for a given policy, nonce and scheme; the readiness controller uses it to prove the config builds.
 
@@ -265,6 +271,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 
 | Member | Signature |
 | --- | --- |
+| `__construct()` | `public function __construct(private readonly RequestMetricsBinding $binding)` |
 | `handle()` | `public function handle(Request $request, Closure $next): mixed` |
 | `terminate()` | `public function terminate(Request $request, Response $response): void` |
 | `routeGroup()` | `public static function routeGroup(Request $request): string` |
@@ -275,6 +282,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 
 | Member | Signature |
 | --- | --- |
+| `__construct()` | `public function __construct(private readonly ?LoggerInterface $logger = null)` |
 | `configured()` | `public static function configured(): bool` |
 | `get()` | `public function get(): ?RequestMetrics` |
 
@@ -321,6 +329,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `requestId()` | `public static function requestId(): string` |
 | `isValidRequestId()` | `public static function isValidRequestId(string $id): bool` |
 | `addRequestId()` | `public static function addRequestId(LogRecord $record): LogRecord` |
+| `addRequestContext()` | `public static function addRequestContext(LogRecord $record): LogRecord` |
 | `redact()` | `public static function redact(LogRecord $record): LogRecord` |
 
 ## Metrics[#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics)
@@ -360,10 +369,15 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | Member | Signature |
 | --- | --- |
 | `DRIVERS` | `public const array DRIVERS = ['apcu', 'redis', 'sqlite'];` |
+| `PREFIX` | `public const string PREFIX = 'helmet_metrics';` |
 | `isOn()` | `public static function isOn(?string $driver): bool` |
 | `create()` | `public static function create(?string $driver, ?string $redisUrl = null, ?string $sqlitePath = null): ?Adapter` |
 | `defaultSqlitePath()` | `public static function defaultSqlitePath(): string` |
 | `redisOptions()` | `public static function redisOptions(string $url): array` |
+
+### `Metrics\MetricsStorageException` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-metricsstorageexception)
+
+`final class MetricsStorageException extends \RuntimeException` in `src/Metrics/MetricsStorageException.php`. Thrown when a named store cannot be used. It has no public members of its own.
 
 ### `Metrics\RequestTimer` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-requesttimer)
 
@@ -371,6 +385,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 
 | Member | Signature |
 | --- | --- |
+| `__construct()` | `public function __construct(?RequestMetrics $metrics, float $startedAt, string $method, ?LoggerInterface $logger = null)` |
 | `off()` | `public static function off(): self` |
 | `isOn()` | `public function isOn(): bool` |
 | `route()` | `public function route(string $group): self` |
@@ -514,6 +529,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `unmapIpv4MappedIpv6()` | `public static function unmapIpv4MappedIpv6(string $ip): string` |
 | `isEmpty()` | `public function isEmpty(): bool` |
 | `count()` | `public function count(): int` |
+| `broadEntries()` | `public function broadEntries(): array` |
 
 ## Ribbon[#](https://helmet.apps.wayne.edu/docs/reference/api.html#ribbon)
 

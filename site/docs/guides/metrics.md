@@ -38,7 +38,7 @@ HELMET bounds every label before it reaches the store, and anything it will not 
 
 - `route` is a **route group the app names**, never the raw path. Laravel apps get the route name, else the URI template (`users/{user}`), else `unmatched` (a request no route took, usually a 404). Raw PHP apps pass their own group. Values must be lowercase letters, digits and `. _ / { } : -`, 64 characters at most.
 - `method` is one of the standard HTTP verbs, else `OTHER`.
-- `status` is the class (`2xx`, `3xx`, `4xx`, `5xx`), never the exact code.
+- `status` is the class (`1xx` to `5xx`), never the exact code.
 - `directive` is a CSP Level 3 directive name, else `other`, so a forged report cannot mint a new series.
 
 The request count is the histogram's `_count` series; there is no separate counter to keep in sync.

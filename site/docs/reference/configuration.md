@@ -12,7 +12,7 @@ Every `HELMET_` environment variable the package reads, its meaning, its default
 
 ## How a value is read[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#how-a-value-is-read)
 
-The Laravel adapter reads every value through `Waynestate\Helmet\Support\Setting::get()`. The real environment wins (getenv, then `$_ENV`, then `$_SERVER`); an empty string counts as not set, so a blank value falls through to the next source. When the environment has no value for the key, the private `waynestate/playbook` package (Playbook) supplies it, if it is installed. When neither has it, null comes back and the default in the table applies. Playbook is optional by design: the package never requires it, it only looks for the class. That is how a WSU value can arrive at an app without this public repo naming a single one of them.
+Every setting except `HELMET_PRESET` is read from the environment with Laravel's `env()`; the config file treats an empty value as not set, so a blank value keeps the default in the table. `HELMET_PRESET` alone goes through `Waynestate\Helmet\Support\Setting::get()`: the real environment wins (getenv, then `$_ENV`, then `$_SERVER`), an empty string counts as not set, and when the environment has no value for the key the private `waynestate/playbook` package (Playbook) supplies it, if it is installed; when neither has it, null comes back and no preset is applied. Playbook is optional by design: the package never requires it, it only looks for the class. That is how a WSU value can arrive at an app without this public repo naming a single one of them.
 
 ## The config keys[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#the-config-keys)
 
@@ -78,7 +78,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_CORP | Value of the Cross-Origin-Resource-Policy header; unset sends no header. | none | config/helmet.php |
 | HELMET_CSP | JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default. | the core default policy | config/helmet.php |
 | HELMET_CSP_REPORT_ONLY | true sends the policy as Content-Security-Policy-Report-Only, observing violations without blocking them. | false | config/helmet.php |
-| HELMET_CSP_REPORT_URI | URL browsers POST CSP violation reports to; adds report-uri and report-to to the policy plus a Reporting-Endpoints header. Must be https. | none | config/helmet.php |
+| HELMET_CSP_REPORT_URI | URL browsers POST CSP violation reports to; adds report-uri and report-to to the policy plus a Reporting-Endpoints header. An absolute URL must be https with a host, or a path relative to the page's origin that starts with a single slash. | none | config/helmet.php |
 | HELMET_CSP_STYLE_SRC_ATTR | Inline style attribute mode: inline keeps style-src-attr 'unsafe-inline' for WayneUI's recipes, report adds a report-only probe with 'none', none blocks inline style attributes. | inline | config/helmet.php |
 | HELMET_CSP_TRUSTED_TYPES_ENABLED | true appends Trusted Types directives to the report-only CSP header. | false | config/helmet.php |
 | HELMET_CSP_TRUSTED_TYPES_POLICIES | Comma-separated Trusted Types policy names; replaces the default list. | \["default"\] | config/helmet.php |
@@ -107,6 +107,8 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_SESSION_SECURE | auto sets the Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. Anything else throws. | auto | config/helmet.php |
 | HELMET_WARN_BROAD_PROXIES | true makes HELMET log one helmet.broad_trusted_proxy warning at boot when the trusted-proxy list holds a broad entry (an IPv4 range shorter than /16 or an IPv6 range shorter than /48). | true | config/helmet.php |
 | HELMET_WARN_DEBUG | true makes the Laravel adapter log one warning when the app boots with debug enabled in production. | true | config/helmet.php |
+
+Seven of these variables are also read by the raw PHP path: `helmet_metrics_env()` in `src/functions.php` reads `HELMET_METRICS_ALLOW`, `HELMET_METRICS_ENABLED`, `HELMET_METRICS_REDIS_URL`, `HELMET_METRICS_SQLITE_PATH`, `HELMET_METRICS_STORAGE`, `HELMET_METRICS_TOKEN` and `HELMET_POLICY_PATH` through the same `Setting::get()` (environment first, then Playbook), so the same values drive `helmet_metrics()` and `helmet_metrics_track()` outside Laravel. The table's "Read in" column names the first reader it finds, which is why those rows point at `config/helmet.php`.
 
 ## Example .env[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#example-env)
 

@@ -26,7 +26,7 @@ Package discovery registers `Waynestate\Helmet\Laravel\HelmetServiceProvider`, s
 
 They are added through the HTTP kernel, so they survive another package adding to the same group. Set `HELMET_SCOPE=web` to keep `SecurityHeaders` in the `web` group only; then routes outside `web` and unmatched 404s do not carry its headers.
 
-At boot the provider also registers two route macros: `Route::cspReport()` for the CSP report endpoint ([Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html)) and `Route::helmetMetrics()` for the metrics endpoint ([Metrics](https://helmet.apps.wayne.edu/docs/guides/metrics.html)). Both macros are always registered, but each route is added only when the app calls it, so both endpoints stay off by default.
+At boot the provider also registers three route macros: `Route::cspReport()` for the CSP report endpoint ([Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html)), `Route::helmetMetrics()` for the metrics endpoint ([Metrics](https://helmet.apps.wayne.edu/docs/guides/metrics.html)) and `Route::helmetReady()` for the readiness endpoint ([Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html)). All three macros are always registered, but each route is added only when the app calls it, so all three endpoints stay off by default.
 
 ## Publish the config[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#publish-the-config)
 
@@ -66,7 +66,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`
 | `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |
 | `HELMET_POLICY_PATH` | `helmet.policy_path` | none | Path to a CREED `policy.json`. When set, the ribbon shows a version warning for the running PHP (and, in Laravel, the framework) version. A missing or invalid file shows no warning and never breaks the page. |
 | `HELMET_DEV_ORIGIN` | `helmet.dev_origin` | none | The Vite dev server origin, used in `local` only when the dev server is running. Must be `http` or `https` on `localhost`, `127.0.0.1` or `[::1]`. Overrides the hot file. |
-| `HELMET_CSP_REPORT_URI` | `helmet.csp_report_uri` | none | The URL browsers POST CSP violation reports to. Adds `report-uri` and `report-to` to the policy and a `Reporting-Endpoints` header. Must be `https`. |
+| `HELMET_CSP_REPORT_URI` | `helmet.csp_report_uri` | none | The URL browsers POST CSP violation reports to. Adds `report-uri` and `report-to` to the policy and a `Reporting-Endpoints` header. An absolute URL must be `https` with a host; a single-slash path relative to the page's origin is valid too. |
 | `HELMET_CSP_REPORT_ONLY` | `helmet.csp_report_only` | `false` | Set `true` to send the policy as `Content-Security-Policy-Report-Only` (observe violations without blocking them). |
 | `HELMET_CSRF_ENABLED` | `helmet.csrf.enabled` | `false` | Set `true` to turn on the request-forgery guard for state-changing requests. |
 | `HELMET_CSRF_ALLOW_SAME_SITE` | `helmet.csrf.allow_same_site` | `false` | Set `true` to let `Sec-Fetch-Site: same-site` pass. Off by default because sibling subdomains are still same-site. |

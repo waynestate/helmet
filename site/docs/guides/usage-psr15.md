@@ -45,7 +45,7 @@ On every request, `SecurityHeadersMiddleware`:
 - exposes the nonce to the application as the `helmet.csp_nonce` request attribute,
 - removes the `X-Powered-By` header.
 
-The headers are sent even when the inner handler throws. When no-store is enabled and the request path matches (`noStorePaths` is empty for every response) and the response carries no `Cache-Control` header, the middleware adds `Cache-Control: no-store`.
+The headers are attached to whatever response comes back through the middleware. When no-store is enabled and the request path matches (`noStorePaths` is empty for every response) and the response carries no `Cache-Control` header, the middleware adds `Cache-Control: no-store`. What happens when the inner handler throws depends on `rethrow`; see [Errors and rethrow](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#errors-and-rethrow).
 
 ## Errors and rethrow[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#errors-and-rethrow)
 
@@ -77,10 +77,11 @@ Order decides whether an error page gets the headers. A response built by a laye
 | `trustedTypesPolicies` | `['default']` | the Trusted Types policy names, used when `trustedTypesEnabled` is true |
 | `noStoreEnabled` | `false` | whether to send `Cache-Control: no-store` on matching responses |
 | `noStorePaths` | `[]` | path prefixes that carry no-store, or empty for every response |
+| `styleSrcAttr` | `'inline'` | the inline style attribute mode: `inline` (keeps `style-src-attr 'unsafe-inline'`), `report` or `none` |
 
 Note
 
-The cross-origin isolation settings are validated at construction, not per request: a bad `coop`, `corp`, `permissionsPolicy` or `trustedTypesPolicies` value is a config error, and it fails where the app starts, not on the first request, with an `\InvalidArgumentException`.
+These settings are validated at construction, not per request: a bad `coop`, `corp`, `permissionsPolicy`, `trustedTypesPolicies` or `styleSrcAttr` value is a config error, and it fails where the app starts, not on the first request, with an `\InvalidArgumentException`.
 
 ## Related[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#related)
 

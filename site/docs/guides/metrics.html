@@ -117,7 +117,7 @@ the dashboard turns it into days.</p>
 template (<code>users/{user}</code>), else <code>unmatched</code> (a request no route took, usually a 404). Raw PHP apps pass their own
 group. Values must be lowercase letters, digits and <code>. _ / { } : -</code>, 64 characters at most.</li>
 <li><code>method</code> is one of the standard HTTP verbs, else <code>OTHER</code>.</li>
-<li><code>status</code> is the class (<code>2xx</code>, <code>3xx</code>, <code>4xx</code>, <code>5xx</code>), never the exact code.</li>
+<li><code>status</code> is the class (<code>1xx</code> to <code>5xx</code>), never the exact code.</li>
 <li><code>directive</code> is a CSP Level 3 directive name, else <code>other</code>, so a forged report cannot mint a new series.</li>
 </ul>
 <p>The request count is the histogram's <code>_count</code> series; there is no separate counter to keep in sync.</p>

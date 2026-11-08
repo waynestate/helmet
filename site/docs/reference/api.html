@@ -244,6 +244,10 @@
 </thead>
 <tbody>
 <tr>
+<td><code>STYLE_SRC_ATTR_MODES</code></td>
+<td><code>public const array STYLE_SRC_ATTR_MODES = ['inline', 'report', 'none'];</code></td>
+</tr>
+<tr>
 <td><code>defaultCspPolicy()</code></td>
 <td><code>public static function defaultCspPolicy(): array</code></td>
 </tr>
@@ -269,7 +273,11 @@
 </tr>
 <tr>
 <td><code>build()</code></td>
-<td><code>public static function build(array $policy, string $nonce, bool $isHttps, int $hstsMaxAge = 31536000, bool $hstsIncludeSubDomains = true, ?string $cspReportUri = null, bool $cspReportOnly = false, ?string $coop = 'same-origin', ?string $corp = null, ?array $permissionsPolicy = null, bool $hstsPreload = false, bool $trustedTypesEnabled = false, array $trustedTypesPolicies = ['default']): array</code></td>
+<td><code>public static function build(array $policy, string $nonce, bool $isHttps, int $hstsMaxAge = 31536000, bool $hstsIncludeSubDomains = true, ?string $cspReportUri = null, bool $cspReportOnly = false, ?string $coop = 'same-origin', ?string $corp = null, ?array $permissionsPolicy = null, bool $hstsPreload = false, bool $trustedTypesEnabled = false, array $trustedTypesPolicies = ['default'], string $styleSrcAttr = 'inline'): array</code></td>
+</tr>
+<tr>
+<td><code>validateStyleSrcAttr()</code></td>
+<td><code>public static function validateStyleSrcAttr(string $mode): string</code></td>
 </tr>
 <tr>
 <td><code>buildHsts()</code></td>
@@ -326,7 +334,7 @@
 </tbody>
 </table></div>
 <h3 id="headers-securityheadersmiddleware"><code>Headers\SecurityHeadersMiddleware</code><a class="docs-heading-link" aria-label="Link to this section" href="#headers-securityheadersmiddleware">#</a></h3>
-<p><code>final class SecurityHeadersMiddleware implements MiddlewareInterface</code> in <code>src/Headers/SecurityHeadersMiddleware.php</code>. PSR-15 middleware that sends HELMET's security headers. It decides whether the request is HTTPS from the trusted-proxy list, builds the headers (including a per-request CSP nonce), exposes the nonce to the application as the <code>helmet.csp_nonce</code> request attribute, and removes the <code>X-Powered-By</code> header. The headers are sent even when the inner handler throws; by default the middleware rethrows so the framework's error handler still runs, and with <code>rethrow</code> false it returns a 500 response carrying the same headers.</p>
+<p><code>final class SecurityHeadersMiddleware implements MiddlewareInterface</code> in <code>src/Headers/SecurityHeadersMiddleware.php</code>. PSR-15 middleware that sends HELMET's security headers. It decides whether the request is HTTPS from the trusted-proxy list, builds the headers (including a per-request CSP nonce), exposes the nonce to the application as the <code>helmet.csp_nonce</code> request attribute, and removes the <code>X-Powered-By</code> header. When the inner handler throws, the default <code>rethrow</code> true lets the exception pass through to the framework's error handler, whose response carries no security headers; with <code>rethrow</code> false the middleware itself returns a 500 response carrying the same headers.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -337,7 +345,7 @@
 <tbody>
 <tr>
 <td><code>__construct()</code></td>
-<td><code>public function __construct(private readonly TrustedProxies $proxies, ?array $cspPolicy = null, private readonly bool $rethrow = true, private readonly ?ResponseFactoryInterface $responseFactory = null, private readonly int $hstsMaxAge = 31536000, private readonly bool $hstsIncludeSubDomains = true, private readonly ?string $cspReportUri = null, private readonly bool $cspReportOnly = false, private readonly ?string $coop = 'same-origin', private readonly ?string $corp = null, private readonly ?array $permissionsPolicy = null, private readonly bool $hstsPreload = false, private readonly bool $trustedTypesEnabled = false, private readonly array $trustedTypesPolicies = ['default'], private readonly bool $noStoreEnabled = false, private readonly array $noStorePaths = [])</code></td>
+<td><code>public function __construct(private readonly TrustedProxies $proxies, ?array $cspPolicy = null, private readonly bool $rethrow = true, private readonly ?ResponseFactoryInterface $responseFactory = null, private readonly int $hstsMaxAge = 31536000, private readonly bool $hstsIncludeSubDomains = true, private readonly ?string $cspReportUri = null, private readonly bool $cspReportOnly = false, private readonly ?string $coop = 'same-origin', private readonly ?string $corp = null, private readonly ?array $permissionsPolicy = null, private readonly bool $hstsPreload = false, private readonly bool $trustedTypesEnabled = false, private readonly array $trustedTypesPolicies = ['default'], private readonly bool $noStoreEnabled = false, private readonly array $noStorePaths = [], private readonly string $styleSrcAttr = 'inline')</code></td>
 </tr>
 <tr>
 <td><code>process()</code></td>
@@ -395,6 +403,18 @@
 <tr>
 <td><code>DEFAULT_PATH</code></td>
 <td><code>public const string DEFAULT_PATH = '/ready';</code></td>
+</tr>
+<tr>
+<td><code>PASS</code></td>
+<td><code>public const string PASS = 'pass';</code></td>
+</tr>
+<tr>
+<td><code>WARN</code></td>
+<td><code>public const string WARN = 'warn';</code></td>
+</tr>
+<tr>
+<td><code>FAIL</code></td>
+<td><code>public const string FAIL = 'fail';</code></td>
 </tr>
 <tr>
 <td><code>__construct()</code></td>
@@ -493,6 +513,10 @@
 <tr>
 <td><code>configuredHeaders()</code></td>
 <td><code>public static function configuredHeaders(array $policy, string $nonce, bool $isHttps): array</code></td>
+</tr>
+<tr>
+<td><code>styleSrcAttr()</code></td>
+<td><code>public static function styleSrcAttr(): string</code></td>
 </tr>
 </tbody>
 </table></div>
@@ -629,6 +653,10 @@
 </thead>
 <tbody>
 <tr>
+<td><code>__construct()</code></td>
+<td><code>public function __construct(private readonly RequestMetricsBinding $binding)</code></td>
+</tr>
+<tr>
 <td><code>handle()</code></td>
 <td><code>public function handle(Request $request, Closure $next): mixed</code></td>
 </tr>
@@ -652,6 +680,10 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>__construct()</code></td>
+<td><code>public function __construct(private readonly ?LoggerInterface $logger = null)</code></td>
+</tr>
 <tr>
 <td><code>configured()</code></td>
 <td><code>public static function configured(): bool</code></td>
@@ -766,6 +798,10 @@
 <td><code>public static function addRequestId(LogRecord $record): LogRecord</code></td>
 </tr>
 <tr>
+<td><code>addRequestContext()</code></td>
+<td><code>public static function addRequestContext(LogRecord $record): LogRecord</code></td>
+</tr>
+<tr>
 <td><code>redact()</code></td>
 <td><code>public static function redact(LogRecord $record): LogRecord</code></td>
 </tr>
@@ -867,6 +903,10 @@
 <td><code>public const array DRIVERS = ['apcu', 'redis', 'sqlite'];</code></td>
 </tr>
 <tr>
+<td><code>PREFIX</code></td>
+<td><code>public const string PREFIX = 'helmet_metrics';</code></td>
+</tr>
+<tr>
 <td><code>isOn()</code></td>
 <td><code>public static function isOn(?string $driver): bool</code></td>
 </tr>
@@ -884,6 +924,8 @@
 </tr>
 </tbody>
 </table></div>
+<h3 id="metrics-metricsstorageexception"><code>Metrics\MetricsStorageException</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsstorageexception">#</a></h3>
+<p><code>final class MetricsStorageException extends \RuntimeException</code> in <code>src/Metrics/MetricsStorageException.php</code>. Thrown when a named store cannot be used. It has no public members of its own.</p>
 <h3 id="metrics-requesttimer"><code>Metrics\RequestTimer</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-requesttimer">#</a></h3>
 <p><code>final class RequestTimer</code> in <code>src/Metrics/RequestTimer.php</code>. Times one raw PHP request and records it once. The route group defaults to <code>app</code>; a recording failure is logged and swallowed, because the page has already been served.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
@@ -894,6 +936,10 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td><code>__construct()</code></td>
+<td><code>public function __construct(?RequestMetrics $metrics, float $startedAt, string $method, ?LoggerInterface $logger = null)</code></td>
+</tr>
 <tr>
 <td><code>off()</code></td>
 <td><code>public static function off(): self</code></td>
@@ -1223,6 +1269,10 @@
 <td><code>count()</code></td>
 <td><code>public function count(): int</code></td>
 </tr>
+<tr>
+<td><code>broadEntries()</code></td>
+<td><code>public function broadEntries(): array</code></td>
+</tr>
 </tbody>
 </table></div>
 <h2 id="ribbon">Ribbon<a class="docs-heading-link" aria-label="Link to this section" href="#ribbon">#</a></h2>
@@ -1309,7 +1359,7 @@
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/reference/configuration.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Environment variables</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/reference/proof.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Proof</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#global-functions">Global functions</a></li><li class="docs-toc__item"><a href="#advisor">Advisor</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#advisor-helmetmodule">Advisor\HelmetModule</a></li><li class="docs-toc__item"><a href="#csrf">Csrf</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#csrf-requestforgeryguard">Csrf\RequestForgeryGuard</a></li><li class="docs-toc__item"><a href="#error">Error</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#error-genericerrorresponse">Error\GenericErrorResponse</a></li><li class="docs-toc__item"><a href="#headers">Headers</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-securityheaders">Headers\SecurityHeaders</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-headerreasons">Headers\HeaderReasons</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-securityheadersmiddleware">Headers\SecurityHeadersMiddleware</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-invalidcspreporturiexception">Headers\InvalidCspReportUriException</a></li><li class="docs-toc__item"><a href="#health">Health</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#health-healthcheck">Health\HealthCheck</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#health-readiness">Health\Readiness</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#health-readinesscheck">Health\ReadinessCheck</a></li><li class="docs-toc__item"><a href="#laravel">Laravel</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-helmetserviceprovider">Laravel\HelmetServiceProvider</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-securityheaders">Laravel\SecurityHeaders</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-requestforgeryguard">Laravel\RequestForgeryGuard</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-forwardedprotonormalizer">Laravel\ForwardedProtoNormalizer</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-injectribbon">Laravel\InjectRibbon</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-cspreportcontroller">Laravel\CspReportController</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-cspreportroute">Laravel\CspReportRoute</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-metricscontroller">Laravel\MetricsController</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-recordrequestmetrics">Laravel\RecordRequestMetrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-requestmetricsbinding">Laravel\RequestMetricsBinding</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-metricsroute">Laravel\MetricsRoute</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-readinessroute">Laravel\ReadinessRoute</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-readinesscontroller">Laravel\ReadinessController</a></li><li class="docs-toc__item"><a href="#logging">Logging</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#logging-logging">Logging\Logging</a></li><li class="docs-toc__item"><a href="#metrics">Metrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metrics">Metrics\Metrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-requestmetrics">Metrics\RequestMetrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsstorage">Metrics\MetricsStorage</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-requesttimer">Metrics\RequestTimer</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsgate">Metrics\MetricsGate</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsdecision">Metrics\MetricsDecision</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-bearertoken">Metrics\BearerToken</a></li><li class="docs-toc__item"><a href="#platform">Platform</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#platform-presets">Platform\Presets</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#platform-unknownpresetexception">Platform\UnknownPresetException</a></li><li class="docs-toc__item"><a href="#policy">Policy</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-policysource">Policy\PolicySource</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-jsonfilepolicysource">Policy\JsonFilePolicySource</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-policyreadexception">Policy\PolicyReadException</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-versionstatus">Policy\VersionStatus</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-versionwarning">Policy\VersionWarning</a></li><li class="docs-toc__item"><a href="#proxy">Proxy</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-clientip">Proxy\ClientIp</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-httpsdetector">Proxy\HttpsDetector</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-ipallowlist">Proxy\IpAllowList</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-trustedproxies">Proxy\TrustedProxies</a></li><li class="docs-toc__item"><a href="#ribbon">Ribbon</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#ribbon-ribbon">Ribbon\Ribbon</a></li><li class="docs-toc__item"><a href="#session">Session</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#session-sessionhardening">Session\SessionHardening</a></li><li class="docs-toc__item"><a href="#support">Support</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#support-setting">Support\Setting</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#global-functions">Global functions</a></li><li class="docs-toc__item"><a href="#advisor">Advisor</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#advisor-helmetmodule">Advisor\HelmetModule</a></li><li class="docs-toc__item"><a href="#csrf">Csrf</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#csrf-requestforgeryguard">Csrf\RequestForgeryGuard</a></li><li class="docs-toc__item"><a href="#error">Error</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#error-genericerrorresponse">Error\GenericErrorResponse</a></li><li class="docs-toc__item"><a href="#headers">Headers</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-securityheaders">Headers\SecurityHeaders</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-headerreasons">Headers\HeaderReasons</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-securityheadersmiddleware">Headers\SecurityHeadersMiddleware</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#headers-invalidcspreporturiexception">Headers\InvalidCspReportUriException</a></li><li class="docs-toc__item"><a href="#health">Health</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#health-healthcheck">Health\HealthCheck</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#health-readiness">Health\Readiness</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#health-readinesscheck">Health\ReadinessCheck</a></li><li class="docs-toc__item"><a href="#laravel">Laravel</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-helmetserviceprovider">Laravel\HelmetServiceProvider</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-securityheaders">Laravel\SecurityHeaders</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-requestforgeryguard">Laravel\RequestForgeryGuard</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-forwardedprotonormalizer">Laravel\ForwardedProtoNormalizer</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-injectribbon">Laravel\InjectRibbon</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-cspreportcontroller">Laravel\CspReportController</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-cspreportroute">Laravel\CspReportRoute</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-metricscontroller">Laravel\MetricsController</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-recordrequestmetrics">Laravel\RecordRequestMetrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-requestmetricsbinding">Laravel\RequestMetricsBinding</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-metricsroute">Laravel\MetricsRoute</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-readinessroute">Laravel\ReadinessRoute</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#laravel-readinesscontroller">Laravel\ReadinessController</a></li><li class="docs-toc__item"><a href="#logging">Logging</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#logging-logging">Logging\Logging</a></li><li class="docs-toc__item"><a href="#metrics">Metrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metrics">Metrics\Metrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-requestmetrics">Metrics\RequestMetrics</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsstorage">Metrics\MetricsStorage</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsstorageexception">Metrics\MetricsStorageException</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-requesttimer">Metrics\RequestTimer</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsgate">Metrics\MetricsGate</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-metricsdecision">Metrics\MetricsDecision</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#metrics-bearertoken">Metrics\BearerToken</a></li><li class="docs-toc__item"><a href="#platform">Platform</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#platform-presets">Platform\Presets</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#platform-unknownpresetexception">Platform\UnknownPresetException</a></li><li class="docs-toc__item"><a href="#policy">Policy</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-policysource">Policy\PolicySource</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-jsonfilepolicysource">Policy\JsonFilePolicySource</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-policyreadexception">Policy\PolicyReadException</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-versionstatus">Policy\VersionStatus</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#policy-versionwarning">Policy\VersionWarning</a></li><li class="docs-toc__item"><a href="#proxy">Proxy</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-clientip">Proxy\ClientIp</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-httpsdetector">Proxy\HttpsDetector</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-ipallowlist">Proxy\IpAllowList</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#proxy-trustedproxies">Proxy\TrustedProxies</a></li><li class="docs-toc__item"><a href="#ribbon">Ribbon</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#ribbon-ribbon">Ribbon\Ribbon</a></li><li class="docs-toc__item"><a href="#session">Session</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#session-sessionhardening">Session\SessionHardening</a></li><li class="docs-toc__item"><a href="#support">Support</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#support-setting">Support\Setting</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>0.4.0</span></span>
