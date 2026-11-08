@@ -8,7 +8,7 @@ generator: Squire agent-ready
 
 # ADR-0001: Inline style attributes in the CSP[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#adr-0001-inline-style-attributes-in-the-csp)
 
-Status: Proposed (HELMET-17). The flag ships; the default is Adam's call.
+Status: Accepted (HELMET-17, 2026-11-08). The flag ships in 1.0 with `inline` as the default; a later minor moves the default to `none` once WayneUI drops its inline `style` attributes.
 
 ## Context[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#context)
 
@@ -28,16 +28,16 @@ What an inline style attribute can do to an attacker's benefit is narrow but rea
 | 4. Report first, then decide | enforce today's policy, and send a report-only probe with `style-src-attr 'none'` | one more header; reports need a report destination to be useful outside the browser console |
 | 5. WayneUI moves to classes | WayneUI replaces inline styles with utility classes or CSS custom properties set from a nonce'd stylesheet | WayneUI's work, on WayneUI's schedule; computed sizes need a different technique |
 
-## Decision (proposed)[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#decision-proposed)
+## Decision[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#decision)
 
-Ship options 1, 2 and 4 as one setting and keep option 1 as the default for 1.0:
+Accepted 2026-11-08. Ship options 1, 2 and 4 as one setting and keep option 1 as the default for 1.0:
 
 - `style_src_attr` in `helmet_boot()`, `csp_style_src_attr` / `HELMET_CSP_STYLE_SRC_ATTR` in Laravel, and the last constructor argument of `SecurityHeadersMiddleware`: `inline` (default, today's header byte for byte), `report` or `none`.
 - `report` keeps the enforced policy and adds `Content-Security-Policy-Report-Only: style-src-attr 'none'` (plus the app's report destination, when it has one), so the browser names each attribute a strict policy would block, and nothing else. On an app that already runs its whole policy report-only, the one report-only header carries `'none'` instead.
 - `none` sends `style-src-attr 'none'`.
 - Both only replace HELMET's default allowance. An app that sets `style-src-attr` itself in `csp` keeps its own value, so the setting never overrides a decision the app already made.
 - The readiness report names the mode (`checks.headers.style_src_attr`), so a fleet scrape shows which apps run strict.
-- Ask WayneUI (option 5) to move its inline styles to classes or nonce'd custom properties. When WayneUI's recipes render under `'none'`, flip HELMET's default to `report` in one minor release and to `none` in the next major.
+- Ask WayneUI (option 5) to move its inline styles to classes or nonce'd custom properties. When WayneUI's recipes render under `'none'`, a 1.x minor release moves HELMET's default to `none`, announced in the 1.0 notes so no app is surprised. An app that still needs inline style attributes then sets `style_src_attr` to `inline`, and runs `report` beforehand to see what `none` would block.
 
 ## Consequences[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#consequences)
 
@@ -45,7 +45,11 @@ Good: no app changes on upgrade; an app with no WayneUI inline styles (an API, a
 
 Bad: the default still allows inline style attributes, so BEST_PRACTICES H5 stays `Documented`, not `Enforced`. Two policies on one response (`report` mode) are harder to read in DevTools, and the probe reports only reach a server when the app has a CSP report URI.
 
-## Decisions for Adam[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#decisions-for-adam)
+Bad, later: moving the default to `none` in a minor is a behavior change inside 1.x. It is announced in the 1.0 notes and waits for WayneUI, so the pages it would break are gone first, but an app with inline styles of its own must set `inline` before it takes that minor.
 
-1. Keep `inline` as the 1.0 default (recommended), or ship 1.0 with `report`.
-2. Whether to open the WayneUI request (option 5) now.
+## Decisions taken[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#decisions-taken)
+
+1. 1.0 keeps `inline` as the default (2026-11-08). `report` and `none` are opt-in.
+2. A later minor moves the default to `none`, once WayneUI drops its inline `style` attributes.
+
+Still open: when to open the WayneUI request (option 5).

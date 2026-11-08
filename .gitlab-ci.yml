@@ -1,37 +1,40 @@
 # HELMET's pipeline, built from the Preflight components on this GitLab.
-# Pinned to Preflight 0.2.0. Never use ~latest.
+# Every include is pinned to one Preflight release, 0.3.0. Never use ~latest.
 # HELMET requires PHP ^8.3, so the test matrix starts at 8.3.
 # composer ci is the contract: every check runs from the "ci" script in composer.json.
-# Docker Hub images go through the GitLab Dependency Proxy to avoid the anonymous pull limit.
+# Docker Hub images go through the GitLab Dependency Proxy to avoid the anonymous pull limit:
+# from Preflight 0.3.0 each component pulls image_prefix/image, and image_prefix defaults to
+# the group's proxy, so the image inputs below are plain image names. Put the prefix in the
+# image as well and you are wearing a helmet on a helmet: the pull fails.
 include:
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/php-test@0.2.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/php-test@0.3.0
     inputs:
       php_versions: ["8.3", "8.4", "8.5"]
-      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/php:${PHP_VERSION}-cli-trixie"
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/composer-audit@0.2.0
+      image: "php:${PHP_VERSION}-cli-trixie"
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/composer-audit@0.3.0
     inputs:
-      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc"
+      image: "composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc"
   # The front page deploy layer (ADR-0017): PROCTOR checks deploy/ against CREED's policy.
   # allow_failure: current findings: unbounded dev-main constraints; CI files missing in deploy/.
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/proctor@0.2.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/proctor@0.3.0
     inputs:
       working_dir: deploy
       proctor_command: vendor/bin/proctor check --format=codequality
       allow_failure: true
-      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/php:8.4-cli-trixie@sha256:9cf851bc2c1b37c3e59dfd677a3c3e56d485af5a47c93f629424bb039eafcb69"
+      image: "php:8.4-cli-trixie@sha256:9cf851bc2c1b37c3e59dfd677a3c3e56d485af5a47c93f629424bb039eafcb69"
   # HELMET-5: Gitleaks over the checked-out tree, through Preflight's component
   # (first released in 0.2.0). It fails the pipeline on a finding; --redact
   # keeps the secret itself out of the log and the gitleaks.json artifact.
-  # Same image and digest as the component default, through the proxy.
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.2.0
+  # Same image and digest as the component default; the prefix sends it through the proxy.
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.3.0
     inputs:
-      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+      image: "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
   # HELMET-23: the front page and every docs page, WCAG 2.2 AA, light and
   # dark, at 320 px (with the reflow check) and 1280 px: a step stricter than
   # scripts/a11y.sh (axe-core 4.14, 320 px), in Preflight's pinned Playwright
   # image (mcr.microsoft.com is not on the Dependency Proxy, which only fronts
-  # Docker Hub).
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/a11y@0.2.0
+  # Docker Hub, so a11y has no image_prefix).
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/a11y@0.3.0
     inputs:
       site_dir: site
       pages: ["index.html", "docs/**/*.html"]
@@ -52,6 +55,7 @@ variables:
 
 # WayneUI strict copies: PROCTOR runs on the project root so it sees site/assets/wayne-ui/.
 # The setting extra.proctor."wayneui.copies" = "fail" in composer.json makes a stale copy fail.
+# These two jobs are HELMET's own, not Preflight components, so they name the proxy themselves.
 wayneui-copies:
   extends: .composer-cache
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/composer:2.10.3

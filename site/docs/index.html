@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Overview | HELMET docs</title>
 <meta name="description" content="HELMET is the Wayne State app stack&#039;s baseline runtime: security headers, a hardened session, an honest proxy check, /up and structured logs.">
-<meta name="docs-version" content="0.4.0">
+<meta name="docs-version" content="1.0.0">
 <link rel="stylesheet" href="../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../assets/docs.css">
 <link rel="stylesheet" href="../docs/theme/helmet.css">
@@ -20,7 +20,7 @@
     <a class="brand" href="../index.html">
       <img src="../brand/helmet-avatar-256.png" width="34" height="34" alt="">
       <span class="brand__name">HELMET</span>
-      <span class="brand__version">0.4.0</span>
+      <span class="brand__version">1.0.0</span>
     </a>
     <nav class="site-nav" aria-label="Site">
       <a href="../index.html#playbook">Playbook</a>
@@ -77,7 +77,7 @@ $helmet = helmet_boot([
 </code></pre>
 <p><code>helmet_boot()</code> sends the headers, strips <code>X-Powered-By</code>, and answers <code>/up</code> with <code>200 ok</code> before your code runs.
 It returns the nonce, the logger and the request ID so the rest of the app can use them.</p>
-<p>Version 0.4.0, MIT licensed.</p>
+<p>Version 1.0.0, MIT licensed.</p>
 <p>Agents: the machine-readable map of these docs lives at <a rel="noopener" href="https://helmet.apps.wayne.edu/llms.txt">https://helmet.apps.wayne.edu/llms.txt</a>.</p>
 <p>Milquetoast is a Helmet song. It is not a Content-Security-Policy.</p>
 <p>Every <code>HELMET_</code> environment variable the package reads, with its meaning, default and the file that reads it, is in <a href="reference/configuration.html">the configuration reference</a>.</p>
@@ -88,7 +88,7 @@ It returns the nonce, the logger and the request ID so the rest of the app can u
   <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#pick-your-path">Pick your path</a></li><li class="docs-toc__item"><a href="#install">Install</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
-  <span>Documents HELMET <span data-docs-version>0.4.0</span></span>
+  <span>Documents HELMET <span data-docs-version>1.0.0</span></span>
   <span><a rel="noopener" href="https://github.com/waynestate/helmet">Source</a> <a href="index.md">Markdown</a></span>
 </footer>
 </body>

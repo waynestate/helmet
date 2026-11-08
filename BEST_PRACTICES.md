@@ -14,12 +14,12 @@ Each practice ends with exactly one tag.
 
 | Tag | Meaning |
 | --- | --- |
-| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository's `.gitlab-ci.yml` includes the Preflight `php-test`, `composer-audit` and `proctor` components, pinned to 0.1.4, and its pipelines pass on git.wayne.edu (for example pipeline 4350, 2026-11-07). The `secret-detection` and `a11y` components, first released in Preflight 0.2.0, are pinned to 0.2.0; no pipeline has run them on HELMET yet (the branch is not pushed), so the local runs on the Proof page are their evidence for now. |
+| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository's `.gitlab-ci.yml` includes the Preflight `php-test`, `composer-audit`, `proctor`, `secret-detection` and `a11y` components, all pinned to one release, Preflight 0.3.0 (`tests/Support/PreflightPinTest.php` fails on a mix). Its pipelines passed on git.wayne.edu on earlier Preflight pins (for example pipeline 4350, 2026-11-07); until a pipeline runs the 0.3.0 pins, the local runs on the Proof page are their evidence. |
 | `Checked` | PROCTOR or CI warns or fails. |
 | `Documented` | Written down in the README or a design note, with no code behind it. |
 | `Not yet` | A gap. |
 
-HELMET's last release is 0.4.0, and the Unreleased work heads for 1.0. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life. Since 0.4.0: a readiness check on `/ready` (H34), a `style_src_attr` mode for the one `'unsafe-inline'` left in the default policy (H5, ADR-0001), Gitleaks in CI (H58) and an accessibility gate on the front page and docs.
+HELMET's current release is 1.0.0 (2026-11-08). The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life. New in 1.0.0: a readiness check on `/ready` (H34), a `style_src_attr` mode for the one `'unsafe-inline'` left in the default policy (H5, ADR-0001, accepted: `inline` stays the default until WayneUI drops inline styles), Gitleaks in CI (H58) and an accessibility gate on the front page and docs.
 
 ---
 

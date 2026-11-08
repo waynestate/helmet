@@ -114,6 +114,20 @@ Check: look for the warning `helmet.request_refused` in the structured log. Its 
 
 ## Content Security Policy[#](https://helmet.apps.wayne.edu/docs/troubleshooting.html#content-security-policy)
 
+### Boot throws `Unknown CSP source` after upgrading to 1.0[#](https://helmet.apps.wayne.edu/docs/troubleshooting.html#boot-throws-unknown-csp-source-after-upgrading-to-1-0)
+
+Cause: since 1.0.0 a quoted source in the `csp` option or `HELMET_CSP` must be a CSP keyword (`'self'`, `'none'`, `'unsafe-inline'`, `'unsafe-eval'`, `'unsafe-hashes'`, `'wasm-unsafe-eval'`, `'report-sample'`, `'strict-dynamic'`), a hash (`'sha256-...'`, `'sha384-...'`, `'sha512-...'`) or a fixed nonce (`'nonce-...'`). Anything else, such as `'unsafe-inlined'`, throws `\InvalidArgumentException` naming the token and the directive. Before 1.0 the token shipped and the browser ignored it.
+
+Fix: correct the token the message names, or drop it.
+
+Check:
+
+```
+curl -sI http://localhost/up
+```
+
+Expected: the app answers, and the `Content-Security-Policy` header carries the source as you wrote it. See [Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html).
+
 ### Inline styles vanished after overriding `style-src` with `'unsafe-inline'` [#](https://helmet.apps.wayne.edu/docs/troubleshooting.html#inline-styles-vanished-after-overriding-style-src-with-unsafe-inline)
 
 Cause: the policy adds the per-request nonce to `style-src` and `style-src-elem`. A browser ignores `'unsafe-inline'` once a nonce is present, so setting `style-src` to `["'unsafe-inline'"]` does not restore inline styles; it removes them.

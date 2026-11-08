@@ -46,6 +46,10 @@ rules live in one place, and every consumer path agrees.
 composer require waynestate/helmet
 ```
 
+Composer picks the latest release, 1.0.0, and writes `^1.0` into `composer.json`. From 1.0 HELMET
+follows semantic versioning; [Upgrading](docs/upgrading.md) has what changed since 0.4, starting with the one that
+bites: an unknown quoted CSP source now throws at boot.
+
 <details>
 <summary><b>Walk the sideline</b>: the front page's playbook, pregame and film room</summary>
 <br>
@@ -1105,9 +1109,9 @@ instead of a home-made one. HELMET's pipeline includes Preflight's
 
 ```yaml
 include:
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.2.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.3.0
     inputs:
-      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+      image: "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
 ```
 
 A finding fails the pipeline, and the match is redacted in the log. The

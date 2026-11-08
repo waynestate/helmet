@@ -7,7 +7,40 @@ description: How to move an app from one HELMET release to the next.
 
 This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 0.4.0.
+release is 1.0.0.
+
+## 1.0.0 (2026-11-08)
+
+From 1.0, HELMET follows semantic versioning: a `^1.0` constraint gets no breaking change, with one default change announced below. The release adds a readiness check on `/ready`, the `style_src_attr` mode, and Gitleaks and accessibility gates in HELMET's own pipeline, and fixes how quoted CSP sources are written.
+
+### Breaking
+
+- An unknown quoted source in the CSP now throws `\InvalidArgumentException` at boot, when the headers are built. A typo such as `'unsafe-inlined'` in the `csp` option (raw PHP, PSR-15) or `HELMET_CSP` (Laravel) used to ship as a token the browser ignored; now the app stops on its first request with the bad token named. Hashes (`'sha256-...'`), fixed nonces, every CSP keyword (`'unsafe-eval'`, `'unsafe-hashes'`, `'wasm-unsafe-eval'`, `'report-sample'`, `'strict-dynamic'`) and the `https:`, `mediastream:` and `filesystem:` schemes are accepted and now come out as written; before, they were mangled into host sources.
+
+### Deprecated
+
+Nothing is deprecated in 1.0.0.
+
+### Announced: the `style_src_attr` default
+
+`style_src_attr` stays `inline` in 1.0, so the policy still sends `style-src-attr 'unsafe-inline'`, exactly as 0.4 did, because WayneUI's recipes set inline `style` attributes. Once WayneUI drops them, a later 1.x minor moves the default to `none`. To be ready, run `report` now (`'style_src_attr' => 'report'`, or `HELMET_CSP_STYLE_SRC_ATTR=report`) and read what the browser reports; an app that needs inline style attributes of its own sets `inline` explicitly. The decision and its reasons are in [ADR-0001](adr/0001-style-src-attr.md).
+
+### Steps
+
+1. Move the constraint in `composer.json` from `^0.4` to `^1.0`, then update:
+
+   ```
+   composer require waynestate/helmet:^1.0
+   ```
+
+2. Read your `csp` option or `HELMET_CSP` value: every quoted source must be one CSP accepts (see Breaking).
+3. Optional: turn on `/ready` for your platform's readiness probe (the [Readiness guide](guides/readiness.md)).
+
+### How to verify
+
+Boot the app once on a test host. It starts, and `curl -sI` on a page shows the same `Content-Security-Policy` as before, with any hashes or keywords you set written as you wrote them. A typo in a quoted source stops the boot with `\InvalidArgumentException` naming it; fix it and boot again.
+
+---
 
 ## 0.4.0 (2026-11-07)
 

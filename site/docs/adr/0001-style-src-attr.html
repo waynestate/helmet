@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ADR-0001: Inline style attributes in the CSP | HELMET docs</title>
 <meta name="description" content="Whether HELMET&#039;s default CSP keeps style-src-attr &#039;unsafe-inline&#039;, and the flag that lets an app go stricter today.">
-<meta name="docs-version" content="0.4.0">
+<meta name="docs-version" content="1.0.0">
 <link rel="stylesheet" href="../../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../../assets/docs.css">
 <link rel="stylesheet" href="../../docs/theme/helmet.css">
@@ -20,7 +20,7 @@
     <a class="brand" href="../../index.html">
       <img src="../../brand/helmet-avatar-256.png" width="34" height="34" alt="">
       <span class="brand__name">HELMET</span>
-      <span class="brand__version">0.4.0</span>
+      <span class="brand__version">1.0.0</span>
     </a>
     <nav class="site-nav" aria-label="Site">
       <a href="../../index.html#playbook">Playbook</a>
@@ -40,7 +40,7 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="adr-0001-inline-style-attributes-in-the-csp">ADR-0001: Inline style attributes in the CSP<a class="docs-heading-link" aria-label="Link to this section" href="#adr-0001-inline-style-attributes-in-the-csp">#</a></h1>
-<p>Status: Proposed (HELMET-17). The flag ships; the default is Adam's call.</p>
+<p>Status: Accepted (HELMET-17, 2026-11-08). The flag ships in 1.0 with <code>inline</code> as the default; a later minor moves the default to <code>none</code> once WayneUI drops its inline <code>style</code> attributes.</p>
 <h2 id="context">Context<a class="docs-heading-link" aria-label="Link to this section" href="#context">#</a></h2>
 <p>HELMET's default CSP keeps exactly one <code>'unsafe-inline'</code>: on <code>style-src-attr</code>, the directive that governs <code>style=&quot;...&quot;</code> attributes and nothing else. <code>&lt;style&gt;</code> elements and stylesheets (<code>style-src-elem</code>) need the nonce or an allowed origin, and scripts never get <code>'unsafe-inline'</code>.</p>
 <p>The allowance is there because WayneUI sets inline style attributes. At the WayneUI commit HELMET tracks, six of its PHP partials, ten of its example pages and its Vue skeleton loader write <code>style=&quot;...&quot;</code>, several of them with values computed per call (a skeleton's width and height, a block's spacing). A browser that enforces <code>style-src-attr 'none'</code> drops those attributes silently: the page still loads, but spacing and placeholders are wrong, and nobody gets an error. HELMET's own front page leans on the same thing, about 140 inline custom properties that time its motion.</p>
@@ -82,32 +82,34 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="decision-proposed">Decision (proposed)<a class="docs-heading-link" aria-label="Link to this section" href="#decision-proposed">#</a></h2>
-<p>Ship options 1, 2 and 4 as one setting and keep option 1 as the default for 1.0:</p>
+<h2 id="decision">Decision<a class="docs-heading-link" aria-label="Link to this section" href="#decision">#</a></h2>
+<p>Accepted 2026-11-08. Ship options 1, 2 and 4 as one setting and keep option 1 as the default for 1.0:</p>
 <ul>
 <li><code>style_src_attr</code> in <code>helmet_boot()</code>, <code>csp_style_src_attr</code> / <code>HELMET_CSP_STYLE_SRC_ATTR</code> in Laravel, and the last constructor argument of <code>SecurityHeadersMiddleware</code>: <code>inline</code> (default, today's header byte for byte), <code>report</code> or <code>none</code>.</li>
 <li><code>report</code> keeps the enforced policy and adds <code>Content-Security-Policy-Report-Only: style-src-attr 'none'</code> (plus the app's report destination, when it has one), so the browser names each attribute a strict policy would block, and nothing else. On an app that already runs its whole policy report-only, the one report-only header carries <code>'none'</code> instead.</li>
 <li><code>none</code> sends <code>style-src-attr 'none'</code>.</li>
 <li>Both only replace HELMET's default allowance. An app that sets <code>style-src-attr</code> itself in <code>csp</code> keeps its own value, so the setting never overrides a decision the app already made.</li>
 <li>The readiness report names the mode (<code>checks.headers.style_src_attr</code>), so a fleet scrape shows which apps run strict.</li>
-<li>Ask WayneUI (option 5) to move its inline styles to classes or nonce'd custom properties. When WayneUI's recipes render under <code>'none'</code>, flip HELMET's default to <code>report</code> in one minor release and to <code>none</code> in the next major.</li>
+<li>Ask WayneUI (option 5) to move its inline styles to classes or nonce'd custom properties. When WayneUI's recipes render under <code>'none'</code>, a 1.x minor release moves HELMET's default to <code>none</code>, announced in the 1.0 notes so no app is surprised. An app that still needs inline style attributes then sets <code>style_src_attr</code> to <code>inline</code>, and runs <code>report</code> beforehand to see what <code>none</code> would block.</li>
 </ul>
 <h2 id="consequences">Consequences<a class="docs-heading-link" aria-label="Link to this section" href="#consequences">#</a></h2>
 <p>Good: no app changes on upgrade; an app with no WayneUI inline styles (an API, a page that uses only WayneUI's stylesheet) can go strict with one variable today; <code>report</code> lets any app see its own exposure without risk; the path to a strict default is written down.</p>
 <p>Bad: the default still allows inline style attributes, so BEST_PRACTICES H5 stays <code>Documented</code>, not <code>Enforced</code>. Two policies on one response (<code>report</code> mode) are harder to read in DevTools, and the probe reports only reach a server when the app has a CSP report URI.</p>
-<h2 id="decisions-for-adam">Decisions for Adam<a class="docs-heading-link" aria-label="Link to this section" href="#decisions-for-adam">#</a></h2>
+<p>Bad, later: moving the default to <code>none</code> in a minor is a behavior change inside 1.x. It is announced in the 1.0 notes and waits for WayneUI, so the pages it would break are gone first, but an app with inline styles of its own must set <code>inline</code> before it takes that minor.</p>
+<h2 id="decisions-taken">Decisions taken<a class="docs-heading-link" aria-label="Link to this section" href="#decisions-taken">#</a></h2>
 <ol>
-<li>Keep <code>inline</code> as the 1.0 default (recommended), or ship 1.0 with <code>report</code>.</li>
-<li>Whether to open the WayneUI request (option 5) now.</li>
+<li>1.0 keeps <code>inline</code> as the default (2026-11-08). <code>report</code> and <code>none</code> are opt-in.</li>
+<li>A later minor moves the default to <code>none</code>, once WayneUI drops its inline <code>style</code> attributes.</li>
 </ol>
+<p>Still open: when to open the WayneUI request (option 5).</p>
 </article>
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/reference/proof.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Proof</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/troubleshooting.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Troubleshooting</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#context">Context</a></li><li class="docs-toc__item"><a href="#options">Options</a></li><li class="docs-toc__item"><a href="#decision-proposed">Decision (proposed)</a></li><li class="docs-toc__item"><a href="#consequences">Consequences</a></li><li class="docs-toc__item"><a href="#decisions-for-adam">Decisions for Adam</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#context">Context</a></li><li class="docs-toc__item"><a href="#options">Options</a></li><li class="docs-toc__item"><a href="#decision">Decision</a></li><li class="docs-toc__item"><a href="#consequences">Consequences</a></li><li class="docs-toc__item"><a href="#decisions-taken">Decisions taken</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
-  <span>Documents HELMET <span data-docs-version>0.4.0</span></span>
+  <span>Documents HELMET <span data-docs-version>1.0.0</span></span>
   <span><a rel="noopener" href="https://github.com/waynestate/helmet">Source</a> <a href="0001-style-src-attr.md">Markdown</a></span>
 </footer>
 </body>

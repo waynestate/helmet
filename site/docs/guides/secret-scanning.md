@@ -18,12 +18,12 @@ Add one include to the app's `.gitlab-ci.yml`:
 
 ```yaml
 include:
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.2.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.3.0
     inputs:
-      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+      image: "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
 ```
 
-That is the whole job. It runs `gitleaks dir` over the checked-out tree with Gitleaks' built-in rules plus a path allowlist for `vendor/` and `node_modules/` (a CI cache can restore them, and they are not your code), redacts every match so the log and the `gitleaks.json` artifact show the rule, file and line but never the value, and fails the pipeline on a finding. The `image` input sends the pull through the GitLab Dependency Proxy, pinned by digest, so the Docker Hub rate limit never fails your pipeline; the digest is a multi-arch list, so it runs on an arm64 runner too.
+That is the whole job. It runs `gitleaks dir` over the checked-out tree with Gitleaks' built-in rules plus a path allowlist for `vendor/` and `node_modules/` (a CI cache can restore them, and they are not your code), redacts every match so the log and the `gitleaks.json` artifact show the rule, file and line but never the value, and fails the pipeline on a finding. The image is pinned by digest and comes through the GitLab Dependency Proxy (from Preflight 0.3.0 the component adds the proxy prefix itself, through its `image_prefix` input; on a GitLab without the proxy, set `image_prefix: docker.io`), so the Docker Hub rate limit never fails your pipeline; the digest is a multi-arch list, so it runs on an arm64 runner too.
 
 HELMET's own pipeline runs exactly this include. Every input (stage, job name, your own `.gitleaks.toml`, `allow_failure`) is in [Preflight's secret-detection guide](https://git.wayne.edu/enterprise-apps/preflight/-/blob/main/docs/guides/component-secret-detection.md).
 

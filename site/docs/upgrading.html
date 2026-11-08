@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Upgrading | HELMET docs</title>
 <meta name="description" content="How to move an app from one HELMET release to the next.">
-<meta name="docs-version" content="0.4.0">
+<meta name="docs-version" content="1.0.0">
 <link rel="stylesheet" href="../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../assets/docs.css">
 <link rel="stylesheet" href="../docs/theme/helmet.css">
@@ -20,7 +20,7 @@
     <a class="brand" href="../index.html">
       <img src="../brand/helmet-avatar-256.png" width="34" height="34" alt="">
       <span class="brand__name">HELMET</span>
-      <span class="brand__version">0.4.0</span>
+      <span class="brand__version">1.0.0</span>
     </a>
     <nav class="site-nav" aria-label="Site">
       <a href="../index.html#playbook">Playbook</a>
@@ -42,7 +42,34 @@
       <article class="docs-article"><h1 id="upgrading">Upgrading<a class="docs-heading-link" aria-label="Link to this section" href="#upgrading">#</a></h1>
 <p>This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 0.4.0.</p>
+release is 1.0.0.</p>
+<h2 id="1-0-0-2026-11-08">1.0.0 (2026-11-08)<a class="docs-heading-link" aria-label="Link to this section" href="#1-0-0-2026-11-08">#</a></h2>
+<p>From 1.0, HELMET follows semantic versioning: a <code>^1.0</code> constraint gets no breaking change, with one default change announced below. The release adds a readiness check on <code>/ready</code>, the <code>style_src_attr</code> mode, and Gitleaks and accessibility gates in HELMET's own pipeline, and fixes how quoted CSP sources are written.</p>
+<h3 id="breaking">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking">#</a></h3>
+<ul>
+<li>An unknown quoted source in the CSP now throws <code>\InvalidArgumentException</code> at boot, when the headers are built. A typo such as <code>'unsafe-inlined'</code> in the <code>csp</code> option (raw PHP, PSR-15) or <code>HELMET_CSP</code> (Laravel) used to ship as a token the browser ignored; now the app stops on its first request with the bad token named. Hashes (<code>'sha256-...'</code>), fixed nonces, every CSP keyword (<code>'unsafe-eval'</code>, <code>'unsafe-hashes'</code>, <code>'wasm-unsafe-eval'</code>, <code>'report-sample'</code>, <code>'strict-dynamic'</code>) and the <code>https:</code>, <code>mediastream:</code> and <code>filesystem:</code> schemes are accepted and now come out as written; before, they were mangled into host sources.</li>
+</ul>
+<h3 id="deprecated">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated">#</a></h3>
+<p>Nothing is deprecated in 1.0.0.</p>
+<h3 id="announced-the-style-src-attr-default">Announced: the <code>style_src_attr</code> default<a class="docs-heading-link" aria-label="Link to this section" href="#announced-the-style-src-attr-default">#</a></h3>
+<p><code>style_src_attr</code> stays <code>inline</code> in 1.0, so the policy still sends <code>style-src-attr 'unsafe-inline'</code>, exactly as 0.4 did, because WayneUI's recipes set inline <code>style</code> attributes. Once WayneUI drops them, a later 1.x minor moves the default to <code>none</code>. To be ready, run <code>report</code> now (<code>'style_src_attr' =&gt; 'report'</code>, or <code>HELMET_CSP_STYLE_SRC_ATTR=report</code>) and read what the browser reports; an app that needs inline style attributes of its own sets <code>inline</code> explicitly. The decision and its reasons are in <a href="adr/0001-style-src-attr.html">ADR-0001</a>.</p>
+<h3 id="steps">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps">#</a></h3>
+<ol>
+<li>
+<p>Move the constraint in <code>composer.json</code> from <code>^0.4</code> to <code>^1.0</code>, then update:</p>
+<pre tabindex="0"><code>composer require waynestate/helmet:^1.0
+</code></pre>
+</li>
+<li>
+<p>Read your <code>csp</code> option or <code>HELMET_CSP</code> value: every quoted source must be one CSP accepts (see Breaking).</p>
+</li>
+<li>
+<p>Optional: turn on <code>/ready</code> for your platform's readiness probe (the <a href="guides/readiness.html">Readiness guide</a>).</p>
+</li>
+</ol>
+<h3 id="how-to-verify">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify">#</a></h3>
+<p>Boot the app once on a test host. It starts, and <code>curl -sI</code> on a page shows the same <code>Content-Security-Policy</code> as before, with any hashes or keywords you set written as you wrote them. A typo in a quoted source stops the boot with <code>\InvalidArgumentException</code> naming it; fix it and boot again.</p>
+<hr />
 <h2 id="0-4-0-2026-11-07">0.4.0 (2026-11-07)<a class="docs-heading-link" aria-label="Link to this section" href="#0-4-0-2026-11-07">#</a></h2>
 <p>No breaks: an ADVISOR module (<code>helmet_headers</code> and <code>helmet_php_support</code>, read-only), opt-in request metrics (<code>HELMET_METRICS_STORAGE</code>), PHP end-of-support and stack-info metrics, <code>extra.http</code> on web request log records, and fixes to the metrics and policy file readers. This is a pre-1.0 minor: apps that pin <code>^0.3</code> stay on 0.3.x until they move their constraint to <code>^0.4</code>. Upgrade with:</p>
 <pre tabindex="0"><code>composer require waynestate/helmet:^0.4
@@ -54,7 +81,7 @@ release is 0.4.0.</p>
 </code></pre>
 <hr />
 <h2 id="0-3-0-2026-11-03">0.3.0 (2026-11-03)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-0-2026-11-03">#</a></h2>
-<h3 id="breaking">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking">#</a></h3>
+<h3 id="breaking-1">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking-1">#</a></h3>
 <p>This is a pre-1.0 minor: apps that pin <code>^0.2</code> stay on 0.2.x until they move their constraint to <code>^0.3</code>. The proxy and
 forwarded-header changes make some requests resolve differently, so read the Security lines first:</p>
 <ul>
@@ -75,9 +102,9 @@ attribute value, or a script, style, textarea or title element no longer receive
 <li>An HTML response that carries a CSP nonce has <code>public</code> changed to <code>private</code> and <code>s-maxage</code> dropped from its
 <code>Cache-Control</code>, so a shared cache cannot store a page whose nonce differs per request.</li>
 </ul>
-<h3 id="deprecated">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated">#</a></h3>
+<h3 id="deprecated-1">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-1">#</a></h3>
 <p>None listed in the changelog for this release.</p>
-<h3 id="steps">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps">#</a></h3>
+<h3 id="steps-1">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps-1">#</a></h3>
 <ol>
 <li>
 <p>Move the constraint in <code>composer.json</code> from <code>^0.2</code> to <code>^0.3</code>, then update:</p>
@@ -101,7 +128,7 @@ client IP the peer, and the warning <code>helmet.forwarded_for_rejected</code> i
 Authorization, the header and the bad entry are never logged.</p>
 </li>
 </ol>
-<h3 id="how-to-verify">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify">#</a></h3>
+<h3 id="how-to-verify-1">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-1">#</a></h3>
 <pre tabindex="0"><code>composer ci
 </code></pre>
 <p>That runs <code>composer validate --strict</code>, the test suite, Pint, PHPStan, the agent-ready check, <code>composer docs:check</code>
@@ -153,16 +180,16 @@ Upgrade with:</p>
 </code></pre>
 <hr />
 <h2 id="0-2-1-2026-10-29">0.2.1 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-1-2026-10-29">#</a></h2>
-<h3 id="breaking-1">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking-1">#</a></h3>
+<h3 id="breaking-2">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking-2">#</a></h3>
 <p>A raw-PHP app that still used the default <code>PHPSESSID</code> cookie gets the new <code>WSUSESSID</code> name (<code>__Host-WSUSESSID</code> on
 HTTPS), so signed-in users sign in once more after deploying. Laravel apps are unaffected (Laravel names its own
 cookie). The rename happens only while the name is still the PHP default <code>PHPSESSID</code>; an app-chosen name is left
 alone, and SESAME reads whatever <code>session_name()</code> returns. <code>SessionHardening::apply()</code> also sets
 <code>cookie_lifetime=0</code> (a browser-session cookie), <code>cache_limiter=nocache</code>, <code>cookie_path=/</code>, an empty <code>cookie_domain</code>
 (host-only) and the cookie name.</p>
-<h3 id="deprecated-1">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-1">#</a></h3>
+<h3 id="deprecated-2">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-2">#</a></h3>
 <p>None listed in the changelog for this release.</p>
-<h3 id="steps-1">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps-1">#</a></h3>
+<h3 id="steps-2">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps-2">#</a></h3>
 <ol>
 <li>
 <p>Update the package:</p>
@@ -176,14 +203,14 @@ alone, and SESAME reads whatever <code>session_name()</code> returns. <code>Sess
 <p>Expect one more sign-in for raw-PHP users after the deploy; tell app owners it is expected.</p>
 </li>
 </ol>
-<h3 id="how-to-verify-1">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-1">#</a></h3>
+<h3 id="how-to-verify-2">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-2">#</a></h3>
 <pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: the <code>Set-Cookie</code> name is <code>__Host-WSUSESSID</code> on HTTPS and <code>WSUSESSID</code> on HTTP. Pinned in
 <code>tests/Session/SessionHardeningTest.php</code>.</p>
 <hr />
 <h2 id="0-2-0-2026-10-29">0.2.0 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-0-2026-10-29">#</a></h2>
-<h3 id="breaking-2">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking-2">#</a></h3>
+<h3 id="breaking-3">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking-3">#</a></h3>
 <ul>
 <li>An unknown <code>HELMET_PRESET</code> now throws even when <code>HELMET_PROXIES</code> is set. A typo in the preset name fails loudly at
 boot instead of going silently unused.</li>
@@ -201,9 +228,9 @@ and requests from untrusted peers are ignored as before.</li>
 <code>&lt;headline&gt;</code> and injected the tag after the wrong element. Responses that carry a <code>Content-Length</code> header now have
 it refreshed to the new body length after injection, so a stale length cannot cut the page off mid-tag.</li>
 </ul>
-<h3 id="deprecated-2">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-2">#</a></h3>
+<h3 id="deprecated-3">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-3">#</a></h3>
 <p>None listed in the changelog for this release.</p>
-<h3 id="steps-2">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps-2">#</a></h3>
+<h3 id="steps-3">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps-3">#</a></h3>
 <ol>
 <li>
 <p>Update the package:</p>
@@ -218,7 +245,7 @@ it refreshed to the new body length after injection, so a stale length cannot cu
 <code>trustProxies(at: ..., headers: ...)</code> or <code>TrustProxies::withHeaders()</code> in <code>bootstrap/app.php</code>.</p>
 </li>
 </ol>
-<h3 id="how-to-verify-2">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-2">#</a></h3>
+<h3 id="how-to-verify-3">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-3">#</a></h3>
 <pre tabindex="0"><code>composer ci
 </code></pre>
 <p>Then check the headers:</p>
@@ -245,10 +272,10 @@ suite pins the adapter behavior in <code>tests/Laravel/SecurityHeadersTest.php</
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../docs/troubleshooting.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Troubleshooting</span></a><a class="docs-pager__link docs-pager__link--next" href="../docs/changelog.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Changelog</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#0-4-0-2026-11-07">0.4.0 (2026-11-07)</a></li><li class="docs-toc__item"><a href="#0-3-1-2026-11-05">0.3.1 (2026-11-05)</a></li><li class="docs-toc__item"><a href="#0-3-0-2026-11-03">0.3.0 (2026-11-03)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-6-2026-11-02">0.2.6 (2026-11-02)</a></li><li class="docs-toc__item"><a href="#0-2-5-2026-10-29">0.2.5 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-4-2026-10-29">0.2.4 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-3-2026-10-29">0.2.3 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-2-2026-10-29">0.2.2 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-1-2026-10-29">0.2.1 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-1">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-1">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-1">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-1">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-0-2026-10-29">0.2.0 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-2">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-2">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-2">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-2">How to verify</a></li><li class="docs-toc__item"><a href="#0-1-0-2026-10-27">0.1.0 (2026-10-27)</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#1-0-0-2026-11-08">1.0.0 (2026-11-08)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#announced-the-style-src-attr-default">Announced: the style_src_attr default</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify">How to verify</a></li><li class="docs-toc__item"><a href="#0-4-0-2026-11-07">0.4.0 (2026-11-07)</a></li><li class="docs-toc__item"><a href="#0-3-1-2026-11-05">0.3.1 (2026-11-05)</a></li><li class="docs-toc__item"><a href="#0-3-0-2026-11-03">0.3.0 (2026-11-03)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-1">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-1">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-1">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-1">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-6-2026-11-02">0.2.6 (2026-11-02)</a></li><li class="docs-toc__item"><a href="#0-2-5-2026-10-29">0.2.5 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-4-2026-10-29">0.2.4 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-3-2026-10-29">0.2.3 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-2-2026-10-29">0.2.2 (2026-10-29)</a></li><li class="docs-toc__item"><a href="#0-2-1-2026-10-29">0.2.1 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-2">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-2">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-2">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-2">How to verify</a></li><li class="docs-toc__item"><a href="#0-2-0-2026-10-29">0.2.0 (2026-10-29)</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#breaking-3">Breaking</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#deprecated-3">Deprecated</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#steps-3">Steps</a></li><li class="docs-toc__item docs-toc__item--sub"><a href="#how-to-verify-3">How to verify</a></li><li class="docs-toc__item"><a href="#0-1-0-2026-10-27">0.1.0 (2026-10-27)</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
-  <span>Documents HELMET <span data-docs-version>0.4.0</span></span>
+  <span>Documents HELMET <span data-docs-version>1.0.0</span></span>
   <span><a rel="noopener" href="https://github.com/waynestate/helmet">Source</a> <a href="upgrading.md">Markdown</a></span>
 </footer>
 </body>

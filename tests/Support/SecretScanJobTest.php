@@ -43,12 +43,21 @@ final class SecretScanJobTest extends TestCase
         self::assertStringNotContainsString('@~latest', $this->ci());
     }
 
+    /**
+     * From Preflight 0.3.0 the component pulls image_prefix/image, and
+     * image_prefix defaults to the Dependency Proxy, so the image input is the
+     * plain name. Naming the proxy in it as well would put the prefix in twice.
+     */
     public function testTheImageIsPinnedByDigestThroughTheProxy(): void
     {
+        $block = $this->block();
+
         self::assertMatchesRegularExpression(
-            '#image: "\$\{CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX\}/zricethezav/gitleaks:v\d+\.\d+\.\d+@sha256:[0-9a-f]{64}"#',
-            $this->block(),
+            '#image: "zricethezav/gitleaks:v\d+\.\d+\.\d+@sha256:[0-9a-f]{64}"#',
+            $block,
         );
+        self::assertStringNotContainsString('CI_DEPENDENCY_PROXY', $block);
+        self::assertStringNotContainsString('image_prefix', $block, 'the default prefix is the proxy');
     }
 
     public function testAFindingFailsThePipeline(): void

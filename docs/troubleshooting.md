@@ -148,6 +148,25 @@ or the bad entry are never logged. The rule is pinned in `tests/Csrf/RequestForg
 
 ## Content Security Policy
 
+### Boot throws `Unknown CSP source` after upgrading to 1.0
+
+Cause: since 1.0.0 a quoted source in the `csp` option or `HELMET_CSP` must be a CSP keyword (`'self'`, `'none'`,
+`'unsafe-inline'`, `'unsafe-eval'`, `'unsafe-hashes'`, `'wasm-unsafe-eval'`, `'report-sample'`, `'strict-dynamic'`),
+a hash (`'sha256-...'`, `'sha384-...'`, `'sha512-...'`) or a fixed nonce (`'nonce-...'`). Anything else, such as
+`'unsafe-inlined'`, throws `\InvalidArgumentException` naming the token and the directive. Before 1.0 the token
+shipped and the browser ignored it.
+
+Fix: correct the token the message names, or drop it.
+
+Check:
+
+```
+curl -sI http://localhost/up
+```
+
+Expected: the app answers, and the `Content-Security-Policy` header carries the source as you wrote it. See
+[Customizing the CSP](guides/csp.md).
+
 ### Inline styles vanished after overriding `style-src` with `'unsafe-inline'`
 
 Cause: the policy adds the per-request nonce to `style-src` and `style-src-elem`. A browser ignores `'unsafe-inline'`
