@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.0.1 (2026-11-08)
+
+A patch release: no public function, option or header changes. It adds tests that hold the 1.0 promises (the CORP opt-in in a real browser, a bad config throwing before any header, BEST_PRACTICES citations), fixed CI cache keys, and docs and front-page fixes.
+
 ### Added
 
 - Added: a real-browser check (`tools/a11y/corp-check.mjs`) proves the `corp` opt-in: own assets load, another origin's embed is blocked (H13).
