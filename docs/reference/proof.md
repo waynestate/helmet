@@ -58,14 +58,14 @@ The header contract suite (`vendor/bin/phpunit tests/Contract`) runs one request
 No PHP on the machine? Fine. Docker runs the suite.
 
 ```bash tab="windows"
-docker run --rm -v "${PWD}:/app" -w /app composer:2 composer install --no-interaction
+docker run --rm -v "${PWD}:/app" -v stack-composer-cache:/tmp/cache -w /app composer:2 composer install --no-interaction
 docker run --rm -v "${PWD}:/app" -w /app php:8.5-cli vendor/bin/phpunit
 docker run --rm -v "${PWD}:/app" -w /app php:8.4-cli vendor/bin/phpunit
 docker run --rm -v "${PWD}:/app" -w /app php:8.3-cli vendor/bin/phpunit
 ```
 
 ```bash tab="linux"
-docker run --rm -v "$PWD:/app" -w /app composer:2 composer install --no-interaction
+docker run --rm -v "$PWD:/app" -v stack-composer-cache:/tmp/cache -w /app composer:2 composer install --no-interaction
 docker run --rm -v "$PWD:/app" -w /app php:8.5-cli vendor/bin/phpunit
 docker run --rm -v "$PWD:/app" -w /app php:8.4-cli vendor/bin/phpunit
 docker run --rm -v "$PWD:/app" -w /app php:8.3-cli vendor/bin/phpunit
