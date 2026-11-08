@@ -14,6 +14,7 @@ All notable changes to this project are documented in this file.
 
 ### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
 
+- Fixed: the docs menu closes with Escape and hands focus back to its button (docs kit synced from Squire).
 - Changed: the deploy layer requires PROCTOR ^0.8 (locked 0.8.0).
 - The front page header's version chip says 1.0 (it still said 0.3).
 - The front page's deploy layer (`deploy/`) requires HELMET `^1.0` (was `^0.4`) and locks 1.0.0, so the site runs the release it describes.
