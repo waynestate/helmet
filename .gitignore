@@ -1,3 +1,5 @@
 /vendor/
 /.phpunit.cache/
 /.cache/
+# Local a11y reports (scripts/a11y.sh, scripts/a11y.ps1).
+/build/
