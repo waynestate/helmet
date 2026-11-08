@@ -6,10 +6,12 @@ All notable changes to this project are documented in this file.
 
 ### Added
 
+- Added: a test keeps BEST_PRACTICES.md honest: one tag per practice, every Enforced practice names a test, and every test it names exists.
 - Added: a test pins that a bad config makes `helmet_boot()` throw before any security header is sent (H14's last uncovered corner, on purpose: HELMET fails loudly instead of half-applying).
 
 ### Changed
 
+- Fixed: the ten drifted citations in BEST_PRACTICES.md now name the tests that hold them: H10 (the two HeaderContractTest path-agreement tests), H28 (the cited `testBootThrowsWhenSessionActive` is really `testBootThrowsWhenSessionAlreadyActive`), H30 and H31 (the SessionHardeningTest name, lifetime and ini tests), H35 (the /up status and body tests), H36, H38, H39 and H40 (the LoggingTest redaction, request-id and context tests), and H54 (the core, Laravel and boot-level request-forgery tests).
 - Fixed: BEST_PRACTICES.md and the Proof page record the first green pipeline on the Preflight 0.3.0 pins (pipeline 4680), say ADR-0001 is accepted, and name the 0.3.0 pins.
 - Fixed: the docs menu closes with Escape and hands focus back to its button (docs kit synced from Squire).
 - Fixed: the docs kit's copy button no longer covers the first line of code when it says Copied or Failed: over the code it keeps its resting width and shows a check or a cross when the word does not fit (docs kit synced from Squire).

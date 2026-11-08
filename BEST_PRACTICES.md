@@ -100,7 +100,7 @@ HELMET's current release is 1.0.0 (2026-11-08). The Laravel adapter and the envi
 - **Practice:** `X-Content-Type-Options: nosniff` and `Referrer-Policy: strict-origin-when-cross-origin`.
 - **Why:** The first stops browsers from guessing a content type. The second limits what leaks in the `Referer` header. OWASP says to set the policy explicitly rather than rely on browser defaults.
 - **Sources:** [OWASP HTTP Headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html)
-- **Stack:** `Enforced`. Both are in `SecurityHeaders::build()`, and `tests/Contract/HeaderContractTest.php` proves every consumer path (raw PHP, PSR-15, Laravel HTML and JSON) sends them the same way.
+- **Stack:** `Enforced`. Both are in `SecurityHeaders::build()`, and `testAllFourConsumerPathsAgreeOverHttps` and `testAllFourConsumerPathsAgreeOnPlainHttpWithoutHsts` in `tests/Contract/HeaderContractTest.php` prove every consumer path (raw PHP, PSR-15, Laravel HTML and JSON) sends them the same way.
 
 ### H11. Turn off browser features the app does not use
 - **Practice:** Send a Permissions-Policy that disables camera, microphone, geolocation and any other feature the app never needs, such as `payment` and `usb`.
@@ -230,7 +230,7 @@ HELMET's current release is 1.0.0 (2026-11-08). The Laravel adapter and the envi
 - **Practice:** If the session is already active, or an `ini_set` fails, stop or log. Do not carry on with weak settings.
 - **Why:** Silent failure leaves the app looking hardened when it is not.
 - **Sources:** [PHP session security ini](https://www.php.net/manual/en/session.security.ini.php)
-- **Stack:** `Enforced`. `helmet_boot()` calls `apply()` unconditionally (`src/functions.php:116`); when a session is already active, `apply()` throws a `LogicException` naming the problem (`src/Session/SessionHardening.php:63-65`), and when an `ini_set` fails it throws a `RuntimeException` naming the failed setting (`src/Session/SessionHardening.php:111-118`). `testThrowsWhenSessionActive` (`tests/Session/SessionHardeningTest.php:42`), `testBootThrowsWhenSessionActive` (`tests/FunctionsTest.php:46`) and `testThrowsNamingTheFailedSetting` (`tests/Session/SessionHardeningTest.php:134`) fail without it.
+- **Stack:** `Enforced`. `helmet_boot()` calls `apply()` unconditionally (`src/functions.php:116`); when a session is already active, `apply()` throws a `LogicException` naming the problem (`src/Session/SessionHardening.php:63-65`), and when an `ini_set` fails it throws a `RuntimeException` naming the failed setting (`src/Session/SessionHardening.php:111-118`). `testThrowsWhenSessionActive` (`tests/Session/SessionHardeningTest.php:42`), `testBootThrowsWhenSessionAlreadyActive` (`tests/FunctionsTest.php:46`) and `testThrowsNamingTheFailedSetting` (`tests/Session/SessionHardeningTest.php:134`) fail without it.
 
 ### H29. Regenerate the session ID on login, expire sessions, and invalidate on logout
 - **Practice:** Issue a new ID after login or any privilege change and destroy the old one. Enforce idle and absolute timeouts on the server. Invalidate the server-side session on logout.
@@ -242,13 +242,13 @@ HELMET's current release is 1.0.0 (2026-11-08). The Laravel adapter and the envi
 - **Practice:** Do not set a cookie `Domain`. Prefer the `__Host-` prefix (needs `Secure`, `Path=/`, no `Domain`). Avoid a framework-revealing name such as `PHPSESSID`.
 - **Why:** A host-only cookie is not sent to sibling subdomains. A generic name reveals less. NIST SP 800-63B-4 now says session cookies SHALL be limited to the minimum practical hostnames and paths, and SHOULD be HttpOnly, use the `__Host-` prefix with `Path=/`, and set SameSite to Lax or Strict. The `__Host-` prefix needs `Secure`, which on Citadel depends on the real scheme (H27), so the prefix fits only requests that arrive as HTTPS.
 - **Sources:** [OWASP Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [NIST SP 800-63B-4 session management](https://pages.nist.gov/800-63-4/sp800-63b/session/)
-- **Stack:** `Enforced`. `SessionHardening::apply()` sets an empty `cookie_domain`, `cookie_path=/` and the name `__Host-WSUSESSID` on HTTPS or `WSUSESSID` on HTTP, but only while the name is still the PHP default `PHPSESSID`; an app-chosen name is left alone. Covered by the name tests in `tests/Session/SessionHardeningTest.php`.
+- **Stack:** `Enforced`. `SessionHardening::apply()` sets an empty `cookie_domain`, `cookie_path=/` and the name `__Host-WSUSESSID` on HTTPS or `WSUSESSID` on HTTP, but only while the name is still the PHP default `PHPSESSID`; an app-chosen name is left alone. `testSetsNameLifetimePathAndDomainWhenHttps` pins the `__Host-WSUSESSID` name, `testSetsPlainNameWhenNotHttps` pins `WSUSESSID`, and `testLeavesAnAppChosenNameAlone` pins the exception, all in `tests/Session/SessionHardeningTest.php`.
 
 ### H31. Set session lifetime, URL IDs and caching explicitly
 - **Practice:** Use `session.cookie_lifetime=0`, keep session IDs out of URLs, and use `session.cache_limiter=nocache` for authenticated pages. Track session lifetime in your own code, since `gc_maxlifetime` is not reliable for expiry.
 - **Why:** Each one closes a way for a session ID or an authenticated page to outlive its use. NIST SP 800-63B-4 backs the last point: expiry settings SHALL NOT be relied on to enforce session timeouts.
 - **Sources:** [PHP session security ini](https://www.php.net/manual/en/session.security.ini.php), [OWASP Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), [NIST SP 800-63B-4 session management](https://pages.nist.gov/800-63-4/sp800-63b/session/)
-- **Stack:** `Enforced`. `SessionHardening::apply()` sets `cookie_lifetime=0` and `cache_limiter=nocache` (on every page, which covers the authenticated ones), and `use_only_cookies=1` keeps session IDs out of URLs. Tracking session lifetime in app code remains the app's own job.
+- **Stack:** `Enforced`. `SessionHardening::apply()` sets `cookie_lifetime=0` and `cache_limiter=nocache` (on every page, which covers the authenticated ones), and `use_only_cookies=1` keeps session IDs out of URLs. `testSetsNameLifetimePathAndDomainWhenHttps` and `testSetsPlainNameWhenNotHttps` pin the lifetime and limiter on both schemes, and `testSetsHardenedIniValuesWhenHttps` pins `use_only_cookies=1`. Tracking session lifetime in app code remains the app's own job.
 
 ### H32. Leave `session.sid_length` alone
 - **Practice:** Do not change `session.sid_length` or `session.sid_bits_per_character`.
@@ -266,7 +266,7 @@ HELMET's current release is 1.0.0 (2026-11-08). The Laravel adapter and the envi
 - **Practice:** Protect every state-changing request (POST, PUT, PATCH, DELETE) with a server-checked token, or with Fetch Metadata (`Sec-Fetch-Site`) plus an `Origin` check, or both. Treat `SameSite=Lax` as a second layer only.
 - **Why:** OWASP's CSRF sheet calls SameSite "useful as a defense-in-depth control" that does not replace a real defense in most deployments. `Lax` still sends cookies on top-level GET navigations, it works at the registrable-domain level (so sibling subdomains count as same-site), and it does not stop client-side CSRF. The same sheet calls `Sec-Fetch-Site` the primary signal for modern browsers and says an `Origin`/`Referer` check is a mandatory fallback. Laravel 13.x does both in `PreventRequestForgery` (in the `web` group by default): it checks `Sec-Fetch-Site` first and falls back to token validation. Its docs note browsers send that header only over HTTPS, and the middleware exposes `originOnly` (check the `Origin` header instead of `Sec-Fetch-Site`) and `allowSameSite` (also trust `same-site` requests, not just `same-origin`) options. The raw PHP paths have no equivalent unless the app writes one.
 - **Sources:** [OWASP CSRF Prevention](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html), [Laravel 13.x CSRF](https://laravel.com/docs/13.x/csrf)
-- **Stack:** `Enforced` when enabled. HELMET sets `SameSite=Lax` (`Enforced`, see H26) and now also provides an opt-in request-forgery guard: `helmet_boot(['csrf' => ['enabled' => true]])`, the PSR-15 `RequestForgeryGuard`, and the Laravel `RequestForgeryGuard` middleware when `helmet.csrf.enabled` is true. It checks `Sec-Fetch-Site` first and falls back to `Origin` against the request's own origin and `csrf.trusted_origins`; `GET`, `HEAD` and `OPTIONS` always pass, and a rejected state-changing request receives `403 Forbidden`. It is off by default, so an app that does not enable it still needs its own CSRF defense.
+- **Stack:** `Enforced` when enabled. HELMET sets `SameSite=Lax` (`Enforced`, see H26) and now also provides an opt-in request-forgery guard: `helmet_boot(['csrf' => ['enabled' => true]])`, the PSR-15 `RequestForgeryGuard`, and the Laravel `RequestForgeryGuard` middleware when `helmet.csrf.enabled` is true. It checks `Sec-Fetch-Site` first and falls back to `Origin` against the request's own origin and `csrf.trusted_origins`; `GET`, `HEAD` and `OPTIONS` always pass, and a rejected state-changing request receives `403 Forbidden`. It is off by default, so an app that does not enable it still needs its own CSRF defense. The guard is pinned by `RequestForgeryGuardTest::testSafeMethodsAlwaysPass`, `RequestForgeryGuardTest::testSecFetchSiteCrossSiteIsRejected`, `RequestForgeryGuardTest::testOriginFallbackCrossOriginIsRejected` and `RequestForgeryGuardTest::testARefusalIsLoggedOnceWithoutTheOriginValue` (core), `testMiddlewareRejectsCrossSiteSecFetchSite` (Laravel), and `testBootCsrfIsDisabledByDefault` with `testBootCsrfRejectsCrossSiteAndExits` for the opt-in switch.
 
 ---
 
@@ -288,7 +288,7 @@ HELMET's current release is 1.0.0 (2026-11-08). The Laravel adapter and the envi
 - **Practice:** Return a short body, `Cache-Control: no-store`, and no version or configuration detail.
 - **Why:** The endpoint is public and polled often.
 - **Sources:** [Docker Dockerfile reference](https://docs.docker.com/reference/dockerfile/), [OWASP HTTP Headers](https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html)
-- **Stack:** `Enforced`. The body is `ok`, `Cache-Control` is `no-store`, and `Content-Type` is plain text.
+- **Stack:** `Enforced`. The body is `ok`, `Cache-Control` is `no-store`, and `Content-Type` is plain text. `testUpResponseReturnsStatusHeadersAndBody` (`tests/FunctionsTest.php:354`) and `testGetHealthPathReturnsOk` (`tests/Health/HealthCheckTest.php:41`) pin all three.
 
 ---
 
@@ -298,7 +298,7 @@ HELMET's current release is 1.0.0 (2026-11-08). The Laravel adapter and the envi
 - **Practice:** Log JSON, one object per line, with the same field names everywhere.
 - **Why:** Structured output is searchable, and the encoder escapes line breaks, which blocks forged log lines.
 - **Sources:** [OWASP Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html), [Monolog handlers and formatters](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md)
-- **Stack:** `Enforced`. `Logging::create()` returns a Monolog logger with `JsonFormatter` on a `StreamHandler`. `tests/Logging/LoggingTest.php` covers it: sensitive keys are redacted (also nested and with a request id), a logging failure does not throw, and every record in a process carries the same request id (a supplied valid id is used, an invalid one is ignored).
+- **Stack:** `Enforced`. `Logging::create()` returns a Monolog logger with `JsonFormatter` on a `StreamHandler`. `tests/Logging/LoggingTest.php` covers it: `testRedactsSensitiveKeys`, `testRedactsNestedSensitiveKeys` and `testRedactionStillMasksPasswordWithRequestId` pin the redaction, `testLoggingFailureDoesNotThrow` pins the swallowing, and `testEveryRecordCarriesTheSameRequestId`, `testSuppliedValidRequestIdIsUsed` and `testSuppliedInvalidRequestIdIsIgnored` pin the request id.
 
 ### H37. Treat logs as a stream and let the platform route them
 - **Practice:** Write events to a stream (stderr or a configured path) and leave collection, rotation and retention to the platform.
@@ -310,19 +310,19 @@ HELMET's current release is 1.0.0 (2026-11-08). The Laravel adapter and the envi
 - **Practice:** Never log passwords, tokens, session IDs, keys or connection strings. Redact known keys in the formatter.
 - **Why:** Logs are read by more people and kept longer than the secrets they would expose.
 - **Sources:** [OWASP Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html), [Monolog handlers and formatters](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md)
-- **Stack:** `Enforced`. `Logging::create()` pushes a redact processor that masks known sensitive keys (passwords, tokens, session IDs, keys, connection strings) in a record's context and extra, at any depth, before anything is written.
+- **Stack:** `Enforced`. `Logging::create()` pushes a redact processor that masks known sensitive keys (passwords, tokens, session IDs, keys, connection strings) in a record's context and extra, at any depth, before anything is written. `testRedactsSensitiveKeys`, `testKeepsNonSensitiveKeys`, `testRedactsNestedSensitiveKeys` and `testRedactionStillMasksPasswordWithRequestId` in `tests/Logging/LoggingTest.php` pin it.
 
 ### H39. Add a request ID and request context
 - **Practice:** Give each request a unique ID and include it, with the method, path and a trusted client address, in every event.
 - **Why:** Related events can then be found together.
 - **Sources:** [OWASP Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html), [Monolog handlers and formatters](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md)
-- **Stack:** `Enforced`. `Logging::create()` pushes `addRequestId()`, which stamps `extra.request_id` on every record with a per-process ID generated by HELMET, never an inbound header, and `Logging::addRequestContext()`, which stamps `extra.http` on every web request record with the method, the path (never the query string) and the client address as PHP saw it, which behind a proxy is the proxy's address. The address is the validated `REMOTE_ADDR`; no forwarded header is trusted for it, so it is the peer, not the H23 trusted-proxy resolution.
+- **Stack:** `Enforced`. `Logging::create()` pushes `addRequestId()`, which stamps `extra.request_id` on every record with a per-process ID generated by HELMET, never an inbound header, and `Logging::addRequestContext()`, which stamps `extra.http` on every web request record with the method, the path (never the query string) and the client address as PHP saw it, which behind a proxy is the proxy's address. The address is the validated `REMOTE_ADDR`; no forwarded header is trusted for it, so it is the peer, not the H23 trusted-proxy resolution. `testRequestIdIsStableWithinTheProcess` pins the per-process ID, and `testWebRequestRecordCarriesHttpContext`, `testInvalidClientAddressIsNullAndForwardedHeaderIgnored`, `testUnusualMethodBecomesOtherAndLongPathIsCutTo512Bytes` and `testResetPasswordTokenInPathIsMasked` in `tests/Logging/LoggingTest.php` pin the request context.
 
 ### H40. A logging failure must not take the request down
 - **Practice:** Wrap handlers so that a full disk or an unwritable file is reported and swallowed.
 - **Why:** Logging should never be the reason an app is unavailable.
 - **Sources:** [OWASP Logging](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html), [Monolog handlers and formatters](https://github.com/Seldaek/monolog/blob/main/doc/02-handlers-formatters-processors.md)
-- **Stack:** `Enforced`. `Logging::create()` wraps the configured stream in Monolog's `FallbackGroupHandler`: when the stream cannot be written (unwritable file, full disk), the record goes to `php://stderr` instead and the request carries on.
+- **Stack:** `Enforced`. `Logging::create()` wraps the configured stream in Monolog's `FallbackGroupHandler`: when the stream cannot be written (unwritable file, full disk), the record goes to `php://stderr` instead and the request carries on. `testLoggingFailureDoesNotThrow` in `tests/Logging/LoggingTest.php` pins it.
 
 ### H41. Log security-relevant events
 - **Practice:** Log authentication and authorization failures, session failures, validation failures and trust-decision surprises, in proportion to risk.
