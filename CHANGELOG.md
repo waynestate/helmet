@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file.
 
 ### Fixed
 
+- the pipeline's PROCTOR jobs no longer pass `--policy`, which PROCTOR 0.7 refuses in CI; PROCTOR checks against the CREED policy it bundles.
 - Front page: the headers list and the practice squad named themselves with `aria-labelledby` on a plain `div`, which ARIA does not allow (axe-core 4.14 flags it for review); both are now `role="group"`. The practice squad lists what is still on the backlog, now that readiness and secret scanning shipped.
 - CSP: a quoted source in the `csp` option other than `'self'`, `'none'` and `'unsafe-inline'` was handed to the policy builder as a host, so `'sha256-...'` came out as `https://'sha256-...' http://'sha256-...' 'sha256-...'` and `'unsafe-eval'`, `'unsafe-hashes'`, `'wasm-unsafe-eval'`, `'report-sample'` and `'strict-dynamic'` the same way, none of which a browser accepts. Hashes, fixed nonces, every CSP keyword and the `https:`, `mediastream:` and `filesystem:` schemes now come out as written. An unknown quoted source (a typo such as `'unsafe-inlined'`) now throws `\InvalidArgumentException` when the headers are built, instead of shipping a token the browser ignores: check your `csp` / `HELMET_CSP` before you upgrade.
 - The front page roster says Sourdough starts all five app shapes, from raw PHP to Inertia and Vue; it no longer says Blade and Inertia come later.
