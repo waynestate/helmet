@@ -1660,6 +1660,7 @@ All notable changes to this project are documented in this file.
 
 #### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
 
+- Fixed: BEST_PRACTICES.md and the Proof page record the first green pipeline on the Preflight 0.3.0 pins (pipeline 4680), say ADR-0001 is accepted, and name the 0.3.0 pins.
 - Fixed: the docs menu closes with Escape and hands focus back to its button (docs kit synced from Squire).
 - Fixed: the docs kit's copy button no longer covers the first line of code when it says Copied or Failed: over the code it keeps its resting width and shows a check or a cross when the word does not fit (docs kit synced from Squire).
 - Fixed: the front page's version chip shows the full version the docs show (1.0.0, was 1.0). It carries `data-docs-version` now, so the docs builder (synced from Squire) rewrites it at every release and `composer docs:check` fails while it is stale.
@@ -4432,7 +4433,7 @@ To refresh this table, run `composer ci` and the Docker commands below on the co
 The front page and every docs page are checked with [axe-core](https://github.com/dequelabs/axe-core) in a real Chromium, through Playwright, at WCAG 2.2 AA, in light and dark. Two gates, both blocking:
 
 - **Local, before a release:** `scripts/a11y.sh` (Linux, macOS, Git Bash) or `scripts/a11y.ps1` (Windows) runs `tools/a11y/check.mjs` in Docker at 360 px and 1280 px, with reduced motion, so scroll reveals never hide content from the check.
-- **In the pipeline:** Preflight's `a11y` component (0.2.0, axe-core 4.14) over the same pages at 320 px and 1280 px, with the WCAG 1.4.10 reflow check at 320 px.
+- **In the pipeline:** Preflight's `a11y` component (0.3.0) over the same pages at 320 px and 1280 px, with the WCAG 1.4.10 reflow check at 320 px.
 
 Last run, 2026-11-07, on the branch that adds readiness, secret scanning and the style-src-attr mode (29 pages):
 
@@ -4442,6 +4443,8 @@ Last run, 2026-11-07, on the branch that adds readiness, secret scanning and the
 | Preflight `a11y` 0.2.0 checker, run locally (axe-core 4.14, 320 and 1280 px, reflow) | 116 | 0 violations; 116 items to review by hand |
 
 The items to review are axe-core's "incomplete" results: it cannot compute contrast for text over a gradient or a background image (the gold underline bar on the header links and the brand name on the textured header). They were checked by hand in Chrome: light text `#eef0e6` on the header's `#0f1f18` is about 15:1, well past the 4.5:1 AA floor, and the gradient sits under the text, not behind it. The same run found two `aria-labelledby` attributes on plain `div`s on the front page (the headers list and the practice squad), where ARIA does not allow a name; both now carry `role="group"`. Keyboard focus shows a 3 px gold outline on every link and button, and the motion only runs with `prefers-reduced-motion: no-preference`.
+
+In the pipeline, 2026-11-08: the `a11y` job of pipeline 4680 (Preflight 0.3.0, main) passed with no violations, and so did `secret-detection`, the first run of both on the 0.3.0 pins.
 
 ### Secret scanning[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#secret-scanning)
 
