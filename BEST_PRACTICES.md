@@ -19,7 +19,7 @@ Each practice ends with exactly one tag.
 | `Documented` | Written down in the README or a design note, with no code behind it. |
 | `Not yet` | A gap. |
 
-HELMET's last release is 0.3.1, and the Unreleased work heads for 1.0. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life. Since 0.3.1: a readiness check on `/ready` (H34), a `style_src_attr` mode for the one `'unsafe-inline'` left in the default policy (H5, ADR-0001), Gitleaks in CI (H58) and an accessibility gate on the front page and docs.
+HELMET's last release is 0.4.0, and the Unreleased work heads for 1.0. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life. Since 0.4.0: a readiness check on `/ready` (H34), a `style_src_attr` mode for the one `'unsafe-inline'` left in the default policy (H5, ADR-0001), Gitleaks in CI (H58) and an accessibility gate on the front page and docs.
 
 ---
 

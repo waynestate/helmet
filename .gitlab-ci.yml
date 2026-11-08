@@ -1,5 +1,5 @@
 # HELMET's pipeline, built from the Preflight components on this GitLab.
-# Pinned to Preflight releases (0.1.4; secret-detection, new in 0.2.0, at 0.2.0). Never use ~latest.
+# Pinned to Preflight releases (0.1.4; secret-detection and a11y, new in 0.2.0, at 0.2.0). Never use ~latest.
 # HELMET requires PHP ^8.3, so the test matrix starts at 8.3.
 # composer ci is the contract: every check runs from the "ci" script in composer.json.
 # Docker Hub images go through the GitLab Dependency Proxy to avoid the anonymous pull limit.
@@ -37,15 +37,30 @@ include:
       pages: ["index.html", "docs/**/*.html"]
       wcag_tags: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]
 
+# Dependency caching: images already come through the Dependency Proxy, and
+# every job that installs packages extends a cache keyed on its lock files,
+# so a pipeline downloads only what changed instead of everything, every run.
+variables:
+  COMPOSER_CACHE_DIR: "$CI_PROJECT_DIR/.cache/composer"
+
+.composer-cache:
+  cache:
+    key:
+      files: [composer.lock, deploy/composer.lock]
+      prefix: composer
+    paths: [.cache/composer/]
+
 # WayneUI strict copies: PROCTOR runs on the project root so it sees site/assets/wayne-ui/.
 # The setting extra.proctor."wayneui.copies" = "fail" in composer.json makes a stale copy fail.
 wayneui-copies:
+  extends: .composer-cache
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/composer:2.10.3
   script:
     - composer install --working-dir=deploy --no-interaction --no-progress --prefer-dist
     - deploy/vendor/bin/proctor check --path=. --policy=deploy/vendor/waynestate/creed/policy/policy.json
 
 composer-ci:
+  extends: .composer-cache
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/composer:2.10.3
   script:
     - composer install --no-interaction --no-progress --prefer-dist

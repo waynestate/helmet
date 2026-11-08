@@ -43,7 +43,7 @@ $helmet = helmet_boot([
 
 `helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up` with `200 ok` before your code runs. It returns the nonce, the logger and the request ID so the rest of the app can use them.
 
-Version 0.3.1, MIT licensed.
+Version 0.4.0, MIT licensed.
 
 Agents: the machine-readable map of these docs lives at [https://helmet.apps.wayne.edu/llms.txt](https://helmet.apps.wayne.edu/llms.txt).
 
