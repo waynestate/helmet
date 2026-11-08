@@ -72,19 +72,55 @@ final class FunctionsErrorHeadersTest extends TestCase
     }
 
     /**
-     * Boots a child php -S 127.0.0.1:0 serving a temp router that boots
-     * HELMET and then throws. Returns the server process, the announced
-     * port, and the router path (the caller unlinks it).
+     * A bad config value makes helmet_boot() itself throw, before any
+     * security header is sent. The answer therefore carries none of them,
+     * and the exception message stays off the wire with display_errors
+     * pinned off. Failing loudly at boot instead of half-applying is on
+     * purpose (H14's last uncovered corner).
      */
-    private function startServerWithThrowingRouter(bool $handlerEnabled): array
+    public function testABootThatThrowsSendsNoSecurityHeaders(): void
+    {
+        [$server, $port, $router] = $this->startServerWithThrowingRouter(false, ['session' => 'nope']);
+
+        try {
+            [$body, $headers] = $this->get("http://127.0.0.1:$port/boom");
+
+            $lower = array_map('strtolower', $headers);
+            self::assertFalse(
+                (bool) array_filter($lower, static fn(string $line): bool => str_starts_with($line, 'content-security-policy:')),
+                'a Content-Security-Policy header rode out of a boot that threw: ' . implode("\n", $headers),
+            );
+            self::assertFalse(
+                (bool) array_filter($lower, static fn(string $line): bool => str_starts_with($line, 'x-content-type-options:')),
+                'an X-Content-Type-Options header rode out of a boot that threw: ' . implode("\n", $headers),
+            );
+            self::assertStringNotContainsString('must be an array', (string) $body);
+        } finally {
+            proc_terminate($server);
+            @unlink($router);
+        }
+    }
+
+    /**
+     * Boots a child php -S 127.0.0.1:0 serving a temp router that boots
+     * HELMET and then throws. When $bootConfig is given, the router boots
+     * with that config instead of the default one, so a bad value makes
+     * the boot itself throw (the trailing throw then never runs). Returns
+     * the server process, the announced port, and the router path (the
+     * caller unlinks it).
+     */
+    private function startServerWithThrowingRouter(bool $handlerEnabled, ?array $bootConfig = null): array
     {
         $autoload = dirname(__DIR__) . '/vendor/autoload.php';
         $router = tempnam(sys_get_temp_dir(), 'helmet-error-router-');
 
+        if ($bootConfig === null) {
+            $bootConfig = ['trusted_proxies' => ['127.0.0.1'], 'error_handler' => ['enabled' => $handlerEnabled]];
+        }
+
         $script = '<?php' . "\n"
             . 'require ' . var_export($autoload, true) . ";\n"
-            . "\Waynestate\Helmet\helmet_boot(['trusted_proxies' => ['127.0.0.1'], 'error_handler' => ['enabled' => "
-            . var_export($handlerEnabled, true) . "]]);\n"
+            . "\Waynestate\Helmet\helmet_boot(" . var_export($bootConfig, true) . ");\n"
             . "throw new \RuntimeException('secret-detail-do-not-leak');\n";
 
         file_put_contents($router, $script);
