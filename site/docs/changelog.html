@@ -44,6 +44,7 @@
 <p>All notable changes to this project are documented in this file.</p>
 <h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
 <ul>
+<li>Docs: BEST_PRACTICES H58 names the Preflight pin the pipeline runs (0.3.1, was 0.3.0).</li>
 <li>Changed: the deploy layer runs Squire's kit 0.7.1 (was 0.6.0): <code>.squire/php.ini</code> no longer sets the deprecated <code>session.sid_*</code> lines, web requests get a <code>disable_functions</code> list and Apache hardening (<code>.squire/php-web.ini</code>, <code>.squire/apache-hardening.conf</code>), and opcache gets production settings with <code>SQUIRE_OPCACHE_VALIDATE</code> as the one switch.</li>
 <li>Docs: BEST_PRACTICES names the current release, 1.0.1 (it still said 1.0.0).</li>
 <li>Changed: the local a11y scripts run Preflight's own checker (vendored from 0.3.1 and pinned by a test), so they check what CI checks: axe-core 4.14.0, 320 and 1280 px, and the reflow check.</li>
