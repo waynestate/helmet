@@ -9,7 +9,7 @@ This page covers the three headers that round out the baseline beyond the CSP: `
 
 ## Cross-Origin-Opener-Policy
 
-`Cross-Origin-Opener-Policy` defaults to `same-origin`, which puts the page in its own browsing-context group so an opener or parent page cannot read it. Set `coop` (raw PHP) or `HELMET_COOP` (Laravel) to `same-origin-allow-popups` or `noopener-allow-popups` to keep the isolation but let a popup window (such as an OAuth login popup to the IdP) stay cross-origin, or to `unsafe-none` to turn the header off. Set it to `null` to send no COOP header at all.
+`Cross-Origin-Opener-Policy` defaults to `same-origin`, which puts the page in its own browsing-context group so an opener or parent page cannot read it. Set `coop` (raw PHP) or `HELMET_COOP` (Laravel) to `same-origin-allow-popups` or `noopener-allow-popups` to keep the isolation but let a popup window (such as an OAuth login popup to the IdP) stay cross-origin, or to `unsafe-none` to drop the isolation while still sending the header with that value. Set it to `null` to send no COOP header at all.
 
 ## Cross-Origin-Resource-Policy
 

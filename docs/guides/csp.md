@@ -51,7 +51,7 @@ The setting only replaces HELMET's own allowance: if you set `style-src-attr` yo
 
 By default the policy is enforced: a violation is blocked. To see what would be blocked before you enforce it, or to keep collecting reports after you do, point the policy at a report endpoint.
 
-Set `csp_report_uri` (raw PHP) or `HELMET_CSP_REPORT_URI` (Laravel) to the URL browsers POST reports to. It must be `https`. HELMET then adds `report-uri` and `report-to` to the policy and sends a `Reporting-Endpoints` header naming the endpoint. Set `csp_report_only` (or `HELMET_CSP_REPORT_ONLY`) to `true` to send the policy as `Content-Security-Policy-Report-Only`, which observes violations without blocking them.
+Set `csp_report_uri` (raw PHP) or `HELMET_CSP_REPORT_URI` (Laravel) to the URL browsers POST reports to. An absolute URL must be `https` with a host; a path relative to the page's origin that starts with a single slash is valid too. HELMET then adds `report-uri` and `report-to` to the policy and sends a `Reporting-Endpoints` header naming the endpoint. Set `csp_report_only` (or `HELMET_CSP_REPORT_ONLY`) to `true` to send the policy as `Content-Security-Policy-Report-Only`, which observes violations without blocking them.
 
 ```php
 $helmet = helmet_boot([
@@ -62,7 +62,7 @@ $helmet = helmet_boot([
 ```
 
 > [!WARNING]
-> An invalid URI (not `https`, no host, or a value carrying whitespace or a quote) throws at boot, so a typo fails loudly instead of pointing the browser at a destination it cannot reach.
+> An invalid URI throws at boot, so a typo fails loudly instead of pointing the browser at a destination it cannot reach: an empty value, one carrying whitespace, a control character or a double quote, a protocol-relative `//...` value, or an absolute URL that is not `https` or has no host are all refused. A single-slash path relative to the page's origin is valid.
 
 > [!TIP]
 > Run report-only first. That is how you see what would be blocked before you enforce it; once the policy is clean, switch off `csp_report_only` and keep collecting.

@@ -29,7 +29,7 @@ $helmet = helmet_boot([
 
 ## Middleware and Laravel
 
-In the PSR-15 middleware, pass the last two constructor arguments of `SecurityHeadersMiddleware`. In Laravel, use the environment variables below; the config keys are `helmet.hsts`, `helmet.hsts_include_subdomains` and `helmet.hsts_preload`.
+In the PSR-15 middleware, pass them to the `SecurityHeadersMiddleware` constructor: `hstsMaxAge` is the fifth argument, `hstsIncludeSubDomains` the sixth and `hstsPreload` the twelfth; named arguments avoid the counting. In Laravel, use the environment variables below; the config keys are `helmet.hsts`, `helmet.hsts_include_subdomains` and `helmet.hsts_preload`.
 
 | Variable | Config key | Default | What it does |
 | --- | --- | --- | --- |
