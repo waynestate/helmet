@@ -67,9 +67,11 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
      *        matching responses.
      * @param list<string> $noStorePaths Path prefixes that carry no-store, or
      *        empty for every response.
+     * @param string $styleSrcAttr The inline style attribute mode: "inline"
+     *        (the default), "report" or "none".
      *
-     * @throws \InvalidArgumentException If $coop, $corp, $permissionsPolicy or
-     *         $trustedTypesPolicies is invalid.
+     * @throws \InvalidArgumentException If $coop, $corp, $permissionsPolicy,
+     *         $trustedTypesPolicies or $styleSrcAttr is invalid.
      */
     public function __construct(
         private readonly TrustedProxies $proxies,
@@ -88,7 +90,10 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         private readonly array $trustedTypesPolicies = ['default'],
         private readonly bool $noStoreEnabled = false,
         private readonly array $noStorePaths = [],
+        private readonly string $styleSrcAttr = 'inline',
     ) {
+        SecurityHeaders::validateStyleSrcAttr($styleSrcAttr);
+
         $this->cspPolicy = SecurityHeaders::mergePolicies(
             SecurityHeaders::defaultCspPolicy(),
             $cspPolicy ?? [],
@@ -130,6 +135,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
             $this->hstsPreload,
             $this->trustedTypesEnabled,
             $this->trustedTypesPolicies,
+            $this->styleSrcAttr,
         );
 
         $request = $request->withAttribute('helmet.csp_nonce', $nonce);

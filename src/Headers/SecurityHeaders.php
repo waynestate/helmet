@@ -16,6 +16,21 @@ use ParagonIE\CSPBuilder\CSPBuilder;
 final class SecurityHeaders
 {
     /**
+     * The inline style attribute modes (HELMET-17, ADR-0001 in docs/adr).
+     *
+     *  - inline: style-src-attr 'unsafe-inline', as WayneUI's recipes need.
+     *    The default, and the behavior of every release before this mode.
+     *  - report: keep enforcing 'unsafe-inline', and add a report-only probe
+     *    with style-src-attr 'none', so the browser says which style="..."
+     *    attributes a strict policy would block, without blocking any.
+     *  - none: style-src-attr 'none'. Inline style attributes are blocked.
+     *
+     * report and none only touch the default allowance: an app that sets its
+     * own style-src-attr in the csp option keeps it.
+     */
+    public const array STYLE_SRC_ATTR_MODES = ['inline', 'report', 'none'];
+
+    /**
      * The default Content-Security-Policy.
      *
      * This is the union of the two WayneUI recipes (the framework-free raw PHP
@@ -249,11 +264,14 @@ final class SecurityHeaders
      *        directives to the report-only CSP header.
      * @param list<string> $trustedTypesPolicies The Trusted Types policy
      *        names, used when $trustedTypesEnabled is true.
+     * @param string $styleSrcAttr The inline style attribute mode: "inline"
+     *        (the default), "report" or "none" (see STYLE_SRC_ATTR_MODES).
      *
      * @return array<string, string> Header name to value.
      *
      * @throws \InvalidArgumentException If $coop, $corp, $permissionsPolicy,
-     *         $trustedTypesPolicies or the HSTS preload combination is invalid.
+     *         $trustedTypesPolicies, $styleSrcAttr or the HSTS preload
+     *         combination is invalid.
      */
     public static function build(
         array $policy,
@@ -269,10 +287,22 @@ final class SecurityHeaders
         bool $hstsPreload = false,
         bool $trustedTypesEnabled = false,
         array $trustedTypesPolicies = ['default'],
+        string $styleSrcAttr = 'inline',
     ): array {
+        self::validateStyleSrcAttr($styleSrcAttr);
+
         $cspHeaderName = $cspReportOnly
             ? 'Content-Security-Policy-Report-Only'
             : 'Content-Security-Policy';
+
+        // "none" blocks inline style attributes. "report" does the same, but
+        // only where nothing is enforced anyway: on a policy that is already
+        // report-only, the probe below would be a second header of the same
+        // name, so the one report-only policy carries 'none' instead.
+        $strictAttr = $styleSrcAttr === 'none' || ($styleSrcAttr === 'report' && $cspReportOnly);
+        if ($strictAttr) {
+            $policy = self::withStrictStyleSrcAttr($policy);
+        }
 
         $cspValue = self::buildCsp($policy, $nonce, $cspReportUri);
         if ($trustedTypesEnabled) {
@@ -289,6 +319,19 @@ final class SecurityHeaders
 
         $headers = [
             $cspHeaderName => $cspValue,
+        ];
+
+        // The report probe: the enforced policy stays as it is, and a second,
+        // report-only policy holds only style-src-attr 'none' (plus the
+        // report destination, when there is one), so the browser reports each
+        // inline style attribute a strict policy would block, and nothing
+        // else. It is only added while the app still has the default
+        // allowance: an app that set its own style-src-attr has decided.
+        if ($styleSrcAttr === 'report' && !$cspReportOnly && self::hasDefaultStyleSrcAttr($policy)) {
+            $headers['Content-Security-Policy-Report-Only'] = self::buildStyleSrcAttrProbe($cspReportUri);
+        }
+
+        $headers += [
             'X-Content-Type-Options' => 'nosniff',
             'X-Frame-Options' => 'SAMEORIGIN',
             'Referrer-Policy' => 'strict-origin-when-cross-origin',
@@ -324,6 +367,67 @@ final class SecurityHeaders
         }
 
         return $headers;
+    }
+
+    /**
+     * Fail on an unknown inline style attribute mode.
+     *
+     * @throws \InvalidArgumentException If $mode is not one of
+     *         STYLE_SRC_ATTR_MODES.
+     */
+    public static function validateStyleSrcAttr(string $mode): string
+    {
+        if (!in_array($mode, self::STYLE_SRC_ATTR_MODES, true)) {
+            throw new \InvalidArgumentException(
+                'The style-src-attr mode must be one of "' . implode('", "', self::STYLE_SRC_ATTR_MODES) . '": got "' . $mode . '".',
+            );
+        }
+
+        return $mode;
+    }
+
+    /**
+     * Whether the policy's style-src-attr is still HELMET's default
+     * allowance ('unsafe-inline' and nothing else).
+     *
+     * @param array<string, list<string>> $policy
+     */
+    private static function hasDefaultStyleSrcAttr(array $policy): bool
+    {
+        return ($policy['style-src-attr'] ?? null) === ["'unsafe-inline'"];
+    }
+
+    /**
+     * Replace the default style-src-attr allowance with 'none'. A policy
+     * whose style-src-attr the app set itself (or removed) is returned
+     * unchanged.
+     *
+     * @param array<string, list<string>> $policy
+     *
+     * @return array<string, list<string>>
+     */
+    private static function withStrictStyleSrcAttr(array $policy): array
+    {
+        if (self::hasDefaultStyleSrcAttr($policy)) {
+            $policy['style-src-attr'] = ["'none'"];
+        }
+
+        return $policy;
+    }
+
+    /**
+     * The report-only probe for the "report" mode: style-src-attr 'none',
+     * plus the same report destination as the main policy. The report URI
+     * was already validated by buildCsp().
+     */
+    private static function buildStyleSrcAttrProbe(?string $reportUri): string
+    {
+        $probe = "style-src-attr 'none'";
+        if ($reportUri !== null) {
+            $probe .= '; report-to csp-endpoint; report-uri ' . $reportUri;
+        }
+
+        return $probe;
     }
 
     /**
@@ -620,9 +724,74 @@ final class SecurityHeaders
             case "'unsafe-inline'":
                 $builder->setAllowUnsafeInline($directive, true);
                 break;
+            case "'unsafe-eval'":
+                $builder->setAllowUnsafeEval($directive, true);
+                break;
+            case "'wasm-unsafe-eval'":
+                $builder->setAllowWasmUnsafeEval($directive, true);
+                break;
+            case "'unsafe-hashes'":
+                $builder->setAllowUnsafeHashes($directive, true);
+                break;
+            case "'strict-dynamic'":
+                $builder->setStrictDynamic($directive, true);
+                break;
+            case "'report-sample'":
+                $builder->setReportSample($directive, true);
+                break;
+            case 'https:':
+                $builder->setHttpsAllowed($directive, true);
+                break;
+            case 'mediastream:':
+                $builder->setMediaStreamAllowed($directive, true);
+                break;
+            case 'filesystem:':
+                $builder->setFileSystemAllowed($directive, true);
+                break;
             default:
+                // A quoted source is a keyword, a hash or a nonce, never a
+                // host. CSPBuilder's addSource() treats every source as a
+                // host and prefixes https:// and http:// to it, which turned
+                // 'sha256-...' into three tokens no browser accepts.
+                if (str_starts_with($source, "'")) {
+                    self::addQuotedSource($builder, $directive, $source);
+                    break;
+                }
                 $builder->addSource($directive, $source);
                 break;
         }
+    }
+
+    /**
+     * Add a hash ('sha256-...', 'sha384-...', 'sha512-...') or a fixed nonce
+     * ('nonce-...') to a directive.
+     *
+     * @throws \InvalidArgumentException For any other quoted source: an
+     *         unknown keyword is a typo, and a browser would ignore it.
+     */
+    private static function addQuotedSource(CSPBuilder $builder, string $directive, string $source): void
+    {
+        if (preg_match("#^'(sha256|sha384|sha512)-([A-Za-z0-9+/]+={0,2})'$#", $source, $m) === 1) {
+            // preHash() only adds to a directive that already exists.
+            if (!array_key_exists($directive, $builder->getPolicies())) {
+                $builder->setDirective($directive, []);
+            }
+            $builder->preHash($directive, $m[2], $m[1]);
+
+            return;
+        }
+
+        if (preg_match("#^'nonce-([A-Za-z0-9+/]+={0,2})'$#", $source, $m) === 1) {
+            if (!array_key_exists($directive, $builder->getPolicies())) {
+                $builder->setDirective($directive, []);
+            }
+            $builder->nonce($directive, $m[1]);
+
+            return;
+        }
+
+        throw new \InvalidArgumentException(
+            'Unknown CSP source ' . $source . ' in ' . $directive . ': a quoted source must be a CSP keyword, a hash or a nonce.',
+        );
     }
 }

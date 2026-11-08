@@ -80,6 +80,39 @@ final class SecurityHeaders
             (array) config('helmet.csp'),
         );
         $policy = $this->maybeAddDevOrigin($policy);
+        // A non-array no_store falls back to the disabled default.
+        $noStore = config('helmet.no_store');
+        $noStore = is_array($noStore) ? $noStore : [];
+        $noStoreEnabled = (bool) ($noStore['enabled'] ?? false);
+        $noStorePaths = $noStore['paths'] ?? [];
+        $noStorePaths = is_array($noStorePaths) ? $noStorePaths : [];
+        /** @var list<string> $noStorePaths */
+        $noStorePaths = array_values($noStorePaths);
+        $headers = self::configuredHeaders($policy, $nonce, $isHttps);
+
+        $request->attributes->set('helmet.csp_nonce', $nonce);
+
+        // Hand the nonce to Vite so the @vite tags carry the same nonce the
+        // CSP header sends. The app no longer needs to call
+        // Vite::useCspNonce() itself.
+        Vite::useCspNonce($nonce);
+
+        return $this->respond($request, $next, $headers, $nonce, $noStoreEnabled, $noStorePaths);
+    }
+
+    /**
+     * The security headers for a merged policy, with every other setting
+     * read from config('helmet'). One definition for the middleware and the
+     * readiness check, so the probe builds exactly what a page sends.
+     *
+     * @param array<string, list<string>> $policy
+     *
+     * @return array<string, string>
+     *
+     * @throws \InvalidArgumentException If a config value is invalid.
+     */
+    public static function configuredHeaders(array $policy, string $nonce, bool $isHttps): array
+    {
         // An empty string from env means "not set", so normalize it to null.
         $reportUri = config('helmet.csp_report_uri');
         $reportUri = is_string($reportUri) && $reportUri !== '' ? $reportUri : null;
@@ -99,17 +132,10 @@ final class SecurityHeaders
         $trustedTypesEnabled = (bool) ($trustedTypes['enabled'] ?? false);
         $trustedTypesPolicies = $trustedTypes['policies'] ?? ['default'];
         $trustedTypesPolicies = is_array($trustedTypesPolicies) ? $trustedTypesPolicies : ['default'];
-        // A non-array no_store falls back to the disabled default.
-        $noStore = config('helmet.no_store');
-        $noStore = is_array($noStore) ? $noStore : [];
-        $noStoreEnabled = (bool) ($noStore['enabled'] ?? false);
-        $noStorePaths = $noStore['paths'] ?? [];
-        $noStorePaths = is_array($noStorePaths) ? $noStorePaths : [];
         /** @var list<string> $trustedTypesPolicies */
         $trustedTypesPolicies = array_values($trustedTypesPolicies);
-        /** @var list<string> $noStorePaths */
-        $noStorePaths = array_values($noStorePaths);
-        $headers = CoreSecurityHeaders::build(
+
+        return CoreSecurityHeaders::build(
             $policy,
             $nonce,
             $isHttps,
@@ -123,15 +149,30 @@ final class SecurityHeaders
             $hstsPreload,
             $trustedTypesEnabled,
             $trustedTypesPolicies,
+            self::styleSrcAttr(),
         );
+    }
 
-        $request->attributes->set('helmet.csp_nonce', $nonce);
+    /**
+     * The inline style attribute mode from config('helmet.csp_style_src_attr'),
+     * "inline" when unset. An unknown value is passed through, so build()
+     * throws on it rather than quietly falling back.
+     */
+    public static function styleSrcAttr(): string
+    {
+        $mode = config('helmet.csp_style_src_attr');
 
-        // Hand the nonce to Vite so the @vite tags carry the same nonce the
-        // CSP header sends. The app no longer needs to call
-        // Vite::useCspNonce() itself.
-        Vite::useCspNonce($nonce);
+        return is_string($mode) && $mode !== '' ? $mode : 'inline';
+    }
 
+    /**
+     * Run the request and dress the response.
+     *
+     * @param array<string, string> $headers
+     * @param list<string> $noStorePaths
+     */
+    private function respond(Request $request, Closure $next, array $headers, string $nonce, bool $noStoreEnabled, array $noStorePaths): Response
+    {
         try {
             $response = $next($request);
 

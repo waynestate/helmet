@@ -8,6 +8,7 @@ use Psr\Log\LoggerInterface;
 use Waynestate\Helmet\Csrf\RequestForgeryGuard;
 use Waynestate\Helmet\Error\GenericErrorResponse;
 use Waynestate\Helmet\Headers\SecurityHeaders;
+use Waynestate\Helmet\Health\Readiness;
 use Waynestate\Helmet\Logging\Logging;
 use Waynestate\Helmet\Metrics\BearerToken;
 use Waynestate\Helmet\Metrics\Metrics;
@@ -41,6 +42,8 @@ if (!function_exists('helmet_boot')) {
        *    enabled and the request is not same-origin (or from a trusted
        *    origin),
        *  - sends the security headers (including a per-request CSP nonce),
+       *  - answers the readiness path (when "readiness" is enabled) with the
+       *    JSON readiness report, 200 or 503, and stops,
        *  - sets up a JSON logger (if configured),
        *  - writes one helmet.broad_trusted_proxy warning (through that
        *    logger, when one was configured) if the trusted-proxy list holds
@@ -64,6 +67,7 @@ if (!function_exists('helmet_boot')) {
        *     csp_report_uri?: string,
        *     csp_report_only?: bool,
        *     csp_trusted_types?: array{enabled?: bool, policies?: list<string>},
+       *     style_src_attr?: 'inline'|'report'|'none',
        *     coop?: string|null,
        *     corp?: string|null,
        *     permissions_policy?: array<string, list<string>>|null,
@@ -74,7 +78,8 @@ if (!function_exists('helmet_boot')) {
        *     no_store?: array{enabled?: bool, paths?: list<string>},
        *     csrf?: array{enabled?: bool, allow_same_site?: bool, trusted_origins?: list<string>, except?: list<string>},
         *     log?: array{channel?: string, stream?: string, level?: 'debug'|'info'|'notice'|'warning'|'error'|'critical'|'alert'|'emergency', request_id?: string},
-        *     error_handler?: array{enabled?: bool}
+        *     error_handler?: array{enabled?: bool},
+        *     readiness?: array{enabled?: bool, path?: string, checks?: array<string, callable(): (bool|null)>}
         * } $config
       *
       * @return array{nonce: string, logger: LoggerInterface|null, request_id: string}
@@ -86,7 +91,9 @@ if (!function_exists('helmet_boot')) {
       *         "coop", "corp", "permissions_policy", "csp_trusted_types",
       *         "no_store", "session.secure" or a "csrf" value is invalid, or
       *         "log.request_id" is not a string, or "error_handler" is the
-      *         wrong type.
+      *         wrong type, or "readiness" is the wrong type, its path is not
+      *         an absolute path or equals the health path, or a check name
+      *         is invalid or a check is not callable.
      * @throws \Waynestate\Helmet\Headers\InvalidCspReportUriException If
      *         "csp_report_uri" is not a valid report destination.
      * @throws \LogicException If a session is already active.
@@ -215,6 +222,48 @@ if (!function_exists('helmet_boot')) {
             helmet_up();
         }
 
+        // Readiness is opt-in and validated on every request (after the
+        // liveness answer, so a readiness typo never restarts the app), so a
+        // bad config fails at boot rather than on the first probe.
+        $readiness = $config['readiness'] ?? null;
+        $readinessEnabled = false;
+        $readinessPath = Readiness::DEFAULT_PATH;
+        $readinessChecks = [];
+        if ($readiness !== null) {
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
+            if (!is_array($readiness)) {
+                throw new \InvalidArgumentException('helmet_boot() "readiness" must be an array.');
+            }
+            $readinessEnabled = $readiness['enabled'] ?? false;
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says bool, but a caller may pass a non-bool at runtime)
+            if (!is_bool($readinessEnabled)) {
+                throw new \InvalidArgumentException('helmet_boot() "readiness.enabled" must be a bool.');
+            }
+            $readinessPath = $readiness['path'] ?? Readiness::DEFAULT_PATH;
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says string, but a caller may pass a non-string at runtime)
+            if (!is_string($readinessPath) || !str_starts_with($readinessPath, '/') || $readinessPath === $healthPath) {
+                throw new \InvalidArgumentException('helmet_boot() "readiness.path" must be an absolute path that differs from the health path.');
+            }
+            $readinessChecks = $readiness['checks'] ?? [];
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
+            if (!is_array($readinessChecks)) {
+                throw new \InvalidArgumentException('helmet_boot() "readiness.checks" must be an array of name => callable.');
+            }
+            // A dry registration against the three HELMET check names, so an
+            // invalid or clashing name throws now, not on the first probe.
+            $dryRun = (new Readiness())
+                ->withHeaders(static fn(): array => [])
+                ->withTrustedProxies($proxies)
+                ->withDebugOutput(false);
+            foreach ($readinessChecks as $checkName => $check) {
+                // @phpstan-ignore function.alreadyNarrowedType (the docblock says name => callable, but a caller may pass anything at runtime), function.alreadyNarrowedType (same), booleanOr.alwaysFalse (same)
+                if (!is_string($checkName) || !is_callable($check)) {
+                    throw new \InvalidArgumentException('helmet_boot() "readiness.checks" must be an array of name => callable.');
+                }
+                $dryRun = $dryRun->withCheck($checkName, $check);
+            }
+        }
+
         $csrf = $config['csrf'] ?? null;
         if ($csrf !== null) {
             // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
@@ -290,6 +339,14 @@ if (!function_exists('helmet_boot')) {
             }
         }
 
+        // HELMET-17: the inline style attribute mode. "inline" (the default)
+        // keeps style-src-attr 'unsafe-inline' for WayneUI's recipes.
+        $styleSrcAttr = $config['style_src_attr'] ?? 'inline';
+        // @phpstan-ignore function.alreadyNarrowedType (the docblock says string, but a caller may pass a non-string at runtime)
+        if (!is_string($styleSrcAttr)) {
+            throw new \InvalidArgumentException('helmet_boot() "style_src_attr" must be "inline", "report" or "none".');
+        }
+
         $noStore = $config['no_store'] ?? null;
         $noStoreEnabled = false;
         $noStorePaths = [];
@@ -324,10 +381,29 @@ if (!function_exists('helmet_boot')) {
             $config['hsts_preload'] ?? false,
             $trustedTypesEnabled,
             $trustedTypesPolicies,
+            $styleSrcAttr,
         );
 
         foreach ($headers as $name => $value) {
             header($name . ': ' . $value, true);
+        }
+
+        // The readiness answer goes out after the security headers, so it
+        // wears them like any other response. The headers check passes
+        // here by construction (the set was just built), and it still names
+        // the CSP mode so a probe log shows what the instance enforces.
+        if ($readinessEnabled && ($method === 'GET' || $method === 'HEAD') && $path === $readinessPath) {
+            $report = Readiness::standard(
+                $proxies,
+                static fn(): array => $headers,
+                ($config['csp_report_only'] ?? false) === true,
+                $styleSrcAttr,
+                $logger,
+            );
+            foreach ($readinessChecks as $checkName => $check) {
+                $report = $report->withCheck($checkName, $check);
+            }
+            helmet_ready($report);
         }
 
         if (SecurityHeaders::noStoreApplies($noStoreEnabled, $path, $noStorePaths)) {
@@ -391,6 +467,33 @@ if (!function_exists('helmet_up')) {
     function helmet_up(): never
     {
         $response = helmet_up_response();
+
+        http_response_code($response['status']);
+        foreach ($response['headers'] as $name => $value) {
+            header($name . ': ' . $value, true);
+        }
+        echo $response['body'];
+        exit;
+    }
+}
+
+if (!function_exists('helmet_ready')) {
+    /**
+     * Answer the readiness path and stop.
+     *
+     * Runs the checks, sends the status (200 ready, 503 not ready), the
+     * JSON Content-Type, Cache-Control: no-store and the JSON report, and
+     * exits. helmet_boot() calls it when "readiness" is enabled; a raw PHP
+     * app with no front controller can call it from a public/ready.php:
+     *
+     *     <?php
+     *     require __DIR__ . '/../vendor/autoload.php';
+     *     use Waynestate\Helmet\Health\Readiness;
+     *     helmet_ready((new Readiness())->withCheck('database', fn () => db_ping()));
+     */
+    function helmet_ready(Readiness $readiness): never
+    {
+        $response = $readiness->response();
 
         http_response_code($response['status']);
         foreach ($response['headers'] as $name => $value) {

@@ -25,6 +25,28 @@ $helmet = helmet_boot([
 
 In Laravel the same array goes in `helmet.csp` (published config) or `HELMET_CSP` (JSON in the environment); see [Laravel](usage-laravel.md). The merge rule is identical on both paths, because both call the same core function.
 
+## Inline style attributes
+
+The default keeps one allowance: `style-src-attr 'unsafe-inline'`, because WayneUI's partials and examples set `style="..."` attributes (spacing, skeleton sizes) that a stricter policy drops without a word. It covers the attribute only; `<style>` blocks and stylesheets still need the nonce or an allowed origin. One setting chooses how strict to be:
+
+| Mode | Raw PHP / PSR-15 | Laravel | What the browser gets |
+| --- | --- | --- | --- |
+| `inline` (default) | `'style_src_attr' => 'inline'` | `HELMET_CSP_STYLE_SRC_ATTR=inline` | `style-src-attr 'unsafe-inline'`, as before |
+| `report` | `'style_src_attr' => 'report'` | `HELMET_CSP_STYLE_SRC_ATTR=report` | the same enforced policy, plus `Content-Security-Policy-Report-Only: style-src-attr 'none'` |
+| `none` | `'style_src_attr' => 'none'` | `HELMET_CSP_STYLE_SRC_ATTR=none` | `style-src-attr 'none'`: inline style attributes are blocked |
+
+Start with `report`. The browser console (and your report endpoint, when `csp_report_uri` is set) then names each attribute a strict policy would block, without blocking any. When the list is empty, switch to `none`. For PSR-15 the mode is the last argument of `SecurityHeadersMiddleware`.
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'csp_report_uri' => '/csp-report',
+    'style_src_attr' => 'report',
+]);
+```
+
+The setting only replaces HELMET's own allowance: if you set `style-src-attr` yourself in `csp`, your value wins in every mode. An unknown mode throws at boot. Why the default stays `inline` for now, and what would change it, is in [ADR-0001](../adr/0001-style-src-attr.md).
+
 ## Reporting setup
 
 By default the policy is enforced: a violation is blocked. To see what would be blocked before you enforce it, or to keep collecting reports after you do, point the policy at a report endpoint.

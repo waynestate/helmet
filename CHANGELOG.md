@@ -4,9 +4,23 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Readiness (HELMET-7): a "send me traffic?" answer on its own path, `/ready`, apart from the liveness answer on `/up`, which is unchanged. `Health\Readiness` runs named checks and answers JSON, `no-store`, 200 while none failed and 503 once one did. HELMET's own checks report config sanity: `headers` (the header set builds and carries a CSP, in `enforce` or `report-only` mode), `trusted_proxies` (a count and a broad count, never an address; warns when empty or broad) and `debug_output` (warns when on). App checks join by name; one that throws fails, and its message goes to the log as `helmet.readiness_check_failed`, never the body. Raw PHP gains the `readiness` option to `helmet_boot()` (off by default, validated on every request) and `helmet_ready()` for a `public/ready.php`; PSR-15 gains the `ReadinessCheck` middleware; Laravel gains `Route::helmetReady()` (invokable check classes, so `route:cache` works; no throttle by default). New docs guide: "Readiness", with probe settings for Citadel, OpenShift, Coolify and Docker. An app that sets nothing behaves exactly as before.
+- Inline style attributes (HELMET-17, ADR-0001, Proposed): a `style_src_attr` option (`helmet_boot()`, the last `SecurityHeadersMiddleware` argument, Laravel `csp_style_src_attr` / `HELMET_CSP_STYLE_SRC_ATTR`). `inline`, the default, sends exactly what earlier releases sent (`style-src-attr 'unsafe-inline'`, which WayneUI's recipes need). `report` keeps enforcing it and adds `Content-Security-Policy-Report-Only: style-src-attr 'none'` (plus the app's report destination), so the browser names each inline style attribute a strict policy would block. `none` sends `style-src-attr 'none'`. Both only replace HELMET's own allowance: an app that sets `style-src-attr` in `csp` keeps its value. An unknown mode throws at boot. The readiness report names the mode. New docs: "Inline style attributes" in the CSP guide, and the ADR under Decisions.
+- Secret scanning (HELMET-5): HELMET's pipeline includes Preflight's `secret-detection` component (0.2.0), which runs Gitleaks v8.30.1, pinned by digest and pulled through the Dependency Proxy, over the tree; a finding fails the pipeline and the match is redacted. HELMET writes no scanner of its own. New docs guide: "Secret scanning", with the include for an app, the same scan on a developer machine (PowerShell and sh), a history scan, and what to do with a finding. HELMET's tree and its full history scan clean.
+- Accessibility (HELMET-23): the pipeline includes Preflight's `a11y` component (0.2.0) over the front page and every docs page at WCAG 2.2 AA, light and dark, 320 px (with the reflow check) and 1280 px, blocking. The Proof page records the last run of both gates and what was checked by hand.
+
 ### Fixed
 
+- Front page: the headers list and the practice squad named themselves with `aria-labelledby` on a plain `div`, which ARIA does not allow (axe-core 4.14 flags it for review); both are now `role="group"`. The practice squad lists what is still on the backlog, now that readiness and secret scanning shipped.
+- CSP: a quoted source in the `csp` option other than `'self'`, `'none'` and `'unsafe-inline'` was handed to the policy builder as a host, so `'sha256-...'` came out as `https://'sha256-...' http://'sha256-...' 'sha256-...'` and `'unsafe-eval'`, `'unsafe-hashes'`, `'wasm-unsafe-eval'`, `'report-sample'` and `'strict-dynamic'` the same way, none of which a browser accepts. Hashes, fixed nonces, every CSP keyword and the `https:`, `mediastream:` and `filesystem:` schemes now come out as written. An unknown quoted source (a typo such as `'unsafe-inlined'`) now throws `\InvalidArgumentException` when the headers are built, instead of shipping a token the browser ignores: check your `csp` / `HELMET_CSP` before you upgrade.
 - The front page roster says Sourdough starts all five app shapes, from raw PHP to Inertia and Vue; it no longer says Blade and Inertia come later.
+
+### Changed
+
+- Docs: BEST_PRACTICES re-checked for 1.0 (HELMET-1, third pass): H34 is `Enforced` (the readiness check), H58 is `Checked` (Gitleaks through Preflight), H5 is `Documented` (the `style_src_attr` mode, with the default left to ADR-0001), backlog items 19, 24 and 31 are closed or moved, and the new "Third pass (2026-11-07)" section records the quoted-source fix, the accessibility gate and what is still unverified.
+- CI caches Composer downloads per lock file (`.composer-cache`, keyed on `composer.lock` and `deploy/composer.lock`), so a pipeline stops fetching every package from Packagist on every run. Images already come through the Dependency Proxy.
 
 ## 0.4.0 (2026-11-07)
 

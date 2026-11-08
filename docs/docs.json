@@ -40,6 +40,10 @@
                     "Comma-separated Trusted Types policy names; replaces the default list.",
                     "[\"default\"]"
                 ],
+                "HELMET_CSP_STYLE_SRC_ATTR": [
+                    "Inline style attribute mode: inline keeps style-src-attr 'unsafe-inline' for WayneUI's recipes, report adds a report-only probe with 'none', none blocks inline style attributes.",
+                    "inline"
+                ],
                 "HELMET_CSRF_ALLOW_SAME_SITE": [
                     "true lets Sec-Fetch-Site: same-site pass; off by default because sibling subdomains are still same-site.",
                     "false"

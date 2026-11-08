@@ -53,7 +53,7 @@ Milquetoast is a Helmet song. It is not a Content-Security-Policy.
 Where each piece comes from:
 
 - `default-src`, `style-src`, `style-src-attr`, `script-src`, `font-src`, `img-src` and `connect-src` come from the raw PHP recipe.
-- `style-src-elem` comes from the Laravel/Blade recipe. It does not carry `'unsafe-inline'`; only `style-src-attr` does, and only for the inline `style="..."` attributes the recipes rely on (block spacing). `style-src-attr` governs only the style attribute, not `<style>` elements or stylesheets, so this is the narrowest allowance that keeps those recipes working.
+- `style-src-elem` comes from the Laravel/Blade recipe. It does not carry `'unsafe-inline'`; only `style-src-attr` does, and only for the inline `style="..."` attributes the recipes rely on (block spacing). `style-src-attr` governs only the style attribute, not `<style>` elements or stylesheets, so this is the narrowest allowance that keeps those recipes working. An app that does not need it can report on it or block it with one setting: see [Inline style attributes](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes).
 - `frame-ancestors 'self'` covers clickjacking at the CSP layer.
 - `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` close the base-tag, plugin and form-targeting gaps that `default-src` alone does not cover in every browser.
 - `data:` appears on `font-src` and `img-src`: Vite and Vue inline small fonts as `data:` URIs, and the nonce does not cover font sources.

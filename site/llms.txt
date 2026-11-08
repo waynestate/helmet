@@ -24,6 +24,7 @@ Every page below is Markdown. The HTML pages send the same Markdown to a client 
 ## Pages
 
 - [HELMET: Put it on before you ship.](https://helmet.apps.wayne.edu/index.md): HELMET is a small PHP package that sends the security headers and a nonce-based CSP, hardens the session, checks the proxy, answers /up and writes JSON logs. Raw PHP, Laravel and PSR-15 apps all use the same core.
+- [ADR-0001: Inline style attributes in the CSP | HELMET docs](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.md): Whether HELMET's default CSP keeps style-src-attr 'unsafe-inline', and the flag that lets an app go stricter today.
 - [Changelog | HELMET docs](https://helmet.apps.wayne.edu/docs/changelog.md): All notable changes to this project.
 - [Use HELMET from your coding agent (ADVISOR) | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/advisor.md): Install the ADVISOR module so a coding agent can ask HELMET which headers it sends and why, and how long the app's PHP floor stays supported, with the two read-only tools helmet_headers and helmet_php_support.
 - [Cross-origin isolation and feature policy | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.md): Three more headers round out the baseline: Cross-Origin-Opener-Policy and Permissions-Policy are on by default, Cross-Origin-Resource-Policy is opt-in.
@@ -36,7 +37,9 @@ Every page below is Markdown. The HTML pages send the same Markdown to a client 
 - [Metrics | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/metrics.md): HELMET can expose a Prometheus metrics endpoint with version, PHP support, request and CSP metrics. Off by default, gated by a bearer token or an IP allow list, with a Grafana dashboard to import.
 - [Platform presets | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/platform-presets.md): A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app.
 - [Quick start | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/quick-start.md): A raw PHP app behind the HELMET baseline in four steps: require, boot, verify, nonce.
+- [Readiness | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/readiness.md): The "send me traffic?" answer on its own path, apart from the "am I alive?" answer on /up, for Citadel, OpenShift, Coolify and Docker.
 - [Running off Citadel | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.md): HELMET ships one package for every platform, so running off Citadel means changing configuration, not code.
+- [Secret scanning | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.md): Keep committed secrets out of the repository with Gitleaks, in CI through Preflight's component and on your machine before you push.
 - [The session | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/session.md): SessionHardening::apply() sets the session ini values, including a __Host- prefixed cookie name on HTTPS, before the session starts.
 - [Laravel | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.md): The Laravel adapter is a service provider, two always-on middlewares, an optional request-forgery guard, and a config file.
 - [PSR-15 middleware | HELMET docs](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.md): The same core, mounted in a middleware pipeline, sends the identical headers.

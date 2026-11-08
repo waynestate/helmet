@@ -16,6 +16,7 @@ File `src/functions.php`, namespace `Waynestate\Helmet`:
 | `helmet_boot()` | `function helmet_boot(array $config): array` |
 | `helmet_up_response()` | `function helmet_up_response(): array` |
 | `helmet_up()` | `function helmet_up(): never` |
+| `helmet_ready()` | `function helmet_ready(Readiness $readiness): never` |
 | `helmet_forbidden_response()` | `function helmet_forbidden_response(): array` |
 | `helmet_forbidden()` | `function helmet_forbidden(): never` |
 | `helmet_csp_nonce_meta()` | `function helmet_csp_nonce_meta(string $nonce): string` |
@@ -29,6 +30,7 @@ What each one returns, from the docblocks:
 
 - `helmet_boot()` boots the core for raw PHP: it validates the config and returns `array{nonce: string, logger: LoggerInterface|null, request_id: string}`. It throws `UnknownPresetException` for an unknown preset, `\InvalidArgumentException` for a bad config value, `InvalidCspReportUriException` for a bad report URI, and `\LogicException` if a session is already active.
 - `helmet_up_response()` and `helmet_forbidden_response()` return the answer as data, `array{status: int, headers: array<string, string>, body: string}`, without sending anything; the caller sends it. `helmet_up()` and `helmet_forbidden()` send the same answers (200, body "ok", and 403, body "Forbidden") and exit, so a small public file can answer a probe that never reaches `helmet_boot()`.
+- `helmet_ready()` sends a `Readiness` report (200 or 503, JSON, `no-store`) and exits, for a `public/ready.php` with no front controller. `helmet_boot()` calls it on the readiness path when the `readiness` option is enabled. See [Readiness](../guides/readiness.md).
 - `helmet_csp_nonce_meta()` builds the `<meta property="csp-nonce">` tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in `<head>` of every page, with the same nonce `helmet_boot()` returned; the nonce is escaped so a quote cannot break out of the attribute.
 - `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder (default `CSP_NONCE_SLOT_FOR_HELMET`, the value a built Vue/Vite page carries where Vite's `html.cspNonce` stood) with the nonce, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws `\InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged.
 - `helmet_metrics()` builds the `/metrics` answer as data, `array{status: int, content_type: string, body: string}`. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning. With `storage` set, the request metrics are read back from that store and added to the body.
@@ -148,13 +150,39 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | `__construct()` | `public function __construct(private readonly ResponseFactoryInterface $responseFactory, private readonly StreamFactoryInterface $streamFactory, private readonly string $path = '/up')` |
 | `process()` | `public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface` |
 
+### `Health\Readiness`
+
+`final class Readiness` in `src/Health/Readiness.php`. The readiness report: named checks, each `pass`, `warn` or `fail`, answered as JSON with 200 while none failed and 503 once one did. Immutable; every `with*()` returns a copy. HELMET's own checks are `headers` (the header set builds and carries a CSP, and in which mode), `trusted_proxies` (a count and a broad count, never an address; warns when empty or broad) and `debug_output` (warns when on). An app check returns true or null to pass and false to fail; one that throws fails, and its class and message go to the logger as `helmet.readiness_check_failed`, never to the body. Check names are lowercase letters, digits and underscores; a bad or duplicate name throws `\InvalidArgumentException`.
+
+| Member | Signature |
+| --- | --- |
+| `DEFAULT_PATH` | `public const string DEFAULT_PATH = '/ready';` |
+| `__construct()` | `public function __construct(private readonly ?LoggerInterface $logger = null)` |
+| `standard()` | `public static function standard(TrustedProxies $proxies, callable $buildHeaders, bool $cspReportOnly = false, string $styleSrcAttr = 'inline', ?LoggerInterface $logger = null): self` |
+| `displayErrorsOn()` | `public static function displayErrorsOn(): bool` |
+| `withHeaders()` | `public function withHeaders(callable $buildHeaders, bool $cspReportOnly = false, string $styleSrcAttr = 'inline', bool $registered = true): self` |
+| `withTrustedProxies()` | `public function withTrustedProxies(TrustedProxies $proxies): self` |
+| `withDebugOutput()` | `public function withDebugOutput(bool $on): self` |
+| `withCheck()` | `public function withCheck(string $name, callable $check): self` |
+| `names()` | `public function names(): array` |
+| `response()` | `public function response(): array` |
+
+### `Health\ReadinessCheck`
+
+`final class ReadinessCheck implements MiddlewareInterface` in `src/Health/ReadinessCheck.php`. Answers a GET or HEAD on the readiness path (default `/ready`) with the `Readiness` report; any other request is passed through unchanged. Put it next to `HealthCheck`, never in its place.
+
+| Member | Signature |
+| --- | --- |
+| `__construct()` | `public function __construct(private readonly ResponseFactoryInterface $responseFactory, private readonly StreamFactoryInterface $streamFactory, private readonly Readiness $readiness, private readonly string $path = Readiness::DEFAULT_PATH)` |
+| `process()` | `public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface` |
+
 ## Laravel
 
-The Laravel adapter. The service provider wires the config into the app; the four middlewares put the core classes into the request pipeline; the two route classes register the optional endpoints, which stay off until an app opts in.
+The Laravel adapter. The service provider wires the config into the app; the four middlewares put the core classes into the request pipeline; the three route classes register the optional endpoints (CSP reports, metrics, readiness), which stay off until an app opts in.
 
 ### `Laravel\HelmetServiceProvider`
 
-`final class HelmetServiceProvider extends ServiceProvider` in `src/Laravel/HelmetServiceProvider.php`. Merges and publishes `config/helmet.php`, copies `helmet.proxies` into Laravel's trusted-proxy list when the app has not set `trustedproxy.proxies` itself (an explicit `trustProxies(at: ...)` call still wins), and registers the `cspReport` and `helmetMetrics` route macros. It registers no routes of its own; the `/up` health route is left to Laravel's built-in `health: '/up'` option.
+`final class HelmetServiceProvider extends ServiceProvider` in `src/Laravel/HelmetServiceProvider.php`. Merges and publishes `config/helmet.php`, copies `helmet.proxies` into Laravel's trusted-proxy list when the app has not set `trustedproxy.proxies` itself (an explicit `trustProxies(at: ...)` call still wins), and registers the `cspReport`, `helmetMetrics` and `helmetReady` route macros. It registers no routes of its own; the `/up` health route is left to Laravel's built-in `health: '/up'` option.
 
 | Member | Signature |
 | --- | --- |
@@ -168,6 +196,9 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 | Member | Signature |
 | --- | --- |
 | `handle()` | `public function handle(Request $request, Closure $next): Response` |
+| `configuredHeaders()` | `public static function configuredHeaders(array $policy, string $nonce, bool $isHttps): array` |
+
+`configuredHeaders()` builds the header set from the `helmet` config for a given policy, nonce and scheme; the readiness controller uses it to prove the config builds.
 
 ### `Laravel\RequestForgeryGuard`
 
@@ -255,6 +286,25 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `DEFAULT_THROTTLE` | `public const string DEFAULT_THROTTLE = 'throttle:60,1';` |
 | `registerMacro()` | `public static function registerMacro(): void` |
 | `register()` | `public static function register(string $path = self::DEFAULT_PATH, ?string $throttle = self::DEFAULT_THROTTLE): \Illuminate\Routing\Route` |
+
+### `Laravel\ReadinessRoute`
+
+`final class ReadinessRoute` in `src/Laravel/ReadinessRoute.php`. Registers the `Route::helmetReady()` macro and the GET route it creates (name `helmet.ready`). App checks are a map of name to invokable class name, carried as a route default so `route:cache` works. No throttle by default: a throttled probe reads as "not ready". A check that is not a name and class-name pair throws `\InvalidArgumentException`.
+
+| Member | Signature |
+| --- | --- |
+| `ROUTE_NAME` | `public const string ROUTE_NAME = 'helmet.ready';` |
+| `CHECKS_DEFAULT` | `public const string CHECKS_DEFAULT = 'helmet_ready_checks';` |
+| `registerMacro()` | `public static function registerMacro(): void` |
+| `register()` | `public static function register(string $path = Readiness::DEFAULT_PATH, array $checks = [], ?string $throttle = null): \Illuminate\Routing\Route` |
+
+### `Laravel\ReadinessController`
+
+`final class ReadinessController` in `src/Laravel/ReadinessController.php`. Runs HELMET's checks against the app's config (the header middleware is registered and the set builds, the trusted-proxy count, `app.debug` in production) plus the route's app checks, each resolved from the container, and answers with the report.
+
+| Member | Signature |
+| --- | --- |
+| `__invoke()` | `public function __invoke(Request $request): Response` |
 
 ## Logging
 
@@ -460,6 +510,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `isTrusted()` | `public function isTrusted(string $ip): bool` |
 | `unmapIpv4MappedIpv6()` | `public static function unmapIpv4MappedIpv6(string $ip): string` |
 | `isEmpty()` | `public function isEmpty(): bool` |
+| `count()` | `public function count(): int` |
 
 ## Ribbon
 

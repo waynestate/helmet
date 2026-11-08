@@ -24,7 +24,7 @@ final class HeaderReasons
     private const DIRECTIVES = [
         'default-src' => "The fallback for every fetch directive not listed here: only the app's own origin.",
         'style-src' => 'Stylesheets from the app and the WayneUI CDN, plus the per-request nonce so the <style> and <link> tags Vite and Vue inject still load.',
-        'style-src-attr' => 'The one inline allowance: the WayneUI raw PHP and Blade recipes set style="..." attributes (block spacing) that browsers drop without it. It covers style attributes only, never <style> elements or stylesheets.',
+        'style-src-attr' => 'The one inline allowance: the WayneUI raw PHP and Blade recipes set style="..." attributes (block spacing) that browsers drop without it. It covers style attributes only, never <style> elements or stylesheets. The style_src_attr setting reports on it or turns it off (ADR-0001).',
         'style-src-elem' => '<style> elements and stylesheet links: the app, the WayneUI CDN and the nonce. No unsafe-inline here, so an injected <style> block is refused.',
         'script-src' => "Scripts from the app and the WayneUI CDN, plus the per-request nonce with 'strict-dynamic': a nonced script may load what it needs, and an injected inline script has no nonce and never runs. Browsers that understand 'strict-dynamic' trust the nonce and ignore the host list; older ones fall back to the hosts.",
         'font-src' => 'Fonts from the app, the WayneUI CDN and data: URIs, because Vite and Vue inline small fonts as data: and a nonce does not cover fonts.',

@@ -202,13 +202,13 @@ $helmet = helmet_boot([
 ```
 
 Every other `helmet_boot()` option is covered in its own section below:
-`csp` (Customizing the CSP), `csp_report_uri` and `csp_report_only`
+`csp` and `style_src_attr` (Customizing the CSP), `csp_report_uri` and `csp_report_only`
 (CSP reports), `coop`, `corp` and `permissions_policy` (Cross-origin
 isolation and feature policy), `hsts_max_age`, `hsts_include_subdomains`
 and `hsts_preload` (Configuring HSTS), `no_store` (the no-store rows of
 [Raw PHP and Laravel agree](#raw-php-and-laravel-agree)), `csrf`
 (The request-forgery guard), `health_path` (Health check without a front
-controller), `session` (The session, secure mode) and `error_handler`
+controller), `readiness` (Readiness is a separate check), `session` (The session, secure mode) and `error_handler`
 (A generic error page).
 
 The `log` option configures that logger: `channel` names it, `stream` is a
@@ -345,33 +345,39 @@ is in the air; it does not grade the play.
 ##### Readiness is a separate check
 
 `/up` is liveness: "the process is running". Keep it free of dependency checks. If `/up` fails because the database is
-down, the platform restarts a healthy app and makes the outage worse. Put dependency checks on a different path, for
-example `/ready`, and point the load balancer's "send me traffic" probe at that one, not the restart probe.
+down, the platform restarts a healthy app and makes the outage worse. Readiness is the other question, "send me
+traffic?", and HELMET answers it on its own path, `/ready`, off unless you turn it on:
 
 ```php
-<?php // public/ready.php
-declare(strict_types=1);
-
-header('Content-Type: text/plain; charset=utf-8');
-header('Cache-Control: no-store');
-
-try {
-    $pdo = new PDO(getenv('DB_DSN'), getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [
-        PDO::ATTR_TIMEOUT => 2,
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    ]);
-    $pdo->query('SELECT 1');
-    echo 'ready';
-} catch (Throwable) {
-    http_response_code(503);
-    echo 'not ready';
-}
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'readiness' => [
+        'enabled' => true,                       // default false
+        'path' => '/ready',                      // the default; must differ from health_path
+        'checks' => [
+            'database' => static fn (): bool => db_ping(), // true or null passes, false fails
+        ],
+    ],
+]);
 ```
 
-Keep the same rules as `/up`: a short body, `no-store`, and no detail about which dependency failed (log that, do not
-print it). Give the check a short timeout so a hung database cannot hang the probe. In Laravel, register a separate
-`/ready` route that runs the checks; do not put them in the `DiagnosingHealth` listener, because that event fires for
-`/up` and would turn the liveness probe into a readiness probe.
+The answer is JSON, `no-store`, 200 while no check failed and 503 once one did:
+
+```json
+{"status":"ready","checks":{"headers":{"status":"pass","csp":"enforce","style_src_attr":"inline"},"trusted_proxies":{"status":"pass","count":1,"broad":0},"debug_output":{"status":"pass"},"database":{"status":"pass"}}}
+```
+
+HELMET adds three checks of its own config: the header set builds and carries a CSP (and in which mode), how many
+trusted proxies there are and how many are broad (a count, never an address), and whether `display_errors` is on. The
+last two warn and never fail. A check that throws fails, and its message goes to the log
+(`helmet.readiness_check_failed`), never the body. Give your checks a short timeout so a hung database cannot hang the
+probe. No secrets, no addresses, no policy text: the probe is reachable by anyone who can reach the app.
+
+A raw app with no front controller can answer from `public/ready.php` with `helmet_ready()`; PSR-15 apps add the
+`ReadinessCheck` middleware; Laravel apps call `Route::helmetReady()`. Never point the restart (liveness) probe at
+`/ready`, and in Laravel do not put dependency checks in the `DiagnosingHealth` listener, because that event fires for
+`/up`. Where each platform wants which path (Citadel, OpenShift, Coolify, Docker) is in the
+[readiness guide](https://github.com/waynestate/helmet/blob/HEAD/docs/guides/readiness.md).
 ##### Raw PHP with a Vue (Vite) build
 
 A raw PHP app that serves a built Vue/Vite SPA gives the bundler HELMET's
@@ -531,7 +537,7 @@ than `/48`, the provider writes one `helmet.broad_trusted_proxy` warning at
 boot; set `HELMET_WARN_BROAD_PROXIES=false` to silence it once you have
 reviewed the range.
 
-Keep `/up` for liveness only; readiness checks (database, cache) belong on a separate `/ready` route (see [Readiness is a separate check](#readiness-is-a-separate-check)).
+Keep `/up` for liveness only. Readiness checks (database, cache) belong on a separate route: `Route::helmetReady('/ready', ['database' => DatabaseReady::class])` in `bootstrap/app.php` `withRouting(then: ...)`, where each check is an invokable class (so `route:cache` works). See [Readiness is a separate check](#readiness-is-a-separate-check).
 
 The `/up` health route is Laravel's own: keep `health: '/up'` in
 `withRouting()`. The adapter registers no route.
@@ -700,6 +706,7 @@ like this:
 | Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
+| Readiness | `readiness` option, answered by `helmet_boot()`, default off | `Route::helmetReady()`, off until called |
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
@@ -747,6 +754,15 @@ $helmet = helmet_boot([
     ],
 ]);
 ```
+
+The one `'unsafe-inline'` in the default is on `style-src-attr`, for WayneUI's
+inline `style="..."` attributes. The `style_src_attr` option (Laravel:
+`HELMET_CSP_STYLE_SRC_ATTR`) chooses how strict to be: `inline` (the default,
+unchanged), `report` (keep it and add a report-only probe with
+`style-src-attr 'none'`) or `none` (block inline style attributes). An app that
+sets `style-src-attr` in `csp` keeps its own value. See
+[Inline style attributes](https://github.com/waynestate/helmet/blob/HEAD/docs/guides/csp.md#inline-style-attributes) and
+[ADR-0001](https://github.com/waynestate/helmet/blob/HEAD/docs/adr/0001-style-src-attr.md).
 
 #### Configuring HSTS
 
@@ -1057,6 +1073,25 @@ the scrape config and the queries.
 The endpoint is the only place in HELMET that says "I am still here" without
 saying "here is your page". A lullaby, in a way.
 
+### Secret scanning
+
+HELMET cannot help once a key is committed, so the stack scans for secrets
+with [Gitleaks](https://github.com/gitleaks/gitleaks), a maintained scanner,
+instead of a home-made one. HELMET's pipeline includes Preflight's
+`secret-detection` component, and an app adds the same include:
+
+```yaml
+include:
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.2.0
+    inputs:
+      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+```
+
+A finding fails the pipeline, and the match is redacted in the log. The
+[Secret scanning guide](https://github.com/waynestate/helmet/blob/HEAD/docs/guides/secret-scanning.md) has the same scan for
+your machine (PowerShell and sh), the history scan, and what to do when it
+finds something: rotate first.
+
 ### Use HELMET from your coding agent (ADVISOR)
 
 HELMET ships an [ADVISOR](https://github.com/waynestate/advisor) module, so a coding agent can ask HELMET
@@ -1124,7 +1159,10 @@ the stack's coding standard: `phpstan.neon` includes
 
 The site gets the same treatment as the headers: `scripts/a11y.sh` (or `scripts/a11y.ps1`) runs axe-core in
 Playwright over `site/index.html` and every page under `site/docs/`, in light and dark at 360 px and 1280 px,
-and fails on any WCAG 2.2 AA violation. Run it before you release.
+and fails on any WCAG 2.2 AA violation. Run it before you release. The pipeline runs Preflight's `a11y` component over the
+same pages, a step stricter (axe-core 4.14, 320 px with the reflow check), and a violation fails it. What axe-core cannot
+decide (text over a gradient or a background image) is checked by hand; see
+[Accessibility](https://github.com/waynestate/helmet/blob/HEAD/docs/reference/proof.md#accessibility) on the Proof page.
 
 ### Strongly recommended: a git.wayne.edu instance runner
 
@@ -1202,7 +1240,7 @@ Each play is one protection and the attack it stops. Laminated, because coffee h
 6. ### Play 00: Victory Formation
    /UP
    Blocks A slow app called dead
-   `GET` or `HEAD /up` answers `200 ok` with `Cache-Control: no-store` before your code runs, so the load balancer sees a live container even while the app is busy.
+   `GET` or `HEAD /up` answers `200 ok` with `Cache-Control: no-store` before your code runs, so the load balancer sees a live container even while the app is busy. Dependency checks go on `/ready`, opt-in, so a database blip never restarts a healthy app.
    `GET /up → 200 ok`
    Take a knee. Still up.
 
@@ -1505,10 +1543,9 @@ The CSP stays honest only if the bundle plays along.
 
 ### Practice squad
 
-These are on HELMET's backlog and aren't in 0.3. They suit up when they're ready.
+Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on `/ready` and Gitleaks in CI.
 
-- A readiness check, separate from `/up` (the pattern is in the docs today)
-- Secret scanning in CI, once Preflight tags its component
+- A strict `style-src-attr` by default, once WayneUI's recipes stop writing inline styles (`style_src_attr` already reports or blocks them)
 - Traded to SESAME: `Clear-Site-Data` on logout, since SESAME owns sign-out
 
 Wayne State app stack · 0.1 season
@@ -1548,6 +1585,54 @@ Starters, deploys, sign-in and upgrades
 
 ---
 
+Source: https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html
+
+## ADR-0001: Inline style attributes in the CSP[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#adr-0001-inline-style-attributes-in-the-csp)
+
+Status: Proposed (HELMET-17). The flag ships; the default is Adam's call.
+
+### Context[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#context)
+
+HELMET's default CSP keeps exactly one `'unsafe-inline'`: on `style-src-attr`, the directive that governs `style="..."` attributes and nothing else. `<style>` elements and stylesheets (`style-src-elem`) need the nonce or an allowed origin, and scripts never get `'unsafe-inline'`.
+
+The allowance is there because WayneUI sets inline style attributes. At the WayneUI commit HELMET tracks, six of its PHP partials, ten of its example pages and its Vue skeleton loader write `style="..."`, several of them with values computed per call (a skeleton's width and height, a block's spacing). A browser that enforces `style-src-attr 'none'` drops those attributes silently: the page still loads, but spacing and placeholders are wrong, and nobody gets an error. HELMET's own front page leans on the same thing, about 140 inline custom properties that time its motion.
+
+What an inline style attribute can do to an attacker's benefit is narrow but real: with an HTML injection and no script, `style` can overlay or hide content (a fake login over the real one), and CSS can leak some attribute values through background requests where `img-src` allows them. It cannot run script. The nonce, `strict-dynamic` and the absence of `'unsafe-inline'` on `script-src` are what stop script injection, and they are unchanged.
+
+### Options[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#options)
+
+| Option | What it does | Cost |
+| --- | --- | --- |
+| 1. Keep `'unsafe-inline'` (today) | WayneUI pages render as designed | the overlay and CSS-leak risks above stay open to any HTML injection |
+| 2. `'none'` by default | blocks every inline style attribute | breaks WayneUI layouts silently, in every app at once, on upgrade |
+| 3. `'unsafe-hashes'` plus hashes | allows only known attribute values | needs a hash per distinct value; WayneUI's computed values (widths, spacing) make the list endless, and every WayneUI release would change it |
+| 4. Report first, then decide | enforce today's policy, and send a report-only probe with `style-src-attr 'none'` | one more header; reports need a report destination to be useful outside the browser console |
+| 5. WayneUI moves to classes | WayneUI replaces inline styles with utility classes or CSS custom properties set from a nonce'd stylesheet | WayneUI's work, on WayneUI's schedule; computed sizes need a different technique |
+
+### Decision (proposed)[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#decision-proposed)
+
+Ship options 1, 2 and 4 as one setting and keep option 1 as the default for 1.0:
+
+- `style_src_attr` in `helmet_boot()`, `csp_style_src_attr` / `HELMET_CSP_STYLE_SRC_ATTR` in Laravel, and the last constructor argument of `SecurityHeadersMiddleware`: `inline` (default, today's header byte for byte), `report` or `none`.
+- `report` keeps the enforced policy and adds `Content-Security-Policy-Report-Only: style-src-attr 'none'` (plus the app's report destination, when it has one), so the browser names each attribute a strict policy would block, and nothing else. On an app that already runs its whole policy report-only, the one report-only header carries `'none'` instead.
+- `none` sends `style-src-attr 'none'`.
+- Both only replace HELMET's default allowance. An app that sets `style-src-attr` itself in `csp` keeps its own value, so the setting never overrides a decision the app already made.
+- The readiness report names the mode (`checks.headers.style_src_attr`), so a fleet scrape shows which apps run strict.
+- Ask WayneUI (option 5) to move its inline styles to classes or nonce'd custom properties. When WayneUI's recipes render under `'none'`, flip HELMET's default to `report` in one minor release and to `none` in the next major.
+
+### Consequences[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#consequences)
+
+Good: no app changes on upgrade; an app with no WayneUI inline styles (an API, a page that uses only WayneUI's stylesheet) can go strict with one variable today; `report` lets any app see its own exposure without risk; the path to a strict default is written down.
+
+Bad: the default still allows inline style attributes, so BEST_PRACTICES H5 stays `Documented`, not `Enforced`. Two policies on one response (`report` mode) are harder to read in DevTools, and the probe reports only reach a server when the app has a CSP report URI.
+
+### Decisions for Adam[#](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html#decisions-for-adam)
+
+1. Keep `inline` as the 1.0 default (recommended), or ship 1.0 with `report`.
+2. Whether to open the WayneUI request (option 5) now.
+
+---
+
 Source: https://helmet.apps.wayne.edu/docs/changelog.html
 
 ## Changelog[#](https://helmet.apps.wayne.edu/docs/changelog.html#changelog)
@@ -1556,13 +1641,27 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+#### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
+
+- Readiness (HELMET-7): a "send me traffic?" answer on its own path, `/ready`, apart from the liveness answer on `/up`, which is unchanged. `Health\Readiness` runs named checks and answers JSON, `no-store`, 200 while none failed and 503 once one did. HELMET's own checks report config sanity: `headers` (the header set builds and carries a CSP, in `enforce` or `report-only` mode), `trusted_proxies` (a count and a broad count, never an address; warns when empty or broad) and `debug_output` (warns when on). App checks join by name; one that throws fails, and its message goes to the log as `helmet.readiness_check_failed`, never the body. Raw PHP gains the `readiness` option to `helmet_boot()` (off by default, validated on every request) and `helmet_ready()` for a `public/ready.php`; PSR-15 gains the `ReadinessCheck` middleware; Laravel gains `Route::helmetReady()` (invokable check classes, so `route:cache` works; no throttle by default). New docs guide: "Readiness", with probe settings for Citadel, OpenShift, Coolify and Docker. An app that sets nothing behaves exactly as before.
+- Inline style attributes (HELMET-17, ADR-0001, Proposed): a `style_src_attr` option (`helmet_boot()`, the last `SecurityHeadersMiddleware` argument, Laravel `csp_style_src_attr` / `HELMET_CSP_STYLE_SRC_ATTR`). `inline`, the default, sends exactly what earlier releases sent (`style-src-attr 'unsafe-inline'`, which WayneUI's recipes need). `report` keeps enforcing it and adds `Content-Security-Policy-Report-Only: style-src-attr 'none'` (plus the app's report destination), so the browser names each inline style attribute a strict policy would block. `none` sends `style-src-attr 'none'`. Both only replace HELMET's own allowance: an app that sets `style-src-attr` in `csp` keeps its value. An unknown mode throws at boot. The readiness report names the mode. New docs: "Inline style attributes" in the CSP guide, and the ADR under Decisions.
+- Secret scanning (HELMET-5): HELMET's pipeline includes Preflight's `secret-detection` component (0.2.0), which runs Gitleaks v8.30.1, pinned by digest and pulled through the Dependency Proxy, over the tree; a finding fails the pipeline and the match is redacted. HELMET writes no scanner of its own. New docs guide: "Secret scanning", with the include for an app, the same scan on a developer machine (PowerShell and sh), a history scan, and what to do with a finding. HELMET's tree and its full history scan clean.
+- Accessibility (HELMET-23): the pipeline includes Preflight's `a11y` component (0.2.0) over the front page and every docs page at WCAG 2.2 AA, light and dark, 320 px (with the reflow check) and 1280 px, blocking. The Proof page records the last run of both gates and what was checked by hand.
+
 #### Fixed[#](https://helmet.apps.wayne.edu/docs/changelog.html#fixed)
 
+- Front page: the headers list and the practice squad named themselves with `aria-labelledby` on a plain `div`, which ARIA does not allow (axe-core 4.14 flags it for review); both are now `role="group"`. The practice squad lists what is still on the backlog, now that readiness and secret scanning shipped.
+- CSP: a quoted source in the `csp` option other than `'self'`, `'none'` and `'unsafe-inline'` was handed to the policy builder as a host, so `'sha256-...'` came out as `https://'sha256-...' http://'sha256-...' 'sha256-...'` and `'unsafe-eval'`, `'unsafe-hashes'`, `'wasm-unsafe-eval'`, `'report-sample'` and `'strict-dynamic'` the same way, none of which a browser accepts. Hashes, fixed nonces, every CSP keyword and the `https:`, `mediastream:` and `filesystem:` schemes now come out as written. An unknown quoted source (a typo such as `'unsafe-inlined'`) now throws `\InvalidArgumentException` when the headers are built, instead of shipping a token the browser ignores: check your `csp` / `HELMET_CSP` before you upgrade.
 - The front page roster says Sourdough starts all five app shapes, from raw PHP to Inertia and Vue; it no longer says Blade and Inertia come later.
+
+#### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
+
+- Docs: BEST_PRACTICES re-checked for 1.0 (HELMET-1, third pass): H34 is `Enforced` (the readiness check), H58 is `Checked` (Gitleaks through Preflight), H5 is `Documented` (the `style_src_attr` mode, with the default left to ADR-0001), backlog items 19, 24 and 31 are closed or moved, and the new "Third pass (2026-11-07)" section records the quoted-source fix, the accessibility gate and what is still unverified.
+- CI caches Composer downloads per lock file (`.composer-cache`, keyed on `composer.lock` and `deploy/composer.lock`), so a pipeline stops fetching every package from Packagist on every run. Images already come through the Dependency Proxy.
 
 ### 0.4.0 (2026-11-07)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-4-0-2026-11-07)
 
-#### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
+#### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added-1)
 
 - ADVISOR module (`Waynestate\Helmet\Advisor\HelmetModule`): a coding agent that runs ADVISOR gains two read-only tools. `helmet_headers` returns the headers and CSP HELMET sends, built by `SecurityHeaders::build()`, each header and directive with its reason, plus how the app folder is wired to HELMET and the settings that change the answer. `helmet_php_support` reads the PHP constraint from the app's `composer.json` and reports the support status of its floor, and of every version it allows, from the CREED policy ADVISOR bundles, read with HELMET's own `JsonFilePolicySource` and `VersionStatus`. Both take one path inside the project, run in-process, write nothing and never read `.env`. `waynestate/advisor` is a dev dependency and a suggestion, never a requirement. New docs guide: "Your coding agent (ADVISOR)".
 - `Headers\HeaderReasons`: one reason per header and CSP directive, next to the policy; a test fails when one is added without a reason.
@@ -1581,7 +1680,7 @@ All notable changes to this project are documented in this file.
 - Metrics: `helmet_metrics()` read the scraper's token only from `$_SERVER['HTTP_AUTHORIZATION']`, which Apache with mod_php (Citadel's images) never sets, so a correct token got 403 there. It now also reads `REDIRECT_HTTP_AUTHORIZATION` and `getallheaders()` (`BearerToken::fromServer()`). Found by scraping HELMET's own front page in a php:8.5 Apache container.
 - Grafana dashboard: the data source was declared under `inputs`, which Grafana's import ignores, so every panel pointed at an unresolved `${DS_PROMETHEUS}`; it is now `__inputs` (with `__requires`). "Scrape health" joined `up` to `helmet_info`, which drops exactly the targets that are down; it now graphs `up` directly.
 
-#### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
+#### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed-1)
 
 - The canonical repository is git.wayne.edu (ADR-0021); docs, links and package metadata no longer point at the archived nougat copy.
 
@@ -1838,6 +1937,28 @@ $helmet = helmet_boot([
 
 In Laravel the same array goes in `helmet.csp` (published config) or `HELMET_CSP` (JSON in the environment); see [Laravel](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html). The merge rule is identical on both paths, because both call the same core function.
 
+### Inline style attributes[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes)
+
+The default keeps one allowance: `style-src-attr 'unsafe-inline'`, because WayneUI's partials and examples set `style="..."` attributes (spacing, skeleton sizes) that a stricter policy drops without a word. It covers the attribute only; `<style>` blocks and stylesheets still need the nonce or an allowed origin. One setting chooses how strict to be:
+
+| Mode | Raw PHP / PSR-15 | Laravel | What the browser gets |
+| --- | --- | --- | --- |
+| `inline` (default) | `'style_src_attr' => 'inline'` | `HELMET_CSP_STYLE_SRC_ATTR=inline` | `style-src-attr 'unsafe-inline'`, as before |
+| `report` | `'style_src_attr' => 'report'` | `HELMET_CSP_STYLE_SRC_ATTR=report` | the same enforced policy, plus `Content-Security-Policy-Report-Only: style-src-attr 'none'` |
+| `none` | `'style_src_attr' => 'none'` | `HELMET_CSP_STYLE_SRC_ATTR=none` | `style-src-attr 'none'`: inline style attributes are blocked |
+
+Start with `report`. The browser console (and your report endpoint, when `csp_report_uri` is set) then names each attribute a strict policy would block, without blocking any. When the list is empty, switch to `none`. For PSR-15 the mode is the last argument of `SecurityHeadersMiddleware`.
+
+```php
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'csp_report_uri' => '/csp-report',
+    'style_src_attr' => 'report',
+]);
+```
+
+The setting only replaces HELMET's own allowance: if you set `style-src-attr` yourself in `csp`, your value wins in every mode. An unknown mode throws at boot. Why the default stays `inline` for now, and what would change it, is in [ADR-0001](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html).
+
 ### Reporting setup[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#reporting-setup)
 
 By default the policy is enforced: a violation is blocked. To see what would be blocked before you enforce it, or to keep collecting reports after you do, point the policy at a report endpoint.
@@ -2021,7 +2142,7 @@ Milquetoast is a Helmet song. It is not a Content-Security-Policy.
 Where each piece comes from:
 
 - `default-src`, `style-src`, `style-src-attr`, `script-src`, `font-src`, `img-src` and `connect-src` come from the raw PHP recipe.
-- `style-src-elem` comes from the Laravel/Blade recipe. It does not carry `'unsafe-inline'`; only `style-src-attr` does, and only for the inline `style="..."` attributes the recipes rely on (block spacing). `style-src-attr` governs only the style attribute, not `<style>` elements or stylesheets, so this is the narrowest allowance that keeps those recipes working.
+- `style-src-elem` comes from the Laravel/Blade recipe. It does not carry `'unsafe-inline'`; only `style-src-attr` does, and only for the inline `style="..."` attributes the recipes rely on (block spacing). `style-src-attr` governs only the style attribute, not `<style>` elements or stylesheets, so this is the narrowest allowance that keeps those recipes working. An app that does not need it can report on it or block it with one setting: see [Inline style attributes](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes).
 - `frame-ancestors 'self'` covers clickjacking at the CSP layer.
 - `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` close the base-tag, plugin and form-targeting gaps that `default-src` alone does not cover in every browser.
 - `data:` appears on `font-src` and `img-src`: Vite and Vue inline small fonts as `data:` URIs, and the nonce does not cover font sources.
@@ -2549,6 +2670,174 @@ A raw PHP front controller where every response carries the baseline security he
 
 ---
 
+Source: https://helmet.apps.wayne.edu/docs/guides/readiness.html
+
+## Readiness[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#readiness)
+
+Two questions, two paths. **Liveness** (`/up`) asks "is the process running?" and a failure means "restart me". **Readiness** (`/ready`) asks "should this instance get traffic right now?" and a failure means "skip me for a while". Mix them up and a database blip restarts every healthy instance at once, which turns a short outage into a long one.
+
+HELMET answers both. `/up` stays what it always was: `200`, `ok`, no checks, no config read. `/ready` is new and off until you turn it on.
+
+### What `/ready` answers[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#what-ready-answers)
+
+```json
+{"status":"ready","checks":{"headers":{"status":"pass","csp":"enforce","style_src_attr":"inline"},"trusted_proxies":{"status":"pass","count":1,"broad":0},"debug_output":{"status":"pass"},"database":{"status":"pass"}}}
+```
+
+- `200` and `"ready"` while no check failed; `503` and `"not ready"` once one did. A `warn` never fails the probe.
+- `Content-Type: application/json; charset=utf-8` and `Cache-Control: no-store`, and the usual security headers.
+- Each check has a `status` of `pass`, `warn` or `fail`, plus a little detail that is safe to show anyone.
+
+HELMET's own checks:
+
+| Check | Fails when | Warns when | Detail in the body |
+| --- | --- | --- | --- |
+| `headers` | the header set does not build (a bad config value) or has no CSP; in Laravel, also when the header middleware is not registered | never | `csp`: `enforce` or `report-only`; `style_src_attr`: the inline-style mode |
+| `trusted_proxies` | never | the list is empty (HTTPS is never trusted, so HSTS is never sent) or holds a broad range | `count` and `broad`, numbers only |
+| `debug_output` | never | raw PHP: `display_errors` is on; Laravel: `app.debug` is true in production | none |
+
+Your own checks join them by name (lowercase letters, digits and underscores). A check returns `true` (or `null`) to pass and `false` to fail. A check that throws fails too, and its message goes to the log as `helmet.readiness_check_failed`, never to the body.
+
+> \[!IMPORTANT\] The probe is as public as the app. The body names checks and statuses, never an address, a hostname, a DSN, an exception message or the policy text. Keep it that way in your own checks: return a bool and log the rest.
+
+Give every dependency check a short timeout (two seconds is plenty). A probe that hangs is a probe that fails, and it holds a worker while it does.
+
+### Turn it on[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#turn-it-on)
+
+#### Raw PHP[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#raw-php)
+
+```php
+use function Waynestate\Helmet\helmet_boot;
+
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'readiness' => [
+        'enabled' => true,                       // default false
+        'path' => '/ready',                      // the default; must differ from health_path
+        'checks' => [
+            'database' => static function (): bool {
+                $pdo = new PDO(getenv('DB_DSN'), getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [
+                    PDO::ATTR_TIMEOUT => 2,
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                ]);
+
+                return $pdo->query('SELECT 1') !== false;
+            },
+        ],
+    ],
+]);
+```
+
+`helmet_boot()` validates the `readiness` option on every request, so a typo (a relative path, a check name with a space, a name that clashes with `headers`) throws on the first page view, not only when the probe arrives. The answer goes out after the security headers and before the session starts, and `helmet_boot()` stops there.
+
+No front controller? Answer from a small public file instead:
+
+```php
+<?php // public/ready.php
+use Waynestate\Helmet\Health\Readiness;
+use function Waynestate\Helmet\helmet_ready;
+
+require __DIR__ . '/../vendor/autoload.php';
+
+helmet_ready((new Readiness())->withCheck('database', static fn (): bool => db_ping()));
+```
+
+#### PSR-15[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#psr-15)
+
+```php
+use Waynestate\Helmet\Health\Readiness;
+use Waynestate\Helmet\Health\ReadinessCheck;
+
+$readiness = (new Readiness($logger))
+    ->withTrustedProxies($proxies)
+    ->withCheck('database', static fn (): bool => db_ping());
+
+$app->add(new ReadinessCheck($responseFactory, $streamFactory, $readiness, '/ready'));
+```
+
+`Readiness::standard($proxies, $buildHeaders)` adds all three HELMET checks when you have the header set's builder at hand.
+
+#### Laravel[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#laravel)
+
+```php
+// bootstrap/app.php
+->withRouting(
+    web: __DIR__.'/../routes/web.php',
+    health: '/up',
+    then: function () {
+        Route::helmetReady('/ready', [
+            'database' => \App\Health\DatabaseReady::class,
+        ]);
+    },
+)
+```
+
+Each check is an invokable class, resolved from the container and called with no arguments, so `php artisan route:cache` keeps working:
+
+```php
+namespace App\Health;
+
+use Illuminate\Support\Facades\DB;
+
+final class DatabaseReady
+{
+    public function __invoke(): bool
+    {
+        DB::select('select 1');
+
+        return true;
+    }
+}
+```
+
+Register the route in `then:`, outside the `web` group: a readiness probe has no session and no cookies. The route carries no throttle by default, because a throttled probe reads as "not ready"; pass one as the third argument if the path is exposed. Keep `health: '/up'` for liveness and leave the `DiagnosingHealth` listener alone: it fires for `/up`.
+
+### Point each platform at the right path[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#point-each-platform-at-the-right-path)
+
+#### Citadel[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#citadel)
+
+Citadel apps keep answering `/up`, as they do today, for anything that restarts or replaces the app. When a monitor or balancer in front of the app asks "send me traffic?", and the app has a dependency worth checking, give that check `/ready`. An app with nothing to check keeps `/up` everywhere and leaves readiness off.
+
+#### OpenShift and Kubernetes[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#openshift-and-kubernetes)
+
+```yaml
+livenessProbe:
+  httpGet: { path: /up, port: 8080 }
+  periodSeconds: 10
+  failureThreshold: 3
+readinessProbe:
+  httpGet: { path: /ready, port: 8080 }
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 2
+startupProbe:
+  httpGet: { path: /up, port: 8080 }
+  failureThreshold: 30
+  periodSeconds: 2
+```
+
+Never point `livenessProbe` at `/ready`: a database restart would then restart every pod.
+
+#### Coolify[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#coolify)
+
+Coolify has one health check per service, and a failing one keeps the new deploy from taking traffic. Point it at `/ready` (path `/ready`, expected status `200`) when you want a deploy held back until its database answers; keep `/up` when you would rather it went live and degraded.
+
+#### Docker[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#docker)
+
+A Dockerfile `HEALTHCHECK` decides whether the container counts as healthy, and some orchestrators restart unhealthy containers, so it is a liveness check: keep it on `/up`.
+
+```dockerfile
+HEALTHCHECK --interval=30s --timeout=3s CMD curl -fsS http://127.0.0.1:8080/up || exit 1
+```
+
+### Reading a 503[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#reading-a-503)
+
+The body says which check failed; the log says why. Search the app log for `helmet.readiness_check_failed` and the `check` field. A `headers` failure means the header config does not build (the same error would break every page), and in Laravel it can also mean `SecurityHeaders` is not in the middleware stack.
+
+Like the band, a readiness probe is loud about one thing at a time.
+
+---
+
 Source: https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.html
 
 ## Running off Citadel[#](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.html#running-off-citadel)
@@ -2586,6 +2875,96 @@ The helmet comes off the platform, not the app.
 - [WSU values (Playbook)](https://helmet.apps.wayne.edu/docs/guides/wsu-values.html)
 - [HTTPS, and why the proxy list matters](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html)
 - [Environment variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html)
+
+---
+
+Source: https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html
+
+## Secret scanning[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#secret-scanning)
+
+HELMET hardens what an app sends. It cannot help once a database password or an API key is in the repository: every clone, fork and CI cache has it, and deleting the line later does not take it out of history. So the stack scans for secrets with a maintained tool, [Gitleaks](https://github.com/gitleaks/gitleaks), instead of writing a scanner of its own. Gitleaks ships a few hundred rules for real token formats (cloud keys, Git hosting tokens, private keys, JWTs, database URLs with a password) and is kept current by people who do only that.
+
+The pipeline runs it on every push, and a finding fails the pipeline. You can run the same scan before you push.
+
+### In CI: Preflight's component[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#in-ci-preflight-s-component)
+
+Add one include to the app's `.gitlab-ci.yml`:
+
+```yaml
+include:
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.2.0
+    inputs:
+      image: "${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
+```
+
+That is the whole job. It runs `gitleaks dir` over the checked-out tree with Gitleaks' built-in rules plus a path allowlist for `vendor/` and `node_modules/` (a CI cache can restore them, and they are not your code), redacts every match so the log and the `gitleaks.json` artifact show the rule, file and line but never the value, and fails the pipeline on a finding. The `image` input sends the pull through the GitLab Dependency Proxy, pinned by digest, so the Docker Hub rate limit never fails your pipeline; the digest is a multi-arch list, so it runs on an arm64 runner too.
+
+HELMET's own pipeline runs exactly this include. Every input (stage, job name, your own `.gitleaks.toml`, `allow_failure`) is in [Preflight's secret-detection guide](https://git.wayne.edu/enterprise-apps/preflight/-/blob/main/docs/guides/component-secret-detection.md).
+
+Note
+
+The job scans the tree, not history: it answers "is a secret in what we are about to ship?". To check the history once, run the history scan below on your machine.
+
+### On your machine[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#on-your-machine)
+
+The same image and the same rules, with Docker. Run from the project root.
+
+Linux and macOS:
+
+```sh
+cat > /tmp/gitleaks.toml <<'TOML'
+[extend]
+useDefault = true
+
+[allowlist]
+paths = ['''(^|/)vendor/''', '''(^|/)node_modules/''']
+TOML
+
+docker run --rm -v "$PWD:/repo:ro" -v /tmp/gitleaks.toml:/gitleaks.toml:ro \
+  zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+  dir --redact --no-banner --config=/gitleaks.toml /repo
+```
+
+Windows (PowerShell):
+
+```powershell
+$config = Join-Path $env:TEMP 'gitleaks.toml'
+@'
+[extend]
+useDefault = true
+
+[allowlist]
+paths = ['''(^|/)vendor/''', '''(^|/)node_modules/''']
+'@ | Set-Content -Path $config -Encoding ascii
+
+docker run --rm -v "${PWD}:/repo:ro" -v "${config}:/gitleaks.toml:ro" `
+  zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f `
+  dir --redact --no-banner --config=/gitleaks.toml /repo
+```
+
+Exit code 0 is clean; 1 means a rule matched, and the output names the file and line. The mount is read-only, so the scan cannot change your tree.
+
+To scan every commit instead of the tree, swap `dir` for `git` and let Git read the repository (the safe-directory line is needed because the mount belongs to another user inside the container):
+
+```sh
+docker run --rm -v "$PWD:/repo:ro" --entrypoint sh \
+  zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f \
+  -c 'git config --global --add safe.directory "*" && gitleaks git --redact --no-banner --log-opts="--all" /repo'
+```
+
+### When it finds something[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#when-it-finds-something)
+
+1. **Treat the secret as leaked.** Rotate it first, at the service that issued it. Removing the line does not un-leak it: the value is in history, in every clone and in CI caches.
+2. Move the value out of the code, into the environment (`.env`, which stays out of Git, or the platform's secret store), and read it with `getenv()` or `env()` in config.
+3. Only then decide whether history needs rewriting. That is a coordinated, destructive change for every clone; ask the repository owner.
+
+A false positive (a test fixture, an example key in docs) is allowlisted in review, like code: add its fingerprint (`file:rule:line`, from the job log or the artifact) to a `.gitleaksignore` at the project root, or commit your own `.gitleaks.toml` and set the component's `config_path`. Prefer a fixture that does not look like a secret at all.
+
+### What HELMET's own scan found[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#what-helmet-s-own-scan-found)
+
+The first run of this job's rules over HELMET's tree and its full history (359 commits) found nothing, so HELMET carries no `.gitleaksignore`. A planted fake cloud key in a scratch copy of the tree was caught (exit 1), so the job does fail when it should. Both runs are recorded on the [Proof](https://helmet.apps.wayne.edu/docs/reference/proof.html) page.
+
+Helmet the band had a song called "Unsung". A committed secret should stay that way.
 
 ---
 
@@ -2693,7 +3072,7 @@ Citadel's HA-Proxy *appends* `X-Forwarded-Proto` instead of replacing it, so a c
 
 As in the [Raw PHP](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html) path, use a [preset](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html) or list only the address your front proxy connects from, never a whole private range. See [Running off Citadel](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.html) for the platform layout.
 
-The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`. The adapter registers no route. Keep `/up` for liveness only: readiness checks (database, cache) belong on a separate `/ready` route, as described in [Readiness is a separate check](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#readiness-is-a-separate-check); do not put them in the `DiagnosingHealth` listener, which fires for `/up`.
+The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`. The adapter registers no route. Keep `/up` for liveness only. Readiness checks (database, cache) belong on a separate route: call `Route::helmetReady('/ready', ['database' => DatabaseReady::class])` in `withRouting(then: ...)`, where each check is an invokable class, so `route:cache` keeps working. See [Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html). Do not put dependency checks in the `DiagnosingHealth` listener, which fires for `/up`.
 
 ### Environment variables[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#environment-variables)
 
@@ -2809,6 +3188,7 @@ Both paths call `SecurityHeaders::build()`, so for the same request and settings
 | Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
+| Readiness | `readiness` option, answered by `helmet_boot()`, default off | `Route::helmetReady()`, off until called |
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
@@ -2922,7 +3302,7 @@ Source: https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html
 
 ## Use HELMET in raw PHP[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#use-helmet-in-raw-php)
 
-This page boots HELMET in a framework-free PHP app with a single call. Start with [Boot the app](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#boot-the-app), then pick up the options your app needs: structured logs, the request-forgery guard, the opt-in error handler, and the standalone health check.
+This page boots HELMET in a framework-free PHP app with a single call. Start with [Boot the app](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#boot-the-app), then pick up the options your app needs: structured logs, the request-forgery guard, the opt-in error handler, the standalone health check and the readiness check.
 
 ### Boot the app[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#boot-the-app)
 
@@ -3061,29 +3441,19 @@ Squire's raw template ships this file. The probe only checks that the ball is in
 
 ### Readiness is a separate check[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#readiness-is-a-separate-check)
 
-`/up` is liveness: "the process is running". Keep it free of dependency checks. If `/up` fails because the database is down, the platform restarts a healthy app and makes the outage worse. Put dependency checks on a different path, for example `/ready`, and point the load balancer's "send me traffic" probe at that one, not the restart probe.
+`/up` is liveness: "the process is running". Keep it free of dependency checks. If `/up` fails because the database is down, the platform restarts a healthy app and makes the outage worse. Readiness, "send me traffic?", gets its own path. Turn it on with the `readiness` option:
 
 ```php
-<?php // public/ready.php
-declare(strict_types=1);
-
-header('Content-Type: text/plain; charset=utf-8');
-header('Cache-Control: no-store');
-
-try {
-    $pdo = new PDO(getenv('DB_DSN'), getenv('DB_USER') ?: null, getenv('DB_PASSWORD') ?: null, [
-        PDO::ATTR_TIMEOUT => 2,
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    ]);
-    $pdo->query('SELECT 1');
-    echo 'ready';
-} catch (Throwable) {
-    http_response_code(503);
-    echo 'not ready';
-}
+$helmet = helmet_boot([
+    'preset' => 'citadel',
+    'readiness' => [
+        'enabled' => true,
+        'checks' => ['database' => static fn (): bool => db_ping()],
+    ],
+]);
 ```
 
-Keep the same rules as `/up`: a short body, `no-store`, and no detail about which dependency failed (log that, do not print it). Give the check a short timeout so a hung database cannot hang the probe. In Laravel, register a separate `/ready` route that runs the checks; do not put them in the `DiagnosingHealth` listener, because that event fires for `/up` and would turn the liveness probe into a readiness probe.
+`GET /ready` then answers JSON, `200` or `503`, with HELMET's own config checks (headers, trusted proxies, debug output) next to yours, and no secrets. A raw app with no front controller answers from `public/ready.php` with `helmet_ready()`. The body, each check, and where each platform's probe should point are in [Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html).
 
 ### The nonce in your markup[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#the-nonce-in-your-markup)
 
@@ -3307,6 +3677,7 @@ File `src/functions.php`, namespace `Waynestate\Helmet`:
 | `helmet_boot()` | `function helmet_boot(array $config): array` |
 | `helmet_up_response()` | `function helmet_up_response(): array` |
 | `helmet_up()` | `function helmet_up(): never` |
+| `helmet_ready()` | `function helmet_ready(Readiness $readiness): never` |
 | `helmet_forbidden_response()` | `function helmet_forbidden_response(): array` |
 | `helmet_forbidden()` | `function helmet_forbidden(): never` |
 | `helmet_csp_nonce_meta()` | `function helmet_csp_nonce_meta(string $nonce): string` |
@@ -3320,6 +3691,7 @@ What each one returns, from the docblocks:
 
 - `helmet_boot()` boots the core for raw PHP: it validates the config and returns `array{nonce: string, logger: LoggerInterface|null, request_id: string}`. It throws `UnknownPresetException` for an unknown preset, `\InvalidArgumentException` for a bad config value, `InvalidCspReportUriException` for a bad report URI, and `\LogicException` if a session is already active.
 - `helmet_up_response()` and `helmet_forbidden_response()` return the answer as data, `array{status: int, headers: array<string, string>, body: string}`, without sending anything; the caller sends it. `helmet_up()` and `helmet_forbidden()` send the same answers (200, body "ok", and 403, body "Forbidden") and exit, so a small public file can answer a probe that never reaches `helmet_boot()`.
+- `helmet_ready()` sends a `Readiness` report (200 or 503, JSON, `no-store`) and exits, for a `public/ready.php` with no front controller. `helmet_boot()` calls it on the readiness path when the `readiness` option is enabled. See [Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html).
 - `helmet_csp_nonce_meta()` builds the `<meta property="csp-nonce">` tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in `<head>` of every page, with the same nonce `helmet_boot()` returned; the nonce is escaped so a quote cannot break out of the attribute.
 - `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder (default `CSP_NONCE_SLOT_FOR_HELMET`, the value a built Vue/Vite page carries where Vite's `html.cspNonce` stood) with the nonce, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws `\InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged.
 - `helmet_metrics()` builds the `/metrics` answer as data, `array{status: int, content_type: string, body: string}`. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning. With `storage` set, the request metrics are read back from that store and added to the body.
@@ -3439,13 +3811,39 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | `__construct()` | `public function __construct(private readonly ResponseFactoryInterface $responseFactory, private readonly StreamFactoryInterface $streamFactory, private readonly string $path = '/up')` |
 | `process()` | `public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface` |
 
+#### `Health\Readiness` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#health-readiness)
+
+`final class Readiness` in `src/Health/Readiness.php`. The readiness report: named checks, each `pass`, `warn` or `fail`, answered as JSON with 200 while none failed and 503 once one did. Immutable; every `with*()` returns a copy. HELMET's own checks are `headers` (the header set builds and carries a CSP, and in which mode), `trusted_proxies` (a count and a broad count, never an address; warns when empty or broad) and `debug_output` (warns when on). An app check returns true or null to pass and false to fail; one that throws fails, and its class and message go to the logger as `helmet.readiness_check_failed`, never to the body. Check names are lowercase letters, digits and underscores; a bad or duplicate name throws `\InvalidArgumentException`.
+
+| Member | Signature |
+| --- | --- |
+| `DEFAULT_PATH` | `public const string DEFAULT_PATH = '/ready';` |
+| `__construct()` | `public function __construct(private readonly ?LoggerInterface $logger = null)` |
+| `standard()` | `public static function standard(TrustedProxies $proxies, callable $buildHeaders, bool $cspReportOnly = false, string $styleSrcAttr = 'inline', ?LoggerInterface $logger = null): self` |
+| `displayErrorsOn()` | `public static function displayErrorsOn(): bool` |
+| `withHeaders()` | `public function withHeaders(callable $buildHeaders, bool $cspReportOnly = false, string $styleSrcAttr = 'inline', bool $registered = true): self` |
+| `withTrustedProxies()` | `public function withTrustedProxies(TrustedProxies $proxies): self` |
+| `withDebugOutput()` | `public function withDebugOutput(bool $on): self` |
+| `withCheck()` | `public function withCheck(string $name, callable $check): self` |
+| `names()` | `public function names(): array` |
+| `response()` | `public function response(): array` |
+
+#### `Health\ReadinessCheck` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#health-readinesscheck)
+
+`final class ReadinessCheck implements MiddlewareInterface` in `src/Health/ReadinessCheck.php`. Answers a GET or HEAD on the readiness path (default `/ready`) with the `Readiness` report; any other request is passed through unchanged. Put it next to `HealthCheck`, never in its place.
+
+| Member | Signature |
+| --- | --- |
+| `__construct()` | `public function __construct(private readonly ResponseFactoryInterface $responseFactory, private readonly StreamFactoryInterface $streamFactory, private readonly Readiness $readiness, private readonly string $path = Readiness::DEFAULT_PATH)` |
+| `process()` | `public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface` |
+
 ### Laravel[#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel)
 
-The Laravel adapter. The service provider wires the config into the app; the four middlewares put the core classes into the request pipeline; the two route classes register the optional endpoints, which stay off until an app opts in.
+The Laravel adapter. The service provider wires the config into the app; the four middlewares put the core classes into the request pipeline; the three route classes register the optional endpoints (CSP reports, metrics, readiness), which stay off until an app opts in.
 
 #### `Laravel\HelmetServiceProvider` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-helmetserviceprovider)
 
-`final class HelmetServiceProvider extends ServiceProvider` in `src/Laravel/HelmetServiceProvider.php`. Merges and publishes `config/helmet.php`, copies `helmet.proxies` into Laravel's trusted-proxy list when the app has not set `trustedproxy.proxies` itself (an explicit `trustProxies(at: ...)` call still wins), and registers the `cspReport` and `helmetMetrics` route macros. It registers no routes of its own; the `/up` health route is left to Laravel's built-in `health: '/up'` option.
+`final class HelmetServiceProvider extends ServiceProvider` in `src/Laravel/HelmetServiceProvider.php`. Merges and publishes `config/helmet.php`, copies `helmet.proxies` into Laravel's trusted-proxy list when the app has not set `trustedproxy.proxies` itself (an explicit `trustProxies(at: ...)` call still wins), and registers the `cspReport`, `helmetMetrics` and `helmetReady` route macros. It registers no routes of its own; the `/up` health route is left to Laravel's built-in `health: '/up'` option.
 
 | Member | Signature |
 | --- | --- |
@@ -3459,6 +3857,9 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 | Member | Signature |
 | --- | --- |
 | `handle()` | `public function handle(Request $request, Closure $next): Response` |
+| `configuredHeaders()` | `public static function configuredHeaders(array $policy, string $nonce, bool $isHttps): array` |
+
+`configuredHeaders()` builds the header set from the `helmet` config for a given policy, nonce and scheme; the readiness controller uses it to prove the config builds.
 
 #### `Laravel\RequestForgeryGuard` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-requestforgeryguard)
 
@@ -3546,6 +3947,25 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `DEFAULT_THROTTLE` | `public const string DEFAULT_THROTTLE = 'throttle:60,1';` |
 | `registerMacro()` | `public static function registerMacro(): void` |
 | `register()` | `public static function register(string $path = self::DEFAULT_PATH, ?string $throttle = self::DEFAULT_THROTTLE): \Illuminate\Routing\Route` |
+
+#### `Laravel\ReadinessRoute` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-readinessroute)
+
+`final class ReadinessRoute` in `src/Laravel/ReadinessRoute.php`. Registers the `Route::helmetReady()` macro and the GET route it creates (name `helmet.ready`). App checks are a map of name to invokable class name, carried as a route default so `route:cache` works. No throttle by default: a throttled probe reads as "not ready". A check that is not a name and class-name pair throws `\InvalidArgumentException`.
+
+| Member | Signature |
+| --- | --- |
+| `ROUTE_NAME` | `public const string ROUTE_NAME = 'helmet.ready';` |
+| `CHECKS_DEFAULT` | `public const string CHECKS_DEFAULT = 'helmet_ready_checks';` |
+| `registerMacro()` | `public static function registerMacro(): void` |
+| `register()` | `public static function register(string $path = Readiness::DEFAULT_PATH, array $checks = [], ?string $throttle = null): \Illuminate\Routing\Route` |
+
+#### `Laravel\ReadinessController` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-readinesscontroller)
+
+`final class ReadinessController` in `src/Laravel/ReadinessController.php`. Runs HELMET's checks against the app's config (the header middleware is registered and the set builds, the trusted-proxy count, `app.debug` in production) plus the route's app checks, each resolved from the container, and answers with the report.
+
+| Member | Signature |
+| --- | --- |
+| `__invoke()` | `public function __invoke(Request $request): Response` |
 
 ### Logging[#](https://helmet.apps.wayne.edu/docs/reference/api.html#logging)
 
@@ -3751,6 +4171,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `isTrusted()` | `public function isTrusted(string $ip): bool` |
 | `unmapIpv4MappedIpv6()` | `public static function unmapIpv4MappedIpv6(string $ip): string` |
 | `isEmpty()` | `public function isEmpty(): bool` |
+| `count()` | `public function count(): int` |
 
 ### Ribbon[#](https://helmet.apps.wayne.edu/docs/reference/api.html#ribbon)
 
@@ -3823,6 +4244,7 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `csp_trusted_types` | The Trusted Types directives, appended to the report-only header only, never the enforcing one. Off by default. |
 | `csp_trusted_types.enabled` | Whether the Trusted Types directives are appended. Set with `HELMET_CSP_TRUSTED_TYPES_ENABLED`. |
 | `csp_trusted_types.policies` | The Trusted Types policy names, default `["default"]`. Filled from `HELMET_CSP_TRUSTED_TYPES_POLICIES` (comma-separated). |
+| `csp_style_src_attr` | The inline style attribute mode: `inline` (the default) keeps `style-src-attr 'unsafe-inline'` for WayneUI's recipes, `report` adds a report-only probe with `style-src-attr 'none'`, and `none` blocks inline style attributes. An app that sets `style-src-attr` in `csp` keeps its own value. Set with `HELMET_CSP_STYLE_SRC_ATTR`. See [Inline style attributes](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes). |
 | `coop` | The Cross-Origin-Opener-Policy value, default `same-origin`; null sends no COOP header. Set with `HELMET_COOP`. |
 | `corp` | The Cross-Origin-Resource-Policy value; null (the default) sends no CORP header. Set with `HELMET_CORP`. |
 | `permissions_policy` | The Permissions-Policy feature map: each feature maps to its allowlist, and an empty allowlist denies the feature. The default is a deny list; an empty map sends no header. Filled from `HELMET_PERMISSIONS_POLICY` when it parses as JSON. |
@@ -3872,6 +4294,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_CSP | JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default. | the core default policy | config/helmet.php |
 | HELMET_CSP_REPORT_ONLY | true sends the policy as Content-Security-Policy-Report-Only, observing violations without blocking them. | false | config/helmet.php |
 | HELMET_CSP_REPORT_URI | URL browsers POST CSP violation reports to; adds report-uri and report-to to the policy plus a Reporting-Endpoints header. Must be https. | none | config/helmet.php |
+| HELMET_CSP_STYLE_SRC_ATTR | Inline style attribute mode: inline keeps style-src-attr 'unsafe-inline' for WayneUI's recipes, report adds a report-only probe with 'none', none blocks inline style attributes. | inline | config/helmet.php |
 | HELMET_CSP_TRUSTED_TYPES_ENABLED | true appends Trusted Types directives to the report-only CSP header. | false | config/helmet.php |
 | HELMET_CSP_TRUSTED_TYPES_POLICIES | Comma-separated Trusted Types policy names; replaces the default list. | \["default"\] | config/helmet.php |
 | HELMET_CSRF_ALLOW_SAME_SITE | true lets Sec-Fetch-Site: same-site pass; off by default because sibling subdomains are still same-site. | false | config/helmet.php |
@@ -3933,13 +4356,41 @@ How HELMET is proven against real Wayne State applications, and how to run its t
 
 | Check | Date | Commit | Result | Duration |
 | --- | --- | --- | --- | --- |
-| `composer ci` (validate, tests, Pint, PHPStan, agent-ready, docs, audit) | 2026-11-07 | 8a79b46 | pass: 585 tests, 1537 assertions; Pint 86 files; PHPStan 36 files clean; 0 vulnerabilities | 02:40 |
-| Header contract suite (`tests/Contract`) | 2026-11-07 | 8a79b46 | pass: 3 tests, 196 assertions | 00:13 |
-| Test suite on PHP 8.5 (`php:8.5-cli`) | 2026-11-07 | 8a79b46 | pass: 585 tests, 1537 assertions | 00:56 |
-| Test suite on PHP 8.4 (`php:8.4-cli`) | 2026-11-07 | 8a79b46 | pass: 585 tests, 1537 assertions | 01:32 |
-| Test suite on PHP 8.3 (`php:8.3-cli`) | 2026-11-07 | 8a79b46 | pass: 585 tests, 1537 assertions | 01:21 |
+| `composer ci` (validate, tests, Pint, PHPStan, agent-ready, docs, audit) | 2026-11-07 | a86c8c8 | pass: 779 tests, 2356 assertions, 1 skipped; Pint 115 files; PHPStan 48 files clean; 0 vulnerabilities | 00:20 |
+| Header contract suite (`tests/Contract`) | 2026-11-07 | a86c8c8 | pass: 3 tests, 196 assertions | 00:19 |
+| Test suite on PHP 8.5 (`php:8.5-cli`) | 2026-11-07 | a86c8c8 | pass: 779 tests, 2356 assertions, 1 skipped | 00:22 |
+| Test suite on PHP 8.4 (`php:8.4-cli`) | 2026-11-07 | a86c8c8 | pass: 779 tests, 2356 assertions, 1 skipped | 00:23 |
+| Test suite on PHP 8.3 (`php:8.3-cli`) | 2026-11-07 | a86c8c8 | pass: 779 tests, 2356 assertions, 1 skipped | 00:22 |
 
 To refresh this table, run `composer ci` and the Docker commands below on the commit you want to record, then copy the summary lines into the rows. The proof runs against real Wayne State applications are not in the table: they live on the private site behind a Wayne State employee sign-in, so they cannot run on a developer machine.
+
+### Accessibility[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#accessibility)
+
+The front page and every docs page are checked with [axe-core](https://github.com/dequelabs/axe-core) in a real Chromium, through Playwright, at WCAG 2.2 AA, in light and dark. Two gates, both blocking:
+
+- **Local, before a release:** `scripts/a11y.sh` (Linux, macOS, Git Bash) or `scripts/a11y.ps1` (Windows) runs `tools/a11y/check.mjs` in Docker at 360 px and 1280 px, with reduced motion, so scroll reveals never hide content from the check.
+- **In the pipeline:** Preflight's `a11y` component (0.2.0, axe-core 4.14) over the same pages at 320 px and 1280 px, with the WCAG 1.4.10 reflow check at 320 px.
+
+Last run, 2026-11-07, on the branch that adds readiness, secret scanning and the style-src-attr mode (29 pages):
+
+| Gate | Checks | Result |
+| --- | --- | --- |
+| `scripts/a11y.sh` (axe-core 4.10, 360 and 1280 px) | 116 | 0 violations |
+| Preflight `a11y` 0.2.0 checker, run locally (axe-core 4.14, 320 and 1280 px, reflow) | 116 | 0 violations; 116 items to review by hand |
+
+The items to review are axe-core's "incomplete" results: it cannot compute contrast for text over a gradient or a background image (the gold underline bar on the header links and the brand name on the textured header). They were checked by hand in Chrome: light text `#eef0e6` on the header's `#0f1f18` is about 15:1, well past the 4.5:1 AA floor, and the gradient sits under the text, not behind it. The same run found two `aria-labelledby` attributes on plain `div`s on the front page (the headers list and the practice squad), where ARIA does not allow a name; both now carry `role="group"`. Keyboard focus shows a 3 px gold outline on every link and button, and the motion only runs with `prefers-reduced-motion: no-preference`.
+
+### Secret scanning[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#secret-scanning)
+
+Gitleaks v8.30.1 with its built-in rules (the configuration Preflight's `secret-detection` component uses), 2026-11-07:
+
+| Scan | Result |
+| --- | --- |
+| The tree (`gitleaks dir`, every tracked file) | no leaks |
+| The full history (`gitleaks git --log-opts=--all`, 359 commits) | no leaks |
+| A scratch copy of the tree with a planted fake cloud key | 1 leak found, exit 1 (the gate fails when it should) |
+
+How to run the same scans is in [Secret scanning](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html).
 
 ### Proof[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof)
 

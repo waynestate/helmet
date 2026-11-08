@@ -75,8 +75,16 @@
           "path": "guides/csrf"
         },
         {
+          "title": "Readiness",
+          "path": "guides/readiness"
+        },
+        {
           "title": "Metrics",
           "path": "guides/metrics"
+        },
+        {
+          "title": "Secret scanning",
+          "path": "guides/secret-scanning"
         },
         {
           "title": "Your coding agent (ADVISOR)",
@@ -102,6 +110,15 @@
         {
           "title": "Proof",
           "path": "reference/proof"
+        }
+      ]
+    },
+    {
+      "title": "Decisions",
+      "items": [
+        {
+          "title": "ADR-0001: Inline style attributes in the CSP",
+          "path": "adr/0001-style-src-attr"
         }
       ]
     },
