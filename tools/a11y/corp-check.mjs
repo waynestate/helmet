@@ -8,9 +8,13 @@
  *   1. Serves the site folder on origin A with the exact headers that
  *      SecurityHeaders::build() produces with corp => 'same-origin' (read
  *      from the JSON file that tools/a11y/corp-headers.php prints), on every
- *      response. Loads the front page and asserts that no request failed,
- *      that every same-origin subresource answered 200, and that the
- *      document carries cross-origin-resource-policy: same-origin.
+ *      response. HTML answers get the per-request CSP nonce injected into
+ *      every script tag without one, exactly like the production front
+ *      controller (deploy/public/index.php, ADR-0017), so the front page
+ *      behaves as it does in production. Loads the front page and asserts
+ *      that no request failed, that every same-origin subresource answered
+ *      200, and that the document carries
+ *      cross-origin-resource-policy: same-origin.
  *
  *   2. Serves a tiny page on origin B that embeds one image and one script
  *      from origin A, loads it, and asserts that the browser blocked both
@@ -98,10 +102,27 @@ function listen(server) {
 }
 
 /**
- * Serve rootDir over http; "/" maps to homePage. When headers is given,
- * every response, including 404s, carries those headers.
+ * Put the CSP nonce on every <script start tag that lacks one, the same
+ * rewrite deploy/public/index.php applies to HTML before sending it
+ * (ADR-0017). Without it the strict-dynamic policy blocks the page's own
+ * external scripts, which is a CSP matter, not a CORP one.
+ */
+function injectCspNonce(html, nonce) {
+  if (!nonce) return html;
+  return html.replace(/<script(?=[\s>])([^>]*)>/gi, (tag, attrs) => {
+    if (/\bnonce\s*=/i.test(attrs)) return tag;
+    return `<script nonce="${nonce}"${attrs}>`;
+  });
+}
+
+/**
+ * Serve rootDir over http; "/" maps to homePage. Every response, including
+ * 404s, carries the given headers, and HTML answers get the CSP nonce
+ * injected so they behave as they do behind the production front controller.
  */
 async function serveSite(rootDir, homePage, headers) {
+  const csp = headers["content-security-policy"] ?? "";
+  const nonce = /'nonce-([^']+)'/.exec(csp)?.[1] ?? null;
   const server = createServer((req, res) => {
     (async () => {
       try {
@@ -114,8 +135,9 @@ async function serveSite(rootDir, homePage, headers) {
         }
         const body = await readFile(filePath);
         const type = MIME[path.extname(filePath).toLowerCase()] || "application/octet-stream";
+        const payload = type === "text/html; charset=utf-8" ? injectCspNonce(body.toString("utf8"), nonce) : body;
         res.writeHead(200, { ...headers, "content-type": type });
-        res.end(body);
+        res.end(payload);
       } catch {
         res.writeHead(404, { ...headers, "content-type": "text/plain; charset=utf-8" });
         res.end("not found");
@@ -158,9 +180,9 @@ async function main() {
   const originB = await serveStatic(embedPage);
 
   const browser = await chromium.launch();
-  let failure = null;
+  const failures = [];
   const fail = (reason) => {
-    if (failure === null) failure = reason;
+    failures.push(reason);
   };
   try {
     /* Part 1: the front page on its own origin, wearing the full header set. */
@@ -200,15 +222,15 @@ async function main() {
     {
       const context = await browser.newContext();
       const page = await context.newPage();
-      const failures = new Map();
+      const blocked = new Map();
       page.on("requestfailed", (req) => {
-        failures.set(req.url(), req.failure() ? req.failure().errorText : "");
+        blocked.set(req.url(), req.failure() ? req.failure().errorText : "");
       });
       await page.goto(`${originB.base}/`, { waitUntil: "load" });
       const imageUrl = `${originA.base}/${EMBED_IMAGE}`;
       const scriptUrl = `${originA.base}/${EMBED_SCRIPT}`;
-      const imageError = failures.get(imageUrl);
-      const scriptError = failures.get(scriptUrl);
+      const imageError = blocked.get(imageUrl);
+      const scriptError = blocked.get(scriptUrl);
       const naturalWidth = await page.evaluate(() => {
         const el = document.getElementById("corp-image");
         return el ? el.naturalWidth : -1;
@@ -227,21 +249,23 @@ async function main() {
     originB.server.close();
   }
 
-  if (failure !== null) {
-    console.log(`CORP CHECK: FAIL ${failure}`);
-    process.exit(1);
+  if (failures.length > 0) {
+    console.log(`CORP CHECK: FAIL ${failures.join("; ")}`);
+    process.exitCode = 1;
+    return;
   }
   console.log("CORP CHECK: PASS");
-  process.exit(0);
+  process.exitCode = 0;
 }
 
+/* Armed but unref'd: it fires only if something leaks a handle and keeps the
+ * event loop alive after the check is done. */
 const timeout = setTimeout(() => {
   console.error("tool error: the check took longer than 90 seconds");
   process.exit(2);
 }, TIMEOUT_MS);
-main()
-  .catch((err) => {
-    console.error(`tool error: ${err && err.message ? err.message : err}`);
-    process.exit(2);
-  })
-  .finally(() => clearTimeout(timeout));
+timeout.unref();
+main().catch((err) => {
+  console.error(`tool error: ${err && err.message ? err.message : err}`);
+  process.exit(2);
+});
