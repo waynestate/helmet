@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Changed: CI caches Composer and npm downloads under a fixed key, so a lock change downloads only what changed (D-072).
+
 ### Added
 
 - Added: a real-browser check (`tools/a11y/corp-check.mjs`) proves the `corp` opt-in: own assets load, another origin's embed is blocked (H13).
