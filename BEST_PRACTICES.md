@@ -14,7 +14,7 @@ Each practice ends with exactly one tag.
 
 | Tag | Meaning |
 | --- | --- |
-| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository's `.gitlab-ci.yml` includes the Preflight `php-test`, `composer-audit`, `proctor`, `secret-detection` and `a11y` components, all pinned to one release, Preflight 0.4.0 (`tests/Support/PreflightPinTest.php` fails on a mix). The last green pipeline on record is on the earlier 0.3.0 pins (pipeline 4680 on git.wayne.edu, 2026-11-08: every component job, `wayneui-copies` and `composer-ci`). |
+| `Enforced` | HELMET's code does it or refuses to run without it, and a test covers it. This holds only for apps that call `helmet_boot()` or mount the middleware. The repository's `.gitlab-ci.yml` includes the Preflight `php-test`, `composer-audit`, `proctor`, `secret-detection` and `a11y` components, all pinned to one release, Preflight 0.5.0 (`tests/Support/PreflightPinTest.php` fails on a mix). The last green pipeline on record is on those 0.5.0 pins (pipeline 5199 on git.wayne.edu, 2026-11-09: every component job, `wayneui-copies` and `composer-ci`). |
 | `Partly enforced` | HELMET's code and tests cover part of the practice; the rest is the app's or the platform's, and the practice says which. |
 | `Checked` | PROCTOR or CI warns or fails. |
 | `Documented` | Written down in the README or a design note, with no code behind it. |
