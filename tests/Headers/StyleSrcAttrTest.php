@@ -15,7 +15,7 @@ use Waynestate\Helmet\Headers\SecurityHeadersMiddleware;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
 /**
- * HELMET-17 (ADR-0001): the inline style attribute mode. "inline" is the
+ * The inline style attribute mode (ADR-0001). "inline" is the
  * default and must stay byte for byte what every earlier release sent.
  */
 final class StyleSrcAttrTest extends TestCase

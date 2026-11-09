@@ -7,7 +7,7 @@ namespace Waynestate\Helmet\Tests\Laravel;
 use Illuminate\Support\Facades\Route;
 
 /**
- * HELMET-17 in Laravel: helmet.csp_style_src_attr (HELMET_CSP_STYLE_SRC_ATTR).
+ * The inline style attribute mode in Laravel: helmet.csp_style_src_attr (HELMET_CSP_STYLE_SRC_ATTR).
  */
 final class StyleSrcAttrTest extends TestCase
 {

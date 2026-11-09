@@ -92,7 +92,7 @@ use Waynestate\Helmet\Support\Setting;
 |                       \InvalidArgumentException when the headers are built.
 |
 | "csp_style_src_attr"
-|               The inline style attribute mode (HELMET-17): "inline" (the
+|               The inline style attribute mode (ADR-0001): "inline" (the
 |               default) keeps style-src-attr 'unsafe-inline', which WayneUI's
 |               recipes need; "report" keeps it and adds a report-only probe
 |               with style-src-attr 'none', so the browser names each inline

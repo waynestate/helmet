@@ -339,7 +339,7 @@ if (!function_exists('helmet_boot')) {
             }
         }
 
-        // HELMET-17: the inline style attribute mode. "inline" (the default)
+        // The inline style attribute mode (ADR-0001). "inline" (the default)
         // keeps style-src-attr 'unsafe-inline' for WayneUI's recipes.
         $styleSrcAttr = $config['style_src_attr'] ?? 'inline';
         // @phpstan-ignore function.alreadyNarrowedType (the docblock says string, but a caller may pass a non-string at runtime)

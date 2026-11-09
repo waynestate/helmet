@@ -16,7 +16,7 @@ use ParagonIE\CSPBuilder\CSPBuilder;
 final class SecurityHeaders
 {
     /**
-     * The inline style attribute modes (HELMET-17, ADR-0001 in docs/adr).
+     * The inline style attribute modes (ADR-0001 in docs/adr).
      *
      *  - inline: style-src-attr 'unsafe-inline', as WayneUI's recipes need.
      *    The default, and the behavior of every release before this mode.

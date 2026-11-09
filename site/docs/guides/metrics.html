@@ -278,7 +278,7 @@ sum by (route) (rate(helmet_http_request_duration_seconds_count[5m]))
 # p95 latency
 histogram_quantile(0.95, sum by (le) (rate(helmet_http_request_duration_seconds_bucket[5m])))
 </code></pre>
-<p>WSU has no Prometheus server yet (decision D-024), so the dashboard is ready, not live: it graphs as soon as a server
+<p>WSU has no Prometheus server yet, so the dashboard is ready, not live: it graphs as soon as a server
 exists and scrapes <code>/metrics</code>. The stack's own sites turn it on first.</p>
 <h2 id="limits">Limits<a class="docs-heading-link" aria-label="Link to this section" href="#limits">#</a></h2>
 <ul>

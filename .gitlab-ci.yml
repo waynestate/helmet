@@ -22,14 +22,14 @@ include:
       proctor_command: vendor/bin/proctor check --format=codequality
       allow_failure: true
       image: "php:8.4-cli-trixie@sha256:9cf851bc2c1b37c3e59dfd677a3c3e56d485af5a47c93f629424bb039eafcb69"
-  # HELMET-5: Gitleaks over the checked-out tree, through Preflight's component
+  # Secret scanning: Gitleaks over the checked-out tree, through Preflight's component
   # (first released in 0.2.0). It fails the pipeline on a finding; --redact
   # keeps the secret itself out of the log and the gitleaks.json artifact.
   # Same image and digest as the component default; the prefix sends it through the proxy.
   - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.4.0
     inputs:
       image: "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
-  # HELMET-23: the front page and every docs page, WCAG 2.2 AA, light and
+  # Accessibility: the front page and every docs page, WCAG 2.2 AA, light and
   # dark, at 320 px (with the reflow check) and 1280 px: a step stricter than
   # scripts/a11y.sh (axe-core 4.14, 320 px), in Preflight's pinned Playwright
   # image (mcr.microsoft.com is not on the Dependency Proxy, which only fronts
@@ -42,7 +42,7 @@ include:
 
 # Dependency caching: images already come through the Dependency Proxy, and
 # every job that installs packages extends a cache under a fixed key, not a
-# lock-file hash (D-072): Composer's and npm's caches are additive, so a lock
+# lock-file hash: Composer's and npm's caches are additive, so a lock
 # change downloads only what changed instead of everything.
 # The cache saves even when a job fails (when: always), so a dropped download
 # still keeps every package that finished, and the retry fetches only the rest.

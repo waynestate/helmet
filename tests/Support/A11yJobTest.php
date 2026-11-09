@@ -7,7 +7,7 @@ namespace Waynestate\Helmet\Tests\Support;
 use PHPUnit\Framework\TestCase;
 
 /**
- * HELMET-23: the pipeline checks the front page and every docs page for
+ * Accessibility: the pipeline checks the front page and every docs page for
  * accessibility with Preflight's a11y component, at WCAG 2.2 AA, blocking.
  */
 final class A11yJobTest extends TestCase

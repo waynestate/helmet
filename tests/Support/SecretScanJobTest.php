@@ -7,7 +7,7 @@ namespace Waynestate\Helmet\Tests\Support;
 use PHPUnit\Framework\TestCase;
 
 /**
- * HELMET-5: the pipeline runs a maintained secret scanner (Gitleaks, through
+ * Secret scanning: the pipeline runs a maintained secret scanner (Gitleaks, through
  * Preflight's secret-detection component), pinned, through the Dependency
  * Proxy, and blocking. HELMET does not write a scanner of its own.
  */

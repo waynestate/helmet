@@ -15,6 +15,7 @@ All notable changes to this project are documented in this file.
 - Changed: the `composer-ci` and `wayneui-copies` jobs, and the Docker line in MAINTAINING, run Composer 2.11.1 pinned by its multi-arch list digest (was 2.10.3, which Squire 0.10.1 calls unmaintained). 2.11.1 fixes GHSA-c968-33g3-wh7p and GHSA-fm2w-xgf2-f9fh.
 - Changed: the deploy kit is Squire 0.10.2 (was 0.10.1): the fallback base image names its images in full (`docker.io/library/...`) with Composer as a build argument, the kit's php.ini sets `session.cookie_samesite = Lax`, and the portable image leaves `node_modules/` out of its layers.
 - Changed: the deploy layer requires CREED ^0.1.8 (locked 0.1.8, was ^0.1 and 0.1.7) and PROCTOR ^0.11.1 (locked 0.11.1, was ^0.11 and 0.11.0); the dev dependency on Pinstripe is ^0.1.4 (locked 0.1.4, was ^0.1 and 0.1.0, with phpstan-strict-rules 2.1.1). Pinstripe 0.1.4's base cut stops reporting `@var` tag mismatches, so phpstan.neon drops its two `varTag.type` ignores, which no longer matched anything.
+- Docs: MAINTAINING names the maintainer as a role (the stack maintainer, reached through an issue on git.wayne.edu), not a person; internal item and decision IDs are replaced with plain words in the CI comments, `config/helmet.php`, the code comments, the tests and the metrics guide.
 
 ## 1.3.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-3-0-2026-11-09)
 
