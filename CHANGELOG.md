@@ -4,6 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Docs: BEST_PRACTICES names the 0.4.0 Preflight pins in its tag table (it still said 0.3.0), records the first secret-detection and composer-audit runs in pipeline 4680 (gap 24 and H50 still called them owed or unseen), and marks gap 36 (no-store) done.
 - Fixed: the raw PHP ribbon (`helmet_ribbon()`, `Ribbon`) no longer renders in production or for an environment HELMET does not know; it follows the Laravel adapter's list, now one constant (`Ribbon::ENVIRONMENTS`) matched in any case, so `STAGING` shows the ribbon and `qa` or a typo does not (H46). The README and the raw PHP guide show how to print it.
 - Changed: CI pins the Preflight components to 0.4.0 (the proctor job clones the full history, so the override-approver check can read git blame).
 - Docs: BEST_PRACTICES H58 names the Preflight pin the pipeline runs (0.3.1, was 0.3.0).
