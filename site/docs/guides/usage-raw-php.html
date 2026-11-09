@@ -193,10 +193,11 @@ export default defineConfig({
 <p>One more setting keeps the CSP honest: Vite inlines small assets as <code>data:</code> URIs by default. The default policy already allows <code>data:</code> in <code>font-src</code> and <code>img-src</code>, so inlined fonts and images pass; if you would rather not inline at all, set <code>build.assetsInlineLimit: 0</code>.</p>
 <h2 id="the-environment-ribbon">The environment ribbon<a class="docs-heading-link" aria-label="Link to this section" href="#the-environment-ribbon">#</a></h2>
 <p><code>helmet_ribbon()</code> gives a raw PHP app the same ribbon the Laravel adapter injects, so nobody mistakes a test site for the real one. Print its <code>html()</code> right after your <code>&lt;body&gt;</code> tag, and style <code>.helmet-ribbon</code> (and <code>.helmet-ribbon-warning</code>) in your own CSS:</p>
-<pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\Ribbon\helmet_ribbon;
+<pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\helmet_ribbon;
 
 echo helmet_ribbon(getenv('APP_ENV') ?: 'production', true, getenv('HELMET_POLICY_PATH') ?: null)-&gt;html();
 </code></pre>
+<p>The old <code>Waynestate\Helmet\Ribbon\helmet_ribbon</code> name still works for one release and raises a deprecation.</p>
 <p>It renders only for <code>local</code>, <code>development</code>, <code>dev</code>, <code>testing</code>, <code>test</code>, <code>staging</code>, <code>stage</code>, <code>qa</code>, <code>uat</code>, <code>preprod</code>, <code>pre-prod</code> and <code>sandbox</code>, in any case: the same list as Laravel (<code>Ribbon::ENVIRONMENTS</code>). Production, an empty name and any name it does not know get an empty string even when the second argument is <code>true</code>, so a typo in <code>APP_ENV</code> hides the ribbon rather than showing it on the live site. The third argument, a path to a CREED <code>policy.json</code>, adds a warning line when the running PHP version is in its security-only phase or end of life; a missing or broken file adds nothing and never breaks the page.</p>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>

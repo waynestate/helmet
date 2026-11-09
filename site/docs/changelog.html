@@ -44,6 +44,7 @@
 <p>All notable changes to this project are documented in this file.</p>
 <h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
 <ul>
+<li>Changed: helmet_ribbon() moves to Waynestate\Helmet, next to helmet_boot(); the old Waynestate\Helmet\Ribbon\helmet_ribbon() still works for one release and raises E_USER_DEPRECATED.</li>
 <li>Docs: BEST_PRACTICES names the 0.4.0 Preflight pins in its tag table (it still said 0.3.0), records the first secret-detection and composer-audit runs in pipeline 4680 (gap 24 and H50 still called them owed or unseen), and marks gap 36 (no-store) done.</li>
 <li>Fixed: the raw PHP ribbon (<code>helmet_ribbon()</code>, <code>Ribbon</code>) no longer renders in production or for an environment HELMET does not know; it follows the Laravel adapter's list, now one constant (<code>Ribbon::ENVIRONMENTS</code>) matched in any case and widened with <code>stage</code>, <code>qa</code>, <code>uat</code>, <code>preprod</code>, <code>pre-prod</code> and <code>sandbox</code>, so those and <code>STAGING</code> show the ribbon while production, an empty name or a typo does not (H46). The README and the raw PHP guide show how to print it.</li>
 <li>Changed: CI pins the Preflight components to 0.4.0 (the proctor job clones the full history, so the override-approver check can read git blame).</li>
