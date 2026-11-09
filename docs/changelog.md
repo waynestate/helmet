@@ -11,6 +11,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.2.0 (2026-11-09)
+
+A minor release, backward compatible. Raw PHP apps get `helmet_client_error()`, the 4xx sibling of `helmet_forbidden()`, and Laravel apps can opt into the same fixed 4xx page with `HELMET_ERROR_PAGES` (off by default), so an exception message never reaches a visitor (H42 is now `Enforced`). The deploy layer moves to Squire's kit 0.10.1 and PROCTOR 0.11.
+
 - Changed: the deploy kit is Squire 0.10.1 (was 0.10.0): the fallback base image copies Composer 2.11.1 (was 2.10.3), and the deploy layer requires PROCTOR ^0.11 (locked 0.11.0, was ^0.8 and 0.8.0).
 - Changed: the deploy kit is Squire 0.10.0 (was 0.7.1): release.sh keeps Composer and npm download caches in the app folder and the gate takes SQUIRE_PHP_RUNTIME; the compose file, health.php and .env.squire.example follow the template, and the portable image files are added.
 - Added: `helmet_client_error(int $status)` sends HELMET's fixed 4xx page and exits, and `helmet_client_error_response(int $status)` returns it as data, the 4xx siblings of `helmet_forbidden()`; a status outside 400 to 499 throws `\InvalidArgumentException`. The Laravel adapter answers every 4xx HTTP exception with the same page when `helmet.error_pages` is on (env `HELMET_ERROR_PAGES`, default false), leaving JSON clients, validation, authentication redirects and every 5xx to Laravel. BEST_PRACTICES H42 is now `Enforced`.

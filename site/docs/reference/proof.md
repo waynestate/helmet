@@ -14,7 +14,7 @@ How HELMET is proven against real Wayne State applications, and how to run its t
 
 | Check | Date | Commit | Result | Duration |
 | --- | --- | --- | --- | --- |
-| `composer ci` (validate, tests, Pint, PHPStan, agent-ready, docs, audit) | 2026-11-07 | a86c8c8 | pass: 779 tests, 2356 assertions, 1 skipped; Pint 115 files; PHPStan 48 files clean; 0 vulnerabilities | 00:20 |
+| `composer ci` (validate, tests, Pint, PHPStan, agent-ready, docs, audit) | 2026-11-09 | b9746b3 | pass: 853 tests, 2607 assertions, 1 skipped; Pint 124 files; PHPStan 49 files clean; 0 vulnerabilities | 00:08 (tests) |
 | Header contract suite (`tests/Contract`) | 2026-11-07 | a86c8c8 | pass: 3 tests, 196 assertions | 00:19 |
 | Test suite on PHP 8.5 (`php:8.5-cli`) | 2026-11-07 | a86c8c8 | pass: 779 tests, 2356 assertions, 1 skipped | 00:22 |
 | Test suite on PHP 8.4 (`php:8.4-cli`) | 2026-11-07 | a86c8c8 | pass: 779 tests, 2356 assertions, 1 skipped | 00:23 |

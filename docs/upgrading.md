@@ -7,7 +7,19 @@ description: How to move an app from one HELMET release to the next.
 
 This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 1.1.0.
+release is 1.2.0.
+
+## 1.2.0 (2026-11-09)
+
+A minor release, backward compatible: `composer update waynestate/helmet` within `^1.0`. Nothing changes until you opt in.
+
+- Raw PHP gains `helmet_client_error(int $status)`, which sends HELMET's fixed 4xx page and exits, and `helmet_client_error_response(int $status)`, which returns it as data. Call it from your router for a 404 or 405 instead of echoing your own text; a status outside 400 to 499 throws.
+- Laravel gains `HELMET_ERROR_PAGES` (`helmet.error_pages`, default `false`). Set it `true` to answer every 4xx HTTP exception with the same fixed page instead of the framework's error view; JSON clients, validation errors, authentication redirects and every 5xx stay with Laravel. An app with its own `resources/views/errors/4xx` views should check them first: with the setting on, HELMET's page answers instead.
+- Nothing is deprecated in 1.2.0.
+
+### How to verify
+
+With `HELMET_ERROR_PAGES=true`, ask for a page that does not exist and expect `404`, `Cache-Control: no-store` and HELMET's fixed page, never the exception message.
 
 ## 1.1.0 (2026-11-09)
 

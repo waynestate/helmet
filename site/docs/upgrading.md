@@ -8,7 +8,19 @@ generator: Squire agent-ready
 
 # Upgrading[#](https://helmet.apps.wayne.edu/docs/upgrading.html#upgrading)
 
-This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.1.0.
+This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.2.0.
+
+## 1.2.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-2-0-2026-11-09)
+
+A minor release, backward compatible: `composer update waynestate/helmet` within `^1.0`. Nothing changes until you opt in.
+
+- Raw PHP gains `helmet_client_error(int $status)`, which sends HELMET's fixed 4xx page and exits, and `helmet_client_error_response(int $status)`, which returns it as data. Call it from your router for a 404 or 405 instead of echoing your own text; a status outside 400 to 499 throws.
+- Laravel gains `HELMET_ERROR_PAGES` (`helmet.error_pages`, default `false`). Set it `true` to answer every 4xx HTTP exception with the same fixed page instead of the framework's error view; JSON clients, validation errors, authentication redirects and every 5xx stay with Laravel. An app with its own `resources/views/errors/4xx` views should check them first: with the setting on, HELMET's page answers instead.
+- Nothing is deprecated in 1.2.0.
+
+### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify)
+
+With `HELMET_ERROR_PAGES=true`, ask for a page that does not exist and expect `404`, `Cache-Control: no-store` and HELMET's fixed page, never the exception message.
 
 ## 1.1.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-1-0-2026-11-09)
 
@@ -23,7 +35,7 @@ A minor release, backward compatible: `composer update waynestate/helmet` within
 - The raw PHP ribbon no longer renders in production or for an environment name HELMET does not know; it follows the Laravel adapter's list (`Ribbon::ENVIRONMENTS`), matched in any case. A test site whose `APP_ENV` was a name outside that list loses its ribbon; use one of the listed names.
 - `helmet_boot()` logs `helmet.forwarded_proto_rejected` when a peer that is not a trusted proxy sends `X-Forwarded-Proto`. Nothing to do, but expect the warning in the logs of an app that is reached directly as well as through its proxy.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify)
+### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-1)
 
 Run the app's tests with deprecations shown, and check that no `Waynestate\Helmet\Ribbon\helmet_ribbon() is deprecated` notice is left.
 
@@ -56,7 +68,7 @@ Nothing is deprecated in 1.0.0.
 2. Read your `csp` option or `HELMET_CSP` value: every quoted source must be one CSP accepts (see Breaking).
 3. Optional: turn on `/ready` for your platform's readiness probe (the [Readiness guide](https://helmet.apps.wayne.edu/docs/guides/readiness.html)).
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-1)
+### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-2)
 
 Boot the app once on a test host. It starts, and `curl -sI` on a page shows the same `Content-Security-Policy` as before, with any hashes or keywords you set written as you wrote them. A typo in a quoted source stops the boot with `\InvalidArgumentException` naming it; fix it and boot again.
 
@@ -109,7 +121,7 @@ None listed in the changelog for this release.
 3. On Citadel, confirm the `citadel` preset's NAT assumption: `172.18.0.1` is the Docker bridge gateway, the preset is safe only when the front proxy reaches the app over that bridge, and a published app port that is source-NATed to the gateway address would make a direct client look like the proxy, so the platform must not publish the app's port.
 4. If you rely on `X-Forwarded-For` values, expect the fail-closed behavior: an unparseable entry makes the resolved client IP the peer, and the warning `helmet.forwarded_for_rejected` is logged with `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`) and `peer` in the context. The Origin value, cookies, Authorization, the header and the bad entry are never logged.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-2)
+### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-3)
 
 ```
 composer ci
@@ -194,7 +206,7 @@ None listed in the changelog for this release.
 2. If your app chose its own session cookie name, nothing changes for it.
 3. Expect one more sign-in for raw-PHP users after the deploy; tell app owners it is expected.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-3)
+### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-4)
 
 ```
 curl -sI http://localhost/up
@@ -226,7 +238,7 @@ None listed in the changelog for this release.
 2. Check `HELMET_PRESET` for typos; the only names are `citadel` and `docker`.
 3. If your app relied on `X-Forwarded-Host`, `X-Forwarded-Prefix` or `X-Forwarded-Port`, choose the set yourself with `trustProxies(at: ..., headers: ...)` or `TrustProxies::withHeaders()` in `bootstrap/app.php`.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-4)
+### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-5)
 
 ```
 composer ci
