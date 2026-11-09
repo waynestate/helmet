@@ -35,7 +35,7 @@ final class PreflightPinTest extends TestCase
             self::assertMatchesRegularExpression('#^\d+\.\d+\.\d+$#', $ref, $m[1][$i] . ' is pinned to a release');
         }
         self::assertCount(1, array_unique($m[2]), 'one Preflight version: ' . implode(', ', array_unique($m[2])));
-        self::assertSame('0.3.1', $m[2][0]);
+        self::assertSame('0.4.0', $m[2][0]);
     }
 
     public function testNoComponentInputCarriesTheProxyPrefix(): void
