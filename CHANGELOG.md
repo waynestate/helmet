@@ -5,6 +5,7 @@ All notable changes to this project are documented in this file.
 ## Unreleased
 
 - Changed: the `composer-ci` and `wayneui-copies` jobs, and the Docker line in MAINTAINING, run Composer 2.11.1 pinned by its multi-arch list digest (was 2.10.3, which Squire 0.10.1 calls unmaintained). 2.11.1 fixes GHSA-c968-33g3-wh7p and GHSA-fm2w-xgf2-f9fh.
+- Changed: the deploy kit is Squire 0.10.2 (was 0.10.1): the fallback base image names its images in full (`docker.io/library/...`) with Composer as a build argument, the kit's php.ini sets `session.cookie_samesite = Lax`, and the portable image leaves `node_modules/` out of its layers.
 
 ## 1.3.0 (2026-11-09)
 
