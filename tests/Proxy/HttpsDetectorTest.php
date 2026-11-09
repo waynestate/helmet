@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Proxy;
 
+use Monolog\Handler\TestHandler;
+use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
 use Waynestate\Helmet\Proxy\HttpsDetector;
 use Waynestate\Helmet\Proxy\TrustedProxies;
@@ -163,5 +165,72 @@ final class HttpsDetectorTest extends TestCase
         ];
 
         self::assertFalse(HttpsDetector::isHttps($server, $proxies));
+    }
+
+    public function testUntrustedPeerForwardedProtoIsLogged(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.1']);
+        $server = [
+            'REMOTE_ADDR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_PROTO' => 'https-spoof-1',
+        ];
+        $logger = new Logger('test');
+        $handler = new TestHandler();
+        $logger->pushHandler($handler);
+
+        self::assertFalse(HttpsDetector::isHttps($server, $proxies, $logger));
+        self::assertCount(1, $handler->getRecords());
+
+        $record = $handler->getRecords()[0];
+        self::assertSame('helmet.forwarded_proto_rejected', $record->message);
+        self::assertSame('forwarded_proto_rejected', $record->context['event']);
+        self::assertSame('untrusted_peer', $record->context['reason']);
+        self::assertSame('203.0.113.9', $record->context['peer']);
+
+        // The header value never reaches the record.
+        $serialized = json_encode(['message' => $record->message, 'context' => $record->context]);
+        self::assertStringNotContainsString('https-spoof-1', (string) $serialized);
+    }
+
+    public function testTrustedPeerForwardedProtoLogsNothing(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.1']);
+        $server = [
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ];
+        $logger = new Logger('test');
+        $handler = new TestHandler();
+        $logger->pushHandler($handler);
+
+        self::assertTrue(HttpsDetector::isHttps($server, $proxies, $logger));
+        self::assertCount(0, $handler->getRecords());
+    }
+
+    public function testNoForwardedProtoLogsNothing(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.1']);
+        $server = ['REMOTE_ADDR' => '203.0.113.9'];
+        $logger = new Logger('test');
+        $handler = new TestHandler();
+        $logger->pushHandler($handler);
+
+        self::assertFalse(HttpsDetector::isHttps($server, $proxies, $logger));
+        self::assertCount(0, $handler->getRecords());
+    }
+
+    public function testNoTrustedProxiesLogsNothing(): void
+    {
+        $proxies = new TrustedProxies([]);
+        $server = [
+            'REMOTE_ADDR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ];
+        $logger = new Logger('test');
+        $handler = new TestHandler();
+        $logger->pushHandler($handler);
+
+        self::assertFalse(HttpsDetector::isHttps($server, $proxies, $logger));
+        self::assertCount(0, $handler->getRecords());
     }
 }

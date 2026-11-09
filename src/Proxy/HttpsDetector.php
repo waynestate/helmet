@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Proxy;
 
+use Psr\Log\LoggerInterface;
+
 /**
  * Decides whether the current request arrived over HTTPS.
  *
@@ -24,15 +26,23 @@ namespace Waynestate\Helmet\Proxy;
  * X-Forwarded-Port is deliberately never read: the front proxy sets
  * X-Forwarded-Proto and the port is always 443 on the TLS edge, so the port
  * header adds no information and only creates a spoofing surface.
+ *
+ * When the peer is not a trusted proxy but sends X-Forwarded-Proto anyway,
+ * a warning is logged (when a logger is given) with the reason and the peer,
+ * and the header value is never logged.
  */
 final class HttpsDetector
 {
     /**
      * Whether the request arrived over HTTPS.
      *
+     * A logger that throws is ignored: it must never change the decision.
+     *
      * @param array<string, mixed> $serverParams The raw $_SERVER array.
+     * @param LoggerInterface|null $logger Optional logger for the rejected
+     *        header event.
      */
-    public static function isHttps(array $serverParams, TrustedProxies $proxies): bool
+    public static function isHttps(array $serverParams, TrustedProxies $proxies, ?LoggerInterface $logger = null): bool
     {
         $https = $serverParams['HTTPS'] ?? null;
         if (is_string($https) && $https !== '' && strtolower($https) !== 'off') {
@@ -49,6 +59,19 @@ final class HttpsDetector
         }
 
         if (!$proxies->isTrusted($remoteAddr)) {
+            $forwardedProto = $serverParams['HTTP_X_FORWARDED_PROTO'] ?? null;
+            if (is_string($forwardedProto) && trim($forwardedProto) !== '') {
+                try {
+                    $logger?->warning('helmet.forwarded_proto_rejected', [
+                        'event' => 'forwarded_proto_rejected',
+                        'reason' => 'untrusted_peer',
+                        'peer' => $remoteAddr,
+                    ]);
+                } catch (\Throwable) {
+                    // A logging failure must never change the decision.
+                }
+            }
+
             return false;
         }
 

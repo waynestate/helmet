@@ -118,7 +118,8 @@ if (!function_exists('helmet_boot')) {
         }
 
         $proxies = new TrustedProxies($proxyList);
-        $isHttps = HttpsDetector::isHttps($_SERVER, $proxies);
+        // @phpstan-ignore nullCoalesce.offset (the docblock does not name a "logger" key, but a caller may pass one)
+        $isHttps = HttpsDetector::isHttps($_SERVER, $proxies, $config['logger'] ?? null);
 
         $secureMode = SessionHardening::SECURE_AUTO;
         $session = $config['session'] ?? null;
