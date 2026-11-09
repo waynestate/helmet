@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Changed: the `composer-ci` and `wayneui-copies` jobs, and the Docker line in MAINTAINING, run Composer 2.11.1 pinned by its multi-arch list digest (was 2.10.3, which Squire 0.10.1 calls unmaintained). 2.11.1 fixes GHSA-c968-33g3-wh7p and GHSA-fm2w-xgf2-f9fh.
+
 ## 1.3.0 (2026-11-09)
 
 A minor release, backward compatible. Two promises now hold on every consumer path: `HELMET_SESSION_SECURE` reaches the Laravel session cookie (it was validated but nothing read it), and the spoofed forwarded headers HELMET ignores are logged by the PSR-15 middleware and the Laravel adapter as well as by raw PHP. Same bucket, better chin strap.
