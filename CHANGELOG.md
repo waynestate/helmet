@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.3.0 (2026-11-09)
+
+A minor release, backward compatible. Two promises now hold on every consumer path: `HELMET_SESSION_SECURE` reaches the Laravel session cookie (it was validated but nothing read it), and the spoofed forwarded headers HELMET ignores are logged by the PSR-15 middleware and the Laravel adapter as well as by raw PHP. Same bucket, better chin strap.
+
 - Added: the Laravel adapter reads `helmet.session.secure` (env `HELMET_SESSION_SECURE`) and maps it onto Laravel's own `session.secure` at boot. `auto` (the default) leaves it unset, so the session cookie is `Secure` on each request the trusted-proxy check calls HTTPS; `always` sets it to `true`, so the cookie is `Secure` on plain HTTP too. An app that sets `session.secure` itself (`SESSION_SECURE_COOKIE`) keeps its value. Before, the key was validated but nothing read it. `helmet_boot()` still reads no environment; raw PHP keeps the `session` option.
 - Added: `SecurityHeadersMiddleware` takes an optional PSR-3 `logger` as its last constructor argument (default `null`, which logs nothing) and logs `helmet.forwarded_proto_rejected` through it, the same event and context (`event`, `reason`, `peer`) as `helmet_boot()`.
 - Added: the Laravel adapter logs `helmet.forwarded_proto_rejected` from `SecurityHeaders` and `helmet.forwarded_for_rejected` from the metrics endpoint through the app's logger, with the same events and context keys as raw PHP. The header values are never logged. Every security event is now logged on every consumer path.

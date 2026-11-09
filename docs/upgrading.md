@@ -7,7 +7,22 @@ description: How to move an app from one HELMET release to the next.
 
 This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 1.2.0.
+release is 1.3.0.
+
+## 1.3.0 (2026-11-09)
+
+A minor release, backward compatible: `composer update waynestate/helmet` within `^1.0`. Nothing to change in the code.
+
+### Changed behavior
+
+- Laravel: `HELMET_SESSION_SECURE` now reaches the session cookie. With the default `auto`, nothing changes: Laravel already marked the cookie `Secure` on HTTPS requests, and HELMET leaves `session.secure` unset. With `always`, the adapter sets `session.secure` to `true`, so the cookie is `Secure` even on plain HTTP. If an app set `HELMET_SESSION_SECURE=always` before (it did nothing then), check that plain HTTP development keeps `auto`, or the browser drops the cookie and nobody stays signed in. An app that sets `session.secure` itself (`SESSION_SECURE_COOKIE`) keeps its value.
+- Laravel: the adapter logs `helmet.forwarded_proto_rejected` (from `SecurityHeaders`) and `helmet.forwarded_for_rejected` (from the metrics endpoint) through the app's logger. Expect the warning in the logs of an app that trusts a proxy and is also reached directly.
+- PSR-15: `SecurityHeadersMiddleware` takes an optional PSR-3 `logger` as its last argument. Pass one (for example `logger: $logger`) to log `helmet.forwarded_proto_rejected`; without it nothing is logged, as before.
+- Nothing is deprecated in 1.3.0.
+
+### How to verify
+
+In Laravel, send a request from an address outside `HELMET_PROXIES` with `X-Forwarded-Proto: https` and expect one `helmet.forwarded_proto_rejected` warning with `event`, `reason` and `peer` in the context. With `HELMET_SESSION_SECURE=always`, a plain HTTP response's session `Set-Cookie` carries `secure`.
 
 ## 1.2.0 (2026-11-09)
 

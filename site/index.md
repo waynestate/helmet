@@ -344,7 +344,7 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
    ```
    # TYPE helmet_info gauge
    helmet_info{php_version="8.5.12",
-    helmet_version="1.2.0"} 1
+    helmet_version="1.3.0"} 1
    helmet_php_eol_timestamp_seconds{
     php_minor="8.5"} 1893369600
    helmet_http_request_duration_seconds_count{
