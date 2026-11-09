@@ -1,5 +1,5 @@
 # HELMET's pipeline, built from the Preflight components on this GitLab.
-# Every include is pinned to one Preflight release, 0.4.0. Never use ~latest.
+# Every include is pinned to one Preflight release, 0.5.0. Never use ~latest.
 # HELMET requires PHP ^8.3, so the test matrix starts at 8.3.
 # composer ci is the contract: every check runs from the "ci" script in composer.json.
 # Docker Hub images go through the GitLab Dependency Proxy to avoid the anonymous pull limit:
@@ -7,16 +7,14 @@
 # the group's proxy, so the image inputs below are plain image names. Put the prefix in the
 # image as well and you are wearing a helmet on a helmet: the pull fails.
 include:
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/php-test@0.4.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/php-test@0.5.0
     inputs:
       php_versions: ["8.3", "8.4", "8.5"]
       image: "php:${PHP_VERSION}-cli-trixie"
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/composer-audit@0.4.0
-    inputs:
-      image: "composer:2@sha256:b6dcd72ca98fa19d0e5b8476de179859704891fad06dd9e0b96833d4c430a5fc"
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/composer-audit@0.5.0
   # The front page deploy layer (ADR-0017): PROCTOR checks deploy/ against CREED's policy.
   # allow_failure: current findings: unbounded dev-main constraints; CI files missing in deploy/.
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/proctor@0.4.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/proctor@0.5.0
     inputs:
       working_dir: deploy
       proctor_command: vendor/bin/proctor check --format=codequality
@@ -26,7 +24,7 @@ include:
   # (first released in 0.2.0). It fails the pipeline on a finding; --redact
   # keeps the secret itself out of the log and the gitleaks.json artifact.
   # Same image and digest as the component default; the prefix sends it through the proxy.
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.4.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.5.0
     inputs:
       image: "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
   # Accessibility: the front page and every docs page, WCAG 2.2 AA, light and
@@ -34,7 +32,7 @@ include:
   # scripts/a11y.sh (axe-core 4.14, 320 px), in Preflight's pinned Playwright
   # image (mcr.microsoft.com is not on the Dependency Proxy, which only fronts
   # Docker Hub, so a11y has no image_prefix).
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/a11y@0.4.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/a11y@0.5.0
     inputs:
       site_dir: site
       pages: ["index.html", "docs/**/*.html"]
