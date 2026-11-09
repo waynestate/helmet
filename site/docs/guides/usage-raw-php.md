@@ -197,6 +197,18 @@ echo helmet_csp_nonce_swap(file_get_contents('dist/index.html'), $helmet['nonce'
 
 One more setting keeps the CSP honest: Vite inlines small assets as `data:` URIs by default. The default policy already allows `data:` in `font-src` and `img-src`, so inlined fonts and images pass; if you would rather not inline at all, set `build.assetsInlineLimit: 0`.
 
+## The environment ribbon[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#the-environment-ribbon)
+
+`helmet_ribbon()` gives a raw PHP app the same ribbon the Laravel adapter injects, so nobody mistakes a test site for the real one. Print its `html()` right after your `<body>` tag, and style `.helmet-ribbon` (and `.helmet-ribbon-warning`) in your own CSS:
+
+```php
+use function Waynestate\Helmet\Ribbon\helmet_ribbon;
+
+echo helmet_ribbon(getenv('APP_ENV') ?: 'production', true, getenv('HELMET_POLICY_PATH') ?: null)->html();
+```
+
+It renders only for `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`, `uat`, `preprod`, `pre-prod` and `sandbox`, in any case: the same list as Laravel (`Ribbon::ENVIRONMENTS`). Production, an empty name and any name it does not know get an empty string even when the second argument is `true`, so a typo in `APP_ENV` hides the ribbon rather than showing it on the live site. The third argument, a path to a CREED `policy.json`, adds a warning line when the running PHP version is in its security-only phase or end of life; a missing or broken file adds nothing and never breaks the page.
+
 ## Related[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#related)
 
 - [Quick start](https://helmet.apps.wayne.edu/docs/guides/quick-start.html)

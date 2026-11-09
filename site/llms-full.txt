@@ -672,11 +672,12 @@ origin is never added.
 
 ##### The ribbon
 
-In `local`, `development`, `dev`, `testing`, `test` and `staging`, `InjectRibbon`
-adds `staging`
+In `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`,
+`uat`, `preprod`, `pre-prod` and `sandbox`, `InjectRibbon` adds `staging`
 right after the opening `` tag of an HTML response, so nobody mistakes a
-test site for the real one. It never appears in `production`, on JSON or other
-non-HTML responses, or on HTML with no ``. The package ships no
+test site for the real one. It never appears in `production` or an
+environment HELMET does not know, on JSON or other non-HTML responses, or on
+HTML with no ``. The package ships no
 stylesheet; style `.helmet-ribbon` in your own CSS. Even with
 `HELMET_RIBBON=true`, production never gets it, so there is no Aftertaste.
 
@@ -687,6 +688,20 @@ version; the Laravel adapter also checks the framework's major version. With
 no policy path there is no warning and no file read, and a missing, unreadable
 or invalid file shows no warning and never breaks the page. Style
 `.helmet-ribbon-warning` in your own CSS.
+
+**Raw PHP.** `helmet_ribbon()` returns the same ribbon; print its `html()`
+right after your `` tag:
+
+```php
+use function Waynestate\Helmet\Ribbon\helmet_ribbon;
+
+echo helmet_ribbon(getenv('APP_ENV') ?: 'production', true, getenv('HELMET_POLICY_PATH') ?: null)->html();
+```
+
+Both paths read one list of non-production names (`Ribbon::ENVIRONMENTS`),
+matched in any case. Production, an empty name and any name HELMET does not
+know get an empty string, so a typo in `APP_ENV` hides the ribbon instead of
+showing it on the live site.
 
 ##### Raw PHP and Laravel agree
 
@@ -1659,6 +1674,8 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Docs: BEST_PRACTICES names the 0.4.0 Preflight pins in its tag table (it still said 0.3.0), records the first secret-detection and composer-audit runs in pipeline 4680 (gap 24 and H50 still called them owed or unseen), and marks gap 36 (no-store) done.
+- Fixed: the raw PHP ribbon (`helmet_ribbon()`, `Ribbon`) no longer renders in production or for an environment HELMET does not know; it follows the Laravel adapter's list, now one constant (`Ribbon::ENVIRONMENTS`) matched in any case and widened with `stage`, `qa`, `uat`, `preprod`, `pre-prod` and `sandbox`, so those and `STAGING` show the ribbon while production, an empty name or a typo does not (H46). The README and the raw PHP guide show how to print it.
 - Changed: CI pins the Preflight components to 0.4.0 (the proctor job clones the full history, so the override-approver check can read git blame).
 - Docs: BEST_PRACTICES H58 names the Preflight pin the pipeline runs (0.3.1, was 0.3.0).
 - Changed: the deploy layer runs Squire's kit 0.7.1 (was 0.6.0): `.squire/php.ini` no longer sets the deprecated `session.sid_*` lines, web requests get a `disable_functions` list and Apache hardening (`.squire/php-web.ini`, `.squire/apache-hardening.conf`), and opcache gets production settings with `SQUIRE_OPCACHE_VALIDATE` as the one switch.
@@ -3223,7 +3240,7 @@ The Vite dev server is allowed in the `local` environment only, and only when it
 
 ### The ribbon[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#the-ribbon)
 
-In `local`, `development`, `dev`, `testing`, `test` and `staging`, `InjectRibbon` adds `<div class="helmet-ribbon" data-environment="staging">staging</div>` right after the opening `<body>` tag of an HTML response, so nobody mistakes a test site for the real one. It never appears in `production`, on JSON or other non-HTML responses, or on HTML with no `<body>`. The package ships no stylesheet; style `.helmet-ribbon` in your own CSS. Even with `HELMET_RIBBON=true`, production never gets it, so there is no Aftertaste.
+In `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`, `uat`, `preprod`, `pre-prod` and `sandbox`, `InjectRibbon` adds `<div class="helmet-ribbon" data-environment="staging">staging</div>` right after the opening `<body>` tag of an HTML response, so nobody mistakes a test site for the real one. The names match in any case. It never appears in `production` or an environment HELMET does not know (a typo counts as production), on JSON or other non-HTML responses, or on HTML with no `<body>`. The package ships no stylesheet; style `.helmet-ribbon` in your own CSS. Even with `HELMET_RIBBON=true`, production never gets it, so there is no Aftertaste.
 
 **Version warnings.** Point `HELMET_POLICY_PATH` at a CREED `policy.json` and the ribbon gains a warning line for each component version that is in its security-only phase or end of life. The raw PHP path checks the running PHP version; the Laravel adapter also checks the framework's major version. With no policy path there is no warning and no file read, and a missing, unreadable or invalid file shows no warning and never breaks the page. Style `.helmet-ribbon-warning` in your own CSS.
 
@@ -3550,6 +3567,18 @@ echo helmet_csp_nonce_swap(file_get_contents('dist/index.html'), $helmet['nonce'
 `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder with the nonce, HTML-escaped exactly the way `helmet_csp_nonce_meta()` escapes it. A placeholder shorter than 16 characters throws, so it cannot collide with page text, an empty nonce throws, and a page that carries no placeholder is returned unchanged.
 
 One more setting keeps the CSP honest: Vite inlines small assets as `data:` URIs by default. The default policy already allows `data:` in `font-src` and `img-src`, so inlined fonts and images pass; if you would rather not inline at all, set `build.assetsInlineLimit: 0`.
+
+### The environment ribbon[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#the-environment-ribbon)
+
+`helmet_ribbon()` gives a raw PHP app the same ribbon the Laravel adapter injects, so nobody mistakes a test site for the real one. Print its `html()` right after your `<body>` tag, and style `.helmet-ribbon` (and `.helmet-ribbon-warning`) in your own CSS:
+
+```php
+use function Waynestate\Helmet\Ribbon\helmet_ribbon;
+
+echo helmet_ribbon(getenv('APP_ENV') ?: 'production', true, getenv('HELMET_POLICY_PATH') ?: null)->html();
+```
+
+It renders only for `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`, `uat`, `preprod`, `pre-prod` and `sandbox`, in any case: the same list as Laravel (`Ribbon::ENVIRONMENTS`). Production, an empty name and any name it does not know get an empty string even when the second argument is `true`, so a typo in `APP_ENV` hides the ribbon rather than showing it on the live site. The third argument, a path to a CREED `policy.json`, adds a warning line when the running PHP version is in its security-only phase or end of life; a missing or broken file adds nothing and never breaks the page.
 
 ### Related[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#related)
 
