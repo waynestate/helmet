@@ -117,31 +117,6 @@ if (!function_exists('helmet_boot')) {
             $proxyList = [];
         }
 
-        $proxies = new TrustedProxies($proxyList);
-        // @phpstan-ignore nullCoalesce.offset (the docblock does not name a "logger" key, but a caller may pass one)
-        $isHttps = HttpsDetector::isHttps($_SERVER, $proxies, $config['logger'] ?? null);
-
-        $secureMode = SessionHardening::SECURE_AUTO;
-        $session = $config['session'] ?? null;
-        if ($session !== null) {
-            // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
-            if (!is_array($session)) {
-                throw new \InvalidArgumentException('helmet_boot() "session" must be an array.');
-            }
-            $secureMode = $session['secure'] ?? SessionHardening::SECURE_AUTO;
-            // @phpstan-ignore function.alreadyNarrowedType (the docblock says 'auto'|'always', but a caller may pass anything at runtime),booleanAnd.alwaysFalse (same reason; the value check stays live code),booleanOr.alwaysFalse (same reason; the value check stays live code),notIdentical.alwaysFalse (same reason; the value check stays live code)
-            if (!is_string($secureMode) || $secureMode !== SessionHardening::SECURE_AUTO && $secureMode !== SessionHardening::SECURE_ALWAYS) {
-                throw new \InvalidArgumentException('helmet_boot() "session.secure" must be "auto" or "always".');
-            }
-        }
-
-        SessionHardening::apply($isHttps, null, $secureMode);
-
-        // Strip the server signature before any early answer below (the
-        // health check and the forgery rejection both exit), so no response
-        // leaves the door still wearing X-Powered-By.
-        header_remove('X-Powered-By');
-
         $logger = null;
         $requestId = Logging::requestId();
         $log = $config['log'] ?? null;
@@ -164,6 +139,30 @@ if (!function_exists('helmet_boot')) {
                 $requestId = $suppliedRequestId;
             }
         }
+
+        $proxies = new TrustedProxies($proxyList);
+        $isHttps = HttpsDetector::isHttps($_SERVER, $proxies, $logger);
+
+        $secureMode = SessionHardening::SECURE_AUTO;
+        $session = $config['session'] ?? null;
+        if ($session !== null) {
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says array, but a caller may pass a non-array at runtime)
+            if (!is_array($session)) {
+                throw new \InvalidArgumentException('helmet_boot() "session" must be an array.');
+            }
+            $secureMode = $session['secure'] ?? SessionHardening::SECURE_AUTO;
+            // @phpstan-ignore function.alreadyNarrowedType (the docblock says 'auto'|'always', but a caller may pass anything at runtime),booleanAnd.alwaysFalse (same reason; the value check stays live code),booleanOr.alwaysFalse (same reason; the value check stays live code),notIdentical.alwaysFalse (same reason; the value check stays live code)
+            if (!is_string($secureMode) || $secureMode !== SessionHardening::SECURE_AUTO && $secureMode !== SessionHardening::SECURE_ALWAYS) {
+                throw new \InvalidArgumentException('helmet_boot() "session.secure" must be "auto" or "always".');
+            }
+        }
+
+        SessionHardening::apply($isHttps, null, $secureMode);
+
+        // Strip the server signature before any early answer below (the
+        // health check and the forgery rejection both exit), so no response
+        // leaves the door still wearing X-Powered-By.
+        header_remove('X-Powered-By');
 
         // H21: trust the proxy's address, not its whole network. Warn once at
         // boot when the trusted-proxy list holds a broad range (an IPv4 range
