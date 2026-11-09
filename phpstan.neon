@@ -15,12 +15,3 @@ parameters:
         -
             identifier: classConstant.deprecatedClass
             path: src/Laravel/CspReportRoute.php
-        # Both constructors deliberately re-type their documented list<string>
-        # parameter as list<mixed> so the per-entry is_string() guard stays
-        # live code; the widening is intentional, not a typo.
-        -
-            identifier: varTag.type
-            path: src/Proxy/IpAllowList.php
-        -
-            identifier: varTag.type
-            path: src/Proxy/TrustedProxies.php

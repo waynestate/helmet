@@ -31,7 +31,7 @@
         "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5",
         "waynestate/advisor": "^0.1.6",
-        "waynestate/pinstripe": "^0.1"
+        "waynestate/pinstripe": "^0.1.4"
     },
     "suggest": {
         "laravel/framework": "For the Laravel adapter (step 2)",
