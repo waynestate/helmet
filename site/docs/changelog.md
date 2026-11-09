@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Added: `helmet_boot()` logs `helmet.forwarded_proto_rejected` when a peer that is not a trusted proxy sends X-Forwarded-Proto.
 - Changed: helmet_ribbon() moves to Waynestate\\Helmet, next to helmet_boot(); the old Waynestate\\Helmet\\Ribbon\\helmet_ribbon() still works for one release and raises E_USER_DEPRECATED.
 - Docs: BEST_PRACTICES names the 0.4.0 Preflight pins in its tag table (it still said 0.3.0), records the first secret-detection and composer-audit runs in pipeline 4680 (gap 24 and H50 still called them owed or unseen), and marks gap 36 (no-store) done.
 - Fixed: the raw PHP ribbon (`helmet_ribbon()`, `Ribbon`) no longer renders in production or for an environment HELMET does not know; it follows the Laravel adapter's list, now one constant (`Ribbon::ENVIRONMENTS`) matched in any case and widened with `stage`, `qa`, `uat`, `preprod`, `pre-prod` and `sandbox`, so those and `STAGING` show the ribbon while production, an empty name or a typo does not (H46). The README and the raw PHP guide show how to print it.
