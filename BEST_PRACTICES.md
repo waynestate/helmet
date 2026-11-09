@@ -19,7 +19,7 @@ Each practice ends with exactly one tag.
 | `Documented` | Written down in the README or a design note, with no code behind it. |
 | `Not yet` | A gap. |
 
-HELMET's current release is 1.0.1 (2026-11-08), a patch on 1.0.0 that adds tests for the 1.0 promises. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life. New in 1.0.0: a readiness check on `/ready` (H34), a `style_src_attr` mode for the one `'unsafe-inline'` left in the default policy (H5, ADR-0001, accepted: `inline` stays the default until WayneUI drops inline styles), Gitleaks in CI (H58) and an accessibility gate on the front page and docs.
+HELMET's current release is 1.1.0 (2026-11-09), which logs a spoofed X-Forwarded-Proto from a peer that is not a trusted proxy (H41) and moves `helmet_ribbon()` next to `helmet_boot()`. 1.0.1 (2026-11-08) added tests for the 1.0 promises. The Laravel adapter and the environment ribbon are built, and the version warning is wired into the ribbon: when a policy file is configured, the ribbon shows a warning line for each component version that is in its security-only phase or end of life. New in 1.0.0: a readiness check on `/ready` (H34), a `style_src_attr` mode for the one `'unsafe-inline'` left in the default policy (H5, ADR-0001, accepted: `inline` stays the default until WayneUI drops inline styles), Gitleaks in CI (H58) and an accessibility gate on the front page and docs.
 
 ---
 
