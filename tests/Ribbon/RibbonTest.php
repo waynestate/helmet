@@ -168,9 +168,24 @@ final class RibbonTest extends TestCase
      */
     public static function nonProductionEnvironments(): iterable
     {
-        foreach (Ribbon::ENVIRONMENTS as $environment) {
+        // Listed by hand, not read from Ribbon::ENVIRONMENTS, so dropping a
+        // name from the constant fails here instead of passing quietly.
+        $names = ['local', 'development', 'dev', 'testing', 'test', 'staging', 'stage', 'qa', 'uat', 'preprod', 'pre-prod', 'sandbox'];
+        foreach ($names as $environment) {
             yield $environment => [$environment];
         }
+    }
+
+    /**
+     * The constant holds exactly the documented names, so the README and
+     * guide lists cannot drift from the code without a red test.
+     */
+    public function testEnvironmentListIsTheDocumentedOne(): void
+    {
+        self::assertSame(
+            ['local', 'development', 'dev', 'testing', 'test', 'staging', 'stage', 'qa', 'uat', 'preprod', 'pre-prod', 'sandbox'],
+            Ribbon::ENVIRONMENTS,
+        );
     }
 
     /**
@@ -198,7 +213,8 @@ final class RibbonTest extends TestCase
         yield 'live' => ['live'];
         yield 'empty' => [''];
         yield 'blank' => ['   '];
-        yield 'unknown' => ['qa'];
+        yield 'unknown' => ['demo'];
+        yield 'production-like' => ['production-2'];
         yield 'typo' => ['stagin'];
     }
 

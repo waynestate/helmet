@@ -41,7 +41,7 @@ final class Ribbon
      *
      * @var list<string>
      */
-    public const ENVIRONMENTS = ['local', 'development', 'dev', 'testing', 'test', 'staging'];
+    public const ENVIRONMENTS = ['local', 'development', 'dev', 'testing', 'test', 'staging', 'stage', 'qa', 'uat', 'preprod', 'pre-prod', 'sandbox'];
 
     private readonly ?VersionWarning $versionWarning;
 

@@ -678,8 +678,8 @@ origin is never added.
 
 #### The ribbon
 
-In `local`, `development`, `dev`, `testing`, `test` and `staging`, `InjectRibbon`
-adds `<div class="helmet-ribbon" data-environment="staging">staging</div>`
+In `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`,
+`uat`, `preprod`, `pre-prod` and `sandbox`, `InjectRibbon` adds `<div class="helmet-ribbon" data-environment="staging">staging</div>`
 right after the opening `<body>` tag of an HTML response, so nobody mistakes a
 test site for the real one. It never appears in `production` or an
 environment HELMET does not know, on JSON or other non-HTML responses, or on

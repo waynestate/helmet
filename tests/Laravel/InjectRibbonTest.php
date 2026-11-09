@@ -53,7 +53,7 @@ final class InjectRibbonTest extends TestCase
      */
     public function testRibbonIsAbsentForAnUnknownEnvironment(): void
     {
-        $this->app->detectEnvironment(static fn() => 'qa');
+        $this->app->detectEnvironment(static fn() => 'demo');
         $this->defineHtmlRoute('/test', self::HTML);
 
         $response = $this->get('/test');

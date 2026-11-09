@@ -22,7 +22,7 @@ use Waynestate\Helmet\Ribbon\Ribbon;
  *  - when the response Content-Type is HTML,
  *  - when the environment is one of the non-production environments in
  *    Ribbon::ENVIRONMENTS (local, development, dev, testing, test, staging,
- *    in any case). It is never injected for production, prod, live, an
+ *    stage, qa, uat, preprod, pre-prod, sandbox, in any case). It is never injected for production, prod, live, an
  *    empty environment or one it does not know.
  *
  * The ribbon HTML is inserted right after the opening <body ...> tag. If the

@@ -200,7 +200,7 @@ use function Waynestate\Helmet\Ribbon\helmet_ribbon;
 echo helmet_ribbon(getenv('APP_ENV') ?: 'production', true, getenv('HELMET_POLICY_PATH') ?: null)->html();
 ```
 
-It renders only for `local`, `development`, `dev`, `testing`, `test` and `staging`, in any case: the same list as Laravel (`Ribbon::ENVIRONMENTS`). Production, an empty name and any name it does not know get an empty string even when the second argument is `true`, so a typo in `APP_ENV` hides the ribbon rather than showing it on the live site. The third argument, a path to a CREED `policy.json`, adds a warning line when the running PHP version is in its security-only phase or end of life; a missing or broken file adds nothing and never breaks the page.
+It renders only for `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`, `uat`, `preprod`, `pre-prod` and `sandbox`, in any case: the same list as Laravel (`Ribbon::ENVIRONMENTS`). Production, an empty name and any name it does not know get an empty string even when the second argument is `true`, so a typo in `APP_ENV` hides the ribbon rather than showing it on the live site. The third argument, a path to a CREED `policy.json`, adds a warning line when the running PHP version is in its security-only phase or end of life; a missing or broken file adds nothing and never breaks the page.
 
 ## Related
 
