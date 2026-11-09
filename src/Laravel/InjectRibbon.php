@@ -20,9 +20,10 @@ use Waynestate\Helmet\Ribbon\Ribbon;
  *
  *  - when config('helmet.ribbon') is true,
  *  - when the response Content-Type is HTML,
- *  - when the environment is one of the non-production environments
- *    (local, development, dev, testing, test, staging). It is never injected
- *    for production, prod, live, or an empty environment.
+ *  - when the environment is one of the non-production environments in
+ *    Ribbon::ENVIRONMENTS (local, development, dev, testing, test, staging,
+ *    in any case). It is never injected for production, prod, live, an
+ *    empty environment or one it does not know.
  *
  * The ribbon HTML is inserted right after the opening <body ...> tag. If the
  * content has no <body> tag, it is left unchanged. A ribbon error must never
@@ -31,14 +32,6 @@ use Waynestate\Helmet\Ribbon\Ribbon;
  */
 final class InjectRibbon
 {
-    /**
-     * The environments the ribbon is shown for. Any other environment
-     * (production, prod, live, empty, or unknown) never gets the ribbon.
-     *
-     * @var list<string>
-     */
-    private const RIBBON_ENVIRONMENTS = ['local', 'development', 'dev', 'testing', 'test', 'staging'];
-
     public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
@@ -109,11 +102,12 @@ final class InjectRibbon
     }
 
     /**
-     * Whether the ribbon should be shown for the current environment.
+     * Whether the ribbon should be shown for the current environment. The
+     * list lives in Ribbon::ENVIRONMENTS, so raw PHP and Laravel agree.
      */
     private function shouldShowForEnvironment(): bool
     {
-        return in_array(app()->environment(), self::RIBBON_ENVIRONMENTS, true);
+        return Ribbon::showsFor((string) app()->environment());
     }
 
     /**

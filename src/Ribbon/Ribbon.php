@@ -16,8 +16,13 @@ use Waynestate\Helmet\Policy\VersionWarning;
  *
  * The ribbon is meant to be injected near the top of the page so that a
  * developer or operator can see at a glance that they are not looking at
- * production. It is disabled by default in production and enabled in every
- * other environment.
+ * production. It shows only for the non-production environments in
+ * ENVIRONMENTS (matched without regard to case or surrounding space), and
+ * only when enabled. Production, prod, live, an empty name and any name it
+ * does not know are all treated as production and get no ribbon, so a typo
+ * in an environment name hides the ribbon instead of showing it on a live
+ * site. Raw PHP (helmet_ribbon()) and Laravel (InjectRibbon) share this one
+ * list.
  *
  * The environment name is escaped to prevent XSS.
  *
@@ -29,6 +34,15 @@ use Waynestate\Helmet\Policy\VersionWarning;
  */
 final class Ribbon
 {
+    /**
+     * The environments the ribbon is shown for, in lower case. Any other
+     * name (production, prod, live, empty, or unknown) never gets the
+     * ribbon: when in doubt, it is production.
+     *
+     * @var list<string>
+     */
+    public const ENVIRONMENTS = ['local', 'development', 'dev', 'testing', 'test', 'staging'];
+
     private readonly ?VersionWarning $versionWarning;
 
     /**
@@ -54,11 +68,22 @@ final class Ribbon
     }
 
     /**
-     * Whether the ribbon should be shown.
+     * Whether the ribbon should be shown: it is enabled and the environment
+     * is one of ENVIRONMENTS.
      */
     public function shouldShow(): bool
     {
-        return $this->enabled;
+        return $this->enabled && self::showsFor($this->environment);
+    }
+
+    /**
+     * Whether an environment name is one the ribbon is shown for. The match
+     * ignores case and surrounding space ("STAGING" and " staging " both
+     * count); anything else is treated as production.
+     */
+    public static function showsFor(string $environment): bool
+    {
+        return in_array(strtolower(trim($environment)), self::ENVIRONMENTS, true);
     }
 
     /**

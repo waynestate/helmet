@@ -47,6 +47,20 @@ final class InjectRibbonTest extends TestCase
         self::assertSame($expected, $response->getContent());
     }
 
+    /**
+     * An environment the ribbon does not know is treated as production, the
+     * same rule the raw PHP helper follows (both read Ribbon::ENVIRONMENTS).
+     */
+    public function testRibbonIsAbsentForAnUnknownEnvironment(): void
+    {
+        $this->app->detectEnvironment(static fn() => 'qa');
+        $this->defineHtmlRoute('/test', self::HTML);
+
+        $response = $this->get('/test');
+
+        self::assertStringNotContainsString('helmet-ribbon', (string) $response->getContent());
+    }
+
     public function testRibbonIsAbsentWhenConfigIsDisabled(): void
     {
         $this->app->detectEnvironment(static fn() => 'local');

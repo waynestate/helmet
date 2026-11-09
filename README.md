@@ -681,8 +681,9 @@ origin is never added.
 In `local`, `development`, `dev`, `testing`, `test` and `staging`, `InjectRibbon`
 adds `<div class="helmet-ribbon" data-environment="staging">staging</div>`
 right after the opening `<body>` tag of an HTML response, so nobody mistakes a
-test site for the real one. It never appears in `production`, on JSON or other
-non-HTML responses, or on HTML with no `<body>`. The package ships no
+test site for the real one. It never appears in `production` or an
+environment HELMET does not know, on JSON or other non-HTML responses, or on
+HTML with no `<body>`. The package ships no
 stylesheet; style `.helmet-ribbon` in your own CSS. Even with
 `HELMET_RIBBON=true`, production never gets it, so there is no Aftertaste.
 
@@ -693,6 +694,20 @@ version; the Laravel adapter also checks the framework's major version. With
 no policy path there is no warning and no file read, and a missing, unreadable
 or invalid file shows no warning and never breaks the page. Style
 `.helmet-ribbon-warning` in your own CSS.
+
+**Raw PHP.** `helmet_ribbon()` returns the same ribbon; print its `html()`
+right after your `<body>` tag:
+
+```php
+use function Waynestate\Helmet\Ribbon\helmet_ribbon;
+
+echo helmet_ribbon(getenv('APP_ENV') ?: 'production', true, getenv('HELMET_POLICY_PATH') ?: null)->html();
+```
+
+Both paths read one list of non-production names (`Ribbon::ENVIRONMENTS`),
+matched in any case. Production, an empty name and any name HELMET does not
+know get an empty string, so a typo in `APP_ENV` hides the ribbon instead of
+showing it on the live site.
 
 #### Raw PHP and Laravel agree
 

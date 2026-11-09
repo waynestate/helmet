@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Waynestate\Helmet\Tests\Ribbon;
 
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Waynestate\Helmet\Ribbon\Ribbon;
+
+use function Waynestate\Helmet\Ribbon\helmet_ribbon;
 
 final class RibbonTest extends TestCase
 {
@@ -142,6 +145,140 @@ final class RibbonTest extends TestCase
         self::assertSame(
             '<div class="helmet-ribbon" data-environment="staging">staging</div>',
             $ribbon->html(),
+        );
+    }
+
+    /**
+     * Every non-production environment gets the ribbon.
+     */
+    #[DataProvider('nonProductionEnvironments')]
+    public function testEveryNonProductionEnvironmentShowsTheRibbon(string $environment): void
+    {
+        $ribbon = new Ribbon($environment);
+
+        self::assertTrue($ribbon->shouldShow());
+        self::assertSame(
+            '<div class="helmet-ribbon" data-environment="' . $environment . '">' . $environment . '</div>',
+            $ribbon->html(),
+        );
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function nonProductionEnvironments(): iterable
+    {
+        foreach (Ribbon::ENVIRONMENTS as $environment) {
+            yield $environment => [$environment];
+        }
+    }
+
+    /**
+     * Production, its aliases, an empty name and any name the ribbon does
+     * not know are all production: no ribbon, even when enabled. A typo in
+     * APP_ENV should hide the ribbon, not paint "prodution" on a live site.
+     */
+    #[DataProvider('productionLikeEnvironments')]
+    public function testProductionAndUnknownEnvironmentsNeverShowTheRibbon(string $environment): void
+    {
+        $ribbon = new Ribbon($environment, true, self::POLICY, [['php', '8.1']], new DateTimeImmutable('2028-01-01'));
+
+        self::assertFalse($ribbon->shouldShow());
+        self::assertSame('', $ribbon->html());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function productionLikeEnvironments(): iterable
+    {
+        yield 'production' => ['production'];
+        yield 'PRODUCTION' => ['PRODUCTION'];
+        yield 'prod' => ['prod'];
+        yield 'live' => ['live'];
+        yield 'empty' => [''];
+        yield 'blank' => ['   '];
+        yield 'unknown' => ['qa'];
+        yield 'typo' => ['stagin'];
+    }
+
+    /**
+     * The match ignores case and surrounding space, and the label keeps the
+     * name exactly as given (escaped).
+     */
+    public function testEnvironmentMatchIgnoresCaseAndKeepsTheLabel(): void
+    {
+        self::assertTrue(Ribbon::showsFor('STAGING'));
+        self::assertTrue(Ribbon::showsFor(' Local '));
+        self::assertFalse(Ribbon::showsFor('Production'));
+
+        self::assertSame(
+            '<div class="helmet-ribbon" data-environment="STAGING">STAGING</div>',
+            (new Ribbon('STAGING'))->html(),
+        );
+    }
+
+    /**
+     * A disabled ribbon stays hidden in a non-production environment too.
+     */
+    public function testDisabledRibbonIsHiddenInStaging(): void
+    {
+        $ribbon = new Ribbon('staging', false);
+
+        self::assertFalse($ribbon->shouldShow());
+        self::assertSame('', $ribbon->html());
+    }
+
+    /**
+     * The raw PHP helper follows the same rule as the class and the Laravel
+     * adapter: it renders in staging and never in production.
+     */
+    public function testHelperRendersInStagingAndNeverInProduction(): void
+    {
+        self::assertSame(
+            '<div class="helmet-ribbon" data-environment="staging">staging</div>',
+            helmet_ribbon('staging')->html(),
+        );
+        self::assertSame('', helmet_ribbon('production')->html());
+        self::assertSame('', helmet_ribbon('production', true, self::POLICY)->html());
+        self::assertSame('', helmet_ribbon('staging', false)->html());
+    }
+
+    /**
+     * The helper checks the running PHP version against the policy, and a
+     * missing policy file still renders the plain ribbon.
+     */
+    public function testHelperChecksTheRunningPhpVersionAgainstThePolicy(): void
+    {
+        $version = PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION;
+        $path = tempnam(sys_get_temp_dir(), 'helmet-policy-');
+        self::assertIsString($path);
+
+        try {
+            // A policy whose only PHP entry is the running version, long past
+            // end of life, so the warning shows whatever today's date is.
+            file_put_contents($path, (string) json_encode([
+                'schema_version' => 1,
+                'components' => [
+                    'php' => [
+                        $version => ['active_until' => '2000-01-01', 'security_until' => '2000-06-01'],
+                    ],
+                ],
+            ]));
+
+            self::assertSame(
+                '<div class="helmet-ribbon" data-environment="staging">staging'
+                . '<div class="helmet-ribbon-warning">PHP ' . $version . ' is end of life and no longer receives security updates. Upgrade to a supported version.</div>'
+                . '</div>',
+                helmet_ribbon('staging', true, $path)->html(),
+            );
+        } finally {
+            unlink($path);
+        }
+
+        self::assertSame(
+            '<div class="helmet-ribbon" data-environment="staging">staging</div>',
+            helmet_ribbon('staging', true, __DIR__ . '/does-not-exist.json')->html(),
         );
     }
 }

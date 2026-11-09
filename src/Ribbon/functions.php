@@ -10,7 +10,10 @@ if (!function_exists('helmet_ribbon')) {
      *
      * This is a convenience helper for raw PHP apps. The returned Ribbon can
      * be rendered with its html() method and injected near the top of the
-     * page.
+     * page. It renders only for the non-production environments in
+     * Ribbon::ENVIRONMENTS, the same list the Laravel adapter uses; for
+     * production, an empty name or a name it does not know, html() returns
+     * an empty string even when $enabled is true.
      *
      * When a policy path is given, the ribbon also shows a version warning
      * for the running PHP version (PHP_MAJOR_VERSION.PHP_MINOR_VERSION) from
@@ -18,7 +21,8 @@ if (!function_exists('helmet_ribbon')) {
      * produces no warning and never breaks the page.
      *
      * @param string $environment The environment name (for example "STAGING").
-     * @param bool $enabled Whether the ribbon should be shown.
+     * @param bool $enabled Whether the ribbon may be shown at all (it still
+     *        never shows outside Ribbon::ENVIRONMENTS).
      * @param string|null $policyPath The path to a CREED policy.json, or null
      *        for no version warnings.
      */

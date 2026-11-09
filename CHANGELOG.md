@@ -4,6 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Fixed: the raw PHP ribbon (`helmet_ribbon()`, `Ribbon`) no longer renders in production or for an environment HELMET does not know; it follows the Laravel adapter's list, now one constant (`Ribbon::ENVIRONMENTS`) matched in any case, so `STAGING` shows the ribbon and `qa` or a typo does not (H46). The README and the raw PHP guide show how to print it.
 - Changed: CI pins the Preflight components to 0.4.0 (the proctor job clones the full history, so the override-approver check can read git blame).
 - Docs: BEST_PRACTICES H58 names the Preflight pin the pipeline runs (0.3.1, was 0.3.0).
 - Changed: the deploy layer runs Squire's kit 0.7.1 (was 0.6.0): `.squire/php.ini` no longer sets the deprecated `session.sid_*` lines, web requests get a `disable_functions` list and Apache hardening (`.squire/php-web.ini`, `.squire/apache-hardening.conf`), and opcache gets production settings with `SQUIRE_OPCACHE_VALIDATE` as the one switch.
