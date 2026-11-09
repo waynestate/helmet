@@ -67,7 +67,7 @@ $middleware = [
 </ul>
 <p>On every request, <code>SecurityHeadersMiddleware</code>:</p>
 <ul>
-<li>decides whether the request is HTTPS from the trusted-proxy list,</li>
+<li>decides whether the request is HTTPS from the trusted-proxy list, and logs <code>helmet.forwarded_proto_rejected</code> through the <code>logger</code> option (when given) when a peer that is not a trusted proxy sent <code>X-Forwarded-Proto</code>,</li>
 <li>builds the headers, including a per-request CSP nonce,</li>
 <li>exposes the nonce to the application as the <code>helmet.csp_nonce</code> request attribute,</li>
 <li>removes the <code>X-Powered-By</code> header.</li>
@@ -172,6 +172,11 @@ $middleware = [
 <td><code>styleSrcAttr</code></td>
 <td><code>'inline'</code></td>
 <td>the inline style attribute mode: <code>inline</code> (keeps <code>style-src-attr 'unsafe-inline'</code>), <code>report</code> or <code>none</code></td>
+</tr>
+<tr>
+<td><code>logger</code></td>
+<td><code>null</code></td>
+<td>a PSR-3 logger for the <code>helmet.forwarded_proto_rejected</code> warning, written when a peer that is not a trusted proxy sends <code>X-Forwarded-Proto</code> (context <code>event</code>, <code>reason</code>, <code>peer</code>; never the header value); <code>null</code> logs nothing, and a logger that throws never changes the response</td>
 </tr>
 </tbody>
 </table></div>

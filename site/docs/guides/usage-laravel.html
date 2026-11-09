@@ -219,6 +219,12 @@
 <td><code>false</code></td>
 <td>Set <code>true</code> to answer a 4xx HTTP exception with HELMET's fixed client-error page (see <a href="#generic-4xx-pages">Generic 4xx pages</a>).</td>
 </tr>
+<tr>
+<td><code>HELMET_SESSION_SECURE</code></td>
+<td><code>helmet.session.secure</code></td>
+<td><code>auto</code></td>
+<td>The session cookie's Secure flag. <code>auto</code> follows the trusted-proxy HTTPS decision; <code>always</code> marks the cookie <code>Secure</code> even on plain HTTP. An app that sets <code>session.secure</code> itself keeps its value. Anything else throws. See <a href="#session-cookie">Session cookie</a>.</td>
+</tr>
 </tbody>
 </table></div>
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed.</p></aside>
@@ -270,6 +276,31 @@
 <li><strong>JSON clients.</strong> A request that expects JSON keeps Laravel's JSON answer, because an API client wants JSON back, not an HTML page.</li>
 </ul>
 <p>A 405 keeps its <code>Allow</code> header and a 429 keeps its <code>Retry-After</code>, because the framework sets them and the protocol wants them. The switch is read on every render, so it is off by default and costs nothing while it stays off. An app with its own branded <code>resources/views/errors/*.blade.php</code> pages can leave it off; those views are yours, so keep exception messages out of them.</p>
+<h2 id="session-cookie">Session cookie<a class="docs-heading-link" aria-label="Link to this section" href="#session-cookie">#</a></h2>
+<p>The adapter reads <code>helmet.session.secure</code> (env <code>HELMET_SESSION_SECURE</code>) once at boot and maps it onto Laravel's own <code>session.secure</code>, the setting Laravel builds its session cookie from:</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th><code>HELMET_SESSION_SECURE</code></th>
+<th>Laravel's <code>session.secure</code></th>
+<th>The session cookie</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>auto</code> (the default)</td>
+<td>left unset (<code>null</code>)</td>
+<td><code>Secure</code> on each request the trusted-proxy check calls HTTPS, plain on plain HTTP</td>
+</tr>
+<tr>
+<td><code>always</code></td>
+<td><code>true</code></td>
+<td><code>Secure</code> on every response, plain HTTP included</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>auto</code> works because, with <code>session.secure</code> unset, Laravel (through Symfony) marks the session cookie <code>Secure</code> whenever <code>$request-&gt;isSecure()</code>, and the adapter makes <code>isSecure()</code> agree with HELMET: it copies <code>helmet.proxies</code> into <code>trustedproxy.proxies</code> and keeps the proxy's own <code>X-Forwarded-Proto</code> value (see <a href="#trust-the-proxy">Trust the proxy</a>). So behind Citadel's proxy the <code>citadel</code> preset is enough. Use <code>always</code> only where TLS always ends in front of the app and the app trusts no proxy; plain HTTP development keeps <code>auto</code>, or the browser drops the cookie and nobody stays signed in.</p>
+<p>An app that sets <code>session.secure</code> itself (<code>SESSION_SECURE_COOKIE</code> in <code>.env</code>, or its own <code>config/session.php</code> value) keeps that value: the adapter only fills it when nobody else has. Anything other than <code>auto</code> or <code>always</code> throws when the config loads, so a typo fails loudly instead of quietly loosening the strap.</p>
 <h2 id="raw-php-and-laravel-agree">Raw PHP and Laravel agree<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php-and-laravel-agree">#</a></h2>
 <p>Both paths call <code>SecurityHeaders::build()</code>, so for the same request and settings they send the same headers. A test pins that down: it compares what the Laravel middleware sends, name and value, with <code>build()</code>. The settings map like this:</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
@@ -367,13 +398,18 @@
 <td><code>HELMET_ERROR_PAGES</code> / <code>helmet.error_pages</code>, default <code>false</code></td>
 </tr>
 <tr>
+<td>Session cookie Secure flag</td>
+<td><code>session</code> option to <code>helmet_boot()</code></td>
+<td><code>HELMET_SESSION_SECURE</code> / <code>helmet.session.secure</code>, default <code>auto</code></td>
+</tr>
+<tr>
 <td>Session hardening, JSON logs</td>
 <td>applied by <code>helmet_boot()</code></td>
 <td>not applied by the adapter; Laravel's session and logging config apply</td>
 </tr>
 </tbody>
 </table></div>
-<p>For session hardening in Laravel, use the framework's own session config: set <code>secure</code>, <code>http_only</code>, and <code>same_site</code> in <code>config/session.php</code> rather than expecting the adapter to apply raw-PHP <code>SessionHardening</code>. For structured logs, use Laravel's log channels, for example the <code>stderr</code> channel, rather than expecting the adapter to configure a raw-PHP logger. Of the security events (<a rel="noopener" href="https://github.com/waynestate/helmet#security-events">Security events</a>), <code>helmet.request_refused</code> is written through the Log facade with the same message and context, and <code>helmet.broad_trusted_proxy</code> and <code>helmet.debug_enabled_in_production</code> are written by the Laravel adapter at boot; <code>helmet.forwarded_for_rejected</code> and <code>helmet.forwarded_proto_rejected</code> come from the raw PHP path only. The debug check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: <code>app.debug</code> must be the boolean <code>true</code>, and the environment must be exactly <code>production</code>. Opt out with <code>helmet.warn_debug</code> (env <code>HELMET_WARN_DEBUG</code>); a logging failure is swallowed and never breaks the boot.</p>
+<p>For the session cookie's Secure flag, the adapter reads <code>helmet.session.secure</code> at boot and maps it onto Laravel's own <code>session.secure</code>; see <a href="#session-cookie">Session cookie</a>. For the rest of session hardening, use the framework's own session config: set <code>http_only</code> and <code>same_site</code> in <code>config/session.php</code> rather than expecting the adapter to apply raw-PHP <code>SessionHardening</code> (Laravel does not use PHP's native session, so those ini settings would never reach its cookie). For structured logs, use Laravel's log channels, for example the <code>stderr</code> channel, rather than expecting the adapter to configure a raw-PHP logger. Every security event (<a rel="noopener" href="https://github.com/waynestate/helmet#security-events">Security events</a>) goes through the app's logger with the same message and context as raw PHP: <code>helmet.request_refused</code> from the guard, <code>helmet.forwarded_proto_rejected</code> from <code>SecurityHeaders</code> (a peer that is not a trusted proxy sent <code>X-Forwarded-Proto</code>), <code>helmet.forwarded_for_rejected</code> from the metrics endpoint (an unparseable <code>X-Forwarded-For</code> entry), and <code>helmet.broad_trusted_proxy</code> and <code>helmet.debug_enabled_in_production</code> at boot. The header values are never logged. The debug check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: <code>app.debug</code> must be the boolean <code>true</code>, and the environment must be exactly <code>production</code>. Opt out with <code>helmet.warn_debug</code> (env <code>HELMET_WARN_DEBUG</code>); a logging failure is swallowed and never breaks the boot.</p>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>
 <li><a href="headers.html">The headers</a></li>
@@ -392,7 +428,7 @@
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/usage-psr15.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">PSR-15 middleware</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/headers.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">The headers</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#install-the-adapter">Install the adapter</a></li><li class="docs-toc__item"><a href="#publish-the-config">Publish the config</a></li><li class="docs-toc__item"><a href="#trust-the-proxy">Trust the proxy</a></li><li class="docs-toc__item"><a href="#environment-variables">Environment variables</a></li><li class="docs-toc__item"><a href="#customizing-the-csp-in-laravel">Customizing the CSP in Laravel</a></li><li class="docs-toc__item"><a href="#the-nonce-in-blade">The nonce in Blade</a></li><li class="docs-toc__item"><a href="#vite-and-inertia">Vite and Inertia</a></li><li class="docs-toc__item"><a href="#the-ribbon">The ribbon</a></li><li class="docs-toc__item"><a href="#generic-4xx-pages">Generic 4xx pages</a></li><li class="docs-toc__item"><a href="#raw-php-and-laravel-agree">Raw PHP and Laravel agree</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#install-the-adapter">Install the adapter</a></li><li class="docs-toc__item"><a href="#publish-the-config">Publish the config</a></li><li class="docs-toc__item"><a href="#trust-the-proxy">Trust the proxy</a></li><li class="docs-toc__item"><a href="#environment-variables">Environment variables</a></li><li class="docs-toc__item"><a href="#customizing-the-csp-in-laravel">Customizing the CSP in Laravel</a></li><li class="docs-toc__item"><a href="#the-nonce-in-blade">The nonce in Blade</a></li><li class="docs-toc__item"><a href="#vite-and-inertia">Vite and Inertia</a></li><li class="docs-toc__item"><a href="#the-ribbon">The ribbon</a></li><li class="docs-toc__item"><a href="#generic-4xx-pages">Generic 4xx pages</a></li><li class="docs-toc__item"><a href="#session-cookie">Session cookie</a></li><li class="docs-toc__item"><a href="#raw-php-and-laravel-agree">Raw PHP and Laravel agree</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>1.2.0</span></span>

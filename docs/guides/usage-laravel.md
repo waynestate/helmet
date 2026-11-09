@@ -74,6 +74,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`
 | `HELMET_CSRF_EXCEPT` | `helmet.csrf.except` | none | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. |
 | `HELMET_WARN_DEBUG` | `helmet.warn_debug` | `true` | Set `false` to stop the one boot-time warning the adapter logs when the app boots with `app.debug` true in `production`. |
 | `HELMET_ERROR_PAGES` | `helmet.error_pages` | `false` | Set `true` to answer a 4xx HTTP exception with HELMET's fixed client-error page (see [Generic 4xx pages](#generic-4xx-pages)). |
+| `HELMET_SESSION_SECURE` | `helmet.session.secure` | `auto` | The session cookie's Secure flag. `auto` follows the trusted-proxy HTTPS decision; `always` marks the cookie `Secure` even on plain HTTP. An app that sets `session.secure` itself keeps its value. Anything else throws. See [Session cookie](#session-cookie). |
 
 > [!WARNING]
 > Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed.
@@ -154,6 +155,19 @@ Some answers stay with Laravel, on purpose:
 
 A 405 keeps its `Allow` header and a 429 keeps its `Retry-After`, because the framework sets them and the protocol wants them. The switch is read on every render, so it is off by default and costs nothing while it stays off. An app with its own branded `resources/views/errors/*.blade.php` pages can leave it off; those views are yours, so keep exception messages out of them.
 
+## Session cookie
+
+The adapter reads `helmet.session.secure` (env `HELMET_SESSION_SECURE`) once at boot and maps it onto Laravel's own `session.secure`, the setting Laravel builds its session cookie from:
+
+| `HELMET_SESSION_SECURE` | Laravel's `session.secure` | The session cookie |
+| --- | --- | --- |
+| `auto` (the default) | left unset (`null`) | `Secure` on each request the trusted-proxy check calls HTTPS, plain on plain HTTP |
+| `always` | `true` | `Secure` on every response, plain HTTP included |
+
+`auto` works because, with `session.secure` unset, Laravel (through Symfony) marks the session cookie `Secure` whenever `$request->isSecure()`, and the adapter makes `isSecure()` agree with HELMET: it copies `helmet.proxies` into `trustedproxy.proxies` and keeps the proxy's own `X-Forwarded-Proto` value (see [Trust the proxy](#trust-the-proxy)). So behind Citadel's proxy the `citadel` preset is enough. Use `always` only where TLS always ends in front of the app and the app trusts no proxy; plain HTTP development keeps `auto`, or the browser drops the cookie and nobody stays signed in.
+
+An app that sets `session.secure` itself (`SESSION_SECURE_COOKIE` in `.env`, or its own `config/session.php` value) keeps that value: the adapter only fills it when nobody else has. Anything other than `auto` or `always` throws when the config loads, so a typo fails loudly instead of quietly loosening the strap.
+
 ## Raw PHP and Laravel agree
 
 Both paths call `SecurityHeaders::build()`, so for the same request and settings they send the same headers. A test pins that down: it compares what the Laravel middleware sends, name and value, with `build()`. The settings map like this:
@@ -177,9 +191,10 @@ Both paths call `SecurityHeaders::build()`, so for the same request and settings
 | Readiness | `readiness` option, answered by `helmet_boot()`, default off | `Route::helmetReady()`, off until called |
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
 | Generic 4xx page | `helmet_client_error()`, called by your router | `HELMET_ERROR_PAGES` / `helmet.error_pages`, default `false` |
+| Session cookie Secure flag | `session` option to `helmet_boot()` | `HELMET_SESSION_SECURE` / `helmet.session.secure`, default `auto` |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
-For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. Of the security events ([Security events](https://github.com/waynestate/helmet#security-events)), `helmet.request_refused` is written through the Log facade with the same message and context, and `helmet.broad_trusted_proxy` and `helmet.debug_enabled_in_production` are written by the Laravel adapter at boot; `helmet.forwarded_for_rejected` and `helmet.forwarded_proto_rejected` come from the raw PHP path only. The debug check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: `app.debug` must be the boolean `true`, and the environment must be exactly `production`. Opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`); a logging failure is swallowed and never breaks the boot.
+For the session cookie's Secure flag, the adapter reads `helmet.session.secure` at boot and maps it onto Laravel's own `session.secure`; see [Session cookie](#session-cookie). For the rest of session hardening, use the framework's own session config: set `http_only` and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening` (Laravel does not use PHP's native session, so those ini settings would never reach its cookie). For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. Every security event ([Security events](https://github.com/waynestate/helmet#security-events)) goes through the app's logger with the same message and context as raw PHP: `helmet.request_refused` from the guard, `helmet.forwarded_proto_rejected` from `SecurityHeaders` (a peer that is not a trusted proxy sent `X-Forwarded-Proto`), `helmet.forwarded_for_rejected` from the metrics endpoint (an unparseable `X-Forwarded-For` entry), and `helmet.broad_trusted_proxy` and `helmet.debug_enabled_in_production` at boot. The header values are never logged. The debug check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: `app.debug` must be the boolean `true`, and the environment must be exactly `production`. Opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`); a logging failure is swallowed and never breaks the boot.
 
 ## Related
 

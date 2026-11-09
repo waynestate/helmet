@@ -52,7 +52,10 @@ final class MetricsController
         /** @var list<string> $proxyList */
         $proxyList = (array) config('helmet.proxies', []);
         $proxies = new TrustedProxies($proxyList);
-        $clientIp = ClientIp::resolve($request->server->all(), $proxies);
+        // The app's logger receives helmet.forwarded_for_rejected when the
+        // resolver fails closed on an unparseable X-Forwarded-For entry, the
+        // same event and context as helmet_metrics().
+        $clientIp = ClientIp::resolve($request->server->all(), $proxies, AppLogger::get());
         $requestToken = BearerToken::from($request->headers->get('Authorization'));
 
         /** @var list<string> $allowList */

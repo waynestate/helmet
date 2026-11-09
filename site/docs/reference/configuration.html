@@ -131,11 +131,11 @@
 </tr>
 <tr>
 <td><code>session</code></td>
-<td>The session cookie settings, in the shape of <code>helmet_boot()</code>'s <code>session</code> option. Nothing in the package reads this key: the Laravel adapter leaves the framework's session configuration alone, and <code>helmet_boot()</code> takes only what it is passed, so a Laravel app that boots through it hands it <code>config('helmet.session')</code>.</td>
+<td>The session cookie settings, in the shape of <code>helmet_boot()</code>'s <code>session</code> option. The Laravel adapter reads it at boot and maps it onto Laravel's own session config. <code>helmet_boot()</code> reads no environment and takes only what it is passed.</td>
 </tr>
 <tr>
 <td><code>session.secure</code></td>
-<td>The session cookie Secure flag: <code>auto</code> (the default) follows the request's HTTPS detection, <code>always</code> forces it for apps whose TLS terminates in front of the app. Set with <code>HELMET_SESSION_SECURE</code>; an invalid value throws when the config loads.</td>
+<td>The session cookie Secure flag: <code>auto</code> (the default) follows the request's HTTPS detection from the trusted-proxy list, <code>always</code> forces it for apps whose TLS terminates in front of the app. In Laravel, <code>always</code> sets <code>session.secure</code> to <code>true</code> and <code>auto</code> leaves it unset, so Laravel marks the cookie <code>Secure</code> on HTTPS requests; an app that set <code>session.secure</code> itself keeps its value. Set with <code>HELMET_SESSION_SECURE</code>; an invalid value throws when the config loads.</td>
 </tr>
 <tr>
 <td><code>ribbon</code></td>
@@ -432,7 +432,7 @@
 </tr>
 <tr>
 <td>HELMET_SESSION_SECURE</td>
-<td>auto sets the Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. Anything else throws.</td>
+<td>auto sets the session cookie's Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. The Laravel adapter maps it onto session.secure at boot, unless the app set session.secure itself. Anything else throws.</td>
 <td>auto</td>
 <td>config/helmet.php</td>
 </tr>

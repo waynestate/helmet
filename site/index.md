@@ -51,7 +51,7 @@ Each play is one protection and the attack it stops. Laminated, because coffee h
 4. ### Play 41: Session Lock
    SESSION
    Blocks Session fixation and cookie theft
-   HELMET turns on strict mode, cookie-only session IDs, `HttpOnly` and `SameSite=Lax` before the session starts. `Secure` follows the HTTPS decision, so behind Citadel's trusted proxy an HTTPS page gets it; pass `'secure' => 'always'` to force it. It won't run once a session is already active, because changing these mid-session does nothing.
+   HELMET turns on strict mode, cookie-only session IDs, `HttpOnly` and `SameSite=Lax` before the session starts. `Secure` follows the HTTPS decision, so behind Citadel's trusted proxy an HTTPS page gets it; pass `'secure' => 'always'` (or `HELMET_SESSION_SECURE=always` in Laravel) to force it. It won't run once a session is already active, because changing these mid-session does nothing.
    `session.use_strict_mode=1 cookie_httponly=1 cookie_samesite=Lax`
    Strapped before kickoff.
 5. ### Play 58: Proxy Trap
@@ -245,7 +245,7 @@ Task:
 2. Publish the config with `php artisan vendor:publish --tag=helmet-config` and make any CSP change there, as a PHP array.
 3. Set HELMET_PRESET=citadel on Citadel, or HELMET_PROXIES to the one proxy address elsewhere, in .env.example (never in .env).
 4. Keep health: '/up' in withRouting(). Give every inline script nonce set to Vite::cspNonce(); @vite needs nothing.
-5. Set secure, http_only and same_site in config/session.php: the adapter leaves the session to Laravel.
+5. Leave secure unset in config/session.php: HELMET marks the session cookie Secure on HTTPS requests (HELMET_SESSION_SECURE=auto). Set http_only and same_site there.
 6. Show me each file you would change before you write it.
 
 Constraints:

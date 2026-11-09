@@ -137,7 +137,7 @@
                     "global"
                 ],
                 "HELMET_SESSION_SECURE": [
-                    "auto sets the Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. Anything else throws.",
+                    "auto sets the session cookie's Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. The Laravel adapter maps it onto session.secure at boot, unless the app set session.secure itself. Anything else throws.",
                     "auto"
                 ],
                 "HELMET_WARN_BROAD_PROXIES": [

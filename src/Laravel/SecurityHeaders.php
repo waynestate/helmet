@@ -68,7 +68,10 @@ final class SecurityHeaders
         /** @var list<string> $proxyList */
         $proxyList = (array) config('helmet.proxies');
         $proxies = new TrustedProxies($proxyList);
-        $isHttps = HttpsDetector::isHttps($request->server->all(), $proxies);
+        // The app's logger receives helmet.forwarded_proto_rejected when a
+        // peer that is not a trusted proxy sends X-Forwarded-Proto, the same
+        // event, context and rule as helmet_boot().
+        $isHttps = HttpsDetector::isHttps($request->server->all(), $proxies, AppLogger::get());
 
         $nonce = CoreSecurityHeaders::generateNonce();
         // The config holds per-directive overrides, merged over the default by

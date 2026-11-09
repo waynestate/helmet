@@ -326,7 +326,7 @@
 <rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
 </svg></div>
     <p class="play-card__blocks"><span class="stamp">Blocks</span> Session fixation and cookie theft</p>
-    <p class="play-card__body">HELMET turns on strict mode, cookie-only session IDs, <code>HttpOnly</code> and <code>SameSite=Lax</code> before the session starts. <code>Secure</code> follows the HTTPS decision, so behind Citadel's trusted proxy an HTTPS page gets it; pass <code>'secure' =&gt; 'always'</code> to force it. It won't run once a session is already active, because changing these mid-session does nothing.</p>
+    <p class="play-card__body">HELMET turns on strict mode, cookie-only session IDs, <code>HttpOnly</code> and <code>SameSite=Lax</code> before the session starts. <code>Secure</code> follows the HTTPS decision, so behind Citadel's trusted proxy an HTTPS page gets it; pass <code>'secure' =&gt; 'always'</code> (or <code>HELMET_SESSION_SECURE=always</code> in Laravel) to force it. It won't run once a session is already active, because changing these mid-session does nothing.</p>
     <p class="play-card__code"><code>session.use_strict_mode=1  cookie_httponly=1  cookie_samesite=Lax</code></p>
     <p class="play-card__foot"><span class="play-card__note">Strapped before kickoff.</span>
       <button class="run-btn" type="button" data-run aria-label="Run play 41, Session Lock, again">Run it</button></p>
@@ -581,7 +581,7 @@ Task:
 2. Publish the config with `php artisan vendor:publish --tag=helmet-config` and make any CSP change there, as a PHP array.
 3. Set HELMET_PRESET=citadel on Citadel, or HELMET_PROXIES to the one proxy address elsewhere, in .env.example (never in .env).
 4. Keep health: '/up' in withRouting(). Give every inline script nonce set to Vite::cspNonce(); @vite needs nothing.
-5. Set secure, http_only and same_site in config/session.php: the adapter leaves the session to Laravel.
+5. Leave secure unset in config/session.php: HELMET marks the session cookie Secure on HTTPS requests (HELMET_SESSION_SECURE=auto). Set http_only and same_site there.
 6. Show me each file you would change before you write it.
 
 Constraints:

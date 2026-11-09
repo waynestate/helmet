@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use ReflectionProperty;
 use Waynestate\Helmet\Proxy\TrustedProxies;
+use Waynestate\Helmet\Session\SessionHardening;
 
 /**
  * The Laravel adapter for HELMET.
@@ -34,6 +35,10 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * sets `trustedproxy.proxies` keeps its own value, and an explicit
  * `trustProxies(at: ...)` call in `bootstrap/app.php` still wins, because
  * Laravel applies it before the config fallback.
+ *
+ * The session cookie's Secure flag follows `helmet.session.secure` (env
+ * HELMET_SESSION_SECURE) through Laravel's own `session.secure` setting; see
+ * applySessionSecure(). An app that sets `session.secure` keeps its own value.
  *
  * The `/up` health route is left to Laravel's built-in `health: '/up'`
  * option in `withRouting()`; this provider does not register a route.
@@ -80,6 +85,8 @@ final class HelmetServiceProvider extends ServiceProvider
         if (config('trustedproxy.proxies') === null) {
             config(['trustedproxy.proxies' => config('helmet.proxies')]);
         }
+
+        $this->applySessionSecure();
 
         // Laravel's default trusted-header set also includes X-Forwarded-Host,
         // X-Forwarded-Prefix and X-Forwarded-Port. A platform that rewrites
@@ -173,6 +180,42 @@ final class HelmetServiceProvider extends ServiceProvider
         // worker must not log it on every request.
         $this->warnIfDebugInProduction();
         $this->warnIfBroadTrustedProxies();
+    }
+
+    /**
+     * Map helmet.session.secure (env HELMET_SESSION_SECURE) onto Laravel's
+     * own session cookie setting, session.secure.
+     *
+     * Laravel does not use PHP's native session, so the ini settings that
+     * SessionHardening applies for raw PHP would never reach its cookie. The
+     * Secure flag is what the key controls, and Laravel builds the session
+     * cookie from session.secure, so that is the setting this method fills:
+     *
+     *  - "auto" (the default) leaves session.secure unset (null). Symfony then
+     *    sets the Secure flag on each response whose request isSecure(), and
+     *    isSecure() follows the same trusted-proxy list as HELMET (boot()
+     *    copies helmet.proxies into trustedproxy.proxies, and
+     *    ForwardedProtoNormalizer makes the proxy's X-Forwarded-Proto value
+     *    win). So the cookie is Secure exactly when HELMET's HTTPS decision
+     *    says the request was HTTPS, unless the app set its own
+     *    trustedproxy.proxies, in which case that list decides.
+     *  - "always" sets session.secure to true, so the cookie carries the
+     *    Secure flag even on a plain HTTP request, for apps whose TLS always
+     *    ends in front of the app.
+     *
+     * An app that set session.secure itself (SESSION_SECURE_COOKIE, or its own
+     * config/session.php value) keeps it, like trustedproxy.proxies above: the
+     * strap only tightens when nobody else buckled it.
+     */
+    private function applySessionSecure(): void
+    {
+        if (config('session.secure') !== null) {
+            return;
+        }
+
+        if (config('helmet.session.secure') === SessionHardening::SECURE_ALWAYS) {
+            config(['session.secure' => true]);
+        }
     }
 
     /**

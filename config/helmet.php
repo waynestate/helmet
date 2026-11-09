@@ -157,21 +157,29 @@ use Waynestate\Helmet\Support\Setting;
 |                       default) means every response. Filled from
 |                       HELMET_NO_STORE_PATHS (comma-separated).
 |
- | "session"     The session cookie settings that helmet_boot() applies when
- |               a raw PHP app boots through it (the Laravel adapter does not
- |               apply session hardening; it leaves the framework's session
- |               configuration alone).
+ | "session"     The session cookie settings. The Laravel adapter reads them
+ |               at boot and maps them onto Laravel's own session config; it
+ |               does not apply the raw PHP ini hardening, because Laravel
+ |               does not use PHP's native session. A raw PHP app passes the
+ |               same array to helmet_boot() as its "session" option
+ |               (helmet_boot() reads no environment).
  |
  |               "session.secure"
  |                       Whether the session cookie carries the Secure flag.
  |                       "auto" (the default) sets it only when the request
- |                       is HTTPS. "always" sets it even when the request is
- |                       not HTTPS, for apps whose TLS always terminates in
- |                       front of the app (as on Citadel, where HA-Proxy ends
- |                       TLS); plain HTTP development then needs "auto".
- |                       Set with the HELMET_SESSION_SECURE env var. An
- |                       invalid value throws \InvalidArgumentException when
- |                       the config loads.
+ |                       is HTTPS, as decided from the trusted-proxy list, so
+ |                       the "citadel" preset is enough behind Citadel's
+ |                       proxy. "always" sets it even when the request is not
+ |                       HTTPS, for apps whose TLS always terminates in front
+ |                       of the app; plain HTTP development then needs
+ |                       "auto". In Laravel, "always" sets session.secure to
+ |                       true and "auto" leaves it unset, so Laravel marks the
+ |                       cookie Secure on each HTTPS request. An app that
+ |                       sets session.secure itself (SESSION_SECURE_COOKIE)
+ |                       keeps its own value. Set with the
+ |                       HELMET_SESSION_SECURE env var. An invalid value
+ |                       throws \InvalidArgumentException when the config
+ |                       loads.
  |
  | "ribbon"      Whether the environment ribbon is injected into HTML
  |               responses in non-production environments. On by default.

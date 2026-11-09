@@ -109,12 +109,12 @@ $helmet = helmet_boot([
 </tr>
 <tr>
 <td><code>helmet.forwarded_for_rejected</code></td>
-<td><code>ClientIp::resolve()</code> fails closed on an unparseable <code>X-Forwarded-For</code> entry</td>
+<td><code>ClientIp::resolve()</code> fails closed on an unparseable <code>X-Forwarded-For</code> entry: in <code>helmet_metrics()</code> and in the Laravel metrics endpoint</td>
 <td><code>event</code> (<code>forwarded_for_rejected</code>), <code>reason</code> (<code>unparseable_entry</code>), <code>peer</code> (the trusted peer address)</td>
 </tr>
 <tr>
 <td><code>helmet.forwarded_proto_rejected</code></td>
-<td><code>helmet_boot()</code> sees <code>X-Forwarded-Proto</code> from a peer that is not a trusted proxy, and ignores it</td>
+<td>the HTTPS check sees <code>X-Forwarded-Proto</code> from a peer that is not a trusted proxy, and ignores it: in <code>helmet_boot()</code>, <code>SecurityHeadersMiddleware</code> and the Laravel <code>SecurityHeaders</code> middleware</td>
 <td><code>event</code> (<code>forwarded_proto_rejected</code>), <code>reason</code> (<code>untrusted_peer</code>), <code>peer</code> (the untrusted peer address)</td>
 </tr>
 <tr>
@@ -129,8 +129,8 @@ $helmet = helmet_boot([
 </tr>
 </tbody>
 </table></div>
-<p>Never logged: the Origin value, cookies, Authorization, the <code>X-Forwarded-For</code> header, or the bad entry. The helmet takes the hit and reports it, without quoting the attacker.</p>
-<p>The logger reaches each path this way: <code>helmet_boot()</code> hands its own logger to the HTTPS check, the broad-proxy warning and the guard; PSR-15 users pass a <code>LoggerInterface</code> as the last constructor argument <code>$logger</code> of <code>RequestForgeryGuard</code>; <code>helmet_metrics()</code> passes its configured logger to <code>ClientIp::resolve()</code>.</p>
+<p>Never logged: the Origin value, cookies, Authorization, the <code>X-Forwarded-For</code> or <code>X-Forwarded-Proto</code> header, or the bad entry. The helmet takes the hit and reports it, without quoting the attacker.</p>
+<p>The logger reaches each path this way: <code>helmet_boot()</code> hands its own logger to the HTTPS check, the broad-proxy warning and the guard; PSR-15 users pass a <code>LoggerInterface</code> as the last constructor argument <code>$logger</code> of <code>SecurityHeadersMiddleware</code> and of <code>RequestForgeryGuard</code> (both default to <code>null</code>, which logs nothing); <code>helmet_metrics()</code> passes its configured logger to <code>ClientIp::resolve()</code>; the Laravel adapter writes every event through the app's own logger.</p>
 <h2 id="trusted-proxies">Trusted proxies<a class="docs-heading-link" aria-label="Link to this section" href="#trusted-proxies">#</a></h2>
 <p>Use a platform preset (for example <code>citadel</code>, which trusts the Docker bridge gateway), or list only the address the front proxy connects from, never a whole private range. A broad range such as <code>10.0.0.0/8</code> also trusts other containers on the same network, and any of them could then set <code>X-Forwarded-Proto</code>. An explicitly empty <code>HELMET_PROXIES</code> means trust nobody, even when a preset is set; only an unset variable falls back to the preset.</p>
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>The <code>citadel</code> preset trusts the container bridge gateway address, which is only correct while the app's port is not published to the host network, because a published port can make a direct client appear to come from the gateway.</p></aside>

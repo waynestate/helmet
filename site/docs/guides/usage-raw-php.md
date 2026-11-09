@@ -80,14 +80,14 @@ Five warnings carry HELMET's security events, and a logger that throws never cha
 | Message | When | Context keys |
 | --- | --- | --- |
 | `helmet.request_refused` | the request-forgery guard answers `403` | `event` (`request_refused`), `method` (upper case), `path` (no query string), `sec_fetch_site` (`same-origin`, `same-site`, `cross-site`, `none`, `other`, or null when the header is absent), `origin_present` (bool) |
-| `helmet.forwarded_for_rejected` | `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry | `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`), `peer` (the trusted peer address) |
-| `helmet.forwarded_proto_rejected` | `helmet_boot()` sees `X-Forwarded-Proto` from a peer that is not a trusted proxy, and ignores it | `event` (`forwarded_proto_rejected`), `reason` (`untrusted_peer`), `peer` (the untrusted peer address) |
+| `helmet.forwarded_for_rejected` | `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry: in `helmet_metrics()` and in the Laravel metrics endpoint | `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`), `peer` (the trusted peer address) |
+| `helmet.forwarded_proto_rejected` | the HTTPS check sees `X-Forwarded-Proto` from a peer that is not a trusted proxy, and ignores it: in `helmet_boot()`, `SecurityHeadersMiddleware` and the Laravel `SecurityHeaders` middleware | `event` (`forwarded_proto_rejected`), `reason` (`untrusted_peer`), `peer` (the untrusted peer address) |
 | `helmet.broad_trusted_proxy` | the app boots with a broad entry in its trusted-proxy list (an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`) | `event` (`broad_trusted_proxy`), `entries` (the broad entries, as configured) |
 | `helmet.debug_enabled_in_production` | the Laravel adapter boots with `app.debug` true in the production environment | `event` (`debug_enabled_in_production`) |
 
-Never logged: the Origin value, cookies, Authorization, the `X-Forwarded-For` header, or the bad entry. The helmet takes the hit and reports it, without quoting the attacker.
+Never logged: the Origin value, cookies, Authorization, the `X-Forwarded-For` or `X-Forwarded-Proto` header, or the bad entry. The helmet takes the hit and reports it, without quoting the attacker.
 
-The logger reaches each path this way: `helmet_boot()` hands its own logger to the HTTPS check, the broad-proxy warning and the guard; PSR-15 users pass a `LoggerInterface` as the last constructor argument `$logger` of `RequestForgeryGuard`; `helmet_metrics()` passes its configured logger to `ClientIp::resolve()`.
+The logger reaches each path this way: `helmet_boot()` hands its own logger to the HTTPS check, the broad-proxy warning and the guard; PSR-15 users pass a `LoggerInterface` as the last constructor argument `$logger` of `SecurityHeadersMiddleware` and of `RequestForgeryGuard` (both default to `null`, which logs nothing); `helmet_metrics()` passes its configured logger to `ClientIp::resolve()`; the Laravel adapter writes every event through the app's own logger.
 
 ## Trusted proxies[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#trusted-proxies)
 

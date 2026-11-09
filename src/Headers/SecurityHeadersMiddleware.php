@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use Waynestate\Helmet\Proxy\HttpsDetector;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
@@ -19,6 +20,11 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * the headers (including a per-request CSP nonce), exposes the nonce to the
  * application as the "helmet.csp_nonce" request attribute, and removes the
  * X-Powered-By header.
+ *
+ * When a logger is given, a peer that is not a trusted proxy but sends
+ * X-Forwarded-Proto anyway is logged as helmet.forwarded_proto_rejected,
+ * exactly as helmet_boot() logs it: the event, the reason and the peer, never
+ * the header value. Without a logger (the default) nothing is logged.
  *
  * The headers are sent even when the inner handler throws. By default the
  * middleware rethrows so the framework's error handler still runs; when
@@ -69,6 +75,9 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
      *        empty for every response.
      * @param string $styleSrcAttr The inline style attribute mode: "inline"
      *        (the default), "report" or "none".
+     * @param LoggerInterface|null $logger Optional PSR-3 logger for the
+     *        helmet.forwarded_proto_rejected warning. null (the default) logs
+     *        nothing. A logger that throws never changes the response.
      *
      * @throws \InvalidArgumentException If $coop, $corp, $permissionsPolicy,
      *         $trustedTypesPolicies or $styleSrcAttr is invalid.
@@ -91,6 +100,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         private readonly bool $noStoreEnabled = false,
         private readonly array $noStorePaths = [],
         private readonly string $styleSrcAttr = 'inline',
+        private readonly ?LoggerInterface $logger = null,
     ) {
         SecurityHeaders::validateStyleSrcAttr($styleSrcAttr);
 
@@ -119,7 +129,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $isHttps = HttpsDetector::isHttps($request->getServerParams(), $this->proxies);
+        $isHttps = HttpsDetector::isHttps($request->getServerParams(), $this->proxies, $this->logger);
         $nonce = SecurityHeaders::generateNonce();
         $headers = SecurityHeaders::build(
             $this->cspPolicy,

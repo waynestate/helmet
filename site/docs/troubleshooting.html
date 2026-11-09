@@ -109,8 +109,9 @@ request reaches PHP, so without a trusted proxy (no <code>citadel</code> preset,
 even though the client connected over HTTPS.</p>
 <p>Fix: boot with the <code>citadel</code> preset, so HELMET trusts the proxy's <code>X-Forwarded-Proto</code> and <code>auto</code> sets the flag. To
 force it regardless, pass <code>'session' =&gt; ['secure' =&gt; 'always']</code> to <code>helmet_boot()</code>; <code>helmet_boot()</code> reads no
-environment, so <code>HELMET_SESSION_SECURE</code> alone does not do it. In Laravel the adapter leaves the session to the
-framework: set <code>secure</code> in <code>config/session.php</code> (<code>SESSION_SECURE_COOKIE=true</code>). Plain HTTP development keeps <code>auto</code>. The cookie name still follows the request, so it never takes the <code>__Host-</code> prefix on a
+environment, so <code>HELMET_SESSION_SECURE</code> alone does not do it in raw PHP. In Laravel, <code>HELMET_PRESET=citadel</code> is
+enough for <code>auto</code>; <code>HELMET_SESSION_SECURE=always</code> forces the flag through Laravel's <code>session.secure</code>, unless the app set
+<code>session.secure</code> (<code>SESSION_SECURE_COOKIE</code>) itself, which wins. Plain HTTP development keeps <code>auto</code>. The cookie name still follows the request, so it never takes the <code>__Host-</code> prefix on a
 plain-HTTP request.</p>
 <p>Check:</p>
 <pre tabindex="0"><code>curl -sI http://localhost/up

@@ -11,6 +11,11 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Added: the Laravel adapter reads `helmet.session.secure` (env `HELMET_SESSION_SECURE`) and maps it onto Laravel's own `session.secure` at boot. `auto` (the default) leaves it unset, so the session cookie is `Secure` on each request the trusted-proxy check calls HTTPS; `always` sets it to `true`, so the cookie is `Secure` on plain HTTP too. An app that sets `session.secure` itself (`SESSION_SECURE_COOKIE`) keeps its value. Before, the key was validated but nothing read it. `helmet_boot()` still reads no environment; raw PHP keeps the `session` option.
+- Added: `SecurityHeadersMiddleware` takes an optional PSR-3 `logger` as its last constructor argument (default `null`, which logs nothing) and logs `helmet.forwarded_proto_rejected` through it, the same event and context (`event`, `reason`, `peer`) as `helmet_boot()`.
+- Added: the Laravel adapter logs `helmet.forwarded_proto_rejected` from `SecurityHeaders` and `helmet.forwarded_for_rejected` from the metrics endpoint through the app's logger, with the same events and context keys as raw PHP. The header values are never logged. Every security event is now logged on every consumer path.
+- Docs: the security-events tables in the README, BEST_PRACTICES (H27, H41) and the usage guides drop "raw PHP only"; the Laravel guide gains a Session cookie section, and the README and Laravel guide env tables gain an `HELMET_SESSION_SECURE` row; the front page's Laravel prompt no longer asks the agent to set `secure` in `config/session.php`.
+
 ## 1.2.0 (2026-11-09)
 
 A minor release, backward compatible. Raw PHP apps get `helmet_client_error()`, the 4xx sibling of `helmet_forbidden()`, and Laravel apps can opt into the same fixed 4xx page with `HELMET_ERROR_PAGES` (off by default), so an exception message never reaches a visitor (H42 is now `Enforced`). The deploy layer moves to Squire's kit 0.10.1 and PROCTOR 0.11.

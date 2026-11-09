@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Tests\Headers;
 
+use Monolog\Handler\TestHandler;
+use Monolog\Logger;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
@@ -892,5 +894,77 @@ final class SecurityHeadersMiddlewareTest extends TestCase
         // HELMET's own headers are still added alongside.
         self::assertSame('nosniff', $response->getHeaderLine('X-Content-Type-Options'));
         self::assertTrue($response->hasHeader('Content-Security-Policy'));
+    }
+
+    public function testUntrustedForwardedProtoIsLoggedThroughTheGivenLogger(): void
+    {
+        $handler = new TestHandler();
+        $logger = new Logger('test', [$handler]);
+        $middleware = new SecurityHeadersMiddleware(new TrustedProxies(['10.0.0.1']), logger: $logger);
+
+        $response = $middleware->process($this->makeRequest([
+            'REMOTE_ADDR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_PROTO' => 'https-spoof-1',
+        ]), $this->passthroughHandler());
+
+        // The rejected header changes nothing: no HSTS on a plain request.
+        self::assertFalse($response->hasHeader('Strict-Transport-Security'));
+
+        self::assertCount(1, $handler->getRecords());
+        $record = $handler->getRecords()[0];
+        self::assertSame('helmet.forwarded_proto_rejected', $record->message);
+        self::assertSame(
+            ['event' => 'forwarded_proto_rejected', 'reason' => 'untrusted_peer', 'peer' => '203.0.113.9'],
+            $record->context,
+        );
+        self::assertStringNotContainsString('https-spoof-1', (string) json_encode($record->context));
+    }
+
+    public function testTrustedForwardedProtoLogsNothing(): void
+    {
+        $handler = new TestHandler();
+        $middleware = new SecurityHeadersMiddleware(new TrustedProxies(['10.0.0.1']), logger: new Logger('test', [$handler]));
+
+        $response = $middleware->process($this->makeRequest([
+            'REMOTE_ADDR' => '10.0.0.1',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]), $this->passthroughHandler());
+
+        self::assertTrue($response->hasHeader('Strict-Transport-Security'));
+        self::assertSame([], $handler->getRecords());
+    }
+
+    public function testWithoutALoggerTheRejectionIsSilentAndTheResponseIsTheSame(): void
+    {
+        // The default stays backward compatible: no logger, no log, and the
+        // same headers as before the logger argument existed.
+        $middleware = new SecurityHeadersMiddleware(new TrustedProxies(['10.0.0.1']));
+
+        $response = $middleware->process($this->makeRequest([
+            'REMOTE_ADDR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]), $this->passthroughHandler());
+
+        self::assertFalse($response->hasHeader('Strict-Transport-Security'));
+        self::assertSame('nosniff', $response->getHeaderLine('X-Content-Type-Options'));
+    }
+
+    public function testAThrowingLoggerNeverBreaksTheResponse(): void
+    {
+        $logger = new Logger('test', [new class extends \Monolog\Handler\AbstractProcessingHandler {
+            protected function write(\Monolog\LogRecord $record): void
+            {
+                throw new \RuntimeException('log sink is down');
+            }
+        }]);
+        $middleware = new SecurityHeadersMiddleware(new TrustedProxies(['10.0.0.1']), logger: $logger);
+
+        $response = $middleware->process($this->makeRequest([
+            'REMOTE_ADDR' => '203.0.113.9',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]), $this->passthroughHandler());
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertFalse($response->hasHeader('Strict-Transport-Security'));
     }
 }

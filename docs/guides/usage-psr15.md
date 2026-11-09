@@ -37,7 +37,7 @@ $middleware = [
 
 On every request, `SecurityHeadersMiddleware`:
 
-- decides whether the request is HTTPS from the trusted-proxy list,
+- decides whether the request is HTTPS from the trusted-proxy list, and logs `helmet.forwarded_proto_rejected` through the `logger` option (when given) when a peer that is not a trusted proxy sent `X-Forwarded-Proto`,
 - builds the headers, including a per-request CSP nonce,
 - exposes the nonce to the application as the `helmet.csp_nonce` request attribute,
 - removes the `X-Powered-By` header.
@@ -75,6 +75,7 @@ Order decides whether an error page gets the headers. A response built by a laye
 | `noStoreEnabled` | `false` | whether to send `Cache-Control: no-store` on matching responses |
 | `noStorePaths` | `[]` | path prefixes that carry no-store, or empty for every response |
 | `styleSrcAttr` | `'inline'` | the inline style attribute mode: `inline` (keeps `style-src-attr 'unsafe-inline'`), `report` or `none` |
+| `logger` | `null` | a PSR-3 logger for the `helmet.forwarded_proto_rejected` warning, written when a peer that is not a trusted proxy sends `X-Forwarded-Proto` (context `event`, `reason`, `peer`; never the header value); `null` logs nothing, and a logger that throws never changes the response |
 
 > [!NOTE]
 > These settings are validated at construction, not per request: a bad `coop`, `corp`, `permissionsPolicy`, `trustedTypesPolicies` or `styleSrcAttr` value is a config error, and it fails where the app starts, not on the first request, with an `\InvalidArgumentException`.

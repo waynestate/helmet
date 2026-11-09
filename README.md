@@ -242,19 +242,21 @@ the peer, the HTTPS decision stands, and the boot still finishes.
 | Message | When | Context keys |
 | --- | --- | --- |
 | `helmet.request_refused` | the request-forgery guard answers `403` | `event` (`request_refused`), `method` (upper case), `path` (no query string), `sec_fetch_site` (`same-origin`, `same-site`, `cross-site`, `none`, `other`, or null when the header is absent), `origin_present` (bool) |
-| `helmet.forwarded_for_rejected` | `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry (logged when a logger is passed, as `helmet_metrics()` does with its `logger` option) | `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`), `peer` (the trusted peer address) |
-| `helmet.forwarded_proto_rejected` | `helmet_boot()` sees `X-Forwarded-Proto` from a peer that is not a trusted proxy, and ignores it (raw PHP only) | `event` (`forwarded_proto_rejected`), `reason` (`untrusted_peer`), `peer` (the untrusted peer address) |
+| `helmet.forwarded_for_rejected` | `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry: in `helmet_metrics()` and in the Laravel metrics endpoint | `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`), `peer` (the trusted peer address) |
+| `helmet.forwarded_proto_rejected` | the HTTPS check sees `X-Forwarded-Proto` from a peer that is not a trusted proxy, and ignores it: in `helmet_boot()`, `SecurityHeadersMiddleware` and the Laravel `SecurityHeaders` middleware | `event` (`forwarded_proto_rejected`), `reason` (`untrusted_peer`), `peer` (the untrusted peer address) |
 | `helmet.debug_enabled_in_production` | the Laravel adapter boots with `app.debug` true in the production environment | `event` (`debug_enabled_in_production`) |
 | `helmet.broad_trusted_proxy` | the app boots with a broad entry in its trusted-proxy list (an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`) | `event` (`broad_trusted_proxy`), `entries` (the broad entries, as configured) |
 
 Never logged: the Origin value, cookies, Authorization, the `X-Forwarded-For`
-header, or the bad entry. The helmet takes the hit and reports it, without
-quoting the attacker.
+or `X-Forwarded-Proto` header, or the bad entry. The helmet takes the hit and
+reports it, without quoting the attacker.
 
 The logger reaches each path this way: `helmet_boot()` hands its own logger to
-the guard; PSR-15 users pass a `LoggerInterface` as the last constructor
-argument `$logger` of `RequestForgeryGuard`; `helmet_metrics()` passes its
-configured logger to `ClientIp::resolve()`.
+the HTTPS check and the guard; PSR-15 users pass a `LoggerInterface` as the
+last constructor argument `$logger` of `SecurityHeadersMiddleware` and of
+`RequestForgeryGuard` (both default to `null`, which logs nothing);
+`helmet_metrics()` passes its configured logger to `ClientIp::resolve()`; the
+Laravel adapter writes every event through the app's own logger.
 
 Use a platform preset (for example `citadel`, which trusts the Docker bridge
 gateway), or list only the address the front proxy connects from, never a
@@ -455,7 +457,11 @@ $middleware = [
 Order matters: `SecurityHeadersMiddleware` must be the outermost layer, so the error page your error middleware builds also carries the headers. In a Slim-style app, where the middleware added last runs first, add it after the error middleware; see [the PSR-15 guide](docs/guides/usage-psr15.md#put-helmet-outermost).
 
 `SecurityHeadersMiddleware` sets the request attribute `helmet.csp_nonce` so a
-downstream handler can read the same nonce the CSP header carries.
+downstream handler can read the same nonce the CSP header carries. Pass it a
+PSR-3 logger as `logger:` and it logs `helmet.forwarded_proto_rejected` when a
+peer that is not a trusted proxy sends `X-Forwarded-Proto`, exactly as
+`helmet_boot()` does (see [Security events](#security-events)). Without one it
+logs nothing, as before.
 
 `RequestForgeryGuard` is opt-in: mounting it turns the check on for that
 pipeline. Its options are described in
@@ -590,6 +596,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | `HELMET_CSRF_TRUSTED_ORIGINS` | `helmet.csrf.trusted_origins` | none | Comma-separated origins allowed to make state-changing requests when the `Origin` fallback is used. |
 | `HELMET_CSRF_EXCEPT` | `helmet.csrf.except` | none | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. |
 | `HELMET_ERROR_PAGES` | `helmet.error_pages` | `false` | Set `true` to answer a 4xx HTTP exception with HELMET's fixed client-error page instead of Laravel's error view. Requests that expect JSON, validation errors, authentication redirects and every 5xx stay with Laravel; a 405 keeps its `Allow` header. |
+| `HELMET_SESSION_SECURE` | `helmet.session.secure` | `auto` | The session cookie's Secure flag. `auto` leaves Laravel's `session.secure` unset, so the cookie is `Secure` on each request the trusted-proxy check calls HTTPS (the `citadel` preset is enough behind Citadel's proxy). `always` sets `session.secure` to `true`, so the cookie is `Secure` even on plain HTTP. An app that sets `session.secure` itself (`SESSION_SECURE_COOKIE`) keeps its value. Anything else throws when the config loads. |
 
 #### Customizing the CSP in Laravel
 
@@ -749,9 +756,10 @@ like this:
 | Readiness | `readiness` option, answered by `helmet_boot()`, default off | `Route::helmetReady()`, off until called |
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
 | Generic 4xx page | `helmet_client_error()`, called by your router | `HELMET_ERROR_PAGES` / `helmet.error_pages`, default `false` |
+| Session cookie Secure flag | `session` option to `helmet_boot()` | `HELMET_SESSION_SECURE` / `helmet.session.secure`, default `auto` |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
-For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. Of the security events ([Security events](#security-events)), `helmet.request_refused` is written through the Log facade with the same message and context, and `helmet.broad_trusted_proxy` and `helmet.debug_enabled_in_production` are written by the Laravel adapter at boot. The adapter logs neither `helmet.forwarded_for_rejected` nor `helmet.forwarded_proto_rejected`: those two come from the raw PHP path.
+For the session cookie's Secure flag in Laravel, the adapter reads `helmet.session.secure` at boot and maps it onto Laravel's own `session.secure`: `auto` (the default) leaves it unset, so Laravel marks the cookie `Secure` on each request the trusted-proxy check calls HTTPS, and `always` sets it to `true`. An app that set `session.secure` itself keeps its value. For the rest of session hardening, use the framework's own session config: set `http_only` and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening` (Laravel does not use PHP's native session, so those ini settings would never reach its cookie). For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. Every security event ([Security events](#security-events)) goes through the app's logger with the same message and context as raw PHP: `helmet.request_refused` from the guard, `helmet.forwarded_proto_rejected` from `SecurityHeaders`, `helmet.forwarded_for_rejected` from the metrics endpoint, and `helmet.broad_trusted_proxy` and `helmet.debug_enabled_in_production` at boot.
 
 ## The headers
 
@@ -975,11 +983,10 @@ the request reaches PHP; with the `citadel` preset HELMET trusts the proxy's
 `X-Forwarded-Proto`, so `auto` still sets `Secure` on HTTPS pages. Where TLS
 ends in front of an app that trusts no proxy, the request looks plain; force
 the flag there with the `session` option, `'session' => ['secure' => 'always']`,
-to `helmet_boot()`. `helmet_boot()` reads no environment, so
-`HELMET_SESSION_SECURE` only fills `helmet.session.secure` in the Laravel
-config, which the adapter does not read (Laravel's `config/session.php`
-decides there); a Laravel app that boots through `helmet_boot()` can hand it
-`['secure' => config('helmet.session.secure')]`. The cookie name still follows the request,
+to `helmet_boot()`. `helmet_boot()` reads no environment, so in raw PHP the
+`session` option is the only switch. In Laravel, `HELMET_SESSION_SECURE`
+fills `helmet.session.secure` and the adapter maps it onto Laravel's own
+`session.secure` (see [Laravel](#laravel)). The cookie name still follows the request,
 so it never takes the `__Host-` prefix on a plain-HTTP request, and plain
 HTTP development keeps `auto`.
 

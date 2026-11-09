@@ -47,13 +47,15 @@ Deploying this version ends every session that still uses the default `PHPSESSID
 
 ## Secure mode[#](https://helmet.apps.wayne.edu/docs/guides/session.html#secure-mode)
 
-By default (`auto`) the Secure flag follows HELMET's HTTPS decision, the same one the headers use. On Citadel, HA-Proxy ends TLS before the request reaches PHP; with the `citadel` preset HELMET trusts the proxy's `X-Forwarded-Proto`, so `auto` still sets `Secure` on HTTPS pages. Where TLS ends in front of an app that trusts no proxy, the request looks plain; force the flag with `'session' => ['secure' => 'always']` to `helmet_boot()`. `helmet_boot()` reads no environment, so `HELMET_SESSION_SECURE` only fills `helmet.session.secure` in the Laravel config, which the adapter does not read; a Laravel app that boots through `helmet_boot()` can hand it `['secure' => config('helmet.session.secure')]`.
+By default (`auto`) the Secure flag follows HELMET's HTTPS decision, the same one the headers use. On Citadel, HA-Proxy ends TLS before the request reaches PHP; with the `citadel` preset HELMET trusts the proxy's `X-Forwarded-Proto`, so `auto` still sets `Secure` on HTTPS pages. Where TLS ends in front of an app that trusts no proxy, the request looks plain; force the flag with `'session' => ['secure' => 'always']` to `helmet_boot()`. `helmet_boot()` reads no environment, so in raw PHP the `session` option is the only switch.
 
 The cookie name still follows the request, so it never takes the `__Host-` prefix on a plain-HTTP request, and plain HTTP development keeps `auto`.
 
+In Laravel, `HELMET_SESSION_SECURE` fills `helmet.session.secure`, and the adapter maps it onto Laravel's own `session.secure` at boot: `auto` leaves it unset, so Laravel marks the cookie `Secure` on each request the trusted-proxy check calls HTTPS, and `always` sets it to `true`. An app that sets `session.secure` itself keeps its value. See [Session cookie](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#session-cookie).
+
 Note
 
-For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`.
+The rest of session hardening in Laravel is the framework's own session config: set `http_only` and `same_site` in `config/session.php`. The adapter does not apply raw-PHP `SessionHardening`, because Laravel does not use PHP's native session.
 
 ## Failure behavior[#](https://helmet.apps.wayne.edu/docs/guides/session.html#failure-behavior)
 
