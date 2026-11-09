@@ -46,6 +46,7 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `dev_origin` | The Vite dev server origin, used in `local` only while the dev server is running; it overrides the hot file. Set with `HELMET_DEV_ORIGIN`. |
 | `warn_debug` | Whether the Laravel adapter writes the `helmet.debug_enabled_in_production` warning when the app boots with debug enabled in production. Set with `HELMET_WARN_DEBUG`. |
 | `warn_broad_proxies` | Whether HELMET writes the `helmet.broad_trusted_proxy` warning at boot when the trusted-proxy list holds a broad entry (an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`). Set with `HELMET_WARN_BROAD_PROXIES` (Laravel) or the `warn_broad_proxies` option of `helmet_boot()`. |
+| `error_pages` | Whether the Laravel adapter answers a 4xx HTTP exception (a missing page, a wrong method, `abort(403)`, a throttle) with HELMET's fixed client-error page, the one `helmet_client_error_response()` builds, instead of the framework's error view. Off by default. Requests that expect JSON, validation errors, authentication redirects and every 5xx stay with Laravel. Set with `HELMET_ERROR_PAGES`. |
 | `metrics` | The `/metrics` endpoint, in the Prometheus text exposition format. Off by default. |
 | `metrics.enabled` | Whether the endpoint is on. Set with `HELMET_METRICS_ENABLED`. |
 | `metrics.token` | The bearer token a scraper must present (`Authorization: Bearer <token>`); compared with `hash_equals`. Set with `HELMET_METRICS_TOKEN`. |
@@ -87,6 +88,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_CSRF_EXCEPT | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in \*, or \* for every path. | none | config/helmet.php |
 | HELMET_CSRF_TRUSTED_ORIGINS | Comma-separated origins allowed to make state-changing requests when the Origin fallback is used. | none | config/helmet.php |
 | HELMET_DEV_ORIGIN | Vite dev server origin, used in local only while the dev server is running; must be http or https on localhost, 127.0.0.1 or \[::1\]. Overrides the hot file. | none | config/helmet.php |
+| HELMET_ERROR_PAGES | true makes the Laravel adapter answer a 4xx HTTP exception with HELMET's fixed client-error page; JSON clients, validation, authentication redirects and 5xx stay with Laravel. | false | config/helmet.php |
 | HELMET_HSTS_INCLUDE_SUBDOMAINS | false omits the HSTS includeSubDomains directive. | true | config/helmet.php |
 | HELMET_HSTS_MAX_AGE | HSTS max-age in seconds, sent on HTTPS only; must not be negative. | 31536000 | config/helmet.php |
 | HELMET_HSTS_PRELOAD | true appends preload to HSTS; requires a year of max-age and includeSubDomains, and is hard to undo. | false | config/helmet.php |

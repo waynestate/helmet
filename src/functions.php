@@ -583,6 +583,68 @@ if (!function_exists('helmet_forbidden')) {
     }
 }
 
+if (!function_exists('helmet_client_error_response')) {
+    /**
+     * The fixed 4xx page for a client fault, as data.
+     *
+     * Returns exactly what GenericErrorResponse::clientError() builds for
+     * the status: the status itself, Content-Type: text/html;
+     * charset=utf-8, Cache-Control: no-store, and a fixed body from a
+     * constant map. It does not send anything; the caller does. This keeps
+     * the answer testable and lets helmet_client_error() and the Laravel
+     * adapter share one definition, so the paths cannot drift apart.
+     *
+     * Only a 4xx status is accepted. A 5xx is a server fault and belongs to
+     * the error handler (and the log); anything else is not an error at all.
+     * Either one throws \InvalidArgumentException before a byte is built.
+     *
+     * @return array{status: int, headers: array<string, string>, body: string}
+     */
+    function helmet_client_error_response(int $status): array
+    {
+        if ($status < 400 || $status > 499) {
+            throw new \InvalidArgumentException('helmet_client_error_response() takes a 4xx status (400 to 499), got ' . $status . '.');
+        }
+
+        return (new GenericErrorResponse())->clientError($status);
+    }
+}
+
+if (!function_exists('helmet_client_error')) {
+    /**
+     * Answer a client fault with the fixed 4xx page and stop.
+     *
+     * It sends exactly what helmet_client_error_response() returns for the
+     * status (the status, Content-Type: text/html; charset=utf-8,
+     * Cache-Control: no-store, and the fixed body) and exits. It takes only
+     * the status code, so there is no parameter that could carry a message,
+     * a path or an exception into the page. Call it from a raw PHP router:
+     *
+     *     if ($route === null) {
+     *         helmet_client_error(404);
+     *     }
+     *
+     * A status outside 400 to 499 throws \InvalidArgumentException before
+     * anything is sent: a 500 is not the client's fault, however much the
+     * client may have deserved it.
+     */
+    function helmet_client_error(int $status): never
+    {
+        if ($status < 400 || $status > 499) {
+            throw new \InvalidArgumentException('helmet_client_error() takes a 4xx status (400 to 499), got ' . $status . '.');
+        }
+
+        $response = helmet_client_error_response($status);
+
+        http_response_code($response['status']);
+        foreach ($response['headers'] as $name => $value) {
+            header($name . ': ' . $value, true);
+        }
+        echo $response['body'];
+        exit;
+    }
+}
+
 if (!function_exists('helmet_csp_nonce_meta')) {
     /**
      * Build the csp-nonce meta tag for Vite's runtime.

@@ -158,6 +158,10 @@
 <td>Whether HELMET writes the <code>helmet.broad_trusted_proxy</code> warning at boot when the trusted-proxy list holds a broad entry (an IPv4 range shorter than <code>/16</code> or an IPv6 range shorter than <code>/48</code>). Set with <code>HELMET_WARN_BROAD_PROXIES</code> (Laravel) or the <code>warn_broad_proxies</code> option of <code>helmet_boot()</code>.</td>
 </tr>
 <tr>
+<td><code>error_pages</code></td>
+<td>Whether the Laravel adapter answers a 4xx HTTP exception (a missing page, a wrong method, <code>abort(403)</code>, a throttle) with HELMET's fixed client-error page, the one <code>helmet_client_error_response()</code> builds, instead of the framework's error view. Off by default. Requests that expect JSON, validation errors, authentication redirects and every 5xx stay with Laravel. Set with <code>HELMET_ERROR_PAGES</code>.</td>
+</tr>
+<tr>
 <td><code>metrics</code></td>
 <td>The <code>/metrics</code> endpoint, in the Prometheus text exposition format. Off by default.</td>
 </tr>
@@ -316,6 +320,12 @@
 <td>HELMET_DEV_ORIGIN</td>
 <td>Vite dev server origin, used in local only while the dev server is running; must be http or https on localhost, 127.0.0.1 or [::1]. Overrides the hot file.</td>
 <td>none</td>
+<td>config/helmet.php</td>
+</tr>
+<tr>
+<td>HELMET_ERROR_PAGES</td>
+<td>true makes the Laravel adapter answer a 4xx HTTP exception with HELMET's fixed client-error page; JSON clients, validation, authentication redirects and 5xx stay with Laravel.</td>
+<td>false</td>
 <td>config/helmet.php</td>
 </tr>
 <tr>

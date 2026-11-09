@@ -70,6 +70,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`
 | `HELMET_CSRF_TRUSTED_ORIGINS` | `helmet.csrf.trusted_origins` | none | Comma-separated origins allowed to make state-changing requests when the `Origin` fallback is used. |
 | `HELMET_CSRF_EXCEPT` | `helmet.csrf.except` | none | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. |
 | `HELMET_WARN_DEBUG` | `helmet.warn_debug` | `true` | Set `false` to stop the one boot-time warning the adapter logs when the app boots with `app.debug` true in `production`. |
+| `HELMET_ERROR_PAGES` | `helmet.error_pages` | `false` | Set `true` to answer a 4xx HTTP exception with HELMET's fixed client-error page (see [Generic 4xx pages](#generic-4xx-pages)). |
 
 > [!WARNING]
 > Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed.
@@ -137,6 +138,19 @@ In `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`, `
 
 **Version warnings.** Point `HELMET_POLICY_PATH` at a CREED `policy.json` and the ribbon gains a warning line for each component version that is in its security-only phase or end of life. The raw PHP path checks the running PHP version; the Laravel adapter also checks the framework's major version. With no policy path there is no warning and no file read, and a missing, unreadable or invalid file shows no warning and never breaks the page. Style `.helmet-ribbon-warning` in your own CSS.
 
+## Generic 4xx pages
+
+Laravel's own error views can put an exception's message on the page: `abort(403, 'Invoice 4411 belongs to someone else')` shows that sentence to the visitor. Set `HELMET_ERROR_PAGES=true` and the adapter answers every 4xx HTTP exception (a missing page or route, a wrong method, `abort(403)`, a throttle, a model that was not found) with HELMET's fixed client-error page instead: the status, `Content-Type: text/html; charset=utf-8`, `Cache-Control: no-store`, and a short fixed title and sentence. It is the same page `helmet_client_error_response()` builds for a raw PHP app, so nothing from the request or the exception can reach it.
+
+Some answers stay with Laravel, on purpose:
+
+- **Every 5xx.** The framework's handler and `APP_DEBUG=false` own those (see [Debug output stays off in production](usage-raw-php.md#debug-output-stays-off-in-production)).
+- **Validation.** A `ValidationException` still gives the 422 with its errors to a JSON client, and the redirect back with the errors to a form.
+- **Authentication.** An `AuthenticationException` still redirects to the login page (or answers 401 to a JSON client).
+- **JSON clients.** A request that expects JSON keeps Laravel's JSON answer, because an API client wants JSON back, not an HTML page.
+
+A 405 keeps its `Allow` header and a 429 keeps its `Retry-After`, because the framework sets them and the protocol wants them. The switch is read on every render, so it is off by default and costs nothing while it stays off. An app with its own branded `resources/views/errors/*.blade.php` pages can leave it off; those views are yours, so keep exception messages out of them.
+
 ## Raw PHP and Laravel agree
 
 Both paths call `SecurityHeaders::build()`, so for the same request and settings they send the same headers. A test pins that down: it compares what the Laravel middleware sends, name and value, with `build()`. The settings map like this:
@@ -159,6 +173,7 @@ Both paths call `SecurityHeaders::build()`, so for the same request and settings
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
 | Readiness | `readiness` option, answered by `helmet_boot()`, default off | `Route::helmetReady()`, off until called |
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
+| Generic 4xx page | `helmet_client_error()`, called by your router | `HELMET_ERROR_PAGES` / `helmet.error_pages`, default `false` |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
 For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events ([Security events](https://github.com/waynestate/helmet#security-events)) are written through the Log facade with the same message and context, and the third, `helmet.debug_enabled_in_production`, is written by the Laravel adapter at boot. The check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: `app.debug` must be the boolean `true`, and the environment must be exactly `production`. Opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`); a logging failure is swallowed and never breaks the boot.

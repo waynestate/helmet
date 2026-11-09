@@ -290,23 +290,28 @@ exception handler. If you want to build the page yourself, call
 for the status, headers and body as data. HELMET does not switch PHP's
 `display_errors` off for you; the platform setting does that.
 
-The same class builds the 4xx half of the rule: a raw PHP app that wants a
-neutral 4xx page for a client fault calls `clientError()` with the status
-and sends the result itself:
+The same class builds the 4xx half of the rule. A raw PHP router answers a
+client fault with `helmet_client_error()`, which sends the status, the fixed
+page and `Cache-Control: no-store`, then exits:
 
 ```php
-$page = (new \Waynestate\Helmet\Error\GenericErrorResponse())->clientError(404);
-http_response_code($page['status']);
-foreach ($page['headers'] as $name => $value) {
-    header($name . ': ' . $value);
+use function Waynestate\Helmet\helmet_client_error;
+
+if ($route === null) {
+    helmet_client_error(404);
 }
-echo $page['body'];
 ```
 
-The page is fixed text: 400, 401, 403, 404, 405, 410 and 429 each carry
-their own title and sentence, and any other 4xx keeps the status you passed
-and falls back to the Bad request text. Nothing from the request or an
-exception reaches the body, and a status outside the 400s throws.
+`helmet_client_error_response($status)` returns the same answer as data
+(status, headers, body) when you want to send it yourself, and
+`(new \Waynestate\Helmet\Error\GenericErrorResponse())->clientError($status)`
+is the class underneath both. The page is fixed text: 400, 401, 403, 404,
+405, 410 and 429 each carry their own title and sentence, and any other 4xx
+keeps the status you passed and falls back to the Bad request text. Nothing
+from the request or an exception reaches the body. Only 400 to 499 is
+accepted: a 500 or a redirect status throws `\InvalidArgumentException`
+before anything is sent. In Laravel, `HELMET_ERROR_PAGES=true` does the same
+for every 4xx HTTP exception (see the Laravel environment variables below).
 
 ##### Debug output stays off in production
 
@@ -572,6 +577,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | `HELMET_CSRF_ALLOW_SAME_SITE` | `helmet.csrf.allow_same_site` | `false` | Set `true` to let `Sec-Fetch-Site: same-site` pass. Off by default because sibling subdomains are still same-site. |
 | `HELMET_CSRF_TRUSTED_ORIGINS` | `helmet.csrf.trusted_origins` | none | Comma-separated origins allowed to make state-changing requests when the `Origin` fallback is used. |
 | `HELMET_CSRF_EXCEPT` | `helmet.csrf.except` | none | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. |
+| `HELMET_ERROR_PAGES` | `helmet.error_pages` | `false` | Set `true` to answer a 4xx HTTP exception with HELMET's fixed client-error page instead of Laravel's error view. Requests that expect JSON, validation errors, authentication redirects and every 5xx stay with Laravel; a 405 keeps its `Allow` header. |
 
 ##### Customizing the CSP in Laravel
 
@@ -730,6 +736,7 @@ like this:
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
 | Readiness | `readiness` option, answered by `helmet_boot()`, default off | `Route::helmetReady()`, off until called |
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
+| Generic 4xx page | `helmet_client_error()`, called by your router | `HELMET_ERROR_PAGES` / `helmet.error_pages`, default `false` |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
 For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events ([Security events](#security-events)) are written through the Log facade with the same message and context, and the third, `helmet.debug_enabled_in_production`, is written by the Laravel adapter at boot.
@@ -1677,6 +1684,7 @@ All notable changes to this project are documented in this file.
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
 - Changed: the deploy kit is Squire 0.10.0 (was 0.7.1): release.sh keeps Composer and npm download caches in the app folder and the gate takes SQUIRE_PHP_RUNTIME; the compose file, health.php and .env.squire.example follow the template, and the portable image files are added.
+- Added: `helmet_client_error(int $status)` sends HELMET's fixed 4xx page and exits, and `helmet_client_error_response(int $status)` returns it as data, the 4xx siblings of `helmet_forbidden()`; a status outside 400 to 499 throws `\InvalidArgumentException`. The Laravel adapter answers every 4xx HTTP exception with the same page when `helmet.error_pages` is on (env `HELMET_ERROR_PAGES`, default false), leaving JSON clients, validation, authentication redirects and every 5xx to Laravel. BEST_PRACTICES H42 is now `Enforced`.
 - Fixed: scripts/a11y.ps1 works on a Windows checkout with CRLF line endings; it strips the carriage returns from the shell command it hands to Docker, which sh rejected with a syntax error.
 
 ### 1.1.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-1-0-2026-11-09)
@@ -3186,6 +3194,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`
 | `HELMET_CSRF_TRUSTED_ORIGINS` | `helmet.csrf.trusted_origins` | none | Comma-separated origins allowed to make state-changing requests when the `Origin` fallback is used. |
 | `HELMET_CSRF_EXCEPT` | `helmet.csrf.except` | none | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. |
 | `HELMET_WARN_DEBUG` | `helmet.warn_debug` | `true` | Set `false` to stop the one boot-time warning the adapter logs when the app boots with `app.debug` true in `production`. |
+| `HELMET_ERROR_PAGES` | `helmet.error_pages` | `false` | Set `true` to answer a 4xx HTTP exception with HELMET's fixed client-error page (see [Generic 4xx pages](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#generic-4xx-pages)). |
 
 Warning
 
@@ -3255,6 +3264,19 @@ In `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`, `
 
 **Version warnings.** Point `HELMET_POLICY_PATH` at a CREED `policy.json` and the ribbon gains a warning line for each component version that is in its security-only phase or end of life. The raw PHP path checks the running PHP version; the Laravel adapter also checks the framework's major version. With no policy path there is no warning and no file read, and a missing, unreadable or invalid file shows no warning and never breaks the page. Style `.helmet-ribbon-warning` in your own CSS.
 
+### Generic 4xx pages[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#generic-4xx-pages)
+
+Laravel's own error views can put an exception's message on the page: `abort(403, 'Invoice 4411 belongs to someone else')` shows that sentence to the visitor. Set `HELMET_ERROR_PAGES=true` and the adapter answers every 4xx HTTP exception (a missing page or route, a wrong method, `abort(403)`, a throttle, a model that was not found) with HELMET's fixed client-error page instead: the status, `Content-Type: text/html; charset=utf-8`, `Cache-Control: no-store`, and a short fixed title and sentence. It is the same page `helmet_client_error_response()` builds for a raw PHP app, so nothing from the request or the exception can reach it.
+
+Some answers stay with Laravel, on purpose:
+
+- **Every 5xx.** The framework's handler and `APP_DEBUG=false` own those (see [Debug output stays off in production](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#debug-output-stays-off-in-production)).
+- **Validation.** A `ValidationException` still gives the 422 with its errors to a JSON client, and the redirect back with the errors to a form.
+- **Authentication.** An `AuthenticationException` still redirects to the login page (or answers 401 to a JSON client).
+- **JSON clients.** A request that expects JSON keeps Laravel's JSON answer, because an API client wants JSON back, not an HTML page.
+
+A 405 keeps its `Allow` header and a 429 keeps its `Retry-After`, because the framework sets them and the protocol wants them. The switch is read on every render, so it is off by default and costs nothing while it stays off. An app with its own branded `resources/views/errors/*.blade.php` pages can leave it off; those views are yours, so keep exception messages out of them.
+
 ### Raw PHP and Laravel agree[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#raw-php-and-laravel-agree)
 
 Both paths call `SecurityHeaders::build()`, so for the same request and settings they send the same headers. A test pins that down: it compares what the Laravel middleware sends, name and value, with `build()`. The settings map like this:
@@ -3277,6 +3299,7 @@ Both paths call `SecurityHeaders::build()`, so for the same request and settings
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
 | Readiness | `readiness` option, answered by `helmet_boot()`, default off | `Route::helmetReady()`, off until called |
 | Request-forgery guard | `csrf` option to `helmet_boot()` | `helmet.csrf.*` / `HELMET_CSRF_*`; the middleware is registered only when enabled |
+| Generic 4xx page | `helmet_client_error()`, called by your router | `HELMET_ERROR_PAGES` / `helmet.error_pages`, default `false` |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
 For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events ([Security events](https://github.com/waynestate/helmet#security-events)) are written through the Log facade with the same message and context, and the third, `helmet.debug_enabled_in_production`, is written by the Laravel adapter at boot. The check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: `app.debug` must be the boolean `true`, and the environment must be exactly `production`. Opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`); a logging failure is swallowed and never breaks the boot.
@@ -3494,18 +3517,23 @@ helmet_boot([
 
 The page never contains anything from the exception, and a logger that throws cannot change it. It is off by default, and Laravel keeps its own exception handler. If you want to build the page yourself, call `(new \Waynestate\Helmet\Error\GenericErrorResponse())->build($exception, $logger)` for the status, headers and body as data. HELMET does not switch PHP's `display_errors` off for you; the platform setting does that.
 
-The same class builds the 4xx half of the rule: a raw PHP app that wants a neutral 4xx page for a client fault calls `clientError()` with the status and sends the result itself:
+The same class builds the 4xx half of the rule. A raw PHP router answers a client fault with `helmet_client_error()`, the 4xx sibling of `helmet_forbidden()`: it sends the status, `Content-Type: text/html; charset=utf-8`, `Cache-Control: no-store` and the fixed page, then exits.
 
 ```php
-$page = (new \Waynestate\Helmet\Error\GenericErrorResponse())->clientError(404);
-http_response_code($page['status']);
-foreach ($page['headers'] as $name => $value) {
-    header($name . ': ' . $value);
+use function Waynestate\Helmet\helmet_client_error;
+
+if ($route === null) {
+    helmet_client_error(404);
 }
-echo $page['body'];
+if (!in_array($_SERVER['REQUEST_METHOD'], $route['methods'], true)) {
+    header('Allow: ' . implode(', ', $route['methods']));
+    helmet_client_error(405);
+}
 ```
 
-The page is fixed text: 400, 401, 403, 404, 405, 410 and 429 each carry their own title and sentence, and any other 4xx keeps the status you passed and falls back to the Bad request text. Nothing from the request or an exception reaches the body, and a status outside the 400s throws.
+`helmet_client_error_response($status)` returns the same answer as data (`status`, `headers`, `body`) without sending anything, the way `helmet_forbidden_response()` pairs with `helmet_forbidden()`, and `(new \Waynestate\Helmet\Error\GenericErrorResponse())->clientError($status)` is the class underneath both.
+
+The page is fixed text: 400, 401, 403, 404, 405, 410 and 429 each carry their own title and sentence, and any other 4xx keeps the status you passed and falls back to the Bad request text. The functions take only the status code, so no message, path or exception can reach the body. Only 400 to 499 is accepted: a 500 or a redirect status throws `\InvalidArgumentException` before anything is sent, because a server fault belongs to the error handler and the log, not to a client-error page. Laravel apps get the same page for every 4xx HTTP exception with `HELMET_ERROR_PAGES=true` (see [Generic 4xx pages](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#generic-4xx-pages)).
 
 ### Debug output stays off in production[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#debug-output-stays-off-in-production)
 
@@ -3789,6 +3817,8 @@ File `src/functions.php`, namespace `Waynestate\Helmet`:
 | `helmet_ready()` | `function helmet_ready(Readiness $readiness): never` |
 | `helmet_forbidden_response()` | `function helmet_forbidden_response(): array` |
 | `helmet_forbidden()` | `function helmet_forbidden(): never` |
+| `helmet_client_error_response()` | `function helmet_client_error_response(int $status): array` |
+| `helmet_client_error()` | `function helmet_client_error(int $status): never` |
 | `helmet_csp_nonce_meta()` | `function helmet_csp_nonce_meta(string $nonce): string` |
 | `helmet_csp_nonce_swap()` | `function helmet_csp_nonce_swap(string $html, string $nonce, string $placeholder = 'CSP_NONCE_SLOT_FOR_HELMET'): string` |
 | `helmet_metrics()` | `function helmet_metrics(array $config): array` |
@@ -3800,6 +3830,7 @@ What each one returns, from the docblocks:
 
 - `helmet_boot()` boots the core for raw PHP: it validates the config and returns `array{nonce: string, logger: LoggerInterface|null, request_id: string}`. It throws `UnknownPresetException` for an unknown preset, `\InvalidArgumentException` for a bad config value, `InvalidCspReportUriException` for a bad report URI, and `\LogicException` if a session is already active.
 - `helmet_up_response()` and `helmet_forbidden_response()` return the answer as data, `array{status: int, headers: array<string, string>, body: string}`, without sending anything; the caller sends it. `helmet_up()` and `helmet_forbidden()` send the same answers (200, body "ok", and 403, body "Forbidden") and exit, so a small public file can answer a probe that never reaches `helmet_boot()`.
+- `helmet_client_error_response()` returns the fixed 4xx page for a client fault as data, exactly what `GenericErrorResponse::clientError()` builds (the status, `Content-Type: text/html; charset=utf-8`, `Cache-Control: no-store`, a fixed body), and `helmet_client_error()` sends it and exits. Both take only the status code, and both throw `\InvalidArgumentException` for a status outside 400 to 499 before anything is built or sent.
 - `helmet_ready()` sends a `Readiness` report (200 or 503, JSON, `no-store`) and exits, for a `public/ready.php` with no front controller. `helmet_boot()` calls it on the readiness path when the `readiness` option is enabled. See [Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html).
 - `helmet_csp_nonce_meta()` builds the `<meta property="csp-nonce">` tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in `<head>` of every page, with the same nonce `helmet_boot()` returned; the nonce is escaped so a quote cannot break out of the attribute.
 - `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder (default `CSP_NONCE_SLOT_FOR_HELMET`, the value a built Vue/Vite page carries where Vite's `html.cspNonce` stood) with the nonce, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws `\InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged.
@@ -3957,12 +3988,21 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 
 #### `Laravel\HelmetServiceProvider` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-helmetserviceprovider)
 
-`final class HelmetServiceProvider extends ServiceProvider` in `src/Laravel/HelmetServiceProvider.php`. Merges and publishes `config/helmet.php`, copies `helmet.proxies` into Laravel's trusted-proxy list when the app has not set `trustedproxy.proxies` itself (an explicit `trustProxies(at: ...)` call still wins), and registers the `cspReport`, `helmetMetrics` and `helmetReady` route macros. It registers no routes of its own; the `/up` health route is left to Laravel's built-in `health: '/up'` option.
+`final class HelmetServiceProvider extends ServiceProvider` in `src/Laravel/HelmetServiceProvider.php`. Merges and publishes `config/helmet.php`, copies `helmet.proxies` into Laravel's trusted-proxy list when the app has not set `trustedproxy.proxies` itself (an explicit `trustProxies(at: ...)` call still wins), registers the `cspReport`, `helmetMetrics` and `helmetReady` route macros, and adds `ClientErrorPages` to the exception handler (inert until `helmet.error_pages` is on). It registers no routes of its own; the `/up` health route is left to Laravel's built-in `health: '/up'` option.
 
 | Member | Signature |
 | --- | --- |
 | `register()` | `public function register(): void` |
 | `boot()` | `public function boot(): void` |
+
+#### `Laravel\ClientErrorPages` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-clienterrorpages)
+
+`final class ClientErrorPages` in `src/Laravel/ClientErrorPages.php`. With `helmet.error_pages` on (env `HELMET_ERROR_PAGES`, default off), answers a 4xx HTTP exception with the page `helmet_client_error_response()` builds, keeping the exception's own headers (`Allow`, `Retry-After`) under HELMET's `Content-Type` and `Cache-Control`. It returns null, so Laravel answers as usual, for every 5xx, for a request that expects JSON, and while the switch is off; a `ValidationException` or an `AuthenticationException` is not an HTTP exception, so it never reaches the callback. The service provider adds it to the framework's exception handler as a renderable callback.
+
+| Member | Signature |
+| --- | --- |
+| `register()` | `public static function register(ExceptionHandler $handler): void` |
+| `render()` | `public static function render(HttpExceptionInterface $e, Request $request): ?Response` |
 
 #### `Laravel\SecurityHeaders` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-securityheaders)
 
@@ -4386,6 +4426,7 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `dev_origin` | The Vite dev server origin, used in `local` only while the dev server is running; it overrides the hot file. Set with `HELMET_DEV_ORIGIN`. |
 | `warn_debug` | Whether the Laravel adapter writes the `helmet.debug_enabled_in_production` warning when the app boots with debug enabled in production. Set with `HELMET_WARN_DEBUG`. |
 | `warn_broad_proxies` | Whether HELMET writes the `helmet.broad_trusted_proxy` warning at boot when the trusted-proxy list holds a broad entry (an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`). Set with `HELMET_WARN_BROAD_PROXIES` (Laravel) or the `warn_broad_proxies` option of `helmet_boot()`. |
+| `error_pages` | Whether the Laravel adapter answers a 4xx HTTP exception (a missing page, a wrong method, `abort(403)`, a throttle) with HELMET's fixed client-error page, the one `helmet_client_error_response()` builds, instead of the framework's error view. Off by default. Requests that expect JSON, validation errors, authentication redirects and every 5xx stay with Laravel. Set with `HELMET_ERROR_PAGES`. |
 | `metrics` | The `/metrics` endpoint, in the Prometheus text exposition format. Off by default. |
 | `metrics.enabled` | Whether the endpoint is on. Set with `HELMET_METRICS_ENABLED`. |
 | `metrics.token` | The bearer token a scraper must present (`Authorization: Bearer <token>`); compared with `hash_equals`. Set with `HELMET_METRICS_TOKEN`. |
@@ -4427,6 +4468,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_CSRF_EXCEPT | Comma-separated path patterns that skip the guard: an exact path, a prefix ending in \*, or \* for every path. | none | config/helmet.php |
 | HELMET_CSRF_TRUSTED_ORIGINS | Comma-separated origins allowed to make state-changing requests when the Origin fallback is used. | none | config/helmet.php |
 | HELMET_DEV_ORIGIN | Vite dev server origin, used in local only while the dev server is running; must be http or https on localhost, 127.0.0.1 or \[::1\]. Overrides the hot file. | none | config/helmet.php |
+| HELMET_ERROR_PAGES | true makes the Laravel adapter answer a 4xx HTTP exception with HELMET's fixed client-error page; JSON clients, validation, authentication redirects and 5xx stay with Laravel. | false | config/helmet.php |
 | HELMET_HSTS_INCLUDE_SUBDOMAINS | false omits the HSTS includeSubDomains directive. | true | config/helmet.php |
 | HELMET_HSTS_MAX_AGE | HSTS max-age in seconds, sent on HTTPS only; must not be negative. | 31536000 | config/helmet.php |
 | HELMET_HSTS_PRELOAD | true appends preload to HSTS; requires a year of max-age and includeSubDomains, and is hard to undo. | false | config/helmet.php |

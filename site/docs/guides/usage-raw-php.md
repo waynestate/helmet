@@ -112,18 +112,23 @@ helmet_boot([
 
 The page never contains anything from the exception, and a logger that throws cannot change it. It is off by default, and Laravel keeps its own exception handler. If you want to build the page yourself, call `(new \Waynestate\Helmet\Error\GenericErrorResponse())->build($exception, $logger)` for the status, headers and body as data. HELMET does not switch PHP's `display_errors` off for you; the platform setting does that.
 
-The same class builds the 4xx half of the rule: a raw PHP app that wants a neutral 4xx page for a client fault calls `clientError()` with the status and sends the result itself:
+The same class builds the 4xx half of the rule. A raw PHP router answers a client fault with `helmet_client_error()`, the 4xx sibling of `helmet_forbidden()`: it sends the status, `Content-Type: text/html; charset=utf-8`, `Cache-Control: no-store` and the fixed page, then exits.
 
 ```php
-$page = (new \Waynestate\Helmet\Error\GenericErrorResponse())->clientError(404);
-http_response_code($page['status']);
-foreach ($page['headers'] as $name => $value) {
-    header($name . ': ' . $value);
+use function Waynestate\Helmet\helmet_client_error;
+
+if ($route === null) {
+    helmet_client_error(404);
 }
-echo $page['body'];
+if (!in_array($_SERVER['REQUEST_METHOD'], $route['methods'], true)) {
+    header('Allow: ' . implode(', ', $route['methods']));
+    helmet_client_error(405);
+}
 ```
 
-The page is fixed text: 400, 401, 403, 404, 405, 410 and 429 each carry their own title and sentence, and any other 4xx keeps the status you passed and falls back to the Bad request text. Nothing from the request or an exception reaches the body, and a status outside the 400s throws.
+`helmet_client_error_response($status)` returns the same answer as data (`status`, `headers`, `body`) without sending anything, the way `helmet_forbidden_response()` pairs with `helmet_forbidden()`, and `(new \Waynestate\Helmet\Error\GenericErrorResponse())->clientError($status)` is the class underneath both.
+
+The page is fixed text: 400, 401, 403, 404, 405, 410 and 429 each carry their own title and sentence, and any other 4xx keeps the status you passed and falls back to the Bad request text. The functions take only the status code, so no message, path or exception can reach the body. Only 400 to 499 is accepted: a 500 or a redirect status throws `\InvalidArgumentException` before anything is sent, because a server fault belongs to the error handler and the log, not to a client-error page. Laravel apps get the same page for every 4xx HTTP exception with `HELMET_ERROR_PAGES=true` (see [Generic 4xx pages](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#generic-4xx-pages)).
 
 ## Debug output stays off in production[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#debug-output-stays-off-in-production)
 

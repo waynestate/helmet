@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Laravel;
 
+use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Foundation\Http\Kernel as FoundationKernel;
 use Illuminate\Http\Middleware\TrustProxies;
@@ -154,6 +155,15 @@ final class HelmetServiceProvider extends ServiceProvider
             if ((bool) config('helmet.csrf.enabled') === true) {
                 $kernel->appendMiddlewareToGroup('web', RequestForgeryGuard::class);
             }
+        });
+
+        // H42: with helmet.error_pages on, a 4xx HTTP exception gets HELMET's
+        // fixed client-error page. The callback is always added and reads
+        // the switch on each render, so it costs nothing while it is off.
+        // The handler is a singleton: callAfterResolving runs this once,
+        // now if the handler is already built or right after it is.
+        $this->callAfterResolving(ExceptionHandler::class, static function (ExceptionHandler $handler): void {
+            ClientErrorPages::register($handler);
         });
 
         // H43: keep debug output off in production. A production app that

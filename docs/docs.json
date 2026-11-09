@@ -64,6 +64,10 @@
                     "Vite dev server origin, used in local only while the dev server is running; must be http or https on localhost, 127.0.0.1 or [::1]. Overrides the hot file.",
                     "none"
                 ],
+                "HELMET_ERROR_PAGES": [
+                    "true makes the Laravel adapter answer a 4xx HTTP exception with HELMET's fixed client-error page; JSON clients, validation, authentication redirects and 5xx stay with Laravel.",
+                    "false"
+                ],
                 "HELMET_HSTS_INCLUDE_SUBDOMAINS": [
                     "false omits the HSTS includeSubDomains directive.",
                     "true"

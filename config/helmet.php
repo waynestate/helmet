@@ -204,6 +204,14 @@ use Waynestate\Helmet\Support\Setting;
  |               shorter than /16 or an IPv6 range shorter than /48). On by
  |               default. Set with the HELMET_WARN_BROAD_PROXIES env var.
  |
+ | "error_pages" Whether the Laravel adapter answers a 4xx HTTP exception
+ |               (abort(404), a missing route, a wrong method, a throttle)
+ |               with HELMET's fixed client-error page instead of the
+ |               framework's error view, so no exception message reaches the
+ |               visitor. Requests that expect JSON, validation errors,
+ |               authentication redirects and every 5xx stay with Laravel.
+ |               Off by default. Set with the HELMET_ERROR_PAGES env var.
+ |
  | "metrics"     The /metrics endpoint, in the Prometheus text exposition
 |               format. Off by default. When enabled, a request is served
 |               only if it presents the bearer token or comes from an
@@ -418,6 +426,10 @@ $warnDebug = (bool) env('HELMET_WARN_DEBUG', true);
 // whole private range should show up in the logs.
 $warnBroadProxies = (bool) env('HELMET_WARN_BROAD_PROXIES', true);
 
+// The generic 4xx pages: off by default. When on, a 4xx HTTP exception is
+// answered with HELMET's fixed client-error page (H42).
+$errorPages = (bool) env('HELMET_ERROR_PAGES', false);
+
 // The request-forgery guard: off by default. When on, it rejects
 // state-changing requests that are not same-origin (or from a trusted
 // origin).
@@ -497,6 +509,7 @@ return [
     'dev_origin' => env('HELMET_DEV_ORIGIN'),
     'warn_debug' => $warnDebug,
     'warn_broad_proxies' => $warnBroadProxies,
+    'error_pages' => $errorPages,
     'metrics' => [
         'enabled' => $metricsEnabled,
         'token' => $metricsToken,

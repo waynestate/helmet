@@ -200,6 +200,12 @@
 <td><code>true</code></td>
 <td>Set <code>false</code> to stop the one boot-time warning the adapter logs when the app boots with <code>app.debug</code> true in <code>production</code>.</td>
 </tr>
+<tr>
+<td><code>HELMET_ERROR_PAGES</code></td>
+<td><code>helmet.error_pages</code></td>
+<td><code>false</code></td>
+<td>Set <code>true</code> to answer a 4xx HTTP exception with HELMET's fixed client-error page (see <a href="#generic-4xx-pages">Generic 4xx pages</a>).</td>
+</tr>
 </tbody>
 </table></div>
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed.</p></aside>
@@ -241,6 +247,16 @@
 <h2 id="the-ribbon">The ribbon<a class="docs-heading-link" aria-label="Link to this section" href="#the-ribbon">#</a></h2>
 <p>In <code>local</code>, <code>development</code>, <code>dev</code>, <code>testing</code>, <code>test</code>, <code>staging</code>, <code>stage</code>, <code>qa</code>, <code>uat</code>, <code>preprod</code>, <code>pre-prod</code> and <code>sandbox</code>, <code>InjectRibbon</code> adds <code>&lt;div class=&quot;helmet-ribbon&quot; data-environment=&quot;staging&quot;&gt;staging&lt;/div&gt;</code> right after the opening <code>&lt;body&gt;</code> tag of an HTML response, so nobody mistakes a test site for the real one. The names match in any case. It never appears in <code>production</code> or an environment HELMET does not know (a typo counts as production), on JSON or other non-HTML responses, or on HTML with no <code>&lt;body&gt;</code>. The package ships no stylesheet; style <code>.helmet-ribbon</code> in your own CSS. Even with <code>HELMET_RIBBON=true</code>, production never gets it, so there is no Aftertaste.</p>
 <p><strong>Version warnings.</strong> Point <code>HELMET_POLICY_PATH</code> at a CREED <code>policy.json</code> and the ribbon gains a warning line for each component version that is in its security-only phase or end of life. The raw PHP path checks the running PHP version; the Laravel adapter also checks the framework's major version. With no policy path there is no warning and no file read, and a missing, unreadable or invalid file shows no warning and never breaks the page. Style <code>.helmet-ribbon-warning</code> in your own CSS.</p>
+<h2 id="generic-4xx-pages">Generic 4xx pages<a class="docs-heading-link" aria-label="Link to this section" href="#generic-4xx-pages">#</a></h2>
+<p>Laravel's own error views can put an exception's message on the page: <code>abort(403, 'Invoice 4411 belongs to someone else')</code> shows that sentence to the visitor. Set <code>HELMET_ERROR_PAGES=true</code> and the adapter answers every 4xx HTTP exception (a missing page or route, a wrong method, <code>abort(403)</code>, a throttle, a model that was not found) with HELMET's fixed client-error page instead: the status, <code>Content-Type: text/html; charset=utf-8</code>, <code>Cache-Control: no-store</code>, and a short fixed title and sentence. It is the same page <code>helmet_client_error_response()</code> builds for a raw PHP app, so nothing from the request or the exception can reach it.</p>
+<p>Some answers stay with Laravel, on purpose:</p>
+<ul>
+<li><strong>Every 5xx.</strong> The framework's handler and <code>APP_DEBUG=false</code> own those (see <a href="usage-raw-php.html#debug-output-stays-off-in-production">Debug output stays off in production</a>).</li>
+<li><strong>Validation.</strong> A <code>ValidationException</code> still gives the 422 with its errors to a JSON client, and the redirect back with the errors to a form.</li>
+<li><strong>Authentication.</strong> An <code>AuthenticationException</code> still redirects to the login page (or answers 401 to a JSON client).</li>
+<li><strong>JSON clients.</strong> A request that expects JSON keeps Laravel's JSON answer, because an API client wants JSON back, not an HTML page.</li>
+</ul>
+<p>A 405 keeps its <code>Allow</code> header and a 429 keeps its <code>Retry-After</code>, because the framework sets them and the protocol wants them. The switch is read on every render, so it is off by default and costs nothing while it stays off. An app with its own branded <code>resources/views/errors/*.blade.php</code> pages can leave it off; those views are yours, so keep exception messages out of them.</p>
 <h2 id="raw-php-and-laravel-agree">Raw PHP and Laravel agree<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php-and-laravel-agree">#</a></h2>
 <p>Both paths call <code>SecurityHeaders::build()</code>, so for the same request and settings they send the same headers. A test pins that down: it compares what the Laravel middleware sends, name and value, with <code>build()</code>. The settings map like this:</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
@@ -333,6 +349,11 @@
 <td><code>helmet.csrf.*</code> / <code>HELMET_CSRF_*</code>; the middleware is registered only when enabled</td>
 </tr>
 <tr>
+<td>Generic 4xx page</td>
+<td><code>helmet_client_error()</code>, called by your router</td>
+<td><code>HELMET_ERROR_PAGES</code> / <code>helmet.error_pages</code>, default <code>false</code></td>
+</tr>
+<tr>
 <td>Session hardening, JSON logs</td>
 <td>applied by <code>helmet_boot()</code></td>
 <td>not applied by the adapter; Laravel's session and logging config apply</td>
@@ -358,7 +379,7 @@
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/usage-psr15.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">PSR-15 middleware</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/headers.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">The headers</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#install-the-adapter">Install the adapter</a></li><li class="docs-toc__item"><a href="#publish-the-config">Publish the config</a></li><li class="docs-toc__item"><a href="#trust-the-proxy">Trust the proxy</a></li><li class="docs-toc__item"><a href="#environment-variables">Environment variables</a></li><li class="docs-toc__item"><a href="#customizing-the-csp-in-laravel">Customizing the CSP in Laravel</a></li><li class="docs-toc__item"><a href="#the-nonce-in-blade">The nonce in Blade</a></li><li class="docs-toc__item"><a href="#vite-and-inertia">Vite and Inertia</a></li><li class="docs-toc__item"><a href="#the-ribbon">The ribbon</a></li><li class="docs-toc__item"><a href="#raw-php-and-laravel-agree">Raw PHP and Laravel agree</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#install-the-adapter">Install the adapter</a></li><li class="docs-toc__item"><a href="#publish-the-config">Publish the config</a></li><li class="docs-toc__item"><a href="#trust-the-proxy">Trust the proxy</a></li><li class="docs-toc__item"><a href="#environment-variables">Environment variables</a></li><li class="docs-toc__item"><a href="#customizing-the-csp-in-laravel">Customizing the CSP in Laravel</a></li><li class="docs-toc__item"><a href="#the-nonce-in-blade">The nonce in Blade</a></li><li class="docs-toc__item"><a href="#vite-and-inertia">Vite and Inertia</a></li><li class="docs-toc__item"><a href="#the-ribbon">The ribbon</a></li><li class="docs-toc__item"><a href="#generic-4xx-pages">Generic 4xx pages</a></li><li class="docs-toc__item"><a href="#raw-php-and-laravel-agree">Raw PHP and Laravel agree</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>1.1.0</span></span>
