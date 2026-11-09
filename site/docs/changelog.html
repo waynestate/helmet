@@ -43,6 +43,9 @@
 <h1 id="changelog">Changelog<a class="docs-heading-link" aria-label="Link to this section" href="#changelog">#</a></h1>
 <p>All notable changes to this project are documented in this file.</p>
 <h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
+<ul>
+<li>Fixed: scripts/a11y.ps1 works on a Windows checkout with CRLF line endings; it strips the carriage returns from the shell command it hands to Docker, which sh rejected with a syntax error.</li>
+</ul>
 <h2 id="1-1-0-2026-11-09">1.1.0 (2026-11-09)<a class="docs-heading-link" aria-label="Link to this section" href="#1-1-0-2026-11-09">#</a></h2>
 <p>A minor release, backward compatible. HELMET now logs every proxy-header spoofing attempt it ignores (a spoofed X-Forwarded-Proto joins X-Forwarded-For), <code>helmet_ribbon()</code> gets its new home next to <code>helmet_boot()</code> (the old name still works for one release), and the raw PHP ribbon stays hidden in production. CI and the deploy layer move to Preflight 0.4.0 and Squire's kit 0.7.1.</p>
 <ul>

@@ -11,6 +11,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Fixed: scripts/a11y.ps1 works on a Windows checkout with CRLF line endings; it strips the carriage returns from the shell command it hands to Docker, which sh rejected with a syntax error.
+
 ## 1.1.0 (2026-11-09)
 
 A minor release, backward compatible. HELMET now logs every proxy-header spoofing attempt it ignores (a spoofed X-Forwarded-Proto joins X-Forwarded-For), `helmet_ribbon()` gets its new home next to `helmet_boot()` (the old name still works for one release), and the raw PHP ribbon stays hidden in production. CI and the deploy layer move to Preflight 0.4.0 and Squire's kit 0.7.1.
