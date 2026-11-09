@@ -12,6 +12,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+## 1.1.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-1-0-2026-11-09)
+
+A minor release, backward compatible. HELMET now logs every proxy-header spoofing attempt it ignores (a spoofed X-Forwarded-Proto joins X-Forwarded-For), `helmet_ribbon()` gets its new home next to `helmet_boot()` (the old name still works for one release), and the raw PHP ribbon stays hidden in production. CI and the deploy layer move to Preflight 0.4.0 and Squire's kit 0.7.1.
+
 - Added: `helmet_boot()` logs `helmet.forwarded_proto_rejected` when a peer that is not a trusted proxy sends X-Forwarded-Proto.
 - Changed: helmet_ribbon() moves to Waynestate\\Helmet, next to helmet_boot(); the old Waynestate\\Helmet\\Ribbon\\helmet_ribbon() still works for one release and raises E_USER_DEPRECATED.
 - Docs: BEST_PRACTICES names the 0.4.0 Preflight pins in its tag table (it still said 0.3.0), records the first secret-detection and composer-audit runs in pipeline 4680 (gap 24 and H50 still called them owed or unseen), and marks gap 36 (no-store) done.
