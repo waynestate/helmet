@@ -94,8 +94,8 @@
 <h2 id="accessibility">Accessibility<a class="docs-heading-link" aria-label="Link to this section" href="#accessibility">#</a></h2>
 <p>The front page and every docs page are checked with <a rel="noopener" href="https://github.com/dequelabs/axe-core">axe-core</a> in a real Chromium, through Playwright, at WCAG 2.2 AA, in light and dark, at 320 px and 1280 px, with the WCAG 1.4.10 reflow check. Two gates, both blocking, and both running the same checker, so they cannot drift apart:</p>
 <ul>
-<li><strong>Local, before a release:</strong> <code>scripts/a11y.sh</code> (Linux, macOS, Git Bash) or <code>scripts/a11y.ps1</code> (Windows) runs <code>tools/a11y/check.mjs</code> in Docker. That file is a byte-for-byte copy of Preflight's a11y checker at the tag the pipeline pins (0.3.1), and <code>tests/A11yCheckerPinTest.php</code> fails <code>composer ci</code> if it drifts. Reduced motion is on, so scroll reveals never hide content from the check.</li>
-<li><strong>In the pipeline:</strong> Preflight's <code>a11y</code> component (0.3.1) over the same pages.</li>
+<li><strong>Local, before a release:</strong> <code>scripts/a11y.sh</code> (Linux, macOS, Git Bash) or <code>scripts/a11y.ps1</code> (Windows) runs <code>tools/a11y/check.mjs</code> in Docker. That file is a byte-for-byte copy of Preflight's a11y checker at the tag the pipeline pins (0.4.0), and <code>tests/A11yCheckerPinTest.php</code> fails <code>composer ci</code> if it drifts. Reduced motion is on, so scroll reveals never hide content from the check.</li>
+<li><strong>In the pipeline:</strong> Preflight's <code>a11y</code> component (0.4.0) over the same pages.</li>
 </ul>
 <p>Last run, 2026-11-08, on the branch that vendors Preflight's checker into the local gate (29 pages):</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
