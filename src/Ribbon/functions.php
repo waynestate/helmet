@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Waynestate\Helmet\Ribbon;
 
-if (!function_exists('helmet_ribbon')) {
+if (!function_exists('Waynestate\Helmet\Ribbon\helmet_ribbon')) {
     /**
      * Create a ribbon for the given environment.
      *
@@ -25,14 +25,13 @@ if (!function_exists('helmet_ribbon')) {
      *        never shows outside Ribbon::ENVIRONMENTS).
      * @param string|null $policyPath The path to a CREED policy.json, or null
      *        for no version warnings.
+     *
+     * @deprecated Use Waynestate\Helmet\helmet_ribbon() instead.
      */
     function helmet_ribbon(string $environment, bool $enabled = true, ?string $policyPath = null): Ribbon
     {
-        return new Ribbon(
-            $environment,
-            $enabled,
-            $policyPath,
-            [['php', PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION]],
-        );
+        @trigger_error('Waynestate\Helmet\Ribbon\helmet_ribbon() is deprecated; use Waynestate\Helmet\helmet_ribbon().', E_USER_DEPRECATED);
+
+        return \Waynestate\Helmet\helmet_ribbon($environment, $enabled, $policyPath);
     }
 }

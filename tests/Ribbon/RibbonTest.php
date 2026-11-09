@@ -9,7 +9,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Waynestate\Helmet\Ribbon\Ribbon;
 
-use function Waynestate\Helmet\Ribbon\helmet_ribbon;
+use function Waynestate\Helmet\helmet_ribbon;
 
 final class RibbonTest extends TestCase
 {
@@ -258,6 +258,40 @@ final class RibbonTest extends TestCase
         self::assertSame('', helmet_ribbon('production')->html());
         self::assertSame('', helmet_ribbon('production', true, self::POLICY)->html());
         self::assertSame('', helmet_ribbon('staging', false)->html());
+    }
+
+    /**
+     * The old Waynestate\Helmet\Ribbon\helmet_ribbon() name still returns the
+     * same HTML as the new Waynestate\Helmet\helmet_ribbon(), and it raises an
+     * E_USER_DEPRECATED so a caller knows to switch.
+     */
+    public function testOldNamespacedHelperIsDeprecatedButStillRendersTheSameHtml(): void
+    {
+        $deprecations = [];
+        set_error_handler(
+            static function (int $errno, string $errstr) use (&$deprecations): bool {
+                if ($errno === E_USER_DEPRECATED) {
+                    $deprecations[] = $errstr;
+                }
+
+                return true;
+            },
+            E_USER_DEPRECATED,
+        );
+
+        try {
+            $old = \Waynestate\Helmet\Ribbon\helmet_ribbon('staging');
+            $new = helmet_ribbon('staging');
+        } finally {
+            restore_error_handler();
+        }
+
+        self::assertSame($new->html(), $old->html());
+        self::assertCount(1, $deprecations);
+        self::assertSame(
+            'Waynestate\Helmet\Ribbon\helmet_ribbon() is deprecated; use Waynestate\Helmet\helmet_ribbon().',
+            $deprecations[0],
+        );
     }
 
     /**

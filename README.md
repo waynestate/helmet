@@ -699,10 +699,12 @@ or invalid file shows no warning and never breaks the page. Style
 right after your `<body>` tag:
 
 ```php
-use function Waynestate\Helmet\Ribbon\helmet_ribbon;
+use function Waynestate\Helmet\helmet_ribbon;
 
 echo helmet_ribbon(getenv('APP_ENV') ?: 'production', true, getenv('HELMET_POLICY_PATH') ?: null)->html();
 ```
+
+The old `Waynestate\Helmet\Ribbon\helmet_ribbon` name still works for one release and raises a deprecation.
 
 Both paths read one list of non-production names (`Ribbon::ENVIRONMENTS`),
 matched in any case. Production, an empty name and any name HELMET does not

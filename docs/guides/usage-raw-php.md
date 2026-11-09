@@ -195,10 +195,12 @@ One more setting keeps the CSP honest: Vite inlines small assets as `data:` URIs
 `helmet_ribbon()` gives a raw PHP app the same ribbon the Laravel adapter injects, so nobody mistakes a test site for the real one. Print its `html()` right after your `<body>` tag, and style `.helmet-ribbon` (and `.helmet-ribbon-warning`) in your own CSS:
 
 ```php
-use function Waynestate\Helmet\Ribbon\helmet_ribbon;
+use function Waynestate\Helmet\helmet_ribbon;
 
 echo helmet_ribbon(getenv('APP_ENV') ?: 'production', true, getenv('HELMET_POLICY_PATH') ?: null)->html();
 ```
+
+The old `Waynestate\Helmet\Ribbon\helmet_ribbon` name still works for one release and raises a deprecation.
 
 It renders only for `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`, `uat`, `preprod`, `pre-prod` and `sandbox`, in any case: the same list as Laravel (`Ribbon::ENVIRONMENTS`). Production, an empty name and any name it does not know get an empty string even when the second argument is `true`, so a typo in `APP_ENV` hides the ribbon rather than showing it on the live site. The third argument, a path to a CREED `policy.json`, adds a warning line when the running PHP version is in its security-only phase or end of life; a missing or broken file adds nothing and never breaks the page.
 
