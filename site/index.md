@@ -51,7 +51,7 @@ Each play is one protection and the attack it stops. Laminated, because coffee h
 4. ### Play 41: Session Lock
    SESSION
    Blocks Session fixation and cookie theft
-   HELMET turns on strict mode, cookie-only session IDs, `HttpOnly` and `SameSite=Lax` before the session starts. `Secure` follows the request; on Citadel, where TLS ends at the proxy, set `HELMET_SESSION_SECURE=always`. It won't run once a session is already active, because changing these mid-session does nothing.
+   HELMET turns on strict mode, cookie-only session IDs, `HttpOnly` and `SameSite=Lax` before the session starts. `Secure` follows the HTTPS decision, so behind Citadel's trusted proxy an HTTPS page gets it; pass `'secure' => 'always'` to force it. It won't run once a session is already active, because changing these mid-session does nothing.
    `session.use_strict_mode=1 cookie_httponly=1 cookie_samesite=Lax`
    Strapped before kickoff.
 5. ### Play 58: Proxy Trap

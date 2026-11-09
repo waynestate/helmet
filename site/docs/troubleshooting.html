@@ -104,11 +104,13 @@ deploy.</p>
 <p>Expected: the <code>Set-Cookie</code> name is <code>__Host-WSUSESSID</code> on HTTPS and <code>WSUSESSID</code> on HTTP. The values are pinned in
 <code>tests/Session/SessionHardeningTest.php</code>.</p>
 <h3 id="the-session-cookie-has-no-secure-flag-on-citadel">The session cookie has no <code>Secure</code> flag on Citadel<a class="docs-heading-link" aria-label="Link to this section" href="#the-session-cookie-has-no-secure-flag-on-citadel">#</a></h3>
-<p>Cause: by default (<code>auto</code>) the Secure flag follows the request. On Citadel, HA-Proxy ends TLS before the request
-reaches PHP, so the request looks plain even though the client connected over HTTPS.</p>
-<p>Fix: set <code>HELMET_SESSION_SECURE=always</code> so the cookie keeps its <code>Secure</code> flag. In Laravel the value lands in
-<code>helmet.session.secure</code>; in raw PHP pass <code>'session' =&gt; ['secure' =&gt; 'always']</code> to <code>helmet_boot()</code>. Plain HTTP
-development keeps <code>auto</code>. The cookie name still follows the request, so it never takes the <code>__Host-</code> prefix on a
+<p>Cause: by default (<code>auto</code>) the Secure flag follows HELMET's HTTPS decision. On Citadel, HA-Proxy ends TLS before the
+request reaches PHP, so without a trusted proxy (no <code>citadel</code> preset, no <code>trusted_proxies</code>) the request looks plain
+even though the client connected over HTTPS.</p>
+<p>Fix: boot with the <code>citadel</code> preset, so HELMET trusts the proxy's <code>X-Forwarded-Proto</code> and <code>auto</code> sets the flag. To
+force it regardless, pass <code>'session' =&gt; ['secure' =&gt; 'always']</code> to <code>helmet_boot()</code>; <code>helmet_boot()</code> reads no
+environment, so <code>HELMET_SESSION_SECURE</code> alone does not do it. In Laravel the adapter leaves the session to the
+framework: set <code>secure</code> in <code>config/session.php</code> (<code>SESSION_SECURE_COOKIE=true</code>). Plain HTTP development keeps <code>auto</code>. The cookie name still follows the request, so it never takes the <code>__Host-</code> prefix on a
 plain-HTTP request.</p>
 <p>Check:</p>
 <pre tabindex="0"><code>curl -sI http://localhost/up

@@ -129,7 +129,7 @@
                     "none"
                 ],
                 "HELMET_RIBBON": [
-                    "false switches the maintenance ribbon off everywhere.",
+                    "false switches the environment ribbon off everywhere.",
                     "true"
                 ],
                 "HELMET_SCOPE": [

@@ -7,7 +7,28 @@ description: How to move an app from one HELMET release to the next.
 
 This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 1.0.0.
+release is 1.1.0.
+
+## 1.1.0 (2026-11-09)
+
+A minor release, backward compatible: `composer update waynestate/helmet` within `^1.0`.
+
+### Deprecated
+
+- `Waynestate\Helmet\Ribbon\helmet_ribbon()` moves to `Waynestate\Helmet\helmet_ribbon()`, next to `helmet_boot()`, with the same arguments. The old name still works for one release and raises `E_USER_DEPRECATED`. Change the import to `use function Waynestate\Helmet\helmet_ribbon;`.
+
+### Changed behavior
+
+- The raw PHP ribbon no longer renders in production or for an environment name HELMET does not know; it follows the Laravel adapter's list (`Ribbon::ENVIRONMENTS`), matched in any case. A test site whose `APP_ENV` was a name outside that list loses its ribbon; use one of the listed names.
+- `helmet_boot()` logs `helmet.forwarded_proto_rejected` when a peer that is not a trusted proxy sends `X-Forwarded-Proto`. Nothing to do, but expect the warning in the logs of an app that is reached directly as well as through its proxy.
+
+### How to verify
+
+Run the app's tests with deprecations shown, and check that no `Waynestate\Helmet\Ribbon\helmet_ribbon() is deprecated` notice is left.
+
+## 1.0.1 (2026-11-08)
+
+A patch release: no public function, option or header changes. Nothing to do.
 
 ## 1.0.0 (2026-11-08)
 

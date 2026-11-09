@@ -106,7 +106,7 @@ Route::helmetMetrics('/metrics', 'throttle:120,1'); // your own throttle
 Route::cspReport();                                 // POST /csp-report, counts violations by directive
 ```
 
-With `HELMET_METRICS_STORAGE` set, the provider adds a terminable middleware to the front of the global stack, so it
+With `HELMET_METRICS_ENABLED` true and `HELMET_METRICS_STORAGE` set, the provider adds a terminable middleware to the front of the global stack, so it
 times the whole request (including your other middleware) and records after the response has been sent. Without it the
 middleware is not registered at all. The controller reads `helmet.metrics` from the published config and resolves the
 client IP through the same trusted-proxy list the headers use.

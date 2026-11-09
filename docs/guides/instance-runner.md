@@ -5,7 +5,7 @@ description: git.wayne.edu now has an instance runner, and HELMET's CI runs on i
 
 # Run on a git.wayne.edu instance runner
 
-This page explains where this repo's CI runs today and why every product in the stack asks for a git.wayne.edu instance runner. Until the runner lands, keep your pipeline on the test GitLab instance.
+This page explains where this repo's CI runs today and why every product in the stack asks for a git.wayne.edu instance runner.
 
 ## The goal
 

@@ -107,6 +107,10 @@
 <td><code>helmet_metrics_track()</code></td>
 <td><code>function helmet_metrics_track(array $config): RequestTimer</code></td>
 </tr>
+<tr>
+<td><code>helmet_ribbon()</code></td>
+<td><code>function helmet_ribbon(string $environment, bool $enabled = true, ?string $policyPath = null): \Waynestate\Helmet\Ribbon\Ribbon</code></td>
+</tr>
 </tbody>
 </table></div>
 <p>What each one returns, from the docblocks:</p>
@@ -122,7 +126,7 @@
 <li><code>helmet_metrics_requests()</code> returns the <code>RequestMetrics</code> recorder when <code>enabled</code> is true and <code>storage</code> names a shared store, else null. A store that cannot be used here is logged through <code>logger</code> and treated as off.</li>
 <li><code>helmet_metrics_track()</code> starts a <code>RequestTimer</code> for this request and records it once at shutdown (so a page that ends with <code>exit</code> is counted). It is inert when request metrics are off.</li>
 </ul>
-<p>File <code>src/Ribbon/functions.php</code>, namespace <code>Waynestate\Helmet\Ribbon</code>:</p>
+<p>File <code>src/Ribbon/functions.php</code>, namespace <code>Waynestate\Helmet\Ribbon</code>, deprecated since 1.1.0 (it raises <code>E_USER_DEPRECATED</code>; call <code>Waynestate\Helmet\helmet_ribbon()</code> above, which takes the same arguments):</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>

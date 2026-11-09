@@ -90,9 +90,9 @@ Expected: the `Set-Cookie` name is `__Host-WSUSESSID` on HTTPS and `WSUSESSID` o
 
 ### The session cookie has no `Secure` flag on Citadel[#](https://helmet.apps.wayne.edu/docs/troubleshooting.html#the-session-cookie-has-no-secure-flag-on-citadel)
 
-Cause: by default (`auto`) the Secure flag follows the request. On Citadel, HA-Proxy ends TLS before the request reaches PHP, so the request looks plain even though the client connected over HTTPS.
+Cause: by default (`auto`) the Secure flag follows HELMET's HTTPS decision. On Citadel, HA-Proxy ends TLS before the request reaches PHP, so without a trusted proxy (no `citadel` preset, no `trusted_proxies`) the request looks plain even though the client connected over HTTPS.
 
-Fix: set `HELMET_SESSION_SECURE=always` so the cookie keeps its `Secure` flag. In Laravel the value lands in `helmet.session.secure`; in raw PHP pass `'session' => ['secure' => 'always']` to `helmet_boot()`. Plain HTTP development keeps `auto`. The cookie name still follows the request, so it never takes the `__Host-` prefix on a plain-HTTP request.
+Fix: boot with the `citadel` preset, so HELMET trusts the proxy's `X-Forwarded-Proto` and `auto` sets the flag. To force it regardless, pass `'session' => ['secure' => 'always']` to `helmet_boot()`; `helmet_boot()` reads no environment, so `HELMET_SESSION_SECURE` alone does not do it. In Laravel the adapter leaves the session to the framework: set `secure` in `config/session.php` (`SESSION_SECURE_COOKIE=true`). Plain HTTP development keeps `auto`. The cookie name still follows the request, so it never takes the `__Host-` prefix on a plain-HTTP request.
 
 Check:
 

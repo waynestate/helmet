@@ -37,12 +37,14 @@ docker run --rm -v "${PWD}:/app" -w /app php:8.3-cli vendor/bin/phpunit
 docker run --rm -v "${PWD}:/app" -w /app php:8.5-cli vendor/bin/phpunit
 ```
 
-`composer ci` runs `composer validate --strict`, the tests, Pint, PHPStan and `composer audit`. On Windows, if tests
+`composer ci` runs `composer validate --strict`, the tests, Pint, PHPStan, the agent-ready check (`site:agent-ready-check`),
+the docs site check (`docs:check`) and `composer audit`. On Windows, if tests
 fail oddly after a Docker install, delete `vendor/` and install again.
 
 ## CI
 
-- **GitLab:** Preflight's `php-test` (PHP 8.3, 8.4, 8.5) and `composer-audit` components, plus a `composer-ci` job.
+- **GitLab:** Preflight's `php-test` (PHP 8.3, 8.4, 8.5), `composer-audit`, `proctor`, `secret-detection` and `a11y`
+  components (all pinned to Preflight 0.4.0), plus HELMET's own `wayneui-copies` and `composer-ci` jobs.
 - **GitHub:** `.github/workflows/ci.yml` calls Preflight's reusable workflow with `composer ci`.
 - Green means `composer ci` passed on all three PHP versions on both.
 
@@ -57,8 +59,8 @@ fail oddly after a Docker install, delete `vendor/` and install again.
 
 ## Releasing
 
-1. Move the lines under `## Unreleased` in `CHANGELOG.md` to a new `## X.Y.Z (YYYY-MM-DD)` heading. (0.1.0 predates
-   the heading convention, so it has none.)
+1. Move the lines under `## Unreleased` in `CHANGELOG.md` to a new `## X.Y.Z (YYYY-MM-DD)` heading, and leave an
+   empty `## Unreleased` above it.
 2. `composer ci` green locally, then on both pipelines for that commit.
 3. Run a secrets scan of the history and check that nothing internal (server names, people, IDs) is in the tree.
 4. Tag `X.Y.Z` (no `v`) on git.wayne.edu. The mirror carries the tag to GitHub, and Packagist picks it up from there.

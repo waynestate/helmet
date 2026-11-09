@@ -326,7 +326,7 @@
 <rect class="app" x="108" y="102" width="44" height="22" rx="5"/><text class="app__label" x="130" y="117.5">APP</text>
 </svg></div>
     <p class="play-card__blocks"><span class="stamp">Blocks</span> Session fixation and cookie theft</p>
-    <p class="play-card__body">HELMET turns on strict mode, cookie-only session IDs, <code>HttpOnly</code> and <code>SameSite=Lax</code> before the session starts. <code>Secure</code> follows the request; on Citadel, where TLS ends at the proxy, set <code>HELMET_SESSION_SECURE=always</code>. It won't run once a session is already active, because changing these mid-session does nothing.</p>
+    <p class="play-card__body">HELMET turns on strict mode, cookie-only session IDs, <code>HttpOnly</code> and <code>SameSite=Lax</code> before the session starts. <code>Secure</code> follows the HTTPS decision, so behind Citadel's trusted proxy an HTTPS page gets it; pass <code>'secure' =&gt; 'always'</code> to force it. It won't run once a session is already active, because changing these mid-session does nothing.</p>
     <p class="play-card__code"><code>session.use_strict_mode=1  cookie_httponly=1  cookie_samesite=Lax</code></p>
     <p class="play-card__foot"><span class="play-card__note">Strapped before kickoff.</span>
       <button class="run-btn" type="button" data-run aria-label="Run play 41, Session Lock, again">Run it</button></p>

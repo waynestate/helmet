@@ -46,10 +46,11 @@ $helmet = helmet_boot([
 
 It reads `$_SERVER` directly rather than building a PSR-7 request, so it works in plain PHP without a server-request factory. In order, it:
 
-- decides whether the request is HTTPS from the trusted-proxy list,
+- sets up a JSON logger (when `log` is set),
+- decides whether the request is HTTPS from the trusted-proxy list, and logs `helmet.forwarded_proto_rejected` when an untrusted peer sent `X-Forwarded-Proto`,
 - hardens the session settings (throws if a session is already active),
 - removes the `X-Powered-By` header,
-- sets up a JSON logger (if configured) and warns once through it when the trusted-proxy list holds a broad entry,
+- warns once through the logger when the trusted-proxy list holds a broad entry,
 - registers the generic error page handler (when `error_handler` is enabled),
 - answers the health check path with `ok` and stops,
 - validates the readiness config (when `readiness` is set), so a typo fails at boot rather than on the first probe,
@@ -74,17 +75,19 @@ When you set `log`, the channel defaults to `helmet`, the stream to `php://stder
 
 ## Security events[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#security-events)
 
-Three warnings carry HELMET's security events, and a logger that throws never changes the answer: the `403` still goes out, the resolved client IP is still the peer, and the boot still finishes.
+Five warnings carry HELMET's security events, and a logger that throws never changes the answer: the `403` still goes out, the resolved client IP is still the peer, the HTTPS decision stands, and the boot still finishes.
 
 | Message | When | Context keys |
 | --- | --- | --- |
 | `helmet.request_refused` | the request-forgery guard answers `403` | `event` (`request_refused`), `method` (upper case), `path` (no query string), `sec_fetch_site` (`same-origin`, `same-site`, `cross-site`, `none`, `other`, or null when the header is absent), `origin_present` (bool) |
 | `helmet.forwarded_for_rejected` | `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry | `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`), `peer` (the trusted peer address) |
+| `helmet.forwarded_proto_rejected` | `helmet_boot()` sees `X-Forwarded-Proto` from a peer that is not a trusted proxy, and ignores it | `event` (`forwarded_proto_rejected`), `reason` (`untrusted_peer`), `peer` (the untrusted peer address) |
+| `helmet.broad_trusted_proxy` | the app boots with a broad entry in its trusted-proxy list (an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`) | `event` (`broad_trusted_proxy`), `entries` (the broad entries, as configured) |
 | `helmet.debug_enabled_in_production` | the Laravel adapter boots with `app.debug` true in the production environment | `event` (`debug_enabled_in_production`) |
 
 Never logged: the Origin value, cookies, Authorization, the `X-Forwarded-For` header, or the bad entry. The helmet takes the hit and reports it, without quoting the attacker.
 
-The logger reaches each path this way: `helmet_boot()` hands its own logger to the guard; PSR-15 users pass a `LoggerInterface` as the last constructor argument `$logger` of `RequestForgeryGuard`; `helmet_metrics()` passes its configured logger to `ClientIp::resolve()`.
+The logger reaches each path this way: `helmet_boot()` hands its own logger to the HTTPS check, the broad-proxy warning and the guard; PSR-15 users pass a `LoggerInterface` as the last constructor argument `$logger` of `RequestForgeryGuard`; `helmet_metrics()` passes its configured logger to `ClientIp::resolve()`.
 
 ## Trusted proxies[#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#trusted-proxies)
 

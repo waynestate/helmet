@@ -119,6 +119,7 @@
 <li>Metrics: <code>helmet_php_eol_timestamp_seconds</code> (the end of security support for the running PHP, from CREED's policy; days left is <code>(helmet_php_eol_timestamp_seconds - time()) / 86400</code>), <code>wsu_stack_info{package,version}</code> for every installed <code>waynestate/*</code> package (ADR-0011), and <code>helmet_metrics_storage_up</code>, so a store outage shows on the dashboard while the info metrics keep answering. Laravel's <code>/metrics</code> reads <code>helmet.policy_path</code> when no <code>PolicySource</code> is bound.</li>
 <li>Docs: the Metrics guide covers what each metric means, how labels stay bounded, picking a store, turning metrics on for one site (Laravel and raw PHP), the scrape config and PromQL; troubleshooting covers a 403 on Apache, empty request panels and an <code>unknown</code> support status.</li>
 <li>Grafana dashboard (<code>docs/grafana/helmet.json</code>): <code>job</code> and <code>instance</code> variables on every query, and new panels for targets down, days to PHP end of support, stack packages, requests by route group and by status class, latency p50 and p95, p95 by route group, server errors, metrics storage and CSP violations by directive. Checked by importing it into Grafana 12 through the API against a local Prometheus scraping three HELMET apps, one per store. Scrape health is a state timeline (up or down per target) and the version panels are bar charts.</li>
+<li>Added: an accessibility gate for the site (axe-core in Playwright, Docker). <code>scripts/a11y.sh</code> and <code>scripts/a11y.ps1</code> check <code>site/index.html</code> and every page under <code>site/docs/</code> in light and dark at 360 px and 1280 px, and fail on any WCAG 2.2 AA violation; <code>tools/a11y/check.mjs</code> is the runner.</li>
 </ul>
 <h3 id="fixed-1">Fixed<a class="docs-heading-link" aria-label="Link to this section" href="#fixed-1">#</a></h3>
 <ul>
@@ -127,10 +128,12 @@
 <li>Metrics: <code>helmet_info</code>'s <code>helmet_version</code> is the tagged version (<code>0.3.1</code>), the same form <code>wsu_stack_info</code> uses, not Composer's normalized <code>0.3.1.0</code>.</li>
 <li>Metrics: <code>helmet_metrics()</code> read the scraper's token only from <code>$_SERVER['HTTP_AUTHORIZATION']</code>, which Apache with mod_php (Citadel's images) never sets, so a correct token got 403 there. It now also reads <code>REDIRECT_HTTP_AUTHORIZATION</code> and <code>getallheaders()</code> (<code>BearerToken::fromServer()</code>). Found by scraping HELMET's own front page in a php:8.5 Apache container.</li>
 <li>Grafana dashboard: the data source was declared under <code>inputs</code>, which Grafana's import ignores, so every panel pointed at an unresolved <code>${DS_PROMETHEUS}</code>; it is now <code>__inputs</code> (with <code>__requires</code>). &quot;Scrape health&quot; joined <code>up</code> to <code>helmet_info</code>, which drops exactly the targets that are down; it now graphs <code>up</code> directly.</li>
+<li>Fixed: two violations the new gate found. A code block wider than its box now joins the tab order so a keyboard user can scroll it (axe <code>scrollable-region-focusable</code>, WCAG 2.1.1), and table-of-contents sub-items get a full-width link target of at least 24 px (axe <code>target-size</code>, WCAG 2.5.8). Both come from syncing the Squire-owned docs kit (<code>bin/docs-site.php</code>, <code>site/assets/docs.css</code>, <code>site/assets/docs.js</code>) to the current stack version, and the docs site and agent-ready files are rebuilt from it.</li>
 </ul>
 <h3 id="changed-2">Changed<a class="docs-heading-link" aria-label="Link to this section" href="#changed-2">#</a></h3>
 <ul>
 <li>The canonical repository is git.wayne.edu (ADR-0021); docs, links and package metadata no longer point at the archived nougat copy.</li>
+<li>Changed: the docs site renders fenced blocks tagged <code>tab=</code> as a labeled tablist (the previous builder ignored the tag and stacked the blocks), and the changelog mirror keeps its top-level heading, per the current shared builder.</li>
 </ul>
 <h3 id="security">Security<a class="docs-heading-link" aria-label="Link to this section" href="#security">#</a></h3>
 <ul>
@@ -186,15 +189,6 @@
 </li>
 <li>
 <p>Added: <code>GenericErrorResponse::clientError(int $status)</code> returns a fixed 4xx page (status, headers, body) for client faults, with its own title and sentence for 400, 401, 403, 404, 405, 410 and 429 and the Bad request text for any other 4xx; a status outside the 400s throws <code>InvalidArgumentException</code>, and nothing from the request or an exception reaches the body. An app calls it from its router; nothing wires it into <code>helmet_boot()</code> automatically.</p>
-</li>
-<li>
-<p>Added: an accessibility gate for the site (axe-core in Playwright, Docker). <code>scripts/a11y.sh</code> and <code>scripts/a11y.ps1</code> check <code>site/index.html</code> and every page under <code>site/docs/</code> in light and dark at 360 px and 1280 px, and fail on any WCAG 2.2 AA violation; <code>tools/a11y/check.mjs</code> is the runner.</p>
-</li>
-<li>
-<p>Fixed: two violations the new gate found. A code block wider than its box now joins the tab order so a keyboard user can scroll it (axe <code>scrollable-region-focusable</code>, WCAG 2.1.1), and table-of-contents sub-items get a full-width link target of at least 24 px (axe <code>target-size</code>, WCAG 2.5.8). Both come from syncing the Squire-owned docs kit (<code>bin/docs-site.php</code>, <code>site/assets/docs.css</code>, <code>site/assets/docs.js</code>) to the current stack version, and the docs site and agent-ready files are rebuilt from it.</p>
-</li>
-<li>
-<p>Changed: the docs site renders fenced blocks tagged <code>tab=</code> as a labeled tablist (the previous builder ignored the tag and stacked the blocks), and the changelog mirror keeps its top-level heading, per the current shared builder.</p>
 </li>
 </ul>
 <h2 id="0-3-0-2026-11-03">0.3.0 (2026-11-03)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-0-2026-11-03">#</a></h2>

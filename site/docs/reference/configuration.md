@@ -39,8 +39,8 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `no_store` | The `Cache-Control: no-store` setting. Off by default. |
 | `no_store.enabled` | Whether the `no-store` header is sent on matching responses. Set with `HELMET_NO_STORE_ENABLED`. |
 | `no_store.paths` | Path prefixes that carry `no-store`; empty means every response. Filled from `HELMET_NO_STORE_PATHS` (comma-separated). |
-| `session` | The session cookie settings that `helmet_boot()` applies when a raw PHP app boots through it; the Laravel adapter leaves the framework's session configuration alone. |
-| `session.secure` | The session cookie Secure flag: `auto` (the default) follows the request's HTTPS detection, `always` forces it for apps whose TLS terminates in front of the app. Set with `HELMET_SESSION_SECURE`. |
+| `session` | The session cookie settings, in the shape of `helmet_boot()`'s `session` option. Nothing in the package reads this key: the Laravel adapter leaves the framework's session configuration alone, and `helmet_boot()` takes only what it is passed, so a Laravel app that boots through it hands it `config('helmet.session')`. |
+| `session.secure` | The session cookie Secure flag: `auto` (the default) follows the request's HTTPS detection, `always` forces it for apps whose TLS terminates in front of the app. Set with `HELMET_SESSION_SECURE`; an invalid value throws when the config loads. |
 | `ribbon` | Whether the environment ribbon is injected into HTML responses in non-production environments. Set with `HELMET_RIBBON`. |
 | `policy_path` | The path to a CREED `policy.json` the ribbon reads for version warnings; null means no warning and no file read. Set with `HELMET_POLICY_PATH`. |
 | `dev_origin` | The Vite dev server origin, used in `local` only while the dev server is running; it overrides the hot file. Set with `HELMET_DEV_ORIGIN`. |
@@ -104,7 +104,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 | HELMET_POLICY_PATH | Path to a CREED policy.json; the ribbon then shows a version warning for the running PHP (and, in Laravel, framework) version, and /metrics reports the PHP support status and end date. A missing or invalid file never breaks the page. | none | config/helmet.php |
 | HELMET_PRESET | Platform preset name (citadel or docker) that supplies the trusted proxies; read from the environment, else from Playbook. HELMET_PROXIES wins when both are set; an unknown name throws. | none | config/helmet.php |
 | HELMET_PROXIES | Comma-separated IPs or CIDR ranges allowed to set X-Forwarded-Proto; wins over HELMET_PRESET and is copied to trustedproxy.proxies when the app has not set it. An explicitly empty value trusts nobody. | none | config/helmet.php |
-| HELMET_RIBBON | false switches the maintenance ribbon off everywhere. | true | config/helmet.php |
+| HELMET_RIBBON | false switches the environment ribbon off everywhere. | true | config/helmet.php |
 | HELMET_SCOPE | global puts SecurityHeaders in the kernel's global middleware; web keeps it in the web group only. InjectRibbon always stays in web. | global | config/helmet.php |
 | HELMET_SESSION_SECURE | auto sets the Secure flag only when the request is HTTPS; always forces it for apps whose TLS terminates in a proxy. Anything else throws. | auto | config/helmet.php |
 | HELMET_WARN_BROAD_PROXIES | true makes HELMET log one helmet.broad_trusted_proxy warning at boot when the trusted-proxy list holds a broad entry (an IPv4 range shorter than /16 or an IPv6 range shorter than /48). | true | config/helmet.php |

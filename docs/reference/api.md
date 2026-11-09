@@ -27,6 +27,7 @@ File `src/functions.php`, namespace `Waynestate\Helmet`:
 | `helmet_metrics_env()` | `function helmet_metrics_env(): array` |
 | `helmet_metrics_requests()` | `function helmet_metrics_requests(array $config): ?RequestMetrics` |
 | `helmet_metrics_track()` | `function helmet_metrics_track(array $config): RequestTimer` |
+| `helmet_ribbon()` | `function helmet_ribbon(string $environment, bool $enabled = true, ?string $policyPath = null): \Waynestate\Helmet\Ribbon\Ribbon` |
 
 What each one returns, from the docblocks:
 
@@ -41,7 +42,7 @@ What each one returns, from the docblocks:
 - `helmet_metrics_requests()` returns the `RequestMetrics` recorder when `enabled` is true and `storage` names a shared store, else null. A store that cannot be used here is logged through `logger` and treated as off.
 - `helmet_metrics_track()` starts a `RequestTimer` for this request and records it once at shutdown (so a page that ends with `exit` is counted). It is inert when request metrics are off.
 
-File `src/Ribbon/functions.php`, namespace `Waynestate\Helmet\Ribbon`:
+File `src/Ribbon/functions.php`, namespace `Waynestate\Helmet\Ribbon`, deprecated since 1.1.0 (it raises `E_USER_DEPRECATED`; call `Waynestate\Helmet\helmet_ribbon()` above, which takes the same arguments):
 
 | Function | Signature |
 | --- | --- |

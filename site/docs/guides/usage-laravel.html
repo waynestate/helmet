@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Laravel | HELMET docs</title>
-<meta name="description" content="The Laravel adapter is a service provider, two always-on middlewares, an optional request-forgery guard, and a config file.">
+<meta name="description" content="The Laravel adapter is a service provider, three always-on middlewares, an optional request-forgery guard, and a config file.">
 <meta name="docs-version" content="1.1.0">
 <link rel="stylesheet" href="../../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../../assets/docs.css">
@@ -40,13 +40,14 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h1>
-<p>This page walks the Laravel adapter from <code>composer require</code> to a fully wired app: install the adapter, publish the config, trust the proxy, then turn the knobs. The adapter is a service provider, two always-on middlewares, an optional request-forgery guard, and a config file. It only wires and configures: every rule (what the headers say, how a nonce is made, how a CSP is merged, and how a request-forgery check is applied) lives in the core, so Laravel and raw PHP cannot drift apart. The suite runs against Laravel 13 with Orchestra Testbench. Helmet is the band, and the name fits: put it on before you ship.</p>
+<p>This page walks the Laravel adapter from <code>composer require</code> to a fully wired app: install the adapter, publish the config, trust the proxy, then turn the knobs. The adapter is a service provider, three always-on middlewares, an optional request-forgery guard, and a config file. It only wires and configures: every rule (what the headers say, how a nonce is made, how a CSP is merged, and how a request-forgery check is applied) lives in the core, so Laravel and raw PHP cannot drift apart. The suite runs against Laravel 13 with Orchestra Testbench. Helmet is the band, and the name fits: put it on before you ship.</p>
 <h2 id="install-the-adapter">Install the adapter<a class="docs-heading-link" aria-label="Link to this section" href="#install-the-adapter">#</a></h2>
 <p>Strap It On:</p>
 <pre tabindex="0"><code class="language-bash">composer require waynestate/helmet
 </code></pre>
 <p>Package discovery registers <code>Waynestate\Helmet\Laravel\HelmetServiceProvider</code>, so there is nothing to add to <code>bootstrap/providers.php</code>. The provider merges the <code>helmet</code> config and joins the HTTP kernel's middleware:</p>
 <ul>
+<li><code>ForwardedProtoNormalizer</code> is prepended to the global stack, so it runs before Laravel's <code>TrustProxies</code> and your code. When a trusted proxy sends a comma-separated <code>X-Forwarded-Proto</code>, it keeps only the last value, so Laravel's <code>$request-&gt;isSecure()</code> reads the same answer HELMET does.</li>
 <li><code>SecurityHeaders</code> sends the headers in <a href="headers.html">The headers</a> and strips <code>X-Powered-By</code>. By default it is global, so 404s and JSON routes carry them too.</li>
 <li><code>InjectRibbon</code> adds the environment ribbon (<a href="#the-ribbon">The ribbon</a>). It always stays in the <code>web</code> group, because it edits HTML.</li>
 <li><code>RequestForgeryGuard</code> is opt-in. When <code>helmet.csrf.enabled</code> is true, it joins the <code>web</code> group after <code>InjectRibbon</code> and applies the check in <a href="csrf.html">The request-forgery guard</a>.</li>
@@ -93,6 +94,12 @@
 <td>Comma-separated IPs or CIDR ranges allowed to set <code>X-Forwarded-Proto</code>. Wins over <code>HELMET_PRESET</code>. Also copied to <code>trustedproxy.proxies</code> when the app has not set it. An explicitly empty value (<code>HELMET_PROXIES=</code>) trusts nobody, even when <code>HELMET_PRESET</code> is set; only an unset variable falls back to the preset.</td>
 </tr>
 <tr>
+<td><code>HELMET_WARN_BROAD_PROXIES</code></td>
+<td><code>helmet.warn_broad_proxies</code></td>
+<td><code>true</code></td>
+<td>Set <code>false</code> to silence the <code>helmet.broad_trusted_proxy</code> boot warning when the trusted-proxy list holds a broad entry (an IPv4 range shorter than <code>/16</code> or an IPv6 range shorter than <code>/48</code>).</td>
+</tr>
+<tr>
 <td><code>HELMET_CSP</code></td>
 <td><code>helmet.csp</code></td>
 <td>the core default policy</td>
@@ -127,6 +134,12 @@
 <td><code>helmet.csp_trusted_types.policies</code></td>
 <td><code>[&quot;default&quot;]</code></td>
 <td>Comma-separated Trusted Types policy names.</td>
+</tr>
+<tr>
+<td><code>HELMET_CSP_STYLE_SRC_ATTR</code></td>
+<td><code>helmet.csp_style_src_attr</code></td>
+<td><code>inline</code></td>
+<td><code>inline</code> keeps <code>style-src-attr 'unsafe-inline'</code> for WayneUI's recipes, <code>report</code> adds a report-only probe with <code>style-src-attr 'none'</code>, <code>none</code> blocks inline style attributes. See <a href="../adr/0001-style-src-attr.html">ADR-0001</a>.</td>
 </tr>
 <tr>
 <td><code>HELMET_NO_STORE_ENABLED</code></td>
@@ -360,7 +373,7 @@
 </tr>
 </tbody>
 </table></div>
-<p>For session hardening in Laravel, use the framework's own session config: set <code>secure</code>, <code>http_only</code>, and <code>same_site</code> in <code>config/session.php</code> rather than expecting the adapter to apply raw-PHP <code>SessionHardening</code>. For structured logs, use Laravel's log channels, for example the <code>stderr</code> channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events (<a rel="noopener" href="https://github.com/waynestate/helmet#security-events">Security events</a>) are written through the Log facade with the same message and context, and the third, <code>helmet.debug_enabled_in_production</code>, is written by the Laravel adapter at boot. The check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: <code>app.debug</code> must be the boolean <code>true</code>, and the environment must be exactly <code>production</code>. Opt out with <code>helmet.warn_debug</code> (env <code>HELMET_WARN_DEBUG</code>); a logging failure is swallowed and never breaks the boot.</p>
+<p>For session hardening in Laravel, use the framework's own session config: set <code>secure</code>, <code>http_only</code>, and <code>same_site</code> in <code>config/session.php</code> rather than expecting the adapter to apply raw-PHP <code>SessionHardening</code>. For structured logs, use Laravel's log channels, for example the <code>stderr</code> channel, rather than expecting the adapter to configure a raw-PHP logger. Of the security events (<a rel="noopener" href="https://github.com/waynestate/helmet#security-events">Security events</a>), <code>helmet.request_refused</code> is written through the Log facade with the same message and context, and <code>helmet.broad_trusted_proxy</code> and <code>helmet.debug_enabled_in_production</code> are written by the Laravel adapter at boot; <code>helmet.forwarded_for_rejected</code> and <code>helmet.forwarded_proto_rejected</code> come from the raw PHP path only. The debug check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: <code>app.debug</code> must be the boolean <code>true</code>, and the environment must be exactly <code>production</code>. Opt out with <code>helmet.warn_debug</code> (env <code>HELMET_WARN_DEBUG</code>); a logging failure is swallowed and never breaks the boot.</p>
 <h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
 <ul>
 <li><a href="headers.html">The headers</a></li>

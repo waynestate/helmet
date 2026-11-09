@@ -8,7 +8,7 @@ generator: Squire agent-ready
 
 # Run on a git.wayne.edu instance runner[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#run-on-a-git-wayne-edu-instance-runner)
 
-This page explains where this repo's CI runs today and why every product in the stack asks for a git.wayne.edu instance runner. Until the runner lands, keep your pipeline on the test GitLab instance.
+This page explains where this repo's CI runs today and why every product in the stack asks for a git.wayne.edu instance runner.
 
 ## The goal[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#the-goal)
 

@@ -21,7 +21,7 @@ Checks: `composer ci` (the same command runs on GitLab and GitHub).
 Two mirrors, one command: the only thing in this repo that plays both sides is the CI.
 Front page: [`site/index.html`](site/index.html), the playbook, as static files ([`site/README.md`](site/README.md)).
 On Citadel it is served by the raw-PHP deploy layer in [`deploy/`](deploy/): a Squire kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
-Documentation: [helmet.apps.wayne.edu/docs/](https://helmet.apps.wayne.edu/docs/) carries the overview and the environment variables the package reads, with more pages on the way.
+Documentation: [helmet.apps.wayne.edu/docs/](https://helmet.apps.wayne.edu/docs/) carries the overview, the install and quick start, a guide per topic (headers, CSP, HSTS, session, proxies, the request-forgery guard, readiness, metrics, platforms), the API and environment variable reference, troubleshooting and upgrading.
 
 HELMET is the Wayne State app stack's baseline runtime. One small
 framework-free PHP core, `Waynestate\Helmet`, does the five things every app on
@@ -32,7 +32,7 @@ answers the load balancer's `/up` ping, and writes structured logs.
 ## Where the code lives
 
 The canonical repository is [git.wayne.edu/enterprise-apps/helmet](https://git.wayne.edu/enterprise-apps/helmet) (clone over SSH as `git@git.wayne.edu:enterprise-apps/helmet.git`, or HTTPS as `https://git.wayne.edu/enterprise-apps/helmet.git`). Open issues and merge requests there; tags are made there, by the maintainer, with an approver.
-GitHub ([waynestate/helmet](https://github.com/waynestate/helmet)) is a read-only push mirror of it. Nobody pushes to the mirror; Packagist and npm read from it.
+GitHub ([waynestate/helmet](https://github.com/waynestate/helmet)) is a read-only push mirror of it. Nobody pushes to the mirror; Packagist reads from it.
 git.wayne.edu is the head this helmet fits; the mirror is the mannequin.
 
 It is the floor, not the ceiling. An app on raw PHP calls `helmet_boot()` once
@@ -46,7 +46,7 @@ rules live in one place, and every consumer path agrees.
 composer require waynestate/helmet
 ```
 
-Composer picks the latest release, 1.0.0, and writes `^1.0` into `composer.json`. From 1.0 HELMET
+Composer picks the latest release, 1.1.0, and writes `^1.0` into `composer.json`. From 1.0 HELMET
 follows semantic versioning; [Upgrading](docs/upgrading.md) has what changed since 0.4, starting with the one that
 bites: an unknown quoted CSP source now throws at boot.
 
@@ -235,14 +235,15 @@ Each record is one JSON line:
 
 #### Security events
 
-Four warnings carry HELMET's security events, and a logger that throws never
+Five warnings carry HELMET's security events, and a logger that throws never
 changes the answer: the `403` still goes out, the resolved client IP is still
-the peer, and the boot still finishes.
+the peer, the HTTPS decision stands, and the boot still finishes.
 
 | Message | When | Context keys |
 | --- | --- | --- |
 | `helmet.request_refused` | the request-forgery guard answers `403` | `event` (`request_refused`), `method` (upper case), `path` (no query string), `sec_fetch_site` (`same-origin`, `same-site`, `cross-site`, `none`, `other`, or null when the header is absent), `origin_present` (bool) |
-| `helmet.forwarded_for_rejected` | `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry | `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`), `peer` (the trusted peer address) |
+| `helmet.forwarded_for_rejected` | `ClientIp::resolve()` fails closed on an unparseable `X-Forwarded-For` entry (logged when a logger is passed, as `helmet_metrics()` does with its `logger` option) | `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`), `peer` (the trusted peer address) |
+| `helmet.forwarded_proto_rejected` | `helmet_boot()` sees `X-Forwarded-Proto` from a peer that is not a trusted proxy, and ignores it (raw PHP only) | `event` (`forwarded_proto_rejected`), `reason` (`untrusted_peer`), `peer` (the untrusted peer address) |
 | `helmet.debug_enabled_in_production` | the Laravel adapter boots with `app.debug` true in the production environment | `event` (`debug_enabled_in_production`) |
 | `helmet.broad_trusted_proxy` | the app boots with a broad entry in its trusted-proxy list (an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`) | `event` (`broad_trusted_proxy`), `entries` (the broad entries, as configured) |
 
@@ -470,7 +471,7 @@ runs, so they are already on the wire by the time an exception can happen.
 
 ### Laravel
 
-The Laravel adapter is a service provider, two always-on middlewares, an
+The Laravel adapter is a service provider, three always-on middlewares, an
 optional request-forgery guard, and a config file.
 It only wires and configures. Every rule (what the headers say, how a nonce is
 made, how a CSP is merged, and how a request-forgery check is applied) lives in
@@ -489,6 +490,10 @@ Package discovery registers `Waynestate\Helmet\Laravel\HelmetServiceProvider`,
 so there is nothing to add to `bootstrap/providers.php`. The provider merges
 the `helmet` config and joins the HTTP kernel's middleware:
 
+- `ForwardedProtoNormalizer` is prepended to the global stack, so it runs
+  before Laravel's `TrustProxies` and your code. When a trusted
+  proxy sends a comma-separated `X-Forwarded-Proto`, it keeps only the last
+  value, so Laravel's `$request->isSecure()` reads the same answer HELMET does.
 - `SecurityHeaders` sends the headers in [The headers](#the-headers) and strips
   `X-Powered-By`. By default it is global, so 404s and JSON routes carry them
   too.
@@ -572,6 +577,7 @@ The `/up` health route is Laravel's own: keep `health: '/up'` in
 | `HELMET_HSTS_PRELOAD` | `helmet.hsts_preload` | `false` | Set `true` to append the `preload` directive to HSTS. Requires `max-age` of at least one year and `includeSubDomains`. Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed. |
 | `HELMET_CSP_TRUSTED_TYPES_ENABLED` | `helmet.csp_trusted_types.enabled` | `false` | Set `true` to append Trusted Types directives to the report-only CSP header. |
 | `HELMET_CSP_TRUSTED_TYPES_POLICIES` | `helmet.csp_trusted_types.policies` | `["default"]` | Comma-separated Trusted Types policy names. |
+| `HELMET_CSP_STYLE_SRC_ATTR` | `helmet.csp_style_src_attr` | `inline` | `inline` keeps `style-src-attr 'unsafe-inline'` for WayneUI's recipes, `report` adds a report-only probe with `style-src-attr 'none'`, `none` blocks inline style attributes. See [ADR-0001](docs/adr/0001-style-src-attr.md). |
 | `HELMET_NO_STORE_ENABLED` | `helmet.no_store.enabled` | `false` | Set `true` to send `Cache-Control: no-store` on matching responses. |
 | `HELMET_NO_STORE_PATHS` | `helmet.no_store.paths` | none | Comma-separated path prefixes that carry no-store. Empty means every response. |
 | `HELMET_RIBBON` | `helmet.ribbon` | `true` | Set `false` to switch the ribbon off everywhere. |
@@ -745,7 +751,7 @@ like this:
 | Generic 4xx page | `helmet_client_error()`, called by your router | `HELMET_ERROR_PAGES` / `helmet.error_pages`, default `false` |
 | Session hardening, JSON logs | applied by `helmet_boot()` | not applied by the adapter; Laravel's session and logging config apply |
 
-For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. The first two security events ([Security events](#security-events)) are written through the Log facade with the same message and context, and the third, `helmet.debug_enabled_in_production`, is written by the Laravel adapter at boot.
+For session hardening in Laravel, use the framework's own session config: set `secure`, `http_only`, and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening`. For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. Of the security events ([Security events](#security-events)), `helmet.request_refused` is written through the Log facade with the same message and context, and `helmet.broad_trusted_proxy` and `helmet.debug_enabled_in_production` are written by the Laravel adapter at boot. The adapter logs neither `helmet.forwarded_for_rejected` nor `helmet.forwarded_proto_rejected`: those two come from the raw PHP path.
 
 ## The headers
 
@@ -963,14 +969,17 @@ app first runs this version, existing sessions under the old name end: the
 next request still carries the old cookie, the app finds no session under
 the new name and starts a fresh one.
 
-**Secure mode.** By default (`auto`) the Secure flag follows the request. On
-Citadel, HA-Proxy ends TLS before the request reaches PHP, so the request
-looks plain even though the client connected over HTTPS; there, set
-`HELMET_SESSION_SECURE=always` so the cookie keeps its `Secure` flag. In
-Laravel the value lands in `helmet.session.secure`; in raw PHP pass the
-`session` option, `'session' => ['secure' => 'always']`, to `helmet_boot()`,
-and a Laravel app that boots through `helmet_boot()` can hand it
-`config('helmet.session.secure')`. The cookie name still follows the request,
+**Secure mode.** By default (`auto`) the Secure flag follows HELMET's HTTPS
+decision, the same one the headers use. On Citadel, HA-Proxy ends TLS before
+the request reaches PHP; with the `citadel` preset HELMET trusts the proxy's
+`X-Forwarded-Proto`, so `auto` still sets `Secure` on HTTPS pages. Where TLS
+ends in front of an app that trusts no proxy, the request looks plain; force
+the flag there with the `session` option, `'session' => ['secure' => 'always']`,
+to `helmet_boot()`. `helmet_boot()` reads no environment, so
+`HELMET_SESSION_SECURE` only fills `helmet.session.secure` in the Laravel
+config, which the adapter does not read (Laravel's `config/session.php`
+decides there); a Laravel app that boots through `helmet_boot()` can hand it
+`['secure' => config('helmet.session.secure')]`. The cookie name still follows the request,
 so it never takes the `__Host-` prefix on a plain-HTTP request, and plain
 HTTP development keeps `auto`.
 
