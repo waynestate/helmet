@@ -20,6 +20,10 @@
                     "Value of the Cross-Origin-Resource-Policy header; unset sends no header.",
                     "none"
                 ],
+                "HELMET_COEP": [
+                    "Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none; off by default.",
+                    "none"
+                ],
                 "HELMET_CSP": [
                     "JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default.",
                     "the core default policy"

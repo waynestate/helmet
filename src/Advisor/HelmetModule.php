@@ -71,6 +71,7 @@ final class HelmetModule implements Module
         ['env' => 'HELMET_CSP_TRUSTED_TYPES_ENABLED', 'boot' => 'csp_trusted_types.enabled', 'changes' => 'Adds the Trusted Types directives to the report-only header.'],
         ['env' => 'HELMET_COOP', 'boot' => 'coop', 'changes' => 'Cross-Origin-Opener-Policy (empty sends none).'],
         ['env' => 'HELMET_CORP', 'boot' => 'corp', 'changes' => 'Cross-Origin-Resource-Policy (off by default).'],
+        ['env' => 'HELMET_COEP', 'boot' => 'coep', 'changes' => 'Cross-Origin-Embedder-Policy (off by default).'],
         ['env' => 'HELMET_PERMISSIONS_POLICY', 'boot' => 'permissions_policy', 'changes' => 'Permissions-Policy feature map ({} sends none).'],
         ['env' => 'HELMET_HSTS_MAX_AGE', 'boot' => 'hsts_max_age', 'changes' => 'Strict-Transport-Security max-age.'],
         ['env' => 'HELMET_HSTS_INCLUDE_SUBDOMAINS', 'boot' => 'hsts_include_subdomains', 'changes' => 'Strict-Transport-Security includeSubDomains.'],

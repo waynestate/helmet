@@ -114,6 +114,14 @@ use Waynestate\Helmet\Support\Setting;
 |               value throws \InvalidArgumentException when the headers are
 |               built.
 |
+| "coep"        The Cross-Origin-Embedder-Policy value: "require-corp",
+|               "credentialless" or "unsafe-none". null (the default) sends
+|               no COEP header. require-corp blocks every cross-origin
+|               resource that does not opt in with CORP or CORS, so test
+|               before turning it on. Set with the HELMET_COEP env var. An
+|               invalid value throws \InvalidArgumentException when the
+|               headers are built.
+|
 | "permissions_policy"
 |               The Permissions-Policy, as a feature map: each feature name
 |               maps to its allowlist, an array of "self" and https origins.
@@ -383,6 +391,9 @@ $coop = is_string($coop) && $coop !== '' ? $coop : null;
 $corp = env('HELMET_CORP');
 $corp = is_string($corp) && $corp !== '' ? $corp : null;
 
+$coep = env('HELMET_COEP');
+$coep = is_string($coep) && $coep !== '' ? $coep : null;
+
 // An empty JSON object is meaningful: it sends no Permissions-Policy header.
 // Invalid JSON keeps the default deny list, like HELMET_CSP.
 $permissionsPolicy = null;
@@ -501,6 +512,7 @@ return [
     'csp_style_src_attr' => $cspStyleSrcAttr,
     'coop' => $coop,
     'corp' => $corp,
+    'coep' => $coep,
     'permissions_policy' => $permissionsPolicy,
     'hsts' => (int) env('HELMET_HSTS_MAX_AGE', 31536000),
     'hsts_include_subdomains' => $hstsIncludeSubDomains,

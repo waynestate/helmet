@@ -22,6 +22,7 @@ final class ConfigTest extends TestCase
         $this->clearEnv('HELMET_CSP_REPORT_ONLY');
         $this->clearEnv('HELMET_COOP');
         $this->clearEnv('HELMET_CORP');
+        $this->clearEnv('HELMET_COEP');
         $this->clearEnv('HELMET_PERMISSIONS_POLICY');
         $this->clearEnv('HELMET_CSRF_ENABLED');
         $this->clearEnv('HELMET_CSRF_ALLOW_SAME_SITE');
@@ -277,6 +278,20 @@ final class ConfigTest extends TestCase
         $this->putEnv('HELMET_CORP', '');
         $this->reloadPackageConfig();
         self::assertNull(config('helmet.corp'));
+    }
+
+    public function testCoepEnvVarIsReadWithNullAsTheDefault(): void
+    {
+        self::assertNull(config('helmet.coep'));
+
+        $this->putEnv('HELMET_COEP', 'require-corp');
+        $this->reloadPackageConfig();
+        self::assertSame('require-corp', config('helmet.coep'));
+
+        // An empty value is treated as "no COEP header", the same as unset.
+        $this->putEnv('HELMET_COEP', '');
+        $this->reloadPackageConfig();
+        self::assertNull(config('helmet.coep'));
     }
 
     public function testPermissionsPolicyEnvVarIsReadWithNullAsTheDefault(): void

@@ -501,6 +501,7 @@ final class FunctionsTest extends TestCase
             'trusted_proxies' => ['127.0.0.1'],
             'coop' => 'unsafe-none',
             'corp' => 'same-site',
+            'coep' => 'require-corp',
             'permissions_policy' => ['camera' => ['self']],
         ]);
 
@@ -558,6 +559,21 @@ final class FunctionsTest extends TestCase
         \Waynestate\Helmet\helmet_boot([
             'trusted_proxies' => ['127.0.0.1'],
             'corp' => 'bogus',
+        ]);
+    }
+
+    public function testBootThrowsOnInvalidCoep(): void
+    {
+        $_SERVER['REMOTE_ADDR'] = '127.0.0.1';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/not-the-health-path';
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('COEP must be one of');
+
+        \Waynestate\Helmet\helmet_boot([
+            'trusted_proxies' => ['127.0.0.1'],
+            'coep' => 'bogus',
         ]);
     }
 

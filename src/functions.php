@@ -70,6 +70,7 @@ if (!function_exists('helmet_boot')) {
        *     style_src_attr?: 'inline'|'report'|'none',
        *     coop?: string|null,
        *     corp?: string|null,
+       *     coep?: string|null,
        *     permissions_policy?: array<string, list<string>>|null,
        *     health_path?: string,
        *     hsts_max_age?: int,
@@ -88,7 +89,7 @@ if (!function_exists('helmet_boot')) {
      *         does not know.
       * @throws \InvalidArgumentException If "trusted_proxies", "preset" or
       *         "session" is the wrong type, "csrf" is the wrong type, or
-      *         "coop", "corp", "permissions_policy", "csp_trusted_types",
+      *         "coop", "corp", "coep", "permissions_policy", "csp_trusted_types",
       *         "no_store", "session.secure" or a "csrf" value is invalid, or
       *         "log.request_id" is not a string, or "error_handler" is the
       *         wrong type, or "readiness" is the wrong type, its path is not
@@ -382,6 +383,7 @@ if (!function_exists('helmet_boot')) {
             $trustedTypesEnabled,
             $trustedTypesPolicies,
             $styleSrcAttr,
+            $config['coep'] ?? null,
         );
 
         foreach ($headers as $name => $value) {

@@ -82,6 +82,17 @@ final class SecurityHeadersTest extends TestCase
         $response->assertHeaderMissing('Cross-Origin-Resource-Policy');
     }
 
+    public function testCoepFollowsConfig(): void
+    {
+        $this->defineHtmlRoute('/test');
+
+        config(['helmet.coep' => 'require-corp']);
+
+        $response = $this->get('/test');
+
+        $response->assertHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+    }
+
     public function testPermissionsPolicyFollowsConfig(): void
     {
         $this->defineHtmlRoute('/test');
@@ -127,6 +138,17 @@ final class SecurityHeadersTest extends TestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('CORP must be one of');
+
+        $request = Request::create('/', 'GET');
+        (new LaravelSecurityHeaders())->handle($request, static fn() => new Response('ok'));
+    }
+
+    public function testInvalidCoepConfigThrows(): void
+    {
+        config(['helmet.coep' => 'bogus']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('COEP must be one of');
 
         $request = Request::create('/', 'GET');
         (new LaravelSecurityHeaders())->handle($request, static fn() => new Response('ok'));

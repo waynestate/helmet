@@ -35,6 +35,7 @@ use Waynestate\Helmet\Proxy\TrustedProxies;
  * policy names from config('helmet.csp_trusted_types'), the
  * Cross-Origin-Opener-Policy value from config('helmet.coop'), the
  * Cross-Origin-Resource-Policy value from config('helmet.corp'), the
+ * Cross-Origin-Embedder-Policy value from config('helmet.coep'), the
  * Permissions-Policy feature map from config('helmet.permissions_policy'), and
  * the no-store switch and path prefixes from config('helmet.no_store'); this
  * middleware never reads env() directly.
@@ -123,6 +124,8 @@ final class SecurityHeaders
         $coop = is_string($coop) && $coop !== '' ? $coop : null;
         $corp = config('helmet.corp');
         $corp = is_string($corp) && $corp !== '' ? $corp : null;
+        $coep = config('helmet.coep');
+        $coep = is_string($coep) && $coep !== '' ? $coep : null;
         // An empty array is meaningful: it sends no Permissions-Policy
         // header. null (or a non-array) falls back to the default deny list.
         $permissionsPolicy = config('helmet.permissions_policy');
@@ -153,6 +156,7 @@ final class SecurityHeaders
             $trustedTypesEnabled,
             $trustedTypesPolicies,
             self::styleSrcAttr(),
+            $coep,
         );
     }
 
