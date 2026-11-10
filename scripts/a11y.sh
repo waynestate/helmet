@@ -1,6 +1,6 @@
 #!/bin/sh
 # Site accessibility gate: Preflight's a11y checker (vendored in
-# tools/a11y/check.mjs from Preflight 0.4.0, pinned by tests/A11yCheckerPinTest.php),
+# tools/a11y/check.mjs from Preflight 0.5.0, pinned by tests/A11yCheckerPinTest.php),
 # run in Docker so no host browser is needed. The same image, tags, color
 # schemes and widths as the a11y CI job, so a page that passes here
 # passes CI. Linux and macOS; on Windows use scripts/a11y.ps1, or this script
