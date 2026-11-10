@@ -1,10 +1,11 @@
 {
   "name": "helmet-vue-vite-fixture",
-  "description": "A small Vue app built by Vite with html.cspNonce set to HELMET's placeholder; tools/a11y/vue-check.mjs runs it under HELMET's default CSP in Chromium.",
+  "description": "A small Vue app built by Vite twice (html.cspNonce set to HELMET's placeholder, and a manifest for Laravel's @vite); tools/a11y/vue-check.mjs runs both under HELMET's default CSP in Chromium.",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "build:laravel": "vite build --mode laravel"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "5.2.4",

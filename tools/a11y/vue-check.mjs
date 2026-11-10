@@ -31,7 +31,15 @@
  *      must precompile templates (single-file components do), because the
  *      default policy never allows 'unsafe-eval'.
  *
+ *   4. With --laravel, serves the page tools/a11y/laravel-page.php rendered
+ *      through Laravel and HELMET's service provider (the CSP header from
+ *      the middleware, @vite tags nonced by Laravel's Vite helper, the
+ *      csp-nonce meta tag the middleware injects) with the Laravel build's
+ *      assets under /build/, and runs the same checks as part 1. An Inertia
+ *      root view is a Blade view with the same @vite, so this covers it.
+ *
  * Usage:  node tools/a11y/vue-check.mjs --headers=build/helmet-headers.json
+ *           [--laravel=build/laravel-page.json]
  *         (paths may be relative to the repo root or absolute)
  * Exit:   0 pass, 1 a check failed, 2 tool error.
  */
@@ -57,6 +65,8 @@ const PLACEHOLDER = "CSP_NONCE_SLOT_FOR_HELMET";
 /** The fixture build and Vue's full build (template compiler included). */
 const DIST_DIR = "tools/vue-vite/dist";
 const VUE_FULL = "tools/vue-vite/node_modules/vue/dist/vue.esm-browser.prod.js";
+/** The Laravel build's public folder: its assets live under build/. */
+const LARAVEL_PUBLIC_DIR = "tools/vue-vite/dist-laravel";
 /** Paths origin A answers from memory, not from the build. */
 const UNSWAPPED_PAGE = "/__unswapped.html";
 const COMPILER_PAGE = "/__compiler-probe.html";
@@ -78,6 +88,52 @@ function option(name) {
     process.exit(2);
   }
   return hit.slice(prefix.length);
+}
+
+function optional(name) {
+  const prefix = `--${name}=`;
+  const hit = process.argv.slice(2).find((arg) => arg.startsWith(prefix));
+  return hit ? hit.slice(prefix.length) : null;
+}
+
+/** The nonce of a CSP header value; a policy that allows eval is refused. */
+function cspNonce(csp, where) {
+  if (/'unsafe-eval'/.test(csp)) {
+    throw new Error(`the CSP in ${where} allows 'unsafe-eval', so the template compiler probe would prove nothing`);
+  }
+  const nonce = /'nonce-([^']+)'/.exec(csp)?.[1];
+  if (!nonce) {
+    throw new Error(`the CSP in ${where} carries no nonce`);
+  }
+  return nonce;
+}
+
+/**
+ * Read the page tools/a11y/laravel-page.php printed:
+ * {"headers": {name: value}, "html": "..."}.
+ */
+async function loadLaravelPage(file) {
+  let raw;
+  try {
+    raw = JSON.parse(await readFile(file, "utf8"));
+  } catch (err) {
+    throw new Error(`cannot read the Laravel page JSON at ${file}: ${err.message}`);
+  }
+  if (raw === null || typeof raw !== "object" || typeof raw.html !== "string" || raw.headers === null || typeof raw.headers !== "object") {
+    throw new Error("the Laravel page JSON must be {\"headers\": {...}, \"html\": \"...\"}; run tools/a11y/laravel-page.php");
+  }
+  const headers = {};
+  for (const [name, value] of Object.entries(raw.headers)) {
+    if (typeof value !== "string") {
+      throw new Error(`the Laravel page JSON must map header names to strings (bad entry: ${JSON.stringify(name)})`);
+    }
+    headers[name.toLowerCase()] = value;
+  }
+  const csp = headers["content-security-policy"];
+  if (csp === undefined) {
+    throw new Error("the Laravel page carries no Content-Security-Policy, so HELMET's middleware did not run");
+  }
+  return { headers, html: raw.html, nonce: cspNonce(csp, "the Laravel page") };
 }
 
 /** Read the headers JSON; every entry must be a string name to a string value. */
@@ -102,14 +158,7 @@ async function loadHeaders(file) {
   if (csp === undefined) {
     throw new Error("the headers JSON carries no Content-Security-Policy; run tools/a11y/corp-headers.php first");
   }
-  if (/'unsafe-eval'/.test(csp)) {
-    throw new Error("the CSP allows 'unsafe-eval', so the template compiler probe would prove nothing");
-  }
-  const nonce = /'nonce-([^']+)'/.exec(csp)?.[1];
-  if (!nonce) {
-    throw new Error("the CSP in the headers JSON carries no nonce");
-  }
-  return { headers, nonce };
+  return { headers, nonce: cspNonce(csp, "the headers JSON") };
 }
 
 /** The HTML escaping helmet_csp_nonce_swap() applies (htmlspecialchars, ENT_QUOTES). */
@@ -188,6 +237,57 @@ async function watchedPage(browser, base) {
 const violations = (page) => page.evaluate(() => window.__violations);
 const describe = (list) => list.map((v) => `${v.directive} blocked ${v.blocked || "(inline)"}`).join("; ");
 
+/**
+ * Load the app at base + "/" and run every positive check on it: mounted,
+ * styled, interactive, the lazy chunk and its nonced stylesheet, and no CSP
+ * violation, failed request or page error. label names the recipe.
+ */
+async function exerciseApp(browser, base, nonce, record, label) {
+  const say = (passed, text) => record(passed, `${label}: ${text}`);
+  const { context, page, seen } = await watchedPage(browser, base);
+  await page.goto(`${base}/`, { waitUntil: "load" });
+  const lazy = await page.waitForSelector('[data-check="lazy"]', { timeout: 15000 }).then(() => true, () => false);
+  say(lazy, lazy ? "the app mounted and the lazily imported chunk rendered" : "the lazily imported chunk never rendered");
+
+  const state = await page.evaluate(() => {
+    const css = (selector, prop) => {
+      const el = document.querySelector(selector);
+      return el ? getComputedStyle(el)[prop] : null;
+    };
+    const img = document.querySelector('[data-check="inlined"]');
+    const lazyLink = [...document.querySelectorAll('link[rel="stylesheet"]')].find((l) => l.href.includes("LazyPanel"));
+    return {
+      mounted: document.querySelector('[data-check="mounted"]')?.textContent ?? null,
+      scoped: css('[data-check="scoped"]', "color"),
+      imgSrc: img ? img.getAttribute("src").slice(0, 5) : null,
+      imgWidth: img ? img.naturalWidth : -1,
+      lazyBackground: css('[data-check="lazy"]', "backgroundColor"),
+      lazyLinkNonce: lazyLink ? lazyLink.nonce : null,
+    };
+  });
+  say(state.mounted === "mounted", `the app rendered its heading (${state.mounted ?? "nothing"})`);
+  say(state.scoped === SCOPED_COLOR, `the scoped stylesheet applied (color ${state.scoped}, expected ${SCOPED_COLOR})`);
+  say(state.imgSrc === "data:" && state.imgWidth > 0, `the inlined data: image loaded (src starts ${state.imgSrc}, naturalWidth ${state.imgWidth})`);
+  say(state.lazyBackground === LAZY_BACKGROUND, `the lazy chunk's stylesheet applied (background ${state.lazyBackground}, expected ${LAZY_BACKGROUND})`);
+  say(state.lazyLinkNonce === nonce, state.lazyLinkNonce === nonce ? "Vite's preload helper put the response nonce on the lazy stylesheet" : `the lazy stylesheet's nonce is ${JSON.stringify(state.lazyLinkNonce)}, not the response nonce`);
+
+  await page.click('[data-check="count"]');
+  const after = await page.evaluate(() => ({
+    text: document.querySelector('[data-check="count"]')?.textContent ?? null,
+    border: getComputedStyle(document.querySelector('[data-check="bound-style"]')).borderLeftColor,
+  }));
+  say(after.text === "Pressed 1 times", `a click updated the page (${after.text})`);
+  say(after.border === PRESSED_COLOR, `the bound style followed the state (border ${after.border}, expected ${PRESSED_COLOR})`);
+
+  await page.waitForTimeout(SETTLE_MS);
+  const found = await violations(page);
+  say(found.length === 0, found.length === 0 ? "no CSP violation" : `CSP violations: ${describe(found)}`);
+  say(seen.failed.length === 0, seen.failed.length === 0 ? "no request failed" : `requests failed: ${seen.failed.join("; ")}`);
+  say(seen.non200.length === 0, seen.non200.length === 0 ? "every request answered 200" : `requests did not answer 200: ${seen.non200.join("; ")}`);
+  say(seen.errors.length === 0, seen.errors.length === 0 ? "no page error" : `page errors: ${seen.errors.join("; ")}`);
+  await context.close();
+}
+
 async function main() {
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
   const resolve = (arg) => (path.isAbsolute(arg) ? arg : path.resolve(repoRoot, arg));
@@ -239,53 +339,34 @@ createApp({ data: () => ({ msg: "compiled" }), template: '<p id="compiled">{{ ms
     [VUE_FULL_PATH, { type: MIME[".js"], body: vueFull }],
   ]);
   const origin = await serveBuild(distDir, headers, memory);
+
+  // The Laravel page carries its own headers and nonce (HELMET's middleware
+  // made them); its assets come from the Laravel build, under /build/.
+  const laravelArg = optional("laravel");
+  const laravel = laravelArg === null ? null : await loadLaravelPage(resolve(laravelArg));
+  let laravelOrigin = null;
+  if (laravel !== null) {
+    const laravelDir = resolve(LARAVEL_PUBLIC_DIR);
+    laravelOrigin = await serveBuild(laravelDir, laravel.headers, new Map([["/index.html", { type: html, body: laravel.html }]]));
+    record(
+      laravel.html.includes(`<meta property="csp-nonce" nonce="${escapeHtml(laravel.nonce)}">`),
+      "the Laravel page carries the csp-nonce meta tag HELMET's middleware injects",
+    );
+    const nonced = (laravel.html.match(/<script\b[^>]*\bnonce="([^"]*)"/g) ?? []).length;
+    record(nonced > 0, `the Laravel page's @vite script tags carry a nonce (${nonced} found)`);
+  }
+
   const browser = await chromium.launch();
 
   try {
     /* Part 1: the swapped build, under the default policy. */
-    {
-      const { context, page, seen } = await watchedPage(browser, origin.base);
-      await page.goto(`${origin.base}/`, { waitUntil: "load" });
-      const lazy = await page.waitForSelector('[data-check="lazy"]', { timeout: 15000 }).then(() => true, () => false);
-      record(lazy, lazy ? "the app mounted and the lazily imported chunk rendered" : "the lazily imported chunk never rendered");
+    await exerciseApp(browser, origin.base, nonce, record, "raw PHP");
 
-      const state = await page.evaluate(() => {
-        const css = (selector, prop) => {
-          const el = document.querySelector(selector);
-          return el ? getComputedStyle(el)[prop] : null;
-        };
-        const img = document.querySelector('[data-check="inlined"]');
-        const lazyLink = [...document.querySelectorAll('link[rel="stylesheet"]')].find((l) => l.href.includes("LazyPanel"));
-        return {
-          mounted: document.querySelector('[data-check="mounted"]')?.textContent ?? null,
-          scoped: css('[data-check="scoped"]', "color"),
-          imgSrc: img ? img.getAttribute("src").slice(0, 5) : null,
-          imgWidth: img ? img.naturalWidth : -1,
-          lazyBackground: css('[data-check="lazy"]', "backgroundColor"),
-          lazyLinkNonce: lazyLink ? lazyLink.nonce : null,
-        };
-      });
-      record(state.mounted === "mounted", `the app rendered its heading (${state.mounted ?? "nothing"})`);
-      record(state.scoped === SCOPED_COLOR, `the scoped stylesheet applied (color ${state.scoped}, expected ${SCOPED_COLOR})`);
-      record(state.imgSrc === "data:" && state.imgWidth > 0, `the inlined data: image loaded (src starts ${state.imgSrc}, naturalWidth ${state.imgWidth})`);
-      record(state.lazyBackground === LAZY_BACKGROUND, `the lazy chunk's stylesheet applied (background ${state.lazyBackground}, expected ${LAZY_BACKGROUND})`);
-      record(state.lazyLinkNonce === nonce, state.lazyLinkNonce === nonce ? "Vite's preload helper put the response nonce on the lazy stylesheet" : `the lazy stylesheet's nonce is ${JSON.stringify(state.lazyLinkNonce)}, not the response nonce`);
-
-      await page.click('[data-check="count"]');
-      const after = await page.evaluate(() => ({
-        text: document.querySelector('[data-check="count"]')?.textContent ?? null,
-        border: getComputedStyle(document.querySelector('[data-check="bound-style"]')).borderLeftColor,
-      }));
-      record(after.text === "Pressed 1 times", `a click updated the page (${after.text})`);
-      record(after.border === PRESSED_COLOR, `the bound style followed the state (border ${after.border}, expected ${PRESSED_COLOR})`);
-
-      await page.waitForTimeout(SETTLE_MS);
-      const found = await violations(page);
-      record(found.length === 0, found.length === 0 ? "no CSP violation" : `CSP violations: ${describe(found)}`);
-      record(seen.failed.length === 0, seen.failed.length === 0 ? "no request failed" : `requests failed: ${seen.failed.join("; ")}`);
-      record(seen.non200.length === 0, seen.non200.length === 0 ? "every request answered 200" : `requests did not answer 200: ${seen.non200.join("; ")}`);
-      record(seen.errors.length === 0, seen.errors.length === 0 ? "no page error" : `page errors: ${seen.errors.join("; ")}`);
-      await context.close();
+    /* Part 4 (run second, it is a positive one): the page Laravel and HELMET rendered. */
+    if (laravel === null) {
+      lines.push("skip: no --laravel page given, the Laravel recipe was not checked");
+    } else {
+      await exerciseApp(browser, laravelOrigin.base, laravel.nonce, record, "Laravel");
     }
 
     /* Part 2: the same build without the swap; the nonce cannot match. */
@@ -317,6 +398,7 @@ createApp({ data: () => ({ msg: "compiled" }), template: '<p id="compiled">{{ ms
   } finally {
     await browser.close();
     origin.server.close();
+    laravelOrigin?.server.close();
   }
 
   for (const line of lines) console.log(line);

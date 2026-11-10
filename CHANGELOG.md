@@ -5,6 +5,8 @@ All notable changes to this project are documented in this file.
 ## Unreleased
 
 - Added: `tools/a11y/vue-check.mjs` and its fixture `tools/vue-vite`, a Chromium check that a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder runs under the default CSP once the nonce is swapped in (lazy chunks and their stylesheets included), that the unswapped build never mounts, and that Vue's runtime template compiler is refused. The `browser-headers` CI job runs it after the CORP and COEP checks; `tests/VueFixtureTest.php` keeps the fixture, the check and `helmet_csp_nonce_swap()` on one placeholder (H51).
+- Added: the Vue check covers the Laravel and Inertia recipe too. `tools/a11y/laravel-page.php` renders the fixture's page through Laravel and HELMET's service provider (`@vite` against the fixture's Laravel build), and the check runs it in Chromium: no CSP violation, and the lazy chunk's stylesheet carries the nonce from the `csp-nonce` meta tag the middleware injects. A new `vue-fixture-build` CI job builds both fixtures; the npm jobs share a fixed-key npm cache like the Composer ones.
+- Docs: the Laravel guide says the `csp-nonce` meta tag serves production builds as well as the dev runtime (Vite's preload helper reads it for lazily loaded stylesheets).
 - Changed: the Composer package leaves out `tools/` (the browser checks and the Vue fixture are CI tools, not code an app runs).
 - Docs: the Vue recipes say to precompile templates (`.vue` files), because Vue's runtime compiler needs `eval` and the policy never allows `'unsafe-eval'`; the Proof page records the three browser checks.
 

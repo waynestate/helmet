@@ -52,6 +52,14 @@ variables:
     paths: [.cache/composer/]
     when: always
 
+.npm-cache:
+  variables:
+    npm_config_cache: "$CI_PROJECT_DIR/.cache/npm"
+  cache:
+    key: npm
+    paths: [.cache/npm/]
+    when: always
+
 # WayneUI strict copies: PROCTOR runs on the project root so it sees site/assets/wayne-ui/.
 # The setting extra.proctor."wayneui.copies" = "fail" in composer.json makes a stale copy fail.
 # These two jobs are HELMET's own, not Preflight components, so they name the proxy themselves.
@@ -69,28 +77,51 @@ composer-ci:
     - composer install --no-interaction --no-progress --prefer-dist
     - composer ci
 
+# Builds the Vue fixture twice for the Vue check (H51): the raw PHP build,
+# whose HTML carries HELMET's nonce placeholder, and the Laravel build, whose
+# manifest browser-headers-json renders a page from. Vue's full build rides
+# along for the check's template compiler probe. The same Playwright image as
+# browser-headers, so Node matches; no install scripts. It stays untagged.
+vue-fixture-build:
+  extends: .npm-cache
+  image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
+  script:
+    - npm --prefix tools/vue-vite ci --no-audit --no-fund --ignore-scripts
+    - npm --prefix tools/vue-vite run build
+    - npm --prefix tools/vue-vite run build:laravel
+  artifacts:
+    paths:
+      - tools/vue-vite/dist/
+      - tools/vue-vite/dist-laravel/
+      - tools/vue-vite/node_modules/vue/dist/vue.esm-browser.prod.js
+    expire_in: 1 day
+
+# Prints HELMET's headers for the CORP and COEP checks, and renders the Vue
+# fixture's page through Laravel and HELMET's service provider for the Vue
+# check (tools/a11y/laravel-page.php reads the Laravel build's manifest).
 browser-headers-json:
   extends: .composer-cache
+  needs: [vue-fixture-build]
   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/composer:2.11.1@sha256:8de2184c6de224f4689e8f80ed5f5edaf0030b6b8b7839a22a2bcb6722ac87d0
   script:
     - composer install --no-interaction --no-progress --prefer-dist
     - mkdir -p build
     - php tools/a11y/corp-headers.php > build/helmet-headers.json
+    - php tools/a11y/laravel-page.php > build/laravel-page.json
   artifacts:
-    paths: [build/helmet-headers.json]
+    paths: [build/helmet-headers.json, build/laravel-page.json]
     expire_in: 1 day
 
 # Runs the H13 CORP opt-in check, the COEP readiness check and the Vue check
-# (H51: a Vite-built Vue app under the default CSP) in real Chromium, in the
-# same Playwright image as the a11y component. The Vue fixture installs
-# without install scripts. It stays untagged.
+# (H51: the Vue fixture under the default CSP, built for raw PHP and rendered
+# through Laravel) in real Chromium, in the same Playwright image as the a11y
+# component. It stays untagged.
 browser-headers:
-  needs: [browser-headers-json]
+  extends: .npm-cache
+  needs: [browser-headers-json, vue-fixture-build]
   image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
   script:
     - npm --prefix tools/a11y ci --no-audit --no-fund
     - node tools/a11y/corp-check.mjs --headers=build/helmet-headers.json
     - node tools/a11y/coep-check.mjs --headers=build/helmet-headers.json
-    - npm --prefix tools/vue-vite ci --no-audit --no-fund --ignore-scripts
-    - npm --prefix tools/vue-vite run build
-    - node tools/a11y/vue-check.mjs --headers=build/helmet-headers.json
+    - node tools/a11y/vue-check.mjs --headers=build/helmet-headers.json --laravel=build/laravel-page.json

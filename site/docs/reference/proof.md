@@ -58,15 +58,15 @@ Three checks run HELMET's real headers (printed by `tools/a11y/corp-headers.php`
 
 - `tools/a11y/corp-check.mjs`: the `corp` opt-in keeps the front page whole and blocks another origin's embed of its assets (H13).
 - `tools/a11y/coep-check.mjs`: under `Cross-Origin-Embedder-Policy: require-corp` the front page stays whole and cross-origin isolated, and a third-party image without CORP is blocked (H13).
-- `tools/a11y/vue-check.mjs`: a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder (`tools/vue-vite`) runs under the default CSP once the nonce is swapped in, including a lazily imported chunk whose stylesheet Vite adds at runtime; without the swap it never mounts, and a runtime-compiled template is refused (H51).
+- `tools/a11y/vue-check.mjs`: one small Vue app (`tools/vue-vite`), built by Vite for both recipes, runs under the default CSP with no violation, a lazily imported chunk and its runtime-added stylesheet included (H51). The raw PHP build has `html.cspNonce` set to HELMET's placeholder and gets the nonce swapped in; the Laravel build's page is rendered by `tools/a11y/laravel-page.php` through Laravel and HELMET's service provider, so its CSP header, `@vite` tags and `csp-nonce` meta tag are the real ones. Without the swap the raw PHP build never mounts, and a runtime-compiled template is refused.
 
-Last run, 2026-11-10, on the branch that adds the Vue check (base e942c75, Playwright 1.65.0, Vite 6.4.5, Vue 3.5.45):
+Last run, 2026-11-10, on the branch that adds the Vue check (base e942c75, Playwright 1.65.0, Vite 6.4.5, Vue 3.5.45, Laravel 13.39.0):
 
 | Check | Result |
 | --- | --- |
 | `corp-check.mjs` | `CORP CHECK: PASS` |
 | `coep-check.mjs` | `COEP CHECK: PASS` (6 checks) |
-| `vue-check.mjs` | `VUE CHECK: PASS` (19 checks, including the two that must refuse) |
+| `vue-check.mjs --laravel=...` | `VUE CHECK: PASS` (33 checks: 12 per recipe, 4 on the build and the Laravel page, 5 on the two probes that must fail) |
 
 ## Proof [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof)
 

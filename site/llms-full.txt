@@ -668,8 +668,13 @@ terrible nonce.
 
 The middleware hands the per-request nonce to Laravel's Vite helper and
 injects a `csp-nonce` meta tag into ``. `@vite` needs nothing. The meta
-tag lets Vite's dev runtime nonce the CSS and preload tags it adds after page
-load. When the request ends, HELMET resets the Vite nonce to a fresh random
+tag lets Vite nonce the CSS and preload tags it adds after page load: the
+dev runtime's, and in a production build the stylesheets of the chunks a
+dynamic `import()` loads. A real browser proves it on every pipeline:
+`tools/a11y/laravel-page.php` renders a small Vue app's page through Laravel
+and HELMET's service provider, and `tools/a11y/vue-check.mjs` runs it in
+Chromium with no CSP violation, a lazy chunk included (an Inertia root view
+is a Blade view with the same `@vite`). When the request ends, HELMET resets the Vite nonce to a fresh random
 one, so a long-lived worker (Octane, Swoole, FrankenPHP) does not carry one
 request's nonce into the next.
 
@@ -1740,6 +1745,8 @@ All notable changes to this project are documented in this file.
 ### Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
 - Added: `tools/a11y/vue-check.mjs` and its fixture `tools/vue-vite`, a Chromium check that a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder runs under the default CSP once the nonce is swapped in (lazy chunks and their stylesheets included), that the unswapped build never mounts, and that Vue's runtime template compiler is refused. The `browser-headers` CI job runs it after the CORP and COEP checks; `tests/VueFixtureTest.php` keeps the fixture, the check and `helmet_csp_nonce_swap()` on one placeholder (H51).
+- Added: the Vue check covers the Laravel and Inertia recipe too. `tools/a11y/laravel-page.php` renders the fixture's page through Laravel and HELMET's service provider (`@vite` against the fixture's Laravel build), and the check runs it in Chromium: no CSP violation, and the lazy chunk's stylesheet carries the nonce from the `csp-nonce` meta tag the middleware injects. A new `vue-fixture-build` CI job builds both fixtures; the npm jobs share a fixed-key npm cache like the Composer ones.
+- Docs: the Laravel guide says the `csp-nonce` meta tag serves production builds as well as the dev runtime (Vite's preload helper reads it for lazily loaded stylesheets).
 - Changed: the Composer package leaves out `tools/` (the browser checks and the Vue fixture are CI tools, not code an app runs).
 - Docs: the Vue recipes say to precompile templates (`.vue` files), because Vue's runtime compiler needs `eval` and the policy never allows `'unsafe-eval'`; the Proof page records the three browser checks.
 
@@ -3366,7 +3373,7 @@ In a controller it is `$request->attributes->get('helmet.csp_nonce')`. A new non
 
 ### Vite and Inertia [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#vite-and-inertia)
 
-The middleware hands the per-request nonce to Laravel's Vite helper and injects a `csp-nonce` meta tag into `<head>`. `@vite` needs nothing. The meta tag lets Vite's dev runtime nonce the CSS and preload tags it adds after page load. When the request ends, HELMET resets the Vite nonce to a fresh random one, so a long-lived worker (Octane, Swoole, FrankenPHP) does not carry one request's nonce into the next.
+The middleware hands the per-request nonce to Laravel's Vite helper and injects a `csp-nonce` meta tag into `<head>`. `@vite` needs nothing. The meta tag lets Vite nonce the CSS and preload tags it adds after page load: the dev runtime's, and in a production build the stylesheets of the chunks a dynamic `import()` loads. A real browser proves it on every pipeline: `tools/a11y/laravel-page.php` renders a small Vue app's page through Laravel and HELMET's service provider, and `tools/a11y/vue-check.mjs` runs it in Chromium with no CSP violation, a lazy chunk included (an Inertia root view is a Blade view with the same `@vite`). The latest run is on the [Proof](https://helmet.apps.wayne.edu/docs/reference/proof.html#browser-checks) page. When the request ends, HELMET resets the Vite nonce to a fresh random one, so a long-lived worker (Octane, Swoole, FrankenPHP) does not carry one request's nonce into the next.
 
 A few rules keep the CSP honest:
 
@@ -4731,15 +4738,15 @@ Three checks run HELMET's real headers (printed by `tools/a11y/corp-headers.php`
 
 - `tools/a11y/corp-check.mjs`: the `corp` opt-in keeps the front page whole and blocks another origin's embed of its assets (H13).
 - `tools/a11y/coep-check.mjs`: under `Cross-Origin-Embedder-Policy: require-corp` the front page stays whole and cross-origin isolated, and a third-party image without CORP is blocked (H13).
-- `tools/a11y/vue-check.mjs`: a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder (`tools/vue-vite`) runs under the default CSP once the nonce is swapped in, including a lazily imported chunk whose stylesheet Vite adds at runtime; without the swap it never mounts, and a runtime-compiled template is refused (H51).
+- `tools/a11y/vue-check.mjs`: one small Vue app (`tools/vue-vite`), built by Vite for both recipes, runs under the default CSP with no violation, a lazily imported chunk and its runtime-added stylesheet included (H51). The raw PHP build has `html.cspNonce` set to HELMET's placeholder and gets the nonce swapped in; the Laravel build's page is rendered by `tools/a11y/laravel-page.php` through Laravel and HELMET's service provider, so its CSP header, `@vite` tags and `csp-nonce` meta tag are the real ones. Without the swap the raw PHP build never mounts, and a runtime-compiled template is refused.
 
-Last run, 2026-11-10, on the branch that adds the Vue check (base e942c75, Playwright 1.65.0, Vite 6.4.5, Vue 3.5.45):
+Last run, 2026-11-10, on the branch that adds the Vue check (base e942c75, Playwright 1.65.0, Vite 6.4.5, Vue 3.5.45, Laravel 13.39.0):
 
 | Check | Result |
 | --- | --- |
 | `corp-check.mjs` | `CORP CHECK: PASS` |
 | `coep-check.mjs` | `COEP CHECK: PASS` (6 checks) |
-| `vue-check.mjs` | `VUE CHECK: PASS` (19 checks, including the two that must refuse) |
+| `vue-check.mjs --laravel=...` | `VUE CHECK: PASS` (33 checks: 12 per recipe, 4 on the build and the Laravel page, 5 on the two probes that must fail) |
 
 ### Proof [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof)
 

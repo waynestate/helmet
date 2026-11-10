@@ -151,9 +151,9 @@
 <ul>
 <li><code>tools/a11y/corp-check.mjs</code>: the <code>corp</code> opt-in keeps the front page whole and blocks another origin's embed of its assets (H13).</li>
 <li><code>tools/a11y/coep-check.mjs</code>: under <code>Cross-Origin-Embedder-Policy: require-corp</code> the front page stays whole and cross-origin isolated, and a third-party image without CORP is blocked (H13).</li>
-<li><code>tools/a11y/vue-check.mjs</code>: a Vue app built by Vite with <code>html.cspNonce</code> set to HELMET's placeholder (<code>tools/vue-vite</code>) runs under the default CSP once the nonce is swapped in, including a lazily imported chunk whose stylesheet Vite adds at runtime; without the swap it never mounts, and a runtime-compiled template is refused (H51).</li>
+<li><code>tools/a11y/vue-check.mjs</code>: one small Vue app (<code>tools/vue-vite</code>), built by Vite for both recipes, runs under the default CSP with no violation, a lazily imported chunk and its runtime-added stylesheet included (H51). The raw PHP build has <code>html.cspNonce</code> set to HELMET's placeholder and gets the nonce swapped in; the Laravel build's page is rendered by <code>tools/a11y/laravel-page.php</code> through Laravel and HELMET's service provider, so its CSP header, <code>@vite</code> tags and <code>csp-nonce</code> meta tag are the real ones. Without the swap the raw PHP build never mounts, and a runtime-compiled template is refused.</li>
 </ul>
-<p>Last run, 2026-11-10, on the branch that adds the Vue check (base e942c75, Playwright 1.65.0, Vite 6.4.5, Vue 3.5.45):</p>
+<p>Last run, 2026-11-10, on the branch that adds the Vue check (base e942c75, Playwright 1.65.0, Vite 6.4.5, Vue 3.5.45, Laravel 13.39.0):</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -171,8 +171,8 @@
 <td><code>COEP CHECK: PASS</code> (6 checks)</td>
 </tr>
 <tr>
-<td><code>vue-check.mjs</code></td>
-<td><code>VUE CHECK: PASS</code> (19 checks, including the two that must refuse)</td>
+<td><code>vue-check.mjs --laravel=...</code></td>
+<td><code>VUE CHECK: PASS</code> (33 checks: 12 per recipe, 4 on the build and the Laravel page, 5 on the two probes that must fail)</td>
 </tr>
 </tbody>
 </table></div>
