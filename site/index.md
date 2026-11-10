@@ -398,10 +398,11 @@ What keeps the code honest
 
 ### Sideline and front office
 
-Starters, deploys, sign-in and upgrades
+Starters, deploys, local runs, sign-in and upgrades
 
 - [Sourdough](https://sourdough.apps.wayne.edu/) Starts a new app in any of the five formations, from raw PHP to Inertia and Vue.
 - [Squire](https://squire.apps.wayne.edu/) The deploy kit for Citadel: build.sh, a release script and local runs on the same images.
+- Parity next The scout team: runs Citadel's own plays on your computer. Site coming.
 - [Drawbridge](https://drawbridge.apps.wayne.edu/) next Signs people in through Entra ID before they reach a Citadel app.
 - [Booster](https://booster.apps.wayne.edu/) Upgrades PHP 7 to 8 and Laravel one version at a time.
 - [Rollcall](https://rollcall.apps.wayne.edu/) Every app answers “present”, with its PHP version.

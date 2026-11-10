@@ -1629,10 +1629,11 @@ What keeps the code honest
 
 #### Sideline and front office
 
-Starters, deploys, sign-in and upgrades
+Starters, deploys, local runs, sign-in and upgrades
 
 - [Sourdough](https://sourdough.apps.wayne.edu/) Starts a new app in any of the five formations, from raw PHP to Inertia and Vue.
 - [Squire](https://squire.apps.wayne.edu/) The deploy kit for Citadel: build.sh, a release script and local runs on the same images.
+- Parity next The scout team: runs Citadel's own plays on your computer. Site coming.
 - [Drawbridge](https://drawbridge.apps.wayne.edu/) next Signs people in through Entra ID before they reach a Citadel app.
 - [Booster](https://booster.apps.wayne.edu/) Upgrades PHP 7 to 8 and Laravel one version at a time.
 - [Rollcall](https://rollcall.apps.wayne.edu/) Every app answers “present”, with its PHP version.
@@ -1699,6 +1700,7 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Docs: Parity joins the party. The README cast, the instance runner page's team list and the front page's WELD depth chart (sideline, after Squire, at SCOUT with a "next" chip) carry Parity with its spirit-level mark: the stack's new tool that runs Citadel on your computer (its PHP image, its proxy and MySQL 5.6). 0.1.0 is coming and it has no site yet, so its row links nowhere. The scout team runs the other side's plays all week, so game day holds no surprises.
 - Changed: refreshed version mentions. The install docs say Composer writes `^1.3`; the secret-scanning example, MAINTAINING and BEST_PRACTICES name Preflight 0.5.0, the pin CI already uses (BEST_PRACTICES records green pipeline 5199 on it). The dev dependencies move to ADVISOR ^0.2 and Pinstripe ^0.3 (Pinstripe 0.3.0 bans joined SQL and turned-off TLS checks), and the front page's deploy layer requires HELMET ^1.3, its own latest helmet size.
 - Changed: the `composer-ci` and `wayneui-copies` jobs, and the Docker line in MAINTAINING, run Composer 2.11.1 pinned by its multi-arch list digest (was 2.10.3, which Squire 0.10.1 calls unmaintained). 2.11.1 fixes GHSA-c968-33g3-wh7p and GHSA-fm2w-xgf2-f9fh.
 - Changed: the deploy kit is Squire 0.10.2 (was 0.10.1): the fallback base image names its images in full (`docker.io/library/...`) with Composer as a build argument, the kit's php.ini sets `session.cookie_samesite = Lax`, and the portable image leaves `node_modules/` out of its layers.
@@ -2482,6 +2484,7 @@ WayneUI and the stack. HELMET plays the line.
 - [HELMET](https://github.com/waynestate/helmet)
 - [Sourdough](https://github.com/waynestate/sourdough)
 - [Squire](https://github.com/waynestate/squire)
+- [Parity](https://git.wayne.edu/enterprise-apps/parity)
 - [Preflight](https://github.com/waynestate/preflight)
 - [Pinstripe](https://github.com/waynestate/pinstripe)
 - [Booster](https://github.com/waynestate/booster)

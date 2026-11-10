@@ -38,6 +38,7 @@ WayneUI and the stack. HELMET plays the line.
 - [HELMET](https://github.com/waynestate/helmet)
 - [Sourdough](https://github.com/waynestate/sourdough)
 - [Squire](https://github.com/waynestate/squire)
+- [Parity](https://git.wayne.edu/enterprise-apps/parity)
 - [Preflight](https://github.com/waynestate/preflight)
 - [Pinstripe](https://github.com/waynestate/pinstripe)
 - [Booster](https://github.com/waynestate/booster)
