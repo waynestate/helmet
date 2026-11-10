@@ -6,17 +6,17 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Metrics[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#metrics)
+# Metrics [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#metrics)
 
 This page is for the opt-in Prometheus metrics endpoint: what it reports, how to turn it on for one site, how to gate it, where request counts are kept, and how to graph the result in Grafana. Read it before you expose `/metrics`.
 
 HELMET can expose a Prometheus metrics endpoint. It is off by default and stays off until you turn it on. HELMET does not write the exposition format by hand: it uses [promphp/prometheus_client_php](https://github.com/PromPHP/prometheus_client_php) and keeps its own layer to naming, label bounding and access control.
 
-## The goal[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#the-goal)
+## The goal [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#the-goal)
 
 One endpoint per app that answers three questions for a fleet dashboard: is it up, is it current (PHP and HELMET versions, and how long until its PHP release loses security support), and how is it doing (requests, latency, errors and CSP violations). Labels never carry personal data or raw paths, so the number of series stays small no matter what the internet sends.
 
-## What it reports[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#what-it-reports)
+## What it reports [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#what-it-reports)
 
 | Metric | Type | Labels | Needs a store |
 | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ The first four are built fresh on every scrape, so they need nothing shared betw
 
 The policy is the CREED `policy.json` (set `HELMET_POLICY_PATH`). Status is looked up by PHP major and minor version, so PHP 8.5.12 reads the `8.5` entry. The end-of-support date is exposed as a Unix timestamp, which is the Prometheus way; the dashboard turns it into days.
 
-### How labels stay small[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#how-labels-stay-small)
+### How labels stay small [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#how-labels-stay-small)
 
 HELMET bounds every label before it reaches the store, and anything it will not accept becomes `other`:
 
@@ -43,7 +43,7 @@ HELMET bounds every label before it reaches the store, and anything it will not 
 
 The request count is the histogram's `_count` series; there is no separate counter to keep in sync.
 
-## Enable it[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#enable-it)
+## Enable it [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#enable-it)
 
 | Variable | What it does |
 | --- | --- |
@@ -61,7 +61,7 @@ With neither a token nor an allow list set, the endpoint returns `404` and logs 
 
 The token is read from the `Authorization` header wherever the server puts it: `HTTP_AUTHORIZATION`, `REDIRECT_HTTP_AUTHORIZATION`, or the request headers themselves. That last one matters on Apache with mod_php, which keeps the header out of `$_SERVER`.
 
-## Pick a store[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#pick-a-store)
+## Pick a store [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#pick-a-store)
 
 PHP shares nothing between requests, so a request counter kept in memory would count to 1 and vanish. Request and CSP metrics need a store that every worker in the app can reach. HELMET does not pick one for you.
 
@@ -73,9 +73,9 @@ PHP shares nothing between requests, so a request counter kept in memory would c
 
 Counters that reset on restart are fine: Prometheus's `rate()` and `increase()` handle resets. If the store breaks, the page still renders: the failure is logged once per request (`metrics_storage_unusable` or `metrics_record_failed`), the version gauges keep answering, and `helmet_metrics_storage_up` drops to `0` so the dashboard shows it.
 
-## Turn it on for one site[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#turn-it-on-for-one-site)
+## Turn it on for one site [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#turn-it-on-for-one-site)
 
-### Laravel[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#laravel)
+### Laravel [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#laravel)
 
 Set the variables, then register the routes you want. Nothing is created until you call the macro:
 
@@ -95,7 +95,7 @@ Route::cspReport();                                 // POST /csp-report, counts 
 
 With `HELMET_METRICS_ENABLED` true and `HELMET_METRICS_STORAGE` set, the provider adds a terminable middleware to the front of the global stack, so it times the whole request (including your other middleware) and records after the response has been sent. Without it the middleware is not registered at all. The controller reads `helmet.metrics` from the published config and resolves the client IP through the same trusted-proxy list the headers use.
 
-### Raw PHP[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#raw-php)
+### Raw PHP [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#raw-php)
 
 Put this at the top of the front controller, after the autoloader:
 
@@ -124,7 +124,7 @@ helmet_metrics_track($config)->route($group);
 
 To count CSP violations in raw PHP, call `helmet_metrics_requests($config)?->cspViolation($directive)` from the handler that receives your reports.
 
-### Check it[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#check-it)
+### Check it [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#check-it)
 
 ```bash
 curl -s -H "Authorization: Bearer $HELMET_METRICS_TOKEN" https://your-app.example.test/metrics | head
@@ -132,7 +132,7 @@ curl -s -H "Authorization: Bearer $HELMET_METRICS_TOKEN" https://your-app.exampl
 
 Expect `helmet_info` first. Without the token you should get `403`; with metrics off, `404`.
 
-## Graph it in Grafana[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#graph-it-in-grafana)
+## Graph it in Grafana [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#graph-it-in-grafana)
 
 The fleet dashboard ships in [`docs/grafana/helmet.json`](https://git.wayne.edu/enterprise-apps/helmet/-/blob/main/docs/grafana/helmet.json). In Grafana, open Dashboards, New, Import, upload the file, and pick your Prometheus data source for the `DS_PROMETHEUS` input. It has three rows:
 
@@ -171,7 +171,7 @@ histogram_quantile(0.95, sum by (le) (rate(helmet_http_request_duration_seconds_
 
 WSU has no Prometheus server yet, so the dashboard is ready, not live: it graphs as soon as a server exists and scrapes `/metrics`. The stack's own sites turn it on first.
 
-## Limits[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#limits)
+## Limits [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#limits)
 
 - HELMET reports; it does not alert. Alert rules belong with the Prometheus server.
 - Request metrics start at the front controller. A static file the web server answers on its own is never counted.
@@ -179,7 +179,7 @@ WSU has no Prometheus server yet, so the dashboard is ready, not live: it graphs
 
 The endpoint is the only place in HELMET that says "I am still here" without saying "here is your page". A lullaby, in a way. A helmet with a heart-rate monitor, if you like.
 
-## Related[#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#related)
 
 - [Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html)
 - [Platform presets](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html)

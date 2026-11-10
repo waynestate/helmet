@@ -6,11 +6,11 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Platform presets[#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#platform-presets)
+# Platform presets [#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#platform-presets)
 
 A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app. Name a preset (or list your own proxies) and the same package runs on Citadel, plain Docker, OpenShift or Coolify without a code change; when you are done choosing a preset, see [Running off Citadel](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.html) for the per-platform table.
 
-## The presets[#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#the-presets)
+## The presets [#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#the-presets)
 
 The presets live in `Waynestate\Helmet\Platform\Presets`:
 
@@ -21,7 +21,7 @@ The presets live in `Waynestate\Helmet\Platform\Presets`:
 
 `citadel` is the WSU container platform: the app container talks to the HA-Proxy front through the Docker bridge gateway `172.18.0.1`, the only address allowed to set `X-Forwarded-Proto`. `docker` is a plain Docker deployment with no front proxy in front of the app container: nothing is trusted, and HTTPS is detected from the direct connection only.
 
-## Passing a preset[#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#passing-a-preset)
+## Passing a preset [#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#passing-a-preset)
 
 Raw PHP passes the preset name:
 
@@ -47,7 +47,7 @@ Note
 
 With neither a preset nor a list, no address is trusted, so forwarded headers such as `X-Forwarded-Proto` are ignored and the request is read as it arrived.
 
-## The API[#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#the-api)
+## The API [#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#the-api)
 
 `Presets` exposes three static methods:
 
@@ -57,14 +57,14 @@ With neither a preset nor a list, no address is trusted, so forwarded headers su
 | `Presets::exists(string $name)` | Whether a preset is known. |
 | `Presets::names()` | The known preset names. |
 
-## Which headers a trusted proxy may set[#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#which-headers-a-trusted-proxy-may-set)
+## Which headers a trusted proxy may set [#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#which-headers-a-trusted-proxy-may-set)
 
 The headers a trusted front proxy may set are the same for every preset: `X-Forwarded-For` and `X-Forwarded-Proto` (`Presets::TRUSTED_HEADERS`). Two more are deliberately left out:
 
 - `X-Forwarded-Host` and `X-Forwarded-Prefix`: a platform that rewrites the host (for example OpenShift, which appends the route host) would let a client pre-seed those headers.
 - `X-Forwarded-Port`: Citadel's HA-Proxy never sends it, so a client-sent value would pass through untouched and change the port the app reports.
 
-## Related[#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html#related)
 
 - [WSU values (Playbook)](https://helmet.apps.wayne.edu/docs/guides/wsu-values.html)
 - [Running off Citadel](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.html)

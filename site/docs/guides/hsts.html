@@ -39,13 +39,13 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html" aria-current="page">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/readiness.html">Readiness</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="configuring-hsts">Configuring HSTS<a class="docs-heading-link" aria-label="Link to this section" href="#configuring-hsts">#</a></h1>
+      <article class="docs-article"><h1 id="configuring-hsts">Configuring <span class="docs-heading-tail"><span>HSTS</span><a class="docs-heading-link" aria-label="Link to this section" href="#configuring-hsts">#</a></span></h1>
 <p>This page is for tuning the <code>Strict-Transport-Security</code> header: what it sends by default, how to roll it out in stages, and the exact options on each consumer path. When you are done here, move on to <a href="headers.html">The headers</a> for the rest of the baseline.</p>
-<h2 id="the-default">The default<a class="docs-heading-link" aria-label="Link to this section" href="#the-default">#</a></h2>
+<h2 id="the-default">The <span class="docs-heading-tail"><span>default</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-default">#</a></span></h2>
 <p>The default is <code>max-age=31536000; includeSubDomains</code> (one year, all subdomains), sent on HTTPS responses only. A request that was not really secure never carries the header, because HELMET decides HTTPS from the trusted proxy list; see <a href="https-and-proxies.html">HTTPS, and why the proxy list matters</a>.</p>
-<h2 id="roll-it-out-in-stages">Roll it out in stages<a class="docs-heading-link" aria-label="Link to this section" href="#roll-it-out-in-stages">#</a></h2>
+<h2 id="roll-it-out-in-stages">Roll it out in <span class="docs-heading-tail"><span>stages</span><a class="docs-heading-link" aria-label="Link to this section" href="#roll-it-out-in-stages">#</a></span></h2>
 <p>Roll it out in stages: start with a short <code>max-age</code>, raise it once nothing breaks, and keep <code>includeSubDomains</code> only when every subdomain serves HTTPS.</p>
-<h2 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h2>
+<h2 id="raw-php">Raw <span class="docs-heading-tail"><span>PHP</span><a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></span></h2>
 <p>Set <code>hsts_max_age</code> (seconds) and <code>hsts_include_subdomains</code> (raw PHP):</p>
 <pre tabindex="0"><code class="language-php">$helmet = helmet_boot([
     'preset' =&gt; 'citadel',
@@ -53,7 +53,7 @@
     'hsts_include_subdomains' =&gt; false,
 ]);
 </code></pre>
-<h2 id="middleware-and-laravel">Middleware and Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#middleware-and-laravel">#</a></h2>
+<h2 id="middleware-and-laravel">Middleware and <span class="docs-heading-tail"><span>Laravel</span><a class="docs-heading-link" aria-label="Link to this section" href="#middleware-and-laravel">#</a></span></h2>
 <p>In the PSR-15 middleware, pass them to the <code>SecurityHeadersMiddleware</code> constructor: <code>hstsMaxAge</code> is the fifth argument, <code>hstsIncludeSubDomains</code> the sixth and <code>hstsPreload</code> the twelfth; named arguments avoid the counting. In Laravel, use the environment variables below; the config keys are <code>helmet.hsts</code>, <code>helmet.hsts_include_subdomains</code> and <code>helmet.hsts_preload</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -85,15 +85,15 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="preload">Preload<a class="docs-heading-link" aria-label="Link to this section" href="#preload">#</a></h2>
+<h2 id="preload"><span class="docs-heading-tail"><span>Preload</span><a class="docs-heading-link" aria-label="Link to this section" href="#preload">#</a></span></h2>
 <p><code>preload</code> is a decision for the domain owner, not for one app, so HELMET never adds it by default. If your domain is in the preload list, set <code>HELMET_HSTS_PRELOAD=true</code> (or <code>hsts_preload</code> in raw PHP) with a <code>max-age</code> of at least one year and <code>includeSubDomains</code>; a shorter <code>max-age</code> or missing <code>includeSubDomains</code> throws.</p>
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed.</p></aside>
-<h2 id="check-the-header">Check the header<a class="docs-heading-link" aria-label="Link to this section" href="#check-the-header">#</a></h2>
+<h2 id="check-the-header">Check the <span class="docs-heading-tail"><span>header</span><a class="docs-heading-link" aria-label="Link to this section" href="#check-the-header">#</a></span></h2>
 <p>Ask for a response over HTTPS and look at the header line:</p>
 <pre tabindex="0"><code>curl -sI https://app.example.edu/
 </code></pre>
 <p>Expected: <code>Strict-Transport-Security: max-age=31536000; includeSubDomains</code> by default, or the value you configured. The same request over plain HTTP carries no HSTS header.</p>
-<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="headers.html">The headers</a></li>
 <li><a href="csp.html">Customizing the CSP</a></li>

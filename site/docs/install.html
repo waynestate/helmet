@@ -39,11 +39,11 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../docs/index.html">Overview</a></li><li><a href="../docs/install.html" aria-current="page">Install</a></li><li><a href="../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../docs/guides/headers.html">The headers</a></li><li><a href="../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../docs/guides/session.html">The session</a></li><li><a href="../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../docs/guides/readiness.html">Readiness</a></li><li><a href="../docs/guides/metrics.html">Metrics</a></li><li><a href="../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../docs/reference/configuration.html">Environment variables</a></li><li><a href="../docs/reference/api.html">API</a></li><li><a href="../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../docs/upgrading.html">Upgrading</a></li><li><a href="../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="install">Install<a class="docs-heading-link" aria-label="Link to this section" href="#install">#</a></h1>
-<h2 id="requirements">Requirements<a class="docs-heading-link" aria-label="Link to this section" href="#requirements">#</a></h2>
+      <article class="docs-article"><h1 id="install"><span class="docs-heading-tail"><span>Install</span><a class="docs-heading-link" aria-label="Link to this section" href="#install">#</a></span></h1>
+<h2 id="requirements"><span class="docs-heading-tail"><span>Requirements</span><a class="docs-heading-link" aria-label="Link to this section" href="#requirements">#</a></span></h2>
 <p>PHP <code>^8.3</code>. <code>composer.json</code> declares no <code>ext-*</code> extensions, so plain PHP 8.3 or newer is enough; Composer pulls the
 rest (Monolog, the PSR interfaces, csp-builder, the Prometheus client and symfony/http-foundation).</p>
-<h2 id="install-1">Install<a class="docs-heading-link" aria-label="Link to this section" href="#install-1">#</a></h2>
+<h2 id="install-1"><span class="docs-heading-tail"><span>Install</span><a class="docs-heading-link" aria-label="Link to this section" href="#install-1">#</a></span></h2>
 <pre tabindex="0"><code>composer require waynestate/helmet
 </code></pre>
 <p>Composer picks the latest release, 1.3.1, and writes <code>^1.3</code> into <code>composer.json</code>. Coming from 0.4? Read
@@ -53,14 +53,14 @@ so the adapters come with it, nothing extra to require.</p>
 <aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>The example everywhere in these docs uses <code>'preset' =&gt; 'citadel'</code>, which trusts the Docker bridge gateway in front
 of HA-Proxy. Off the WSU platform, skip the preset and pass your own list of the addresses your front proxy
 connects from.</p></aside>
-<h2 id="verify">Verify<a class="docs-heading-link" aria-label="Link to this section" href="#verify">#</a></h2>
+<h2 id="verify"><span class="docs-heading-tail"><span>Verify</span><a class="docs-heading-link" aria-label="Link to this section" href="#verify">#</a></span></h2>
 <p>Boot the package as the <a href="guides/quick-start.html">Quick start</a> does, then ask the load balancer's question:</p>
 <pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: <code>200 ok</code>, the baseline headers on the response (<code>Content-Security-Policy</code>, <code>X-Content-Type-Options: nosniff</code>,
 <code>X-Frame-Options: SAMEORIGIN</code>, and the rest), and no <code>X-Powered-By</code> header. If <code>/up</code> answers before your code runs,
 HELMET is on the field.</p>
-<h2 id="next-steps">Next steps<a class="docs-heading-link" aria-label="Link to this section" href="#next-steps">#</a></h2>
+<h2 id="next-steps">Next <span class="docs-heading-tail"><span>steps</span><a class="docs-heading-link" aria-label="Link to this section" href="#next-steps">#</a></span></h2>
 <ul>
 <li><a href="guides/quick-start.html">Quick start</a>: the whole thing in four steps.</li>
 <li>Usage by stack: <a href="guides/usage-raw-php.html">Raw PHP</a>, <a href="guides/usage-psr15.html">PSR-15 middleware</a>, <a href="guides/usage-laravel.html">Laravel</a>.</li>

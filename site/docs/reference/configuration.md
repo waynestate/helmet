@@ -6,15 +6,15 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Configuration[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#configuration)
+# Configuration [#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#configuration)
 
 Every `HELMET_` environment variable the package reads, its meaning, its default, and the file that reads it. The table below is generated from the code, so it cannot drift from what the package actually reads. To set a value, add it to your environment or `.env`; for how the platform presets choose the trusted proxies, see [Platform presets](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html).
 
-## How a value is read[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#how-a-value-is-read)
+## How a value is read [#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#how-a-value-is-read)
 
 Every setting except `HELMET_PRESET` is read from the environment with Laravel's `env()`; the config file treats an empty value as not set, so a blank value keeps the default in the table. `HELMET_PRESET` alone goes through `Waynestate\Helmet\Support\Setting::get()`: the real environment wins (getenv, then `$_ENV`, then `$_SERVER`), an empty string counts as not set, and when the environment has no value for the key the private `waynestate/playbook` package (Playbook) supplies it, if it is installed; when neither has it, null comes back and no preset is applied. Playbook is optional by design: the package never requires it, it only looks for the class. That is how a WSU value can arrive at an app without this public repo naming a single one of them.
 
-## The config keys[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#the-config-keys)
+## The config keys [#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#the-config-keys)
 
 Every value above lands in the `helmet` config repo, and every other part of the package reads it through `config()`. This lists every key, one level deep; the environment variable that fills each one is in [The variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html#the-variables) below. Publish the config (`php artisan vendor:publish --tag=helmet-config`) to edit a key directly instead of through the environment.
 
@@ -60,7 +60,7 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `csrf.trusted_origins` | Origins that may make state-changing requests to the app. Filled from `HELMET_CSRF_TRUSTED_ORIGINS` (comma-separated). |
 | `csrf.except` | Paths that skip the guard: an exact path, a prefix ending in `*`, or `*` for every path. Filled from `HELMET_CSRF_EXCEPT` (comma-separated). |
 
-## Platform presets[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#platform-presets)
+## Platform presets [#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#platform-presets)
 
 A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app. The presets live in `Waynestate\Helmet\Platform\Presets`:
 
@@ -71,7 +71,7 @@ A preset names a platform's trusted-proxy list, so an app does not hard-code an 
 
 Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the environment has none); an explicit `HELMET_PROXIES` always wins over the preset. Off the WSU platform, skip the preset and pass your own list of the addresses your front proxy connects from. An unknown preset name throws at boot, so a typo fails loudly instead of silently trusting nothing.
 
-## The variables[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#the-variables)
+## The variables [#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#the-variables)
 
 | Variable | Meaning | Default | Read in |
 | --- | --- | --- | --- |
@@ -112,7 +112,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 
 Seven of these variables are also read by the raw PHP path: `helmet_metrics_env()` in `src/functions.php` reads `HELMET_METRICS_ALLOW`, `HELMET_METRICS_ENABLED`, `HELMET_METRICS_REDIS_URL`, `HELMET_METRICS_SQLITE_PATH`, `HELMET_METRICS_STORAGE`, `HELMET_METRICS_TOKEN` and `HELMET_POLICY_PATH` through the same `Setting::get()` (environment first, then Playbook), so the same values drive `helmet_metrics()` and `helmet_metrics_track()` outside Laravel. The table's "Read in" column names the first reader it finds, which is why those rows point at `config/helmet.php`.
 
-## Example .env[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#example-env)
+## Example .env [#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#example-env)
 
 ```
 HELMET_PRESET=citadel
@@ -125,7 +125,7 @@ Warning
 
 `HELMET_METRICS_TOKEN` is a secret. Set a different value per environment and never commit it; the scraper sends it as `Authorization: Bearer <token>` and the package compares it with `hash_equals`.
 
-## Related[#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/reference/configuration.html#related)
 
 - [API](https://helmet.apps.wayne.edu/docs/reference/api.html)
 - [Proof](https://helmet.apps.wayne.edu/docs/reference/proof.html)

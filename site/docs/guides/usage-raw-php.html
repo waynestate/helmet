@@ -39,9 +39,9 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html" aria-current="page">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/readiness.html">Readiness</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="use-helmet-in-raw-php">Use HELMET in raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#use-helmet-in-raw-php">#</a></h1>
+      <article class="docs-article"><h1 id="use-helmet-in-raw-php">Use HELMET in raw <span class="docs-heading-tail"><span>PHP</span><a class="docs-heading-link" aria-label="Link to this section" href="#use-helmet-in-raw-php">#</a></span></h1>
 <p>This page boots HELMET in a framework-free PHP app with a single call. Start with <a href="#boot-the-app">Boot the app</a>, then pick up the options your app needs: structured logs, the request-forgery guard, the opt-in error handler, the standalone health check and the readiness check.</p>
-<h2 id="boot-the-app">Boot the app<a class="docs-heading-link" aria-label="Link to this section" href="#boot-the-app">#</a></h2>
+<h2 id="boot-the-app">Boot the <span class="docs-heading-tail"><span>app</span><a class="docs-heading-link" aria-label="Link to this section" href="#boot-the-app">#</a></span></h2>
 <p>At the top of the front controller, before anything is echoed:</p>
 <pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\helmet_boot;
 
@@ -86,12 +86,12 @@ $helmet = helmet_boot([
 <li>adds <code>Cache-Control: no-store</code> to matching responses (when <code>no_store</code> is enabled and they do not set it themselves).</li>
 </ul>
 <aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>A bad config throws at boot: <code>UnknownPresetException</code> if <code>&quot;preset&quot;</code> names a preset the package does not know, <code>\InvalidArgumentException</code> for a wrong type or an invalid value, <code>InvalidCspReportUriException</code> if <code>&quot;csp_report_uri&quot;</code> is not a valid report destination, and <code>\LogicException</code> if a session is already active.</p></aside>
-<h2 id="structured-logs">Structured logs<a class="docs-heading-link" aria-label="Link to this section" href="#structured-logs">#</a></h2>
+<h2 id="structured-logs">Structured <span class="docs-heading-tail"><span>logs</span><a class="docs-heading-link" aria-label="Link to this section" href="#structured-logs">#</a></span></h2>
 <p>Each record is one JSON line:</p>
 <pre tabindex="0"><code class="language-json">{&quot;message&quot;:&quot;login&quot;,&quot;context&quot;:{&quot;user&quot;:&quot;alice&quot;},&quot;level&quot;:200,&quot;level_name&quot;:&quot;INFO&quot;,&quot;channel&quot;:&quot;app&quot;,&quot;datetime&quot;:&quot;2026-10-29T12:00:00.000000+00:00&quot;,&quot;extra&quot;:{&quot;request_id&quot;:&quot;9f2c1ab04d5e6f70&quot;}}
 </code></pre>
 <p>When you set <code>log</code>, the channel defaults to <code>helmet</code>, the stream to <code>php://stderr</code>, and the level to <code>info</code>. The request ID rules sit in the boot snippet above: every record carries one in <code>extra.request_id</code>, generated by HELMET, and an inbound header is never trusted for it.</p>
-<h2 id="security-events">Security events<a class="docs-heading-link" aria-label="Link to this section" href="#security-events">#</a></h2>
+<h2 id="security-events">Security <span class="docs-heading-tail"><span>events</span><a class="docs-heading-link" aria-label="Link to this section" href="#security-events">#</a></span></h2>
 <p>Five warnings carry HELMET's security events, and a logger that throws never changes the answer: the <code>403</code> still goes out, the resolved client IP is still the peer, the HTTPS decision stands, and the boot still finishes.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -131,7 +131,7 @@ $helmet = helmet_boot([
 </table></div>
 <p>Never logged: the Origin value, cookies, Authorization, the <code>X-Forwarded-For</code> or <code>X-Forwarded-Proto</code> header, or the bad entry. The helmet takes the hit and reports it, without quoting the attacker.</p>
 <p>The logger reaches each path this way: <code>helmet_boot()</code> hands its own logger to the HTTPS check, the broad-proxy warning and the guard; PSR-15 users pass a <code>LoggerInterface</code> as the last constructor argument <code>$logger</code> of <code>SecurityHeadersMiddleware</code> and of <code>RequestForgeryGuard</code> (both default to <code>null</code>, which logs nothing); <code>helmet_metrics()</code> passes its configured logger to <code>ClientIp::resolve()</code>; the Laravel adapter writes every event through the app's own logger.</p>
-<h2 id="trusted-proxies">Trusted proxies<a class="docs-heading-link" aria-label="Link to this section" href="#trusted-proxies">#</a></h2>
+<h2 id="trusted-proxies">Trusted <span class="docs-heading-tail"><span>proxies</span><a class="docs-heading-link" aria-label="Link to this section" href="#trusted-proxies">#</a></span></h2>
 <p>Use a platform preset (for example <code>citadel</code>, which trusts the Docker bridge gateway), or list only the address the front proxy connects from, never a whole private range. A broad range such as <code>10.0.0.0/8</code> also trusts other containers on the same network, and any of them could then set <code>X-Forwarded-Proto</code>. An explicitly empty <code>HELMET_PROXIES</code> means trust nobody, even when a preset is set; only an unset variable falls back to the preset.</p>
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p>The <code>citadel</code> preset trusts the container bridge gateway address, which is only correct while the app's port is not published to the host network, because a published port can make a direct client appear to come from the gateway.</p></aside>
 <p>The trusted proxies come from, in order of precedence:</p>
@@ -140,7 +140,7 @@ $helmet = helmet_boot([
 <li><code>preset</code>: a platform preset name (see <code>Waynestate\Helmet\Platform\Presets</code>), for example <code>citadel</code> or <code>docker</code>.</li>
 <li>neither: an empty list, which trusts nothing.</li>
 </ul>
-<h2 id="a-generic-error-page">A generic error page<a class="docs-heading-link" aria-label="Link to this section" href="#a-generic-error-page">#</a></h2>
+<h2 id="a-generic-error-page">A generic error <span class="docs-heading-tail"><span>page</span><a class="docs-heading-link" aria-label="Link to this section" href="#a-generic-error-page">#</a></span></h2>
 <p>A raw PHP app has no framework to catch an uncaught exception, so PHP may print the message, the file path and a stack trace to the visitor. Turn on the opt-in handler and the visitor gets a short, fixed &quot;Something went wrong&quot; page with status 500 and <code>Cache-Control: no-store</code>, while the full detail (class, message, file, line and trace) goes to the log at <code>error</code> level:</p>
 <pre tabindex="0"><code class="language-php">helmet_boot([
     'error_handler' =&gt; ['enabled' =&gt; true],
@@ -160,14 +160,14 @@ if (!in_array($_SERVER['REQUEST_METHOD'], $route['methods'], true)) {
 </code></pre>
 <p><code>helmet_client_error_response($status)</code> returns the same answer as data (<code>status</code>, <code>headers</code>, <code>body</code>) without sending anything, the way <code>helmet_forbidden_response()</code> pairs with <code>helmet_forbidden()</code>, and <code>(new \Waynestate\Helmet\Error\GenericErrorResponse())-&gt;clientError($status)</code> is the class underneath both.</p>
 <p>The page is fixed text: 400, 401, 403, 404, 405, 410 and 429 each carry their own title and sentence, and any other 4xx keeps the status you passed and falls back to the Bad request text. The functions take only the status code, so no message, path or exception can reach the body. Only 400 to 499 is accepted: a 500 or a redirect status throws <code>\InvalidArgumentException</code> before anything is sent, because a server fault belongs to the error handler and the log, not to a client-error page. Laravel apps get the same page for every 4xx HTTP exception with <code>HELMET_ERROR_PAGES=true</code> (see <a href="usage-laravel.html#generic-4xx-pages">Generic 4xx pages</a>).</p>
-<h2 id="debug-output-stays-off-in-production">Debug output stays off in production<a class="docs-heading-link" aria-label="Link to this section" href="#debug-output-stays-off-in-production">#</a></h2>
+<h2 id="debug-output-stays-off-in-production">Debug output stays off in <span class="docs-heading-tail"><span>production</span><a class="docs-heading-link" aria-label="Link to this section" href="#debug-output-stays-off-in-production">#</a></span></h2>
 <p>HELMET never switches debug output off or on for you, because the right place is the platform, not a library. Two settings decide whether a visitor can read a stack trace, and both belong to your deploy:</p>
 <ul>
 <li><strong>PHP's <code>display_errors</code>.</strong> Keep it <code>Off</code> in production. Squire's deploy kit already ships a <code>php.ini</code> with <code>display_errors = Off</code> and <code>log_errors = On</code> (<code>deploy/.squire/php.ini</code> in a Squire-based app), and Citadel uses the same values. Off the platform, set it in <code>php.ini</code> or the FPM pool. HELMET does not set or check it.</li>
 <li><strong>Laravel's <code>APP_DEBUG</code>.</strong> Keep it <code>false</code> in production. The Laravel adapter cannot stop an app from turning it on, but it notices: when the app boots with <code>app.debug</code> true in the production environment it writes one warning, <code>helmet.debug_enabled_in_production</code>, through the Log facade. Opt out with <code>helmet.warn_debug</code> (env <code>HELMET_WARN_DEBUG</code>, default <code>true</code>). A logger that fails never breaks the boot.</li>
 </ul>
 <p>The opt-in error handler above covers one more case: with it on, an uncaught exception in a raw PHP app shows the fixed 500 page even if <code>display_errors</code> is wrong. Warnings and notices still follow <code>display_errors</code>, so set it anyway.</p>
-<h2 id="health-check-without-a-front-controller">Health check without a front controller<a class="docs-heading-link" aria-label="Link to this section" href="#health-check-without-a-front-controller">#</a></h2>
+<h2 id="health-check-without-a-front-controller">Health check without a front <span class="docs-heading-tail"><span>controller</span><a class="docs-heading-link" aria-label="Link to this section" href="#health-check-without-a-front-controller">#</a></span></h2>
 <p>A raw PHP app with no front controller (or an Apache setup with no rewrite) never reaches <code>helmet_boot()</code> for <code>/up</code>. Ship a two-line <code>public/up.php</code> that calls HELMET directly:</p>
 <pre tabindex="0"><code class="language-php">&lt;?php // public/up.php
 use function Waynestate\Helmet\helmet_up;
@@ -177,7 +177,7 @@ helmet_up();
 </code></pre>
 <p>Squire's raw template ships this file. The probe only checks that the ball is in the air; it does not grade the play.</p>
 <p><code>helmet_up()</code> sends exactly what <code>helmet_boot()</code> sends for the health path (<code>200</code>, <code>Content-Type: text/plain; charset=utf-8</code>, <code>Cache-Control: no-store</code>, body <code>ok</code>) and exits. No session, no other headers, no config read.</p>
-<h2 id="readiness-is-a-separate-check">Readiness is a separate check<a class="docs-heading-link" aria-label="Link to this section" href="#readiness-is-a-separate-check">#</a></h2>
+<h2 id="readiness-is-a-separate-check">Readiness is a separate <span class="docs-heading-tail"><span>check</span><a class="docs-heading-link" aria-label="Link to this section" href="#readiness-is-a-separate-check">#</a></span></h2>
 <p><code>/up</code> is liveness: &quot;the process is running&quot;. Keep it free of dependency checks. If <code>/up</code> fails because the database is down, the platform restarts a healthy app and makes the outage worse. Readiness, &quot;send me traffic?&quot;, gets its own path. Turn it on with the <code>readiness</code> option:</p>
 <pre tabindex="0"><code class="language-php">$helmet = helmet_boot([
     'preset' =&gt; 'citadel',
@@ -188,9 +188,9 @@ helmet_up();
 ]);
 </code></pre>
 <p><code>GET /ready</code> then answers JSON, <code>200</code> or <code>503</code>, with HELMET's own config checks (headers, trusted proxies, debug output) next to yours, and no secrets. A raw app with no front controller answers from <code>public/ready.php</code> with <code>helmet_ready()</code>. The body, each check, and where each platform's probe should point are in <a href="readiness.html">Readiness</a>.</p>
-<h2 id="the-nonce-in-your-markup">The nonce in your markup<a class="docs-heading-link" aria-label="Link to this section" href="#the-nonce-in-your-markup">#</a></h2>
+<h2 id="the-nonce-in-your-markup">The nonce in your <span class="docs-heading-tail"><span>markup</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-nonce-in-your-markup">#</a></span></h2>
 <aside class="docs-callout docs-callout--tip" role="note"><p class="docs-callout__label">Tip</p><p>Vite's dev runtime reads a <code>&lt;meta property=&quot;csp-nonce&quot; nonce=&quot;...&quot;&gt;</code> tag to nonce the CSS and preload tags it adds after page load. Print <code>helmet_csp_nonce_meta($helmet['nonce'])</code> in the <code>&lt;head&gt;</code> of every page, with the same nonce <code>helmet_boot()</code> returned. The nonce is escaped, so a nonce with a quote cannot break out of the attribute.</p></aside>
-<h2 id="raw-php-with-a-vue-vite-build">Raw PHP with a Vue (Vite) build<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php-with-a-vue-vite-build">#</a></h2>
+<h2 id="raw-php-with-a-vue-vite-build">Raw PHP with a Vue (Vite) <span class="docs-heading-tail"><span>build</span><a class="docs-heading-link" aria-label="Link to this section" href="#raw-php-with-a-vue-vite-build">#</a></span></h2>
 <p>A raw PHP app that serves a built Vue/Vite SPA gives the bundler HELMET's nonce in two steps. At build time, set Vite's <code>html.cspNonce</code> to a placeholder:</p>
 <pre tabindex="0"><code class="language-js">// vite.config.js
 import { defineConfig } from 'vite';
@@ -206,7 +206,7 @@ export default defineConfig({
 </code></pre>
 <p><code>helmet_csp_nonce_swap()</code> replaces every occurrence of the placeholder with the nonce, HTML-escaped exactly the way <code>helmet_csp_nonce_meta()</code> escapes it. A placeholder shorter than 16 characters throws, so it cannot collide with page text, an empty nonce throws, and a page that carries no placeholder is returned unchanged.</p>
 <p>One more setting keeps the CSP honest: Vite inlines small assets as <code>data:</code> URIs by default. The default policy already allows <code>data:</code> in <code>font-src</code> and <code>img-src</code>, so inlined fonts and images pass; if you would rather not inline at all, set <code>build.assetsInlineLimit: 0</code>.</p>
-<h2 id="the-environment-ribbon">The environment ribbon<a class="docs-heading-link" aria-label="Link to this section" href="#the-environment-ribbon">#</a></h2>
+<h2 id="the-environment-ribbon">The environment <span class="docs-heading-tail"><span>ribbon</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-environment-ribbon">#</a></span></h2>
 <p><code>helmet_ribbon()</code> gives a raw PHP app the same ribbon the Laravel adapter injects, so nobody mistakes a test site for the real one. Print its <code>html()</code> right after your <code>&lt;body&gt;</code> tag, and style <code>.helmet-ribbon</code> (and <code>.helmet-ribbon-warning</code>) in your own CSS:</p>
 <pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\helmet_ribbon;
 
@@ -214,7 +214,7 @@ echo helmet_ribbon(getenv('APP_ENV') ?: 'production', true, getenv('HELMET_POLIC
 </code></pre>
 <p>The old <code>Waynestate\Helmet\Ribbon\helmet_ribbon</code> name still works for one release and raises a deprecation.</p>
 <p>It renders only for <code>local</code>, <code>development</code>, <code>dev</code>, <code>testing</code>, <code>test</code>, <code>staging</code>, <code>stage</code>, <code>qa</code>, <code>uat</code>, <code>preprod</code>, <code>pre-prod</code> and <code>sandbox</code>, in any case: the same list as Laravel (<code>Ribbon::ENVIRONMENTS</code>). Production, an empty name and any name it does not know get an empty string even when the second argument is <code>true</code>, so a typo in <code>APP_ENV</code> hides the ribbon rather than showing it on the live site. The third argument, a path to a CREED <code>policy.json</code>, adds a warning line when the running PHP version is in its security-only phase or end of life; a missing or broken file adds nothing and never breaks the page.</p>
-<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="quick-start.html">Quick start</a></li>
 <li><a href="usage-psr15.html">PSR-15 middleware</a></li>

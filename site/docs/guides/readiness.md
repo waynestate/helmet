@@ -6,13 +6,13 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Readiness[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#readiness)
+# Readiness [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#readiness)
 
 Two questions, two paths. **Liveness** (`/up`) asks "is the process running?" and a failure means "restart me". **Readiness** (`/ready`) asks "should this instance get traffic right now?" and a failure means "skip me for a while". Mix them up and a database blip restarts every healthy instance at once, which turns a short outage into a long one.
 
 HELMET answers both. `/up` stays what it always was: `200`, `ok`, no checks, no config read. `/ready` is new and off until you turn it on.
 
-## What `/ready` answers[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#what-ready-answers)
+## What `/ready` answers [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#what-ready-answers)
 
 ```json
 {"status":"ready","checks":{"headers":{"status":"pass","csp":"enforce","style_src_attr":"inline"},"trusted_proxies":{"status":"pass","count":1,"broad":0},"debug_output":{"status":"pass"},"database":{"status":"pass"}}}
@@ -36,9 +36,9 @@ Your own checks join them by name (lowercase letters, digits and underscores). A
 
 Give every dependency check a short timeout (two seconds is plenty). A probe that hangs is a probe that fails, and it holds a worker while it does.
 
-## Turn it on[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#turn-it-on)
+## Turn it on [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#turn-it-on)
 
-### Raw PHP[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#raw-php)
+### Raw PHP [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#raw-php)
 
 ```php
 use function Waynestate\Helmet\helmet_boot;
@@ -76,7 +76,7 @@ require __DIR__ . '/../vendor/autoload.php';
 helmet_ready((new Readiness())->withCheck('database', static fn (): bool => db_ping()));
 ```
 
-### PSR-15[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#psr-15)
+### PSR-15 [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#psr-15)
 
 ```php
 use Waynestate\Helmet\Health\Readiness;
@@ -91,7 +91,7 @@ $app->add(new ReadinessCheck($responseFactory, $streamFactory, $readiness, '/rea
 
 `Readiness::standard($proxies, $buildHeaders)` adds all three HELMET checks when you have the header set's builder at hand.
 
-### Laravel[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#laravel)
+### Laravel [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#laravel)
 
 ```php
 // bootstrap/app.php
@@ -126,13 +126,13 @@ final class DatabaseReady
 
 Register the route in `then:`, outside the `web` group: a readiness probe has no session and no cookies. The route carries no throttle by default, because a throttled probe reads as "not ready"; pass one as the third argument if the path is exposed. Keep `health: '/up'` for liveness and leave the `DiagnosingHealth` listener alone: it fires for `/up`.
 
-## Point each platform at the right path[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#point-each-platform-at-the-right-path)
+## Point each platform at the right path [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#point-each-platform-at-the-right-path)
 
-### Citadel[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#citadel)
+### Citadel [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#citadel)
 
 Citadel apps keep answering `/up`, as they do today, for anything that restarts or replaces the app. When a monitor or balancer in front of the app asks "send me traffic?", and the app has a dependency worth checking, give that check `/ready`. An app with nothing to check keeps `/up` everywhere and leaves readiness off.
 
-### OpenShift and Kubernetes[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#openshift-and-kubernetes)
+### OpenShift and Kubernetes [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#openshift-and-kubernetes)
 
 ```yaml
 livenessProbe:
@@ -152,11 +152,11 @@ startupProbe:
 
 Never point `livenessProbe` at `/ready`: a database restart would then restart every pod.
 
-### Coolify[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#coolify)
+### Coolify [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#coolify)
 
 Coolify has one health check per service, and a failing one keeps the new deploy from taking traffic. Point it at `/ready` (path `/ready`, expected status `200`) when you want a deploy held back until its database answers; keep `/up` when you would rather it went live and degraded.
 
-### Docker[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#docker)
+### Docker [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#docker)
 
 A Dockerfile `HEALTHCHECK` decides whether the container counts as healthy, and some orchestrators restart unhealthy containers, so it is a liveness check: keep it on `/up`.
 
@@ -164,7 +164,7 @@ A Dockerfile `HEALTHCHECK` decides whether the container counts as healthy, and 
 HEALTHCHECK --interval=30s --timeout=3s CMD curl -fsS http://127.0.0.1:8080/up || exit 1
 ```
 
-## Reading a 503[#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#reading-a-503)
+## Reading a 503 [#](https://helmet.apps.wayne.edu/docs/guides/readiness.html#reading-a-503)
 
 The body says which check failed; the log says why. Search the app log for `helmet.readiness_check_failed` and the `check` field. A `headers` failure means the header config does not build (the same error would break every page), and in Laravel it can also mean `SecurityHeaders` is not in the middleware stack.
 

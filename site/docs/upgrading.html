@@ -39,58 +39,58 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../docs/index.html">Overview</a></li><li><a href="../docs/install.html">Install</a></li><li><a href="../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../docs/guides/headers.html">The headers</a></li><li><a href="../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../docs/guides/session.html">The session</a></li><li><a href="../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../docs/guides/readiness.html">Readiness</a></li><li><a href="../docs/guides/metrics.html">Metrics</a></li><li><a href="../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../docs/reference/configuration.html">Environment variables</a></li><li><a href="../docs/reference/api.html">API</a></li><li><a href="../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../docs/upgrading.html" aria-current="page">Upgrading</a></li><li><a href="../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="upgrading">Upgrading<a class="docs-heading-link" aria-label="Link to this section" href="#upgrading">#</a></h1>
+      <article class="docs-article"><h1 id="upgrading"><span class="docs-heading-tail"><span>Upgrading</span><a class="docs-heading-link" aria-label="Link to this section" href="#upgrading">#</a></span></h1>
 <p>This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
 release is 1.3.1.</p>
-<h2 id="1-3-1-2026-11-09">1.3.1 (2026-11-09)<a class="docs-heading-link" aria-label="Link to this section" href="#1-3-1-2026-11-09">#</a></h2>
+<h2 id="1-3-1-2026-11-09">1.3.1 <span class="docs-heading-tail"><span>(2026-11-09)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-3-1-2026-11-09">#</a></span></h2>
 <p>A patch release: <code>composer update waynestate/helmet</code> within <code>^1.0</code>. No header, option or event changes, so there is nothing to change in the code. It carries the docs, HELMET's own CI on Composer 2.11.1 and Preflight 0.5.0, and the front page's deploy kit on Squire 0.10.2. Same bucket, fresh decal.</p>
-<h2 id="1-3-0-2026-11-09">1.3.0 (2026-11-09)<a class="docs-heading-link" aria-label="Link to this section" href="#1-3-0-2026-11-09">#</a></h2>
+<h2 id="1-3-0-2026-11-09">1.3.0 <span class="docs-heading-tail"><span>(2026-11-09)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-3-0-2026-11-09">#</a></span></h2>
 <p>A minor release, backward compatible: <code>composer update waynestate/helmet</code> within <code>^1.0</code>. Nothing to change in the code.</p>
-<h3 id="changed-behavior">Changed behavior<a class="docs-heading-link" aria-label="Link to this section" href="#changed-behavior">#</a></h3>
+<h3 id="changed-behavior">Changed <span class="docs-heading-tail"><span>behavior</span><a class="docs-heading-link" aria-label="Link to this section" href="#changed-behavior">#</a></span></h3>
 <ul>
 <li>Laravel: <code>HELMET_SESSION_SECURE</code> now reaches the session cookie. With the default <code>auto</code>, nothing changes: Laravel already marked the cookie <code>Secure</code> on HTTPS requests, and HELMET leaves <code>session.secure</code> unset. With <code>always</code>, the adapter sets <code>session.secure</code> to <code>true</code>, so the cookie is <code>Secure</code> even on plain HTTP. If an app set <code>HELMET_SESSION_SECURE=always</code> before (it did nothing then), check that plain HTTP development keeps <code>auto</code>, or the browser drops the cookie and nobody stays signed in. An app that sets <code>session.secure</code> itself (<code>SESSION_SECURE_COOKIE</code>) keeps its value.</li>
 <li>Laravel: the adapter logs <code>helmet.forwarded_proto_rejected</code> (from <code>SecurityHeaders</code>) and <code>helmet.forwarded_for_rejected</code> (from the metrics endpoint) through the app's logger. Expect the warning in the logs of an app that trusts a proxy and is also reached directly.</li>
 <li>PSR-15: <code>SecurityHeadersMiddleware</code> takes an optional PSR-3 <code>logger</code> as its last argument. Pass one (for example <code>logger: $logger</code>) to log <code>helmet.forwarded_proto_rejected</code>; without it nothing is logged, as before.</li>
 <li>Nothing is deprecated in 1.3.0.</li>
 </ul>
-<h3 id="how-to-verify">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify">#</a></h3>
+<h3 id="how-to-verify">How to <span class="docs-heading-tail"><span>verify</span><a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify">#</a></span></h3>
 <p>In Laravel, send a request from an address outside <code>HELMET_PROXIES</code> with <code>X-Forwarded-Proto: https</code> and expect one <code>helmet.forwarded_proto_rejected</code> warning with <code>event</code>, <code>reason</code> and <code>peer</code> in the context. With <code>HELMET_SESSION_SECURE=always</code>, a plain HTTP response's session <code>Set-Cookie</code> carries <code>secure</code>.</p>
-<h2 id="1-2-0-2026-11-09">1.2.0 (2026-11-09)<a class="docs-heading-link" aria-label="Link to this section" href="#1-2-0-2026-11-09">#</a></h2>
+<h2 id="1-2-0-2026-11-09">1.2.0 <span class="docs-heading-tail"><span>(2026-11-09)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-2-0-2026-11-09">#</a></span></h2>
 <p>A minor release, backward compatible: <code>composer update waynestate/helmet</code> within <code>^1.0</code>. Nothing changes until you opt in.</p>
 <ul>
 <li>Raw PHP gains <code>helmet_client_error(int $status)</code>, which sends HELMET's fixed 4xx page and exits, and <code>helmet_client_error_response(int $status)</code>, which returns it as data. Call it from your router for a 404 or 405 instead of echoing your own text; a status outside 400 to 499 throws.</li>
 <li>Laravel gains <code>HELMET_ERROR_PAGES</code> (<code>helmet.error_pages</code>, default <code>false</code>). Set it <code>true</code> to answer every 4xx HTTP exception with the same fixed page instead of the framework's error view; JSON clients, validation errors, authentication redirects and every 5xx stay with Laravel. An app with its own <code>resources/views/errors/4xx</code> views should check them first: with the setting on, HELMET's page answers instead.</li>
 <li>Nothing is deprecated in 1.2.0.</li>
 </ul>
-<h3 id="how-to-verify-1">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-1">#</a></h3>
+<h3 id="how-to-verify-1">How to <span class="docs-heading-tail"><span>verify</span><a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-1">#</a></span></h3>
 <p>With <code>HELMET_ERROR_PAGES=true</code>, ask for a page that does not exist and expect <code>404</code>, <code>Cache-Control: no-store</code> and HELMET's fixed page, never the exception message.</p>
-<h2 id="1-1-0-2026-11-09">1.1.0 (2026-11-09)<a class="docs-heading-link" aria-label="Link to this section" href="#1-1-0-2026-11-09">#</a></h2>
+<h2 id="1-1-0-2026-11-09">1.1.0 <span class="docs-heading-tail"><span>(2026-11-09)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-1-0-2026-11-09">#</a></span></h2>
 <p>A minor release, backward compatible: <code>composer update waynestate/helmet</code> within <code>^1.0</code>.</p>
-<h3 id="deprecated">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated">#</a></h3>
+<h3 id="deprecated"><span class="docs-heading-tail"><span>Deprecated</span><a class="docs-heading-link" aria-label="Link to this section" href="#deprecated">#</a></span></h3>
 <ul>
 <li><code>Waynestate\Helmet\Ribbon\helmet_ribbon()</code> moves to <code>Waynestate\Helmet\helmet_ribbon()</code>, next to <code>helmet_boot()</code>, with the same arguments. The old name still works for one release and raises <code>E_USER_DEPRECATED</code>. Change the import to <code>use function Waynestate\Helmet\helmet_ribbon;</code>.</li>
 </ul>
-<h3 id="changed-behavior-1">Changed behavior<a class="docs-heading-link" aria-label="Link to this section" href="#changed-behavior-1">#</a></h3>
+<h3 id="changed-behavior-1">Changed <span class="docs-heading-tail"><span>behavior</span><a class="docs-heading-link" aria-label="Link to this section" href="#changed-behavior-1">#</a></span></h3>
 <ul>
 <li>The raw PHP ribbon no longer renders in production or for an environment name HELMET does not know; it follows the Laravel adapter's list (<code>Ribbon::ENVIRONMENTS</code>), matched in any case. A test site whose <code>APP_ENV</code> was a name outside that list loses its ribbon; use one of the listed names.</li>
 <li><code>helmet_boot()</code> logs <code>helmet.forwarded_proto_rejected</code> when a peer that is not a trusted proxy sends <code>X-Forwarded-Proto</code>. Nothing to do, but expect the warning in the logs of an app that is reached directly as well as through its proxy.</li>
 </ul>
-<h3 id="how-to-verify-2">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-2">#</a></h3>
+<h3 id="how-to-verify-2">How to <span class="docs-heading-tail"><span>verify</span><a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-2">#</a></span></h3>
 <p>Run the app's tests with deprecations shown, and check that no <code>Waynestate\Helmet\Ribbon\helmet_ribbon() is deprecated</code> notice is left.</p>
-<h2 id="1-0-1-2026-11-08">1.0.1 (2026-11-08)<a class="docs-heading-link" aria-label="Link to this section" href="#1-0-1-2026-11-08">#</a></h2>
+<h2 id="1-0-1-2026-11-08">1.0.1 <span class="docs-heading-tail"><span>(2026-11-08)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-0-1-2026-11-08">#</a></span></h2>
 <p>A patch release: no public function, option or header changes. Nothing to do.</p>
-<h2 id="1-0-0-2026-11-08">1.0.0 (2026-11-08)<a class="docs-heading-link" aria-label="Link to this section" href="#1-0-0-2026-11-08">#</a></h2>
+<h2 id="1-0-0-2026-11-08">1.0.0 <span class="docs-heading-tail"><span>(2026-11-08)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-0-0-2026-11-08">#</a></span></h2>
 <p>From 1.0, HELMET follows semantic versioning: a <code>^1.0</code> constraint gets no breaking change, with one default change announced below. The release adds a readiness check on <code>/ready</code>, the <code>style_src_attr</code> mode, and Gitleaks and accessibility gates in HELMET's own pipeline, and fixes how quoted CSP sources are written.</p>
-<h3 id="breaking">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking">#</a></h3>
+<h3 id="breaking"><span class="docs-heading-tail"><span>Breaking</span><a class="docs-heading-link" aria-label="Link to this section" href="#breaking">#</a></span></h3>
 <ul>
 <li>An unknown quoted source in the CSP now throws <code>\InvalidArgumentException</code> at boot, when the headers are built. A typo such as <code>'unsafe-inlined'</code> in the <code>csp</code> option (raw PHP, PSR-15) or <code>HELMET_CSP</code> (Laravel) used to ship as a token the browser ignored; now the app stops on its first request with the bad token named. Hashes (<code>'sha256-...'</code>), fixed nonces, every CSP keyword (<code>'unsafe-eval'</code>, <code>'unsafe-hashes'</code>, <code>'wasm-unsafe-eval'</code>, <code>'report-sample'</code>, <code>'strict-dynamic'</code>) and the <code>https:</code>, <code>mediastream:</code> and <code>filesystem:</code> schemes are accepted and now come out as written; before, they were mangled into host sources.</li>
 </ul>
-<h3 id="deprecated-1">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-1">#</a></h3>
+<h3 id="deprecated-1"><span class="docs-heading-tail"><span>Deprecated</span><a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-1">#</a></span></h3>
 <p>Nothing is deprecated in 1.0.0.</p>
-<h3 id="announced-the-style-src-attr-default">Announced: the <code>style_src_attr</code> default<a class="docs-heading-link" aria-label="Link to this section" href="#announced-the-style-src-attr-default">#</a></h3>
+<h3 id="announced-the-style-src-attr-default">Announced: the <code>style_src_attr</code> <span class="docs-heading-tail"><span>default</span><a class="docs-heading-link" aria-label="Link to this section" href="#announced-the-style-src-attr-default">#</a></span></h3>
 <p><code>style_src_attr</code> stays <code>inline</code> in 1.0, so the policy still sends <code>style-src-attr 'unsafe-inline'</code>, exactly as 0.4 did, because WayneUI's recipes set inline <code>style</code> attributes. Once WayneUI drops them, a later 1.x minor moves the default to <code>none</code>. To be ready, run <code>report</code> now (<code>'style_src_attr' =&gt; 'report'</code>, or <code>HELMET_CSP_STYLE_SRC_ATTR=report</code>) and read what the browser reports; an app that needs inline style attributes of its own sets <code>inline</code> explicitly. The decision and its reasons are in <a href="adr/0001-style-src-attr.html">ADR-0001</a>.</p>
-<h3 id="steps">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps">#</a></h3>
+<h3 id="steps"><span class="docs-heading-tail"><span>Steps</span><a class="docs-heading-link" aria-label="Link to this section" href="#steps">#</a></span></h3>
 <ol>
 <li>
 <p>Move the constraint in <code>composer.json</code> from <code>^0.4</code> to <code>^1.0</code>, then update:</p>
@@ -104,21 +104,21 @@ release is 1.3.1.</p>
 <p>Optional: turn on <code>/ready</code> for your platform's readiness probe (the <a href="guides/readiness.html">Readiness guide</a>).</p>
 </li>
 </ol>
-<h3 id="how-to-verify-3">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-3">#</a></h3>
+<h3 id="how-to-verify-3">How to <span class="docs-heading-tail"><span>verify</span><a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-3">#</a></span></h3>
 <p>Boot the app once on a test host. It starts, and <code>curl -sI</code> on a page shows the same <code>Content-Security-Policy</code> as before, with any hashes or keywords you set written as you wrote them. A typo in a quoted source stops the boot with <code>\InvalidArgumentException</code> naming it; fix it and boot again.</p>
 <hr />
-<h2 id="0-4-0-2026-11-07">0.4.0 (2026-11-07)<a class="docs-heading-link" aria-label="Link to this section" href="#0-4-0-2026-11-07">#</a></h2>
+<h2 id="0-4-0-2026-11-07">0.4.0 <span class="docs-heading-tail"><span>(2026-11-07)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-4-0-2026-11-07">#</a></span></h2>
 <p>No breaks: an ADVISOR module (<code>helmet_headers</code> and <code>helmet_php_support</code>, read-only), opt-in request metrics (<code>HELMET_METRICS_STORAGE</code>), PHP end-of-support and stack-info metrics, <code>extra.http</code> on web request log records, and fixes to the metrics and policy file readers. This is a pre-1.0 minor: apps that pin <code>^0.3</code> stay on 0.3.x until they move their constraint to <code>^0.4</code>. Upgrade with:</p>
 <pre tabindex="0"><code>composer require waynestate/helmet:^0.4
 </code></pre>
 <hr />
-<h2 id="0-3-1-2026-11-05">0.3.1 (2026-11-05)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-1-2026-11-05">#</a></h2>
+<h2 id="0-3-1-2026-11-05">0.3.1 <span class="docs-heading-tail"><span>(2026-11-05)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-3-1-2026-11-05">#</a></span></h2>
 <p>No breaks: a boot warning for a broad trusted-proxy list (<code>helmet.broad_trusted_proxy</code>), <code>helmet_csp_nonce_swap()</code> and <code>GenericErrorResponse::clientError()</code>, and the rest of the release is docs and deploy-layer refreshes. Upgrade with:</p>
 <pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
-<h2 id="0-3-0-2026-11-03">0.3.0 (2026-11-03)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-0-2026-11-03">#</a></h2>
-<h3 id="breaking-1">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking-1">#</a></h3>
+<h2 id="0-3-0-2026-11-03">0.3.0 <span class="docs-heading-tail"><span>(2026-11-03)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-3-0-2026-11-03">#</a></span></h2>
+<h3 id="breaking-1"><span class="docs-heading-tail"><span>Breaking</span><a class="docs-heading-link" aria-label="Link to this section" href="#breaking-1">#</a></span></h3>
 <p>This is a pre-1.0 minor: apps that pin <code>^0.2</code> stay on 0.2.x until they move their constraint to <code>^0.3</code>. The proxy and
 forwarded-header changes make some requests resolve differently, so read the Security lines first:</p>
 <ul>
@@ -139,9 +139,9 @@ attribute value, or a script, style, textarea or title element no longer receive
 <li>An HTML response that carries a CSP nonce has <code>public</code> changed to <code>private</code> and <code>s-maxage</code> dropped from its
 <code>Cache-Control</code>, so a shared cache cannot store a page whose nonce differs per request.</li>
 </ul>
-<h3 id="deprecated-2">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-2">#</a></h3>
+<h3 id="deprecated-2"><span class="docs-heading-tail"><span>Deprecated</span><a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-2">#</a></span></h3>
 <p>None listed in the changelog for this release.</p>
-<h3 id="steps-1">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps-1">#</a></h3>
+<h3 id="steps-1"><span class="docs-heading-tail"><span>Steps</span><a class="docs-heading-link" aria-label="Link to this section" href="#steps-1">#</a></span></h3>
 <ol>
 <li>
 <p>Move the constraint in <code>composer.json</code> from <code>^0.2</code> to <code>^0.3</code>, then update:</p>
@@ -165,7 +165,7 @@ client IP the peer, and the warning <code>helmet.forwarded_for_rejected</code> i
 Authorization, the header and the bad entry are never logged.</p>
 </li>
 </ol>
-<h3 id="how-to-verify-4">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-4">#</a></h3>
+<h3 id="how-to-verify-4">How to <span class="docs-heading-tail"><span>verify</span><a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-4">#</a></span></h3>
 <pre tabindex="0"><code>composer ci
 </code></pre>
 <p>That runs <code>composer validate --strict</code>, the test suite, Pint, PHPStan, the agent-ready check, <code>composer docs:check</code>
@@ -177,21 +177,21 @@ suite pins the new behavior in <code>tests/Proxy/ClientIpTest.php</code>, <code>
 <code>tests/Proxy/TrustedProxiesTest.php</code>, <code>tests/Headers/SecurityHeadersTest.php</code> and
 <code>tests/Laravel/SecurityHeadersTest.php</code>.</p>
 <hr />
-<h2 id="0-2-6-2026-11-02">0.2.6 (2026-11-02)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-6-2026-11-02">#</a></h2>
+<h2 id="0-2-6-2026-11-02">0.2.6 <span class="docs-heading-tail"><span>(2026-11-02)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-6-2026-11-02">#</a></span></h2>
 <p>No breaks: HTML rewrites (CSP nonce meta, environment ribbon) keep the response's view object, so <code>assertInertia()</code>
 and <code>assertViewHas()</code> work in apps that use HELMET, and the rest of the release is fixes, deploy-layer refreshes and
 docs. Upgrade with:</p>
 <pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
-<h2 id="0-2-5-2026-10-29">0.2.5 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-5-2026-10-29">#</a></h2>
+<h2 id="0-2-5-2026-10-29">0.2.5 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-5-2026-10-29">#</a></span></h2>
 <p>No breaks: adds the agent-ready site (prompt blocks, Markdown twins, llms.txt) from Squire's kit and
 <code>HELMET_SESSION_SECURE=always</code>, which keeps the session cookie Secure even when HTTPS is not detected, and moves the
 proof page to a private site that needs a Wayne State sign-in. Upgrade with:</p>
 <pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
-<h2 id="0-2-4-2026-10-29">0.2.4 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-4-2026-10-29">#</a></h2>
+<h2 id="0-2-4-2026-10-29">0.2.4 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-4-2026-10-29">#</a></span></h2>
 <p>No breaks: <code>HELMET_PRESET</code> (Laravel) now also comes from the private <code>waynestate/playbook</code> package when the
 environment has no value; the config reads it through <code>Waynestate\Helmet\Support\Setting</code>, which checks the
 environment first, then Playbook, then gives up. A missing preset is still not an error, and <code>waynestate/playbook</code>
@@ -199,14 +199,14 @@ is suggested, never required. Upgrade with:</p>
 <pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
-<h2 id="0-2-3-2026-10-29">0.2.3 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-3-2026-10-29">#</a></h2>
+<h2 id="0-2-3-2026-10-29">0.2.3 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-3-2026-10-29">#</a></span></h2>
 <p>No breaks: a fix. <code>helmet_boot()</code> removed <code>X-Powered-By</code> only after it had already answered the health check path, so
 a GET or HEAD to <code>/up</code> (the default <code>health_path</code>) still sent the header; the removal now runs before the health
 answer and the request-forgery rejection, so both early exits leave the response clean. Upgrade with:</p>
 <pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
-<h2 id="0-2-2-2026-10-29">0.2.2 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-2-2026-10-29">#</a></h2>
+<h2 id="0-2-2-2026-10-29">0.2.2 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-2-2026-10-29">#</a></span></h2>
 <p>No breaks: every JSON log record now carries a request ID in <code>extra.request_id</code>, 16 lowercase hex characters
 generated by HELMET (<code>Logging::requestId()</code>), stamped by a processor pushed before the redaction processor. An
 inbound header is never trusted for the ID. <code>Logging::create()</code> takes an optional fourth argument for a
@@ -216,17 +216,17 @@ Upgrade with:</p>
 <pre tabindex="0"><code>composer update waynestate/helmet
 </code></pre>
 <hr />
-<h2 id="0-2-1-2026-10-29">0.2.1 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-1-2026-10-29">#</a></h2>
-<h3 id="breaking-2">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking-2">#</a></h3>
+<h2 id="0-2-1-2026-10-29">0.2.1 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-1-2026-10-29">#</a></span></h2>
+<h3 id="breaking-2"><span class="docs-heading-tail"><span>Breaking</span><a class="docs-heading-link" aria-label="Link to this section" href="#breaking-2">#</a></span></h3>
 <p>A raw-PHP app that still used the default <code>PHPSESSID</code> cookie gets the new <code>WSUSESSID</code> name (<code>__Host-WSUSESSID</code> on
 HTTPS), so signed-in users sign in once more after deploying. Laravel apps are unaffected (Laravel names its own
 cookie). The rename happens only while the name is still the PHP default <code>PHPSESSID</code>; an app-chosen name is left
 alone, and SESAME reads whatever <code>session_name()</code> returns. <code>SessionHardening::apply()</code> also sets
 <code>cookie_lifetime=0</code> (a browser-session cookie), <code>cache_limiter=nocache</code>, <code>cookie_path=/</code>, an empty <code>cookie_domain</code>
 (host-only) and the cookie name.</p>
-<h3 id="deprecated-3">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-3">#</a></h3>
+<h3 id="deprecated-3"><span class="docs-heading-tail"><span>Deprecated</span><a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-3">#</a></span></h3>
 <p>None listed in the changelog for this release.</p>
-<h3 id="steps-2">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps-2">#</a></h3>
+<h3 id="steps-2"><span class="docs-heading-tail"><span>Steps</span><a class="docs-heading-link" aria-label="Link to this section" href="#steps-2">#</a></span></h3>
 <ol>
 <li>
 <p>Update the package:</p>
@@ -240,14 +240,14 @@ alone, and SESAME reads whatever <code>session_name()</code> returns. <code>Sess
 <p>Expect one more sign-in for raw-PHP users after the deploy; tell app owners it is expected.</p>
 </li>
 </ol>
-<h3 id="how-to-verify-5">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-5">#</a></h3>
+<h3 id="how-to-verify-5">How to <span class="docs-heading-tail"><span>verify</span><a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-5">#</a></span></h3>
 <pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: the <code>Set-Cookie</code> name is <code>__Host-WSUSESSID</code> on HTTPS and <code>WSUSESSID</code> on HTTP. Pinned in
 <code>tests/Session/SessionHardeningTest.php</code>.</p>
 <hr />
-<h2 id="0-2-0-2026-10-29">0.2.0 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-0-2026-10-29">#</a></h2>
-<h3 id="breaking-3">Breaking<a class="docs-heading-link" aria-label="Link to this section" href="#breaking-3">#</a></h3>
+<h2 id="0-2-0-2026-10-29">0.2.0 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-0-2026-10-29">#</a></span></h2>
+<h3 id="breaking-3"><span class="docs-heading-tail"><span>Breaking</span><a class="docs-heading-link" aria-label="Link to this section" href="#breaking-3">#</a></span></h3>
 <ul>
 <li>An unknown <code>HELMET_PRESET</code> now throws even when <code>HELMET_PROXIES</code> is set. A typo in the preset name fails loudly at
 boot instead of going silently unused.</li>
@@ -265,9 +265,9 @@ and requests from untrusted peers are ignored as before.</li>
 <code>&lt;headline&gt;</code> and injected the tag after the wrong element. Responses that carry a <code>Content-Length</code> header now have
 it refreshed to the new body length after injection, so a stale length cannot cut the page off mid-tag.</li>
 </ul>
-<h3 id="deprecated-4">Deprecated<a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-4">#</a></h3>
+<h3 id="deprecated-4"><span class="docs-heading-tail"><span>Deprecated</span><a class="docs-heading-link" aria-label="Link to this section" href="#deprecated-4">#</a></span></h3>
 <p>None listed in the changelog for this release.</p>
-<h3 id="steps-3">Steps<a class="docs-heading-link" aria-label="Link to this section" href="#steps-3">#</a></h3>
+<h3 id="steps-3"><span class="docs-heading-tail"><span>Steps</span><a class="docs-heading-link" aria-label="Link to this section" href="#steps-3">#</a></span></h3>
 <ol>
 <li>
 <p>Update the package:</p>
@@ -282,7 +282,7 @@ it refreshed to the new body length after injection, so a stale length cannot cu
 <code>trustProxies(at: ..., headers: ...)</code> or <code>TrustProxies::withHeaders()</code> in <code>bootstrap/app.php</code>.</p>
 </li>
 </ol>
-<h3 id="how-to-verify-6">How to verify<a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-6">#</a></h3>
+<h3 id="how-to-verify-6">How to <span class="docs-heading-tail"><span>verify</span><a class="docs-heading-link" aria-label="Link to this section" href="#how-to-verify-6">#</a></span></h3>
 <pre tabindex="0"><code>composer ci
 </code></pre>
 <p>Then check the headers:</p>
@@ -292,12 +292,12 @@ it refreshed to the new body length after injection, so a stale length cannot cu
 suite pins the adapter behavior in <code>tests/Laravel/SecurityHeadersTest.php</code> and the core in
 <code>tests/Headers/SecurityHeadersTest.php</code>.</p>
 <hr />
-<h2 id="0-1-0-2026-10-27">0.1.0 (2026-10-27)<a class="docs-heading-link" aria-label="Link to this section" href="#0-1-0-2026-10-27">#</a></h2>
+<h2 id="0-1-0-2026-10-27">0.1.0 <span class="docs-heading-tail"><span>(2026-10-27)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-1-0-2026-10-27">#</a></span></h2>
 <p>First tagged release. There is nothing below it to upgrade from: install with</p>
 <pre tabindex="0"><code>composer require waynestate/helmet
 </code></pre>
 <p>and follow the <a href="guides/quick-start.html">Quick start</a>.</p>
-<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="install.html">Install</a></li>
 <li><a href="guides/quick-start.html">Quick start</a></li>

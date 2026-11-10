@@ -6,11 +6,11 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Run on a git.wayne.edu instance runner[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#run-on-a-git-wayne-edu-instance-runner)
+# Run on a git.wayne.edu instance runner [#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#run-on-a-git-wayne-edu-instance-runner)
 
 This page explains where this repo's CI runs today and why every product in the stack asks for a git.wayne.edu instance runner.
 
-## The goal[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#the-goal)
+## The goal [#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#the-goal)
 
 git.wayne.edu now has an instance runner, and HELMET's CI runs on it. Every product in the stack still strongly recommends a git.wayne.edu instance runner, so that capacity stays there.
 
@@ -18,19 +18,19 @@ git.wayne.edu now has an instance runner, and HELMET's CI runs on it. Every prod
 
 *GIF via [Tenor](https://tenor.com/view/wilmas-rainbow-helmet-wilmas-wilma-rainbow-gif-18685087)*
 
-## Why it matters[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#why-it-matters)
+## Why it matters [#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#why-it-matters)
 
 HELMET, the band, built their sound on precision: short songs, no filler, every part earning its place. That is the whole point of a baseline runtime. The floor is tight, the headers are exact, and nothing here is decoration.
 
 Call `helmet_boot()` once and the rest is Exactly What You Wanted. Size Matters too, which is why the core stays small enough to read in an afternoon.
 
-## The brand board[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#the-brand-board)
+## The brand board [#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#the-brand-board)
 
 **The brand board**: the mark, lockups, palette and type
 
 ![HELMET's brand board: the helmet mark on a Wayne State green tile, the app icon, horizontal and stacked lockups reading 'Put it on before you ship.', the mark on light and dark, the palette of WSU green, gold, cream and berry (site accent only), Inter type, favicons at 64, 32 and 16 px, clear space, do and don't, and a response-headers mockup.](https://helmet.apps.wayne.edu/docs/readme/board.jpg)
 
-## Same team, every snap[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#same-team-every-snap)
+## Same team, every snap [#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#same-team-every-snap)
 
 WayneUI and the stack. HELMET plays the line.
 
@@ -52,7 +52,7 @@ WayneUI and the stack. HELMET plays the line.
 
 Images are regenerated from the front page by [`scripts/readme-art`](https://github.com/waynestate/helmet). Chalk dust included.
 
-## Related[#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/guides/instance-runner.html#related)
 
 - [Quick start](https://helmet.apps.wayne.edu/docs/guides/quick-start.html)
 - [Raw PHP](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html)

@@ -6,7 +6,7 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# The headers[#](https://helmet.apps.wayne.edu/docs/guides/headers.html#the-headers)
+# The headers [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#the-headers)
 
 Every response gets the same set, built by one shared function. This page shows the set, the default Content-Security-Policy exactly as the code defines it, and the rule behind each header. To change the policy itself, see [Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html).
 
@@ -14,7 +14,7 @@ Every response gets the same set, built by one shared function. This page shows 
 
 The play is read from `src/Headers/SecurityHeaders.php`: seven routes, one per default header, drawn in the order HELMET sets them. Cross-Origin-Resource-Policy waits on the bench until you opt in. With reduced motion on, you get the finished play.
 
-## The set[#](https://helmet.apps.wayne.edu/docs/guides/headers.html#the-set)
+## The set [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#the-set)
 
 | Header | Value |
 | --- | --- |
@@ -31,7 +31,7 @@ The default CSP is the union of the WayneUI recipes, with `frame-ancestors 'self
 
 Milquetoast is a Helmet song. It is not a Content-Security-Policy.
 
-## The default policy, exactly[#](https://helmet.apps.wayne.edu/docs/guides/headers.html#the-default-policy-exactly)
+## The default policy, exactly [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#the-default-policy-exactly)
 
 `SecurityHeaders::defaultCspPolicy()` returns the full default, directive by directive:
 
@@ -58,35 +58,35 @@ Where each piece comes from:
 - `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` close the base-tag, plugin and form-targeting gaps that `default-src` alone does not cover in every browser.
 - `data:` appears on `font-src` and `img-src`: Vite and Vue inline small fonts as `data:` URIs, and the nonce does not cover font sources.
 
-## The nonce[#](https://helmet.apps.wayne.edu/docs/guides/headers.html#the-nonce)
+## The nonce [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#the-nonce)
 
 `SecurityHeaders::generateNonce()` makes a new nonce for every request: 18 random bytes, base64 encoded. When the header is built, the nonce is bound to `script-src`, and to `style-src` and `style-src-elem` when those directives are present in the merged policy. An app may remove a directive with `null`, so the nonce only goes on the directives that are there. Vite and Vue inject `<style>` and `<link>` tags that carry the nonce, which is why the style directives need it too.
 
 `strict-dynamic` rides along on `script-src`: it lets a script that was loaded with the nonce load other scripts dynamically, without opening `script-src` to `'unsafe-inline'`.
 
-## Permissions-Policy[#](https://helmet.apps.wayne.edu/docs/guides/headers.html#permissions-policy)
+## Permissions-Policy [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#permissions-policy)
 
 The default denies the browser features a typical app never uses: `camera`, `geolocation`, `microphone`, `payment` and `usb`. An injected script cannot use a feature the page has disabled, so the deny list targets the features most useful to an attacker and least useful to a form-filling app. `interest-cohort` is not in it: the browser vendors dropped it, so denying it buys nothing.
 
 The header renders as `feature=(allowlist)`: an empty list denies the feature, `self` allows the page's own origin unquoted, and an https origin is quoted. Passing `null` (the default) uses the deny list above; an empty map sends no `Permissions-Policy` header at all.
 
-## Cross-Origin-Opener-Policy and Cross-Origin-Resource-Policy[#](https://helmet.apps.wayne.edu/docs/guides/headers.html#cross-origin-opener-policy-and-cross-origin-resource-policy)
+## Cross-Origin-Opener-Policy and Cross-Origin-Resource-Policy [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#cross-origin-opener-policy-and-cross-origin-resource-policy)
 
 COOP puts the page in its own browsing context group, so a cross-origin page cannot reach it through `window.opener` or the cross-origin Web APIs. The default is `same-origin`: only same-origin pages may open it. The accepted values are `unsafe-none`, `same-origin-allow-popups`, `same-origin` and `noopener-allow-popups`; anything else throws. Set COOP to `null` to send no header.
 
 CORP declares who may load this page's resources cross-origin. It is the resource-side half of the cross-origin isolation pair with COOP, and its accepted values are `same-site`, `same-origin` and `cross-origin`. CORP is off by default: pass a value to send it. See [Cross-origin isolation and feature policy](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html) for the pair working together.
 
-## Strict-Transport-Security[#](https://helmet.apps.wayne.edu/docs/guides/headers.html#strict-transport-security)
+## Strict-Transport-Security [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#strict-transport-security)
 
 The default is `max-age=31536000; includeSubDomains` (one year, all subdomains), sent on HTTPS responses only. Roll it out in stages: start with a short `max-age`, raise it once nothing breaks, and keep `includeSubDomains` only when every subdomain serves HTTPS.
 
 `preload` is a decision for the domain owner, not for one app, so HELMET never adds it by default. It is opt-in, and it is only appended when the `max-age` is at least a year and `includeSubDomains` is on, because a browser refuses a preload HSTS header that does not meet both. A negative `max-age` throws. The knobs and the staged rollout are on [Configuring HSTS](https://helmet.apps.wayne.edu/docs/guides/hsts.html).
 
-## One shared function[#](https://helmet.apps.wayne.edu/docs/guides/headers.html#one-shared-function)
+## One shared function [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#one-shared-function)
 
 `SecurityHeaders` is the single place that defines HELMET's security headers and the default Content-Security-Policy. Both the PSR-15 middleware and the framework-free `helmet_boot()` path build their headers from this class, so the two consumer paths always agree. That is what lets the [Laravel](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html) and [Raw PHP](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html) pages promise identical behavior: they call the same `build()`.
 
-## Related[#](https://helmet.apps.wayne.edu/docs/guides/headers.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#related)
 
 - [Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html)
 - [Configuring HSTS](https://helmet.apps.wayne.edu/docs/guides/hsts.html)

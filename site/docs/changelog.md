@@ -6,18 +6,19 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Changelog[#](https://helmet.apps.wayne.edu/docs/changelog.html#changelog)
+# Changelog [#](https://helmet.apps.wayne.edu/docs/changelog.html#changelog)
 
 All notable changes to this project are documented in this file.
 
-## Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
+## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Changed: the docs, agent-ready and deploy kits are Squire 0.10.6 (was 0.10.5): the docs builder and agent-ready generator see every file on Docker Desktop mounts.
 - Site: `assets/stack-env.js` knows Parity, so a pre-production page links Parity's pre-production site and a dev page links its local `site/` folder. Until now Parity, of all parts, was the one link that ignored its environment.
 - Site: Parity is out; the party list links its site.
 - Changed: the deploy kit is Squire 0.10.5 (was 0.10.2): the template comments drop their internal item IDs, and Squire reports the parity group as deprecated (removed no sooner than 0.12.0; Parity runs Citadel on your computer now and carries the kit over with `parity init --from-squire`).
 - Changed: the dev dependency requires waynestate/advisor ^0.3 (locked 0.3.0, was ^0.2 and 0.2.0); the same update moves CREED from 0.1.8 to 0.1.9.
 
-## 1.3.1 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-3-1-2026-11-09)
+## 1.3.1 (2026-11-09) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-3-1-2026-11-09)
 
 A patch release: no header, option or event changes. Docs, version mentions, HELMET's own CI and the front page's deploy kit catch up with the stack.
 
@@ -28,7 +29,7 @@ A patch release: no header, option or event changes. Docs, version mentions, HEL
 - Changed: the deploy layer requires CREED ^0.1.8 (locked 0.1.8, was ^0.1 and 0.1.7) and PROCTOR ^0.11.1 (locked 0.11.1, was ^0.11 and 0.11.0); the dev dependency on Pinstripe is ^0.1.4 (locked 0.1.4, was ^0.1 and 0.1.0, with phpstan-strict-rules 2.1.1). Pinstripe 0.1.4's base cut stops reporting `@var` tag mismatches, so phpstan.neon drops its two `varTag.type` ignores, which no longer matched anything.
 - Docs: MAINTAINING names the maintainer as a role (the stack maintainer, reached through an issue on git.wayne.edu), not a person; internal item and decision IDs are replaced with plain words in the CI comments, `config/helmet.php`, the code comments, the tests and the metrics guide.
 
-## 1.3.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-3-0-2026-11-09)
+## 1.3.0 (2026-11-09) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-3-0-2026-11-09)
 
 A minor release, backward compatible. Two promises now hold on every consumer path: `HELMET_SESSION_SECURE` reaches the Laravel session cookie (it was validated but nothing read it), and the spoofed forwarded headers HELMET ignores are logged by the PSR-15 middleware and the Laravel adapter as well as by raw PHP. Same bucket, better chin strap.
 
@@ -37,7 +38,7 @@ A minor release, backward compatible. Two promises now hold on every consumer pa
 - Added: the Laravel adapter logs `helmet.forwarded_proto_rejected` from `SecurityHeaders` and `helmet.forwarded_for_rejected` from the metrics endpoint through the app's logger, with the same events and context keys as raw PHP. The header values are never logged. Every security event is now logged on every consumer path.
 - Docs: the security-events tables in the README, BEST_PRACTICES (H27, H41) and the usage guides drop "raw PHP only"; the Laravel guide gains a Session cookie section, and the README and Laravel guide env tables gain an `HELMET_SESSION_SECURE` row; the front page's Laravel prompt no longer asks the agent to set `secure` in `config/session.php`.
 
-## 1.2.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-2-0-2026-11-09)
+## 1.2.0 (2026-11-09) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-2-0-2026-11-09)
 
 A minor release, backward compatible. Raw PHP apps get `helmet_client_error()`, the 4xx sibling of `helmet_forbidden()`, and Laravel apps can opt into the same fixed 4xx page with `HELMET_ERROR_PAGES` (off by default), so an exception message never reaches a visitor (H42 is now `Enforced`). The deploy layer moves to Squire's kit 0.10.1 and PROCTOR 0.11.
 
@@ -46,7 +47,7 @@ A minor release, backward compatible. Raw PHP apps get `helmet_client_error()`, 
 - Added: `helmet_client_error(int $status)` sends HELMET's fixed 4xx page and exits, and `helmet_client_error_response(int $status)` returns it as data, the 4xx siblings of `helmet_forbidden()`; a status outside 400 to 499 throws `\InvalidArgumentException`. The Laravel adapter answers every 4xx HTTP exception with the same page when `helmet.error_pages` is on (env `HELMET_ERROR_PAGES`, default false), leaving JSON clients, validation, authentication redirects and every 5xx to Laravel. BEST_PRACTICES H42 is now `Enforced`.
 - Fixed: scripts/a11y.ps1 works on a Windows checkout with CRLF line endings; it strips the carriage returns from the shell command it hands to Docker, which sh rejected with a syntax error.
 
-## 1.1.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-1-0-2026-11-09)
+## 1.1.0 (2026-11-09) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-1-0-2026-11-09)
 
 A minor release, backward compatible. HELMET now logs every proxy-header spoofing attempt it ignores (a spoofed X-Forwarded-Proto joins X-Forwarded-For), `helmet_ribbon()` gets its new home next to `helmet_boot()` (the old name still works for one release), and the raw PHP ribbon stays hidden in production. CI and the deploy layer move to Preflight 0.4.0 and Squire's kit 0.7.1.
 
@@ -61,17 +62,17 @@ A minor release, backward compatible. HELMET now logs every proxy-header spoofin
 - Changed: the local a11y scripts run Preflight's own checker (vendored from 0.3.1 and pinned by a test), so they check what CI checks: axe-core 4.14.0, 320 and 1280 px, and the reflow check.
 - Changed: CI pins the Preflight components to 0.3.1 (fixed cache keys, and caches saved even when a job fails; D-072).
 
-## 1.0.1 (2026-11-08)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-0-1-2026-11-08)
+## 1.0.1 (2026-11-08) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-0-1-2026-11-08)
 
 A patch release: no public function, option or header changes. It adds tests that hold the 1.0 promises (the CORP opt-in in a real browser, a bad config throwing before any header, BEST_PRACTICES citations), fixed CI cache keys, and docs and front-page fixes.
 
-### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
+### Added [#](https://helmet.apps.wayne.edu/docs/changelog.html#added)
 
 - Added: a real-browser check (`tools/a11y/corp-check.mjs`) proves the `corp` opt-in: own assets load, another origin's embed is blocked (H13).
 - Added: a test keeps BEST_PRACTICES.md honest: one tag per practice, every Enforced practice names a test, and every test it names exists.
 - Added: a test pins that a bad config makes `helmet_boot()` throw before any security header is sent (H14's last uncovered corner, on purpose: HELMET fails loudly instead of half-applying).
 
-### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
+### Changed [#](https://helmet.apps.wayne.edu/docs/changelog.html#changed)
 
 - Changed: CI saves its Composer and npm caches even when a job fails, so a retry after a dropped download fetches only what is missing (D-072).
 - Changed: CI caches Composer and npm downloads under a fixed key, so a lock change downloads only what changed (D-072).
@@ -84,25 +85,25 @@ A patch release: no public function, option or header changes. It adds tests tha
 - The front page header's version chip says 1.0 (it still said 0.3).
 - The front page's deploy layer (`deploy/`) requires HELMET `^1.0` (was `^0.4`) and locks 1.0.0, so the site runs the release it describes.
 
-## 1.0.0 (2026-11-08)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-0-0-2026-11-08)
+## 1.0.0 (2026-11-08) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-0-0-2026-11-08)
 
-1.0 notes: from 1.0 HELMET follows semantic versioning, so a `^1.0` constraint gets no breaking change, with one default change announced here. Before you move from `^0.4`, know two things. An unknown quoted source in the CSP (a typo such as `'unsafe-inlined'` in the `csp` option or `HELMET_CSP`) now throws `\InvalidArgumentException` at boot, when the headers are built, instead of shipping a token the browser ignores, so boot the app once on a test host before you deploy. And `style_src_attr` stays `inline` by default: the policy still sends `style-src-attr 'unsafe-inline'` until WayneUI drops its inline `style` attributes. A later 1.x minor then moves the default to `none`; set `style_src_attr` to `inline` to keep today's header, or run `report` now to see what `none` would block. That plan is the decision recorded in [ADR-0001](https://github.com/waynestate/helmet/-/blob/main/docs/adr/0001-style-src-attr.md). Upgrade with `composer require waynestate/helmet:^1.0`.
+1.0 notes: from 1.0 HELMET follows semantic versioning, so a `^1.0` constraint gets no breaking change, with one default change announced here. Before you move from `^0.4`, know two things. An unknown quoted source in the CSP (a typo such as `'unsafe-inlined'` in the `csp` option or `HELMET_CSP`) now throws `\InvalidArgumentException` at boot, when the headers are built, instead of shipping a token the browser ignores, so boot the app once on a test host before you deploy. And `style_src_attr` stays `inline` by default: the policy still sends `style-src-attr 'unsafe-inline'` until WayneUI drops its inline `style` attributes. A later 1.x minor then moves the default to `none`; set `style_src_attr` to `inline` to keep today's header, or run `report` now to see what `none` would block. That plan is the decision recorded in [ADR-0001](https://github.com/waynestate/helmet/blob/main/docs/adr/0001-style-src-attr.md). Upgrade with `composer require waynestate/helmet:^1.0`.
 
-### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added-1)
+### Added [#](https://helmet.apps.wayne.edu/docs/changelog.html#added-1)
 
 - Readiness (HELMET-7): a "send me traffic?" answer on its own path, `/ready`, apart from the liveness answer on `/up`, which is unchanged. `Health\Readiness` runs named checks and answers JSON, `no-store`, 200 while none failed and 503 once one did. HELMET's own checks report config sanity: `headers` (the header set builds and carries a CSP, in `enforce` or `report-only` mode), `trusted_proxies` (a count and a broad count, never an address; warns when empty or broad) and `debug_output` (warns when on). App checks join by name; one that throws fails, and its message goes to the log as `helmet.readiness_check_failed`, never the body. Raw PHP gains the `readiness` option to `helmet_boot()` (off by default, validated on every request) and `helmet_ready()` for a `public/ready.php`; PSR-15 gains the `ReadinessCheck` middleware; Laravel gains `Route::helmetReady()` (invokable check classes, so `route:cache` works; no throttle by default). New docs guide: "Readiness", with probe settings for Citadel, OpenShift, Coolify and Docker. An app that sets nothing behaves exactly as before.
 - Inline style attributes (HELMET-17, ADR-0001): a `style_src_attr` option (`helmet_boot()`, the last `SecurityHeadersMiddleware` argument, Laravel `csp_style_src_attr` / `HELMET_CSP_STYLE_SRC_ATTR`). `inline`, the default, sends exactly what earlier releases sent (`style-src-attr 'unsafe-inline'`, which WayneUI's recipes need). `report` keeps enforcing it and adds `Content-Security-Policy-Report-Only: style-src-attr 'none'` (plus the app's report destination), so the browser names each inline style attribute a strict policy would block. `none` sends `style-src-attr 'none'`. Both only replace HELMET's own allowance: an app that sets `style-src-attr` in `csp` keeps its value. An unknown mode throws at boot. The readiness report names the mode. New docs: "Inline style attributes" in the CSP guide, and the ADR under Decisions.
 - Secret scanning (HELMET-5): HELMET's pipeline includes Preflight's `secret-detection` component (0.2.0), which runs Gitleaks v8.30.1, pinned by digest and pulled through the Dependency Proxy, over the tree; a finding fails the pipeline and the match is redacted. HELMET writes no scanner of its own. New docs guide: "Secret scanning", with the include for an app, the same scan on a developer machine (PowerShell and sh), a history scan, and what to do with a finding. HELMET's tree and its full history scan clean.
 - Accessibility (HELMET-23): the pipeline includes Preflight's `a11y` component (0.2.0) over the front page and every docs page at WCAG 2.2 AA, light and dark, 320 px (with the reflow check) and 1280 px, blocking. The Proof page records the last run of both gates and what was checked by hand.
 
-### Fixed[#](https://helmet.apps.wayne.edu/docs/changelog.html#fixed)
+### Fixed [#](https://helmet.apps.wayne.edu/docs/changelog.html#fixed)
 
 - The pipeline's PROCTOR jobs no longer pass `--policy`, which PROCTOR 0.7 refuses in CI; PROCTOR checks against the CREED policy it bundles.
 - Front page: the headers list and the practice squad named themselves with `aria-labelledby` on a plain `div`, which ARIA does not allow (axe-core 4.14 flags it for review); both are now `role="group"`. The practice squad lists what is still on the backlog, now that readiness and secret scanning shipped.
 - CSP: a quoted source in the `csp` option other than `'self'`, `'none'` and `'unsafe-inline'` was handed to the policy builder as a host, so `'sha256-...'` came out as `https://'sha256-...' http://'sha256-...' 'sha256-...'` and `'unsafe-eval'`, `'unsafe-hashes'`, `'wasm-unsafe-eval'`, `'report-sample'` and `'strict-dynamic'` the same way, none of which a browser accepts. Hashes, fixed nonces, every CSP keyword and the `https:`, `mediastream:` and `filesystem:` schemes now come out as written. An unknown quoted source (a typo such as `'unsafe-inlined'`) now throws `\InvalidArgumentException` when the headers are built, instead of shipping a token the browser ignores: check your `csp` / `HELMET_CSP` before you upgrade.
 - The front page roster says Sourdough starts all five app shapes, from raw PHP to Inertia and Vue; it no longer says Blade and Inertia come later.
 
-### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed-1)
+### Changed [#](https://helmet.apps.wayne.edu/docs/changelog.html#changed-1)
 
 - The GitLab pipeline pins every Preflight component to one release, 0.3.0 (was 0.2.0), with plain image names: Preflight 0.3.0 adds the Dependency Proxy prefix itself (`image_prefix`). A new test, `PreflightPinTest`, fails when the includes name more than one Preflight version or an input carries the proxy prefix.
 - The front page's deploy layer (`deploy/`) runs Squire's kit 0.6.0 (was 0.5.0): `scripts/release.sh` asks PROCTOR's deploy gate for a go or no-go on each release (a report, not a stop, unless `SQUIRE_PROCTOR=enforce`), and `.env.squire.example` lists the new setting. The layer's pins move to HELMET `^0.4` (locked 0.4.0) and PROCTOR `^0.7` (locked 0.7.0).
@@ -111,9 +112,9 @@ A patch release: no public function, option or header changes. It adds tests tha
 - CI caches Composer downloads per lock file (`.composer-cache`, keyed on `composer.lock` and `deploy/composer.lock`), so a pipeline stops fetching every package from Packagist on every run. Images already come through the Dependency Proxy.
 - Docs: every page checked against the code. Fixed the preset log path (presets supply trusted proxies only, never a log path), the CSP report URI rule (a single-slash path relative to the page's origin is valid; an absolute URL must be `https` with a host), HSTS preload (opt-in, appended only with a `max-age` of at least a year and `includeSubDomains`), the HSTS constructor positions, the PSR-15 rethrow behavior, and the COOP `unsafe-none` wording. Completed the API reference with the members it missed: `styleSrcAttr` in `build()` and the middleware, `validateStyleSrcAttr()`, `STYLE_SRC_ATTR_MODES`, `Laravel\SecurityHeaders::styleSrcAttr()`, `Logging\Logging::addRequestContext()`, `Proxy\TrustedProxies::broadEntries()`, `Metrics\MetricsStorageException`, the `Health\Readiness` `PASS`/`WARN`/`FAIL` constants, `Metrics\MetricsStorage::PREFIX`, and the `RecordRequestMetrics`, `RequestMetricsBinding` and `RequestTimer` constructors. Made the README "Security events" a real heading so its anchor resolves.
 
-## 0.4.0 (2026-11-07)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-4-0-2026-11-07)
+## 0.4.0 (2026-11-07) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-4-0-2026-11-07)
 
-### Added[#](https://helmet.apps.wayne.edu/docs/changelog.html#added-2)
+### Added [#](https://helmet.apps.wayne.edu/docs/changelog.html#added-2)
 
 - ADVISOR module (`Waynestate\Helmet\Advisor\HelmetModule`): a coding agent that runs ADVISOR gains two read-only tools. `helmet_headers` returns the headers and CSP HELMET sends, built by `SecurityHeaders::build()`, each header and directive with its reason, plus how the app folder is wired to HELMET and the settings that change the answer. `helmet_php_support` reads the PHP constraint from the app's `composer.json` and reports the support status of its floor, and of every version it allows, from the CREED policy ADVISOR bundles, read with HELMET's own `JsonFilePolicySource` and `VersionStatus`. Both take one path inside the project, run in-process, write nothing and never read `.env`. `waynestate/advisor` is a dev dependency and a suggestion, never a requirement. New docs guide: "Your coding agent (ADVISOR)".
 - `Headers\HeaderReasons`: one reason per header and CSP directive, next to the policy; a test fails when one is added without a reason.
@@ -125,7 +126,7 @@ A patch release: no public function, option or header changes. It adds tests tha
 - Grafana dashboard (`docs/grafana/helmet.json`): `job` and `instance` variables on every query, and new panels for targets down, days to PHP end of support, stack packages, requests by route group and by status class, latency p50 and p95, p95 by route group, server errors, metrics storage and CSP violations by directive. Checked by importing it into Grafana 12 through the API against a local Prometheus scraping three HELMET apps, one per store. Scrape health is a state timeline (up or down per target) and the version panels are bar charts.
 - Added: an accessibility gate for the site (axe-core in Playwright, Docker). `scripts/a11y.sh` and `scripts/a11y.ps1` check `site/index.html` and every page under `site/docs/` in light and dark at 360 px and 1280 px, and fail on any WCAG 2.2 AA violation; `tools/a11y/check.mjs` is the runner.
 
-### Fixed[#](https://helmet.apps.wayne.edu/docs/changelog.html#fixed-1)
+### Fixed [#](https://helmet.apps.wayne.edu/docs/changelog.html#fixed-1)
 
 - Metrics: `helmet_php_version_status` looked up the full PHP release (`8.3.12`) in CREED's policy, which names versions by major.minor (`8.3`), so every real app reported `unknown`. It now looks up major.minor.
 - Policy: `JsonFilePolicySource` read each component as a flat version map, but CREED's `policy.json` (and its schema) keeps the versions under `versions`, so against the real file the ribbon never warned and the PHP support metrics said `unknown`. It now reads both shapes, skips a version with no `security_until`, and treats one with no `active_until` as security-only.
@@ -134,16 +135,16 @@ A patch release: no public function, option or header changes. It adds tests tha
 - Grafana dashboard: the data source was declared under `inputs`, which Grafana's import ignores, so every panel pointed at an unresolved `${DS_PROMETHEUS}`; it is now `__inputs` (with `__requires`). "Scrape health" joined `up` to `helmet_info`, which drops exactly the targets that are down; it now graphs `up` directly.
 - Fixed: two violations the new gate found. A code block wider than its box now joins the tab order so a keyboard user can scroll it (axe `scrollable-region-focusable`, WCAG 2.1.1), and table-of-contents sub-items get a full-width link target of at least 24 px (axe `target-size`, WCAG 2.5.8). Both come from syncing the Squire-owned docs kit (`bin/docs-site.php`, `site/assets/docs.css`, `site/assets/docs.js`) to the current stack version, and the docs site and agent-ready files are rebuilt from it.
 
-### Changed[#](https://helmet.apps.wayne.edu/docs/changelog.html#changed-2)
+### Changed [#](https://helmet.apps.wayne.edu/docs/changelog.html#changed-2)
 
 - The canonical repository is git.wayne.edu (ADR-0021); docs, links and package metadata no longer point at the archived nougat copy.
 - Changed: the docs site renders fenced blocks tagged `tab=` as a labeled tablist (the previous builder ignored the tag and stacked the blocks), and the changelog mirror keeps its top-level heading, per the current shared builder.
 
-### Security[#](https://helmet.apps.wayne.edu/docs/changelog.html#security)
+### Security [#](https://helmet.apps.wayne.edu/docs/changelog.html#security)
 
 - The front-page deploy layer moves to Symfony 7.4.23 (symfony/http-foundation and symfony/yaml advisories, including CVE-2026-118514).
 
-## 0.3.1 (2026-11-05)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-3-1-2026-11-05)
+## 0.3.1 (2026-11-05) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-3-1-2026-11-05)
 
 No breaks: new boot warning for a broad trusted-proxy list, `helmet_csp_nonce_swap()`, `GenericErrorResponse::clientError()`, a Grafana dashboard, a contract test suite and the docs site, plus docs and deploy-layer refreshes.
 
@@ -164,7 +165,7 @@ No breaks: new boot warning for a broad trusted-proxy list, `helmet_csp_nonce_sw
 - Docs: the sample metrics output shows 0.3.0.
 - Added: `GenericErrorResponse::clientError(int $status)` returns a fixed 4xx page (status, headers, body) for client faults, with its own title and sentence for 400, 401, 403, 404, 405, 410 and 429 and the Bad request text for any other 4xx; a status outside the 400s throws `InvalidArgumentException`, and nothing from the request or an exception reaches the body. An app calls it from its router; nothing wires it into `helmet_boot()` automatically.
 
-## 0.3.0 (2026-11-03)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-3-0-2026-11-03)
+## 0.3.0 (2026-11-03) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-3-0-2026-11-03)
 
 - This is a pre-1.0 minor: apps that pin `^0.2` stay on 0.2.x until they move their constraint to `^0.3`. The proxy and forwarded-header changes below make some requests resolve differently (an empty `HELMET_PROXIES=` now trusts nobody), so read the Security lines first.
 - Docs: BEST_PRACTICES H14, H13 and H41 say what is tested and what is not (error page headers on the raw PHP path, WayneUI assets, session hardening events).
@@ -183,7 +184,7 @@ No breaks: new boot warning for a broad trusted-proxy list, `helmet_csp_nonce_sw
 - Docs: the README and the `Presets` docblock now state the `citadel` preset's NAT assumption: `172.18.0.1` is the Docker bridge gateway, the preset is safe only when the front proxy reaches the app over that bridge, and a published app port that is source-NATed to the gateway address would make a direct client look like the proxy, so the platform must not publish the app's port.
 - Changed: docs and package metadata name nougat as the canonical repository, with git.wayne.edu and GitHub as read-only mirrors, until git.wayne.edu has CI runners.
 
-## 0.2.6 (2026-11-02)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-6-2026-11-02)
+## 0.2.6 (2026-11-02) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-6-2026-11-02)
 
 - Fixed: HTML rewrites (CSP nonce meta, environment ribbon) keep the response's view object, so `assertInertia()` and `assertViewHas()` work in apps that use HELMET.
 - Changed: the deploy layer's Squire kit is refreshed to 0.3.3 (release options can now live in ./.env.squire).
@@ -192,7 +193,7 @@ No breaks: new boot warning for a broad trusted-proxy list, `helmet_csp_nonce_sw
 - Changed: composer.json sets config.audit.abandoned to report, making the Composer audit policy explicit.
 - Docs: README Docker test commands cover PHP 8.5, 8.4 and 8.3 on both PowerShell and sh, and the middleware error-path wording matches the default rethrow behaviour.
 
-## 0.2.5 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-5-2026-10-29)
+## 0.2.5 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-5-2026-10-29)
 
 - Added: agent-ready site (prompt blocks, Markdown twins, llms.txt), from Squire's kit.
 - Added: HELMET_SESSION_SECURE=always keeps the session cookie Secure even when HTTPS is not detected.
@@ -200,25 +201,25 @@ No breaks: new boot warning for a broad trusted-proxy list, `helmet_csp_nonce_sw
 - Changed: project names written as words except acronyms.
 - Fixed: stale capability claims in the site and docs.
 
-## 0.2.4 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-4-2026-10-29)
+## 0.2.4 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-4-2026-10-29)
 
 - `HELMET_PRESET` (Laravel) now also comes from the private `waynestate/playbook` package when the environment has no value: the config reads it through `Waynestate\Helmet\Support\Setting`, which checks the environment first, then PLAYBOOK, then gives up. A missing preset is still not an error, and `waynestate/playbook` is suggested, never required. The README gains a "WSU values (PLAYBOOK)" section with the fetch commands.
 
-## 0.2.3 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-3-2026-10-29)
+## 0.2.3 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-3-2026-10-29)
 
 - Fixed: `helmet_boot()` removed `X-Powered-By` only after it had already answered the health check path, so a GET or HEAD to `/up` (the default `health_path`) still sent the header. The removal now runs before the health answer and the request-forgery rejection, so both early exits leave the response clean.
 
-## 0.2.2 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-2-2026-10-29)
+## 0.2.2 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-2-2026-10-29)
 
 - Every JSON log record now carries a request ID in `extra.request_id`: 16 lowercase hex characters generated by HELMET (`Logging::requestId()`), stamped by a processor pushed before the redaction processor, so a record with a `password` context key still comes out redacted and keeps its ID. An inbound header is never trusted for the ID. `Logging::create()` takes an optional fourth argument for a caller-supplied ID (8 to 64 letters, digits, dots, underscores or dashes; anything else is ignored), and `helmet_boot()` accepts it as `log.request_id`, which must be a string. `helmet_boot()` now also returns the ID as `request_id`.
 
-## 0.2.1 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-1-2026-10-29)
+## 0.2.1 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-1-2026-10-29)
 
 - Upgrade note: a raw-PHP app that still used the default `PHPSESSID` cookie gets the new `WSUSESSID` name (`__Host-WSUSESSID` on HTTPS), so signed-in users sign in once more after deploying. Laravel apps are unaffected (Laravel names its own cookie).
 - Docs: added a "Running off Citadel" section to the README with a table for Citadel, OpenShift, Coolify and raw Docker behind a compose proxy: what sits in front, what to put in `HELMET_PROXIES`, and where logs go. The README log example now leads with `php://stderr`, and the hard-coded `172.18.0.1` now lives only in that table, with the other references pointing at the `citadel` preset.
 - `SessionHardening::apply()` now also sets the session cookie name, lifetime, path, domain and cache limiter: `cookie_lifetime=0` (a browser-session cookie), `cache_limiter=nocache`, `cookie_path=/`, an empty `cookie_domain` (host-only), and the name `__Host-WSUSESSID` on HTTPS or `WSUSESSID` on HTTP. The rename happens only while the name is still the PHP default `PHPSESSID`; an app-chosen name is left alone, and SESAME reads whatever `session_name()` returns.
 
-## 0.2.0 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-0-2026-10-29)
+## 0.2.0 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-2-0-2026-10-29)
 
 - Fixed the `<head>` match when injecting the csp-nonce meta tag into HTML responses: the old pattern also matched `<header>` and `<headline>` and injected the tag after the wrong element. Responses that carry a `Content-Length` header now have it refreshed to the new body length after injection, so a stale length cannot cut the page off mid-tag.
 - Narrowed the trusted-header set in the Laravel adapter. `X-Forwarded-Host`, `X-Forwarded-Prefix` and now `X-Forwarded-Port` are no longer trusted by default. Port is out because Citadel's HA-Proxy never sends it, so a client-sent value would pass through untouched and change the port Laravel reports and the URLs it generates. Apps that need any of them choose the set themselves with `trustProxies(at: ..., headers: ...)` or `TrustProxies::withHeaders()`.
@@ -234,6 +235,6 @@ No breaks: new boot warning for a broad trusted-proxy list, `helmet_csp_nonce_sw
 - BEST_PRACTICES tags brought up to date. The Stack lines are now picture perfect.
 - PHPStan and Pint now run from Pinstripe, the stack's coding standard, instead of a hand copy. `composer.json` requires `waynestate/pinstripe` (dev-main, until 0.1.0 is tagged) as a dev dependency, `phpstan.neon` includes `vendor/waynestate/pinstripe/phpstan/raw.neon` (keeping this repo's paths, PHP version range and three commented exceptions), and `pint.json` keeps the `per` preset Pinstripe ships. No behaviour change; the code is just cut from the same cloth now.
 
-## 0.1.0 (2026-10-27)[#](https://helmet.apps.wayne.edu/docs/changelog.html#0-1-0-2026-10-27)
+## 0.1.0 (2026-10-27) [#](https://helmet.apps.wayne.edu/docs/changelog.html#0-1-0-2026-10-27)
 
 - First tagged release.

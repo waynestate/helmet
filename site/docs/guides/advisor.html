@@ -39,13 +39,13 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/readiness.html">Readiness</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../../docs/guides/advisor.html" aria-current="page">Your coding agent (ADVISOR)</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="use-helmet-from-your-coding-agent-advisor">Use HELMET from your coding agent (ADVISOR)<a class="docs-heading-link" aria-label="Link to this section" href="#use-helmet-from-your-coding-agent-advisor">#</a></h1>
+      <article class="docs-article"><h1 id="use-helmet-from-your-coding-agent-advisor">Use HELMET from your coding agent <span class="docs-heading-tail"><span>(ADVISOR)</span><a class="docs-heading-link" aria-label="Link to this section" href="#use-helmet-from-your-coding-agent-advisor">#</a></span></h1>
 <p>This page is for developers whose coding agent runs <a rel="noopener" href="https://github.com/waynestate/advisor">ADVISOR</a>, the stack's
 read-only MCP server. HELMET ships an ADVISOR module, so the agent can ask HELMET two questions without leaving its
 sandbox: &quot;which headers does HELMET send, and why?&quot; and &quot;how long is this app's PHP floor supported?&quot; Both answers come
 from HELMET's own code. Next, see <a href="headers.html">The headers</a> for the same ground in prose and
 <a href="csp.html">Customizing the CSP</a> for changing it.</p>
-<h2 id="install-advisor">Install ADVISOR<a class="docs-heading-link" aria-label="Link to this section" href="#install-advisor">#</a></h2>
+<h2 id="install-advisor">Install <span class="docs-heading-tail"><span>ADVISOR</span><a class="docs-heading-link" aria-label="Link to this section" href="#install-advisor">#</a></span></h2>
 <p>In the app, install ADVISOR as a dev dependency:</p>
 <!-- docs-test: skip needs a real project -->
 <pre tabindex="0"><code class="language-bash">composer require --dev waynestate/advisor
@@ -59,10 +59,10 @@ from HELMET's own code. Next, see <a href="headers.html">The headers</a> for the
 </code></pre>
 <p>HELMET does not require ADVISOR, and ADVISOR does not require HELMET: the module only loads when both are installed and
 <code>modules.json</code> names it.</p>
-<h2 id="the-two-read-only-tools">The two read-only tools<a class="docs-heading-link" aria-label="Link to this section" href="#the-two-read-only-tools">#</a></h2>
+<h2 id="the-two-read-only-tools">The two read-only <span class="docs-heading-tail"><span>tools</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-two-read-only-tools">#</a></span></h2>
 <p>Both tools take exactly one argument, <code>path</code>: the app folder, inside the project root (default: the root itself). Both
 run in-process: no subprocess, no network, nothing written. Neither reads <code>.env</code>, the environment or any secret.</p>
-<h3 id="helmet-headers">helmet_headers<a class="docs-heading-link" aria-label="Link to this section" href="#helmet-headers">#</a></h3>
+<h3 id="helmet-headers"><span class="docs-heading-tail"><span>helmet_headers</span><a class="docs-heading-link" aria-label="Link to this section" href="#helmet-headers">#</a></span></h3>
 <p><code>helmet_headers</code> builds the headers HELMET sends with its defaults, through the same <code>SecurityHeaders::build()</code> every
 consumer path uses, and returns:</p>
 <ul>
@@ -87,7 +87,7 @@ them; it never reads their values.</li>
 </code></pre>
 <p>The reasons live in <code>src/Headers/HeaderReasons.php</code>, next to the policy they explain, and a test fails when a header or
 directive is added without one.</p>
-<h3 id="helmet-php-support">helmet_php_support<a class="docs-heading-link" aria-label="Link to this section" href="#helmet-php-support">#</a></h3>
+<h3 id="helmet-php-support"><span class="docs-heading-tail"><span>helmet_php_support</span><a class="docs-heading-link" aria-label="Link to this section" href="#helmet-php-support">#</a></span></h3>
 <p><code>helmet_php_support</code> reads <code>require.php</code> and <code>config.platform.php</code> from the app's <code>composer.json</code>, takes the lowest PHP
 version the constraint allows (the floor), and looks it up in the CREED <code>policy.json</code> that ADVISOR bundles. It reads the
 policy with HELMET's own <code>JsonFilePolicySource</code> and <code>VersionStatus</code>, the code behind the environment ribbon and the PHP

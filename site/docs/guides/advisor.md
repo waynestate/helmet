@@ -6,11 +6,11 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Use HELMET from your coding agent (ADVISOR)[#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#use-helmet-from-your-coding-agent-advisor)
+# Use HELMET from your coding agent (ADVISOR) [#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#use-helmet-from-your-coding-agent-advisor)
 
 This page is for developers whose coding agent runs [ADVISOR](https://github.com/waynestate/advisor), the stack's read-only MCP server. HELMET ships an ADVISOR module, so the agent can ask HELMET two questions without leaving its sandbox: "which headers does HELMET send, and why?" and "how long is this app's PHP floor supported?" Both answers come from HELMET's own code. Next, see [The headers](https://helmet.apps.wayne.edu/docs/guides/headers.html) for the same ground in prose and [Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html) for changing it.
 
-## Install ADVISOR[#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#install-advisor)
+## Install ADVISOR [#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#install-advisor)
 
 In the app, install ADVISOR as a dev dependency:
 
@@ -30,11 +30,11 @@ Then add one line to the app's `modules.json` (or point `ADVISOR_MODULES_FILE` a
 
 HELMET does not require ADVISOR, and ADVISOR does not require HELMET: the module only loads when both are installed and `modules.json` names it.
 
-## The two read-only tools[#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#the-two-read-only-tools)
+## The two read-only tools [#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#the-two-read-only-tools)
 
 Both tools take exactly one argument, `path`: the app folder, inside the project root (default: the root itself). Both run in-process: no subprocess, no network, nothing written. Neither reads `.env`, the environment or any secret.
 
-### helmet_headers[#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#helmet-headers)
+### helmet_headers [#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#helmet-headers)
 
 `helmet_headers` builds the headers HELMET sends with its defaults, through the same `SecurityHeaders::build()` every consumer path uses, and returns:
 
@@ -56,7 +56,7 @@ One directive, as it comes back:
 
 The reasons live in `src/Headers/HeaderReasons.php`, next to the policy they explain, and a test fails when a header or directive is added without one.
 
-### helmet_php_support[#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#helmet-php-support)
+### helmet_php_support [#](https://helmet.apps.wayne.edu/docs/guides/advisor.html#helmet-php-support)
 
 `helmet_php_support` reads `require.php` and `config.platform.php` from the app's `composer.json`, takes the lowest PHP version the constraint allows (the floor), and looks it up in the CREED `policy.json` that ADVISOR bundles. It reads the policy with HELMET's own `JsonFilePolicySource` and `VersionStatus`, the code behind the environment ribbon and the PHP support metrics, so all three agree. It returns:
 

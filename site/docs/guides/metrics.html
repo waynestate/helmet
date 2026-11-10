@@ -39,18 +39,18 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/readiness.html">Readiness</a></li><li><a href="../../docs/guides/metrics.html" aria-current="page">Metrics</a></li><li><a href="../../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="metrics">Metrics<a class="docs-heading-link" aria-label="Link to this section" href="#metrics">#</a></h1>
+      <article class="docs-article"><h1 id="metrics"><span class="docs-heading-tail"><span>Metrics</span><a class="docs-heading-link" aria-label="Link to this section" href="#metrics">#</a></span></h1>
 <p>This page is for the opt-in Prometheus metrics endpoint: what it reports, how to turn it on for one site, how to gate it,
 where request counts are kept, and how to graph the result in Grafana. Read it before you expose <code>/metrics</code>.</p>
 <p>HELMET can expose a Prometheus metrics endpoint. It is off by default and stays off until you turn it on. HELMET does
 not write the exposition format by hand: it uses <a rel="noopener" href="https://github.com/PromPHP/prometheus_client_php">promphp/prometheus_client_php</a>
 and keeps its own layer to naming, label bounding and access control.</p>
-<h2 id="the-goal">The goal<a class="docs-heading-link" aria-label="Link to this section" href="#the-goal">#</a></h2>
+<h2 id="the-goal">The <span class="docs-heading-tail"><span>goal</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-goal">#</a></span></h2>
 <p>One endpoint per app that answers three questions for a fleet dashboard: is it up, is it current (PHP and HELMET
 versions, and how long until its PHP release loses security support), and how is it doing (requests, latency, errors
 and CSP violations). Labels never carry personal data or raw paths, so the number of series stays small no matter
 what the internet sends.</p>
-<h2 id="what-it-reports">What it reports<a class="docs-heading-link" aria-label="Link to this section" href="#what-it-reports">#</a></h2>
+<h2 id="what-it-reports">What it <span class="docs-heading-tail"><span>reports</span><a class="docs-heading-link" aria-label="Link to this section" href="#what-it-reports">#</a></span></h2>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -110,7 +110,7 @@ across requests and need a store (see <a href="#pick-a-store">Pick a store</a>).
 <p>The policy is the CREED <code>policy.json</code> (set <code>HELMET_POLICY_PATH</code>). Status is looked up by PHP major and minor version, so
 PHP 8.5.12 reads the <code>8.5</code> entry. The end-of-support date is exposed as a Unix timestamp, which is the Prometheus way;
 the dashboard turns it into days.</p>
-<h3 id="how-labels-stay-small">How labels stay small<a class="docs-heading-link" aria-label="Link to this section" href="#how-labels-stay-small">#</a></h3>
+<h3 id="how-labels-stay-small">How labels stay <span class="docs-heading-tail"><span>small</span><a class="docs-heading-link" aria-label="Link to this section" href="#how-labels-stay-small">#</a></span></h3>
 <p>HELMET bounds every label before it reaches the store, and anything it will not accept becomes <code>other</code>:</p>
 <ul>
 <li><code>route</code> is a <strong>route group the app names</strong>, never the raw path. Laravel apps get the route name, else the URI
@@ -121,7 +121,7 @@ group. Values must be lowercase letters, digits and <code>. _ / { } : -</code>, 
 <li><code>directive</code> is a CSP Level 3 directive name, else <code>other</code>, so a forged report cannot mint a new series.</li>
 </ul>
 <p>The request count is the histogram's <code>_count</code> series; there is no separate counter to keep in sync.</p>
-<h2 id="enable-it">Enable it<a class="docs-heading-link" aria-label="Link to this section" href="#enable-it">#</a></h2>
+<h2 id="enable-it">Enable <span class="docs-heading-tail"><span>it</span><a class="docs-heading-link" aria-label="Link to this section" href="#enable-it">#</a></span></h2>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
 <tr>
@@ -165,7 +165,7 @@ does not hand its metrics to the whole network.</p></aside>
 <p>The token is read from the <code>Authorization</code> header wherever the server puts it: <code>HTTP_AUTHORIZATION</code>,
 <code>REDIRECT_HTTP_AUTHORIZATION</code>, or the request headers themselves. That last one matters on Apache with mod_php,
 which keeps the header out of <code>$_SERVER</code>.</p>
-<h2 id="pick-a-store">Pick a store<a class="docs-heading-link" aria-label="Link to this section" href="#pick-a-store">#</a></h2>
+<h2 id="pick-a-store">Pick a <span class="docs-heading-tail"><span>store</span><a class="docs-heading-link" aria-label="Link to this section" href="#pick-a-store">#</a></span></h2>
 <p>PHP shares nothing between requests, so a request counter kept in memory would count to 1 and vanish. Request and CSP
 metrics need a store that every worker in the app can reach. HELMET does not pick one for you.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
@@ -197,8 +197,8 @@ metrics need a store that every worker in the app can reach. HELMET does not pic
 <p>Counters that reset on restart are fine: Prometheus's <code>rate()</code> and <code>increase()</code> handle resets. If the store breaks, the
 page still renders: the failure is logged once per request (<code>metrics_storage_unusable</code> or <code>metrics_record_failed</code>),
 the version gauges keep answering, and <code>helmet_metrics_storage_up</code> drops to <code>0</code> so the dashboard shows it.</p>
-<h2 id="turn-it-on-for-one-site">Turn it on for one site<a class="docs-heading-link" aria-label="Link to this section" href="#turn-it-on-for-one-site">#</a></h2>
-<h3 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h3>
+<h2 id="turn-it-on-for-one-site">Turn it on for one <span class="docs-heading-tail"><span>site</span><a class="docs-heading-link" aria-label="Link to this section" href="#turn-it-on-for-one-site">#</a></span></h2>
+<h3 id="laravel"><span class="docs-heading-tail"><span>Laravel</span><a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></span></h3>
 <p>Set the variables, then register the routes you want. Nothing is created until you call the macro:</p>
 <pre tabindex="0"><code class="language-dotenv">HELMET_METRICS_ENABLED=true
 HELMET_METRICS_TOKEN=&lt;a long random string, from your secret store&gt;
@@ -214,7 +214,7 @@ Route::cspReport();                                 // POST /csp-report, counts 
 times the whole request (including your other middleware) and records after the response has been sent. Without it the
 middleware is not registered at all. The controller reads <code>helmet.metrics</code> from the published config and resolves the
 client IP through the same trusted-proxy list the headers use.</p>
-<h3 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h3>
+<h3 id="raw-php">Raw <span class="docs-heading-tail"><span>PHP</span><a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></span></h3>
 <p>Put this at the top of the front controller, after the autoloader:</p>
 <pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\helmet_metrics;
 use function Waynestate\Helmet\helmet_metrics_env;
@@ -240,11 +240,11 @@ with <code>exit</code> is still counted, with whatever status code it sent. It d
 same front controller works with or without a store.</p>
 <p>To count CSP violations in raw PHP, call <code>helmet_metrics_requests($config)?-&gt;cspViolation($directive)</code> from the
 handler that receives your reports.</p>
-<h3 id="check-it">Check it<a class="docs-heading-link" aria-label="Link to this section" href="#check-it">#</a></h3>
+<h3 id="check-it">Check <span class="docs-heading-tail"><span>it</span><a class="docs-heading-link" aria-label="Link to this section" href="#check-it">#</a></span></h3>
 <pre tabindex="0"><code class="language-bash">curl -s -H &quot;Authorization: Bearer $HELMET_METRICS_TOKEN&quot; https://your-app.example.test/metrics | head
 </code></pre>
 <p>Expect <code>helmet_info</code> first. Without the token you should get <code>403</code>; with metrics off, <code>404</code>.</p>
-<h2 id="graph-it-in-grafana">Graph it in Grafana<a class="docs-heading-link" aria-label="Link to this section" href="#graph-it-in-grafana">#</a></h2>
+<h2 id="graph-it-in-grafana">Graph it in <span class="docs-heading-tail"><span>Grafana</span><a class="docs-heading-link" aria-label="Link to this section" href="#graph-it-in-grafana">#</a></span></h2>
 <p>The fleet dashboard ships in <a rel="noopener" href="https://git.wayne.edu/enterprise-apps/helmet/-/blob/main/docs/grafana/helmet.json"><code>docs/grafana/helmet.json</code></a>.
 In Grafana, open Dashboards, New, Import, upload the file, and pick your Prometheus data source for the
 <code>DS_PROMETHEUS</code> input. It has three rows:</p>
@@ -280,7 +280,7 @@ histogram_quantile(0.95, sum by (le) (rate(helmet_http_request_duration_seconds_
 </code></pre>
 <p>WSU has no Prometheus server yet, so the dashboard is ready, not live: it graphs as soon as a server
 exists and scrapes <code>/metrics</code>. The stack's own sites turn it on first.</p>
-<h2 id="limits">Limits<a class="docs-heading-link" aria-label="Link to this section" href="#limits">#</a></h2>
+<h2 id="limits"><span class="docs-heading-tail"><span>Limits</span><a class="docs-heading-link" aria-label="Link to this section" href="#limits">#</a></span></h2>
 <ul>
 <li>HELMET reports; it does not alert. Alert rules belong with the Prometheus server.</li>
 <li>Request metrics start at the front controller. A static file the web server answers on its own is never counted.</li>
@@ -288,7 +288,7 @@ exists and scrapes <code>/metrics</code>. The stack's own sites turn it on first
 </ul>
 <p>The endpoint is the only place in HELMET that says &quot;I am still here&quot; without saying &quot;here is your page&quot;. A lullaby,
 in a way. A helmet with a heart-rate monitor, if you like.</p>
-<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="csp.html">Customizing the CSP</a></li>
 <li><a href="platform-presets.html">Platform presets</a></li>

@@ -39,9 +39,9 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html" aria-current="page">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/readiness.html">Readiness</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="platform-presets">Platform presets<a class="docs-heading-link" aria-label="Link to this section" href="#platform-presets">#</a></h1>
+      <article class="docs-article"><h1 id="platform-presets">Platform <span class="docs-heading-tail"><span>presets</span><a class="docs-heading-link" aria-label="Link to this section" href="#platform-presets">#</a></span></h1>
 <p>A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app. Name a preset (or list your own proxies) and the same package runs on Citadel, plain Docker, OpenShift or Coolify without a code change; when you are done choosing a preset, see <a href="running-off-citadel.html">Running off Citadel</a> for the per-platform table.</p>
-<h2 id="the-presets">The presets<a class="docs-heading-link" aria-label="Link to this section" href="#the-presets">#</a></h2>
+<h2 id="the-presets">The <span class="docs-heading-tail"><span>presets</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-presets">#</a></span></h2>
 <p>The presets live in <code>Waynestate\Helmet\Platform\Presets</code>:</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -62,7 +62,7 @@
 </tbody>
 </table></div>
 <p><code>citadel</code> is the WSU container platform: the app container talks to the HA-Proxy front through the Docker bridge gateway <code>172.18.0.1</code>, the only address allowed to set <code>X-Forwarded-Proto</code>. <code>docker</code> is a plain Docker deployment with no front proxy in front of the app container: nothing is trusted, and HTTPS is detected from the direct connection only.</p>
-<h2 id="passing-a-preset">Passing a preset<a class="docs-heading-link" aria-label="Link to this section" href="#passing-a-preset">#</a></h2>
+<h2 id="passing-a-preset">Passing a <span class="docs-heading-tail"><span>preset</span><a class="docs-heading-link" aria-label="Link to this section" href="#passing-a-preset">#</a></span></h2>
 <p>Raw PHP passes the preset name:</p>
 <pre tabindex="0"><code class="language-php">$helmet = helmet_boot([
     'preset' =&gt; 'citadel',
@@ -76,7 +76,7 @@
 </code></pre>
 <p>An unknown preset name throws at boot, so a typo fails loudly instead of silently trusting nothing.</p>
 <aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>With neither a preset nor a list, no address is trusted, so forwarded headers such as <code>X-Forwarded-Proto</code> are ignored and the request is read as it arrived.</p></aside>
-<h2 id="the-api">The API<a class="docs-heading-link" aria-label="Link to this section" href="#the-api">#</a></h2>
+<h2 id="the-api">The <span class="docs-heading-tail"><span>API</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-api">#</a></span></h2>
 <p><code>Presets</code> exposes three static methods:</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -100,13 +100,13 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="which-headers-a-trusted-proxy-may-set">Which headers a trusted proxy may set<a class="docs-heading-link" aria-label="Link to this section" href="#which-headers-a-trusted-proxy-may-set">#</a></h2>
+<h2 id="which-headers-a-trusted-proxy-may-set">Which headers a trusted proxy may <span class="docs-heading-tail"><span>set</span><a class="docs-heading-link" aria-label="Link to this section" href="#which-headers-a-trusted-proxy-may-set">#</a></span></h2>
 <p>The headers a trusted front proxy may set are the same for every preset: <code>X-Forwarded-For</code> and <code>X-Forwarded-Proto</code> (<code>Presets::TRUSTED_HEADERS</code>). Two more are deliberately left out:</p>
 <ul>
 <li><code>X-Forwarded-Host</code> and <code>X-Forwarded-Prefix</code>: a platform that rewrites the host (for example OpenShift, which appends the route host) would let a client pre-seed those headers.</li>
 <li><code>X-Forwarded-Port</code>: Citadel's HA-Proxy never sends it, so a client-sent value would pass through untouched and change the port the app reports.</li>
 </ul>
-<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="wsu-values.html">WSU values (Playbook)</a></li>
 <li><a href="running-off-citadel.html">Running off Citadel</a></li>

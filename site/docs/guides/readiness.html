@@ -39,10 +39,10 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/readiness.html" aria-current="page">Readiness</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="readiness">Readiness<a class="docs-heading-link" aria-label="Link to this section" href="#readiness">#</a></h1>
+      <article class="docs-article"><h1 id="readiness"><span class="docs-heading-tail"><span>Readiness</span><a class="docs-heading-link" aria-label="Link to this section" href="#readiness">#</a></span></h1>
 <p>Two questions, two paths. <strong>Liveness</strong> (<code>/up</code>) asks &quot;is the process running?&quot; and a failure means &quot;restart me&quot;. <strong>Readiness</strong> (<code>/ready</code>) asks &quot;should this instance get traffic right now?&quot; and a failure means &quot;skip me for a while&quot;. Mix them up and a database blip restarts every healthy instance at once, which turns a short outage into a long one.</p>
 <p>HELMET answers both. <code>/up</code> stays what it always was: <code>200</code>, <code>ok</code>, no checks, no config read. <code>/ready</code> is new and off until you turn it on.</p>
-<h2 id="what-ready-answers">What <code>/ready</code> answers<a class="docs-heading-link" aria-label="Link to this section" href="#what-ready-answers">#</a></h2>
+<h2 id="what-ready-answers">What <code>/ready</code> <span class="docs-heading-tail"><span>answers</span><a class="docs-heading-link" aria-label="Link to this section" href="#what-ready-answers">#</a></span></h2>
 <pre tabindex="0"><code class="language-json">{&quot;status&quot;:&quot;ready&quot;,&quot;checks&quot;:{&quot;headers&quot;:{&quot;status&quot;:&quot;pass&quot;,&quot;csp&quot;:&quot;enforce&quot;,&quot;style_src_attr&quot;:&quot;inline&quot;},&quot;trusted_proxies&quot;:{&quot;status&quot;:&quot;pass&quot;,&quot;count&quot;:1,&quot;broad&quot;:0},&quot;debug_output&quot;:{&quot;status&quot;:&quot;pass&quot;},&quot;database&quot;:{&quot;status&quot;:&quot;pass&quot;}}}
 </code></pre>
 <ul>
@@ -87,8 +87,8 @@
 The probe is as public as the app. The body names checks and statuses, never an address, a hostname, a DSN, an exception message or the policy text. Keep it that way in your own checks: return a bool and log the rest.</p>
 </blockquote>
 <p>Give every dependency check a short timeout (two seconds is plenty). A probe that hangs is a probe that fails, and it holds a worker while it does.</p>
-<h2 id="turn-it-on">Turn it on<a class="docs-heading-link" aria-label="Link to this section" href="#turn-it-on">#</a></h2>
-<h3 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h3>
+<h2 id="turn-it-on">Turn it <span class="docs-heading-tail"><span>on</span><a class="docs-heading-link" aria-label="Link to this section" href="#turn-it-on">#</a></span></h2>
+<h3 id="raw-php">Raw <span class="docs-heading-tail"><span>PHP</span><a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></span></h3>
 <pre tabindex="0"><code class="language-php">use function Waynestate\Helmet\helmet_boot;
 
 $helmet = helmet_boot([
@@ -119,7 +119,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 helmet_ready((new Readiness())-&gt;withCheck('database', static fn (): bool =&gt; db_ping()));
 </code></pre>
-<h3 id="psr-15">PSR-15<a class="docs-heading-link" aria-label="Link to this section" href="#psr-15">#</a></h3>
+<h3 id="psr-15"><span class="docs-heading-tail"><span>PSR-15</span><a class="docs-heading-link" aria-label="Link to this section" href="#psr-15">#</a></span></h3>
 <pre tabindex="0"><code class="language-php">use Waynestate\Helmet\Health\Readiness;
 use Waynestate\Helmet\Health\ReadinessCheck;
 
@@ -130,7 +130,7 @@ $readiness = (new Readiness($logger))
 $app-&gt;add(new ReadinessCheck($responseFactory, $streamFactory, $readiness, '/ready'));
 </code></pre>
 <p><code>Readiness::standard($proxies, $buildHeaders)</code> adds all three HELMET checks when you have the header set's builder at hand.</p>
-<h3 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h3>
+<h3 id="laravel"><span class="docs-heading-tail"><span>Laravel</span><a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></span></h3>
 <pre tabindex="0"><code class="language-php">// bootstrap/app.php
 -&gt;withRouting(
     web: __DIR__.'/../routes/web.php',
@@ -158,10 +158,10 @@ final class DatabaseReady
 }
 </code></pre>
 <p>Register the route in <code>then:</code>, outside the <code>web</code> group: a readiness probe has no session and no cookies. The route carries no throttle by default, because a throttled probe reads as &quot;not ready&quot;; pass one as the third argument if the path is exposed. Keep <code>health: '/up'</code> for liveness and leave the <code>DiagnosingHealth</code> listener alone: it fires for <code>/up</code>.</p>
-<h2 id="point-each-platform-at-the-right-path">Point each platform at the right path<a class="docs-heading-link" aria-label="Link to this section" href="#point-each-platform-at-the-right-path">#</a></h2>
-<h3 id="citadel">Citadel<a class="docs-heading-link" aria-label="Link to this section" href="#citadel">#</a></h3>
+<h2 id="point-each-platform-at-the-right-path">Point each platform at the right <span class="docs-heading-tail"><span>path</span><a class="docs-heading-link" aria-label="Link to this section" href="#point-each-platform-at-the-right-path">#</a></span></h2>
+<h3 id="citadel"><span class="docs-heading-tail"><span>Citadel</span><a class="docs-heading-link" aria-label="Link to this section" href="#citadel">#</a></span></h3>
 <p>Citadel apps keep answering <code>/up</code>, as they do today, for anything that restarts or replaces the app. When a monitor or balancer in front of the app asks &quot;send me traffic?&quot;, and the app has a dependency worth checking, give that check <code>/ready</code>. An app with nothing to check keeps <code>/up</code> everywhere and leaves readiness off.</p>
-<h3 id="openshift-and-kubernetes">OpenShift and Kubernetes<a class="docs-heading-link" aria-label="Link to this section" href="#openshift-and-kubernetes">#</a></h3>
+<h3 id="openshift-and-kubernetes">OpenShift and <span class="docs-heading-tail"><span>Kubernetes</span><a class="docs-heading-link" aria-label="Link to this section" href="#openshift-and-kubernetes">#</a></span></h3>
 <pre tabindex="0"><code class="language-yaml">livenessProbe:
   httpGet: { path: /up, port: 8080 }
   periodSeconds: 10
@@ -177,13 +177,13 @@ startupProbe:
   periodSeconds: 2
 </code></pre>
 <p>Never point <code>livenessProbe</code> at <code>/ready</code>: a database restart would then restart every pod.</p>
-<h3 id="coolify">Coolify<a class="docs-heading-link" aria-label="Link to this section" href="#coolify">#</a></h3>
+<h3 id="coolify"><span class="docs-heading-tail"><span>Coolify</span><a class="docs-heading-link" aria-label="Link to this section" href="#coolify">#</a></span></h3>
 <p>Coolify has one health check per service, and a failing one keeps the new deploy from taking traffic. Point it at <code>/ready</code> (path <code>/ready</code>, expected status <code>200</code>) when you want a deploy held back until its database answers; keep <code>/up</code> when you would rather it went live and degraded.</p>
-<h3 id="docker">Docker<a class="docs-heading-link" aria-label="Link to this section" href="#docker">#</a></h3>
+<h3 id="docker"><span class="docs-heading-tail"><span>Docker</span><a class="docs-heading-link" aria-label="Link to this section" href="#docker">#</a></span></h3>
 <p>A Dockerfile <code>HEALTHCHECK</code> decides whether the container counts as healthy, and some orchestrators restart unhealthy containers, so it is a liveness check: keep it on <code>/up</code>.</p>
 <pre tabindex="0"><code class="language-dockerfile">HEALTHCHECK --interval=30s --timeout=3s CMD curl -fsS http://127.0.0.1:8080/up || exit 1
 </code></pre>
-<h2 id="reading-a-503">Reading a 503<a class="docs-heading-link" aria-label="Link to this section" href="#reading-a-503">#</a></h2>
+<h2 id="reading-a-503">Reading a <span class="docs-heading-tail"><span>503</span><a class="docs-heading-link" aria-label="Link to this section" href="#reading-a-503">#</a></span></h2>
 <p>The body says which check failed; the log says why. Search the app log for <code>helmet.readiness_check_failed</code> and the <code>check</code> field. A <code>headers</code> failure means the header config does not build (the same error would break every page), and in Laravel it can also mean <code>SecurityHeaders</code> is not in the middleware stack.</p>
 <p>Like the band, a readiness probe is loud about one thing at a time.</p>
 </article>

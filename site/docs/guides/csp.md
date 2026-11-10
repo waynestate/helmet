@@ -6,11 +6,11 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Customizing the CSP[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#customizing-the-csp)
+# Customizing the CSP [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#customizing-the-csp)
 
 The default policy is a starting point, not a cage. Pass a `csp` policy (raw PHP) or a second constructor argument (middleware) and it is merged over the default, per directive: a directive you set replaces the default's value for that directive, and a directive you leave out keeps the default. The default itself, exactly as the code defines it, is on [The headers](https://helmet.apps.wayne.edu/docs/guides/headers.html).
 
-## Merging over the default[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#merging-over-the-default)
+## Merging over the default [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#merging-over-the-default)
 
 To remove a directive the default sets, set it to `null`:
 
@@ -28,7 +28,7 @@ $helmet = helmet_boot([
 
 In Laravel the same array goes in `helmet.csp` (published config) or `HELMET_CSP` (JSON in the environment); see [Laravel](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html). The merge rule is identical on both paths, because both call the same core function.
 
-## Inline style attributes[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes)
+## Inline style attributes [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes)
 
 The default keeps one allowance: `style-src-attr 'unsafe-inline'`, because WayneUI's partials and examples set `style="..."` attributes (spacing, skeleton sizes) that a stricter policy drops without a word. It covers the attribute only; `<style>` blocks and stylesheets still need the nonce or an allowed origin. One setting chooses how strict to be:
 
@@ -50,7 +50,7 @@ $helmet = helmet_boot([
 
 The setting only replaces HELMET's own allowance: if you set `style-src-attr` yourself in `csp`, your value wins in every mode. An unknown mode throws at boot. Why the default stays `inline` for now, and what would change it, is in [ADR-0001](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html).
 
-## Reporting setup[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#reporting-setup)
+## Reporting setup [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#reporting-setup)
 
 By default the policy is enforced: a violation is blocked. To see what would be blocked before you enforce it, or to keep collecting reports after you do, point the policy at a report endpoint.
 
@@ -72,7 +72,7 @@ Tip
 
 Run report-only first. That is how you see what would be blocked before you enforce it; once the policy is clean, switch off `csp_report_only` and keep collecting.
 
-## Receiving the reports in Laravel[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-laravel)
+## Receiving the reports in Laravel [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-laravel)
 
 Laravel ships an opt-in endpoint that receives the reports and logs one line per violation (the violated directive, the blocked URI's host, and the document path) and nothing else. It accepts both report formats: the legacy `application/csp-report` object, and the Reporting API's `application/reports+json` array, from which it logs the `csp-violation` entries (at most 20 per POST; browsers batch other report types into the same request, and those are ignored). The route is off until you register it:
 
@@ -89,7 +89,7 @@ Route::cspReport('/reports/csp', 'throttle:120,1'); // your own limit
 Route::cspReport('/reports/csp', null);             // no throttle
 ```
 
-## Related[#](https://helmet.apps.wayne.edu/docs/guides/csp.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#related)
 
 - [The headers](https://helmet.apps.wayne.edu/docs/guides/headers.html)
 - [Laravel](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html)

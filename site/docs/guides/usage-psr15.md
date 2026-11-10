@@ -6,11 +6,11 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Use HELMET as PSR-15 middleware[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#use-helmet-as-psr-15-middleware)
+# Use HELMET as PSR-15 middleware [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#use-helmet-as-psr-15-middleware)
 
 This page mounts the same HELMET core in a PSR-15 middleware pipeline. Copy the pipeline in [Mount the pipeline](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#mount-the-pipeline), then decide which middlewares your app needs and how errors should flow.
 
-## Mount the pipeline[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#mount-the-pipeline)
+## Mount the pipeline [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#mount-the-pipeline)
 
 The same core, mounted in a middleware pipeline:
 
@@ -32,7 +32,7 @@ $middleware = [
 ];
 ```
 
-## The middlewares[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#the-middlewares)
+## The middlewares [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#the-middlewares)
 
 - `HealthCheck` answers the health path, `/up` in the example.
 - `RequestForgeryGuard` is opt-in: mounting it turns the check on for that pipeline. The example passes `except: ['/api/webhooks/*']`. Its options are described in [The request-forgery guard](https://helmet.apps.wayne.edu/docs/guides/csrf.html).
@@ -47,17 +47,17 @@ On every request, `SecurityHeadersMiddleware`:
 
 The headers are attached to whatever response comes back through the middleware. When no-store is enabled and the request path matches (`noStorePaths` is empty for every response) and the response carries no `Cache-Control` header, the middleware adds `Cache-Control: no-store`. What happens when the inner handler throws depends on `rethrow`; see [Errors and rethrow](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#errors-and-rethrow).
 
-## Errors and rethrow[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#errors-and-rethrow)
+## Errors and rethrow [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#errors-and-rethrow)
 
 By default the middleware rethrows, so the framework's error handler still runs and produces the error page, and the middleware attaches the headers only to responses that come back through it; pass `rethrow: false` (and a PSR-17 `ResponseFactory`) to make the middleware itself return a `500` carrying the same headers. The raw PHP path needs no such flag: `helmet_boot()` sends the headers before your code runs, so they are already on the wire by the time an exception can happen.
 
 The `500` response carries `Content-Type: text/plain; charset=utf-8`. If `rethrow` is false and no `ResponseFactory` was passed, the middleware throws a `\RuntimeException` when it needs to build the `500`.
 
-## Put HELMET outermost[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#put-helmet-outermost)
+## Put HELMET outermost [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#put-helmet-outermost)
 
 Order decides whether an error page gets the headers. A response built by a layer inside HELMET comes back through HELMET and is stamped; a response built by a layer outside HELMET never is. So HELMET has to be the outermost layer. In a Slim-style app, where the middleware added last runs first, that means adding HELMET after the error middleware. If the error middleware sits outside HELMET, the exception passes straight through (HELMET rethrows by default) and the error middleware builds a bare `500` with no security headers. `tests/Headers/SecurityHeadersMiddlewareTest.php` pins both orders with a stand-in error middleware.
 
-## Constructor options[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#constructor-options)
+## Constructor options [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#constructor-options)
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -84,7 +84,7 @@ Note
 
 These settings are validated at construction, not per request: a bad `coop`, `corp`, `permissionsPolicy`, `trustedTypesPolicies` or `styleSrcAttr` value is a config error, and it fails where the app starts, not on the first request, with an `\InvalidArgumentException`.
 
-## Related[#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#related)
 
 - [Quick start](https://helmet.apps.wayne.edu/docs/guides/quick-start.html)
 - [Raw PHP](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html)

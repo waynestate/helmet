@@ -6,11 +6,11 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Laravel[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#laravel)
+# Laravel [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#laravel)
 
 This page walks the Laravel adapter from `composer require` to a fully wired app: install the adapter, publish the config, trust the proxy, then turn the knobs. The adapter is a service provider, three always-on middlewares, an optional request-forgery guard, and a config file. It only wires and configures: every rule (what the headers say, how a nonce is made, how a CSP is merged, and how a request-forgery check is applied) lives in the core, so Laravel and raw PHP cannot drift apart. The suite runs against Laravel 13 with Orchestra Testbench. Helmet is the band, and the name fits: put it on before you ship.
 
-## Install the adapter[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#install-the-adapter)
+## Install the adapter [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#install-the-adapter)
 
 Strap It On:
 
@@ -29,7 +29,7 @@ They are added through the HTTP kernel, so they survive another package adding t
 
 At boot the provider also registers three route macros: `Route::cspReport()` for the CSP report endpoint ([Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html)), `Route::helmetMetrics()` for the metrics endpoint ([Metrics](https://helmet.apps.wayne.edu/docs/guides/metrics.html)) and `Route::helmetReady()` for the readiness endpoint ([Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html)). All three macros are always registered, but each route is added only when the app calls it, so all three endpoints stay off by default.
 
-## Publish the config[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#publish-the-config)
+## Publish the config [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#publish-the-config)
 
 ```bash
 php artisan vendor:publish --tag=helmet-config
@@ -37,7 +37,7 @@ php artisan vendor:publish --tag=helmet-config
 
 This copies `config/helmet.php` into your app. Do it: it is the best place to change the CSP, because the policy is a PHP array there, not JSON squeezed into `.env`. The config file is also the one place HELMET reads the environment (`env()`, plus `HELMET_PRESET` through `Setting`, which also checks Playbook), so `php artisan config:cache` keeps working.
 
-## Trust the proxy[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#trust-the-proxy)
+## Trust the proxy [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#trust-the-proxy)
 
 HELMET decides on its own whether a request was really HTTPS, from `HELMET_PROXIES`. Laravel has a separate trusted-proxy setting that drives `url()`, secure cookies and `$request->isSecure()`. The provider follows the same list: when the app has not set `trustedproxy.proxies` itself, it copies `helmet.proxies` over, so `HELMET_PROXIES` drives both. An app that sets `trustedproxy.proxies` keeps its own value, and an explicit `trustProxies(at: ...)` call in `bootstrap/app.php` still wins, because Laravel applies it before the config fallback.
 
@@ -49,7 +49,7 @@ As in the [Raw PHP](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html
 
 The `/up` health route is Laravel's own: keep `health: '/up'` in `withRouting()`. The adapter registers no route. Keep `/up` for liveness only. Readiness checks (database, cache) belong on a separate route: call `Route::helmetReady('/ready', ['database' => DatabaseReady::class])` in `withRouting(then: ...)`, where each check is an invokable class, so `route:cache` keeps working. See [Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html). Do not put dependency checks in the `DiagnosingHealth` listener, which fires for `/up`.
 
-## Environment variables[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#environment-variables)
+## Environment variables [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#environment-variables)
 
 | Variable | Config key | Default | What it does |
 | --- | --- | --- | --- |
@@ -83,7 +83,7 @@ Warning
 
 Preload is hard to undo: once a browser has preloaded the domain it refuses plain-HTTP connections until the entry is removed.
 
-## Customizing the CSP in Laravel[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#customizing-the-csp-in-laravel)
+## Customizing the CSP in Laravel [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#customizing-the-csp-in-laravel)
 
 `helmet.csp` takes the same shape as the raw PHP `csp` option and follows the same rule: it is merged over the default, per directive. A directive you set replaces the default's, a directive you leave out keeps it, and `null` removes one. Open the published `config/helmet.php` and replace the `$csp = SecurityHeaders::defaultCspPolicy();` line:
 
@@ -106,7 +106,7 @@ Warning
 
 One gotcha when overriding: the policy adds the per-request nonce to `style-src` and `style-src-elem`. A browser ignores `'unsafe-inline'` once a nonce is present, so setting `style-src` to `["'unsafe-inline'"]` does not restore inline styles; it removes them.
 
-## The nonce in Blade[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#the-nonce-in-blade)
+## The nonce in Blade [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#the-nonce-in-blade)
 
 The middleware puts the per-request nonce on the request as the attribute `helmet.csp_nonce`, the same name the PSR-15 middleware uses. It also hands the nonce to Laravel's Vite helper, so `@vite` needs nothing: the `script` and `style` tags it print already carry the nonce the CSP header sends.
 
@@ -120,7 +120,7 @@ For an inline script, print the nonce from the Vite helper:
 
 In a controller it is `$request->attributes->get('helmet.csp_nonce')`. A new nonce is made for every request. Repetition is a fine Helmet song and a terrible nonce.
 
-## Vite and Inertia[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#vite-and-inertia)
+## Vite and Inertia [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#vite-and-inertia)
 
 The middleware hands the per-request nonce to Laravel's Vite helper and injects a `csp-nonce` meta tag into `<head>`. `@vite` needs nothing. The meta tag lets Vite's dev runtime nonce the CSS and preload tags it adds after page load. When the request ends, HELMET resets the Vite nonce to a fresh random one, so a long-lived worker (Octane, Swoole, FrankenPHP) does not carry one request's nonce into the next.
 
@@ -141,13 +141,13 @@ echo helmet_csp_nonce_meta($helmet['nonce']);
 
 The Vite dev server is allowed in the `local` environment only, and only when it is running (a hot file exists). The origin comes from `HELMET_DEV_ORIGIN` when set, otherwise from the hot file. It must be `http` or `https` on `localhost`, `127.0.0.1` or `[::1]`, with an optional port. An invalid origin is ignored and a warning is logged. In every other environment the dev server origin is never added.
 
-## The ribbon[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#the-ribbon)
+## The ribbon [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#the-ribbon)
 
 In `local`, `development`, `dev`, `testing`, `test`, `staging`, `stage`, `qa`, `uat`, `preprod`, `pre-prod` and `sandbox`, `InjectRibbon` adds `<div class="helmet-ribbon" data-environment="staging">staging</div>` right after the opening `<body>` tag of an HTML response, so nobody mistakes a test site for the real one. The names match in any case. It never appears in `production` or an environment HELMET does not know (a typo counts as production), on JSON or other non-HTML responses, or on HTML with no `<body>`. The package ships no stylesheet; style `.helmet-ribbon` in your own CSS. Even with `HELMET_RIBBON=true`, production never gets it, so there is no Aftertaste.
 
 **Version warnings.** Point `HELMET_POLICY_PATH` at a CREED `policy.json` and the ribbon gains a warning line for each component version that is in its security-only phase or end of life. The raw PHP path checks the running PHP version; the Laravel adapter also checks the framework's major version. With no policy path there is no warning and no file read, and a missing, unreadable or invalid file shows no warning and never breaks the page. Style `.helmet-ribbon-warning` in your own CSS.
 
-## Generic 4xx pages[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#generic-4xx-pages)
+## Generic 4xx pages [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#generic-4xx-pages)
 
 Laravel's own error views can put an exception's message on the page: `abort(403, 'Invoice 4411 belongs to someone else')` shows that sentence to the visitor. Set `HELMET_ERROR_PAGES=true` and the adapter answers every 4xx HTTP exception (a missing page or route, a wrong method, `abort(403)`, a throttle, a model that was not found) with HELMET's fixed client-error page instead: the status, `Content-Type: text/html; charset=utf-8`, `Cache-Control: no-store`, and a short fixed title and sentence. It is the same page `helmet_client_error_response()` builds for a raw PHP app, so nothing from the request or the exception can reach it.
 
@@ -160,7 +160,7 @@ Some answers stay with Laravel, on purpose:
 
 A 405 keeps its `Allow` header and a 429 keeps its `Retry-After`, because the framework sets them and the protocol wants them. The switch is read on every render, so it is off by default and costs nothing while it stays off. An app with its own branded `resources/views/errors/*.blade.php` pages can leave it off; those views are yours, so keep exception messages out of them.
 
-## Session cookie[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#session-cookie)
+## Session cookie [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#session-cookie)
 
 The adapter reads `helmet.session.secure` (env `HELMET_SESSION_SECURE`) once at boot and maps it onto Laravel's own `session.secure`, the setting Laravel builds its session cookie from:
 
@@ -173,7 +173,7 @@ The adapter reads `helmet.session.secure` (env `HELMET_SESSION_SECURE`) once at 
 
 An app that sets `session.secure` itself (`SESSION_SECURE_COOKIE` in `.env`, or its own `config/session.php` value) keeps that value: the adapter only fills it when nobody else has. Anything other than `auto` or `always` throws when the config loads, so a typo fails loudly instead of quietly loosening the strap.
 
-## Raw PHP and Laravel agree[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#raw-php-and-laravel-agree)
+## Raw PHP and Laravel agree [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#raw-php-and-laravel-agree)
 
 Both paths call `SecurityHeaders::build()`, so for the same request and settings they send the same headers. A test pins that down: it compares what the Laravel middleware sends, name and value, with `build()`. The settings map like this:
 
@@ -201,7 +201,7 @@ Both paths call `SecurityHeaders::build()`, so for the same request and settings
 
 For the session cookie's Secure flag, the adapter reads `helmet.session.secure` at boot and maps it onto Laravel's own `session.secure`; see [Session cookie](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#session-cookie). For the rest of session hardening, use the framework's own session config: set `http_only` and `same_site` in `config/session.php` rather than expecting the adapter to apply raw-PHP `SessionHardening` (Laravel does not use PHP's native session, so those ini settings would never reach its cookie). For structured logs, use Laravel's log channels, for example the `stderr` channel, rather than expecting the adapter to configure a raw-PHP logger. Every security event ([Security events](https://github.com/waynestate/helmet#security-events)) goes through the app's logger with the same message and context as raw PHP: `helmet.request_refused` from the guard, `helmet.forwarded_proto_rejected` from `SecurityHeaders` (a peer that is not a trusted proxy sent `X-Forwarded-Proto`), `helmet.forwarded_for_rejected` from the metrics endpoint (an unparseable `X-Forwarded-For` entry), and `helmet.broad_trusted_proxy` and `helmet.debug_enabled_in_production` at boot. The header values are never logged. The debug check runs at boot, not per request: the value is fixed for the life of the process, and a long-lived worker must not log it on every request. Both sides are checked strictly: `app.debug` must be the boolean `true`, and the environment must be exactly `production`. Opt out with `helmet.warn_debug` (env `HELMET_WARN_DEBUG`); a logging failure is swallowed and never breaks the boot.
 
-## Related[#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/guides/usage-laravel.html#related)
 
 - [The headers](https://helmet.apps.wayne.edu/docs/guides/headers.html)
 - [Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html)

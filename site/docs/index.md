@@ -8,7 +8,7 @@ generator: Squire agent-ready
 
 [![HELMET's front page: the headline 'HELMET. Put it on before you ship.' and the composer require command beside a chalkboard play where five rushers, XSS, clickjack, fake HTTPS, fixation and false down, are stopped at the line by CSP, frames, proxies, session and /up, in front of the HELMET mark marked 'your app'. Sacks allowed: 0.](https://helmet.apps.wayne.edu/docs/readme/hero.jpg)](https://helmet.apps.wayne.edu/index.html)
 
-# HELMET[#](https://helmet.apps.wayne.edu/docs/#helmet)
+# HELMET [#](https://helmet.apps.wayne.edu/docs/#helmet)
 
 [Three members of the band Helmet, two guitarists and a drummer at a Tama kit, tinted blue against a hazy orange and gold backdrop](https://media.tenor.com/WmJKjN9NQqoAAAAM/helmet-band.gif) GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120)
 
@@ -18,14 +18,14 @@ generator: Squire agent-ready
 
 HELMET is the Wayne State app stack's baseline runtime: one small framework-free PHP core that sends the security headers, hardens the session, decides whether the request really arrived over HTTPS, answers the load balancer's `/up` ping, and writes structured logs.
 
-## Pick your path[#](https://helmet.apps.wayne.edu/docs/#pick-your-path)
+## Pick your path [#](https://helmet.apps.wayne.edu/docs/#pick-your-path)
 
 - **New here?** The [Quick start](https://helmet.apps.wayne.edu/docs/guides/quick-start.html) puts a raw PHP app behind the baseline in four steps.
 - **Installing it now?** [Install](https://helmet.apps.wayne.edu/docs/install.html) has the requirements, the Composer line and the verify step.
 - **Working with a coding agent?** [Your coding agent (ADVISOR)](https://helmet.apps.wayne.edu/docs/guides/advisor.html) gives it two read-only tools: the headers HELMET sends and why, and how long the app's PHP floor stays supported.
 - **Looking for a setting or a function?** The Reference group starts with [Environment variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html), every `HELMET_` variable the package reads.
 
-## Install[#](https://helmet.apps.wayne.edu/docs/#install)
+## Install [#](https://helmet.apps.wayne.edu/docs/#install)
 
 ```
 composer require waynestate/helmet

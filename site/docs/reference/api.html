@@ -39,9 +39,9 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/readiness.html">Readiness</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html" aria-current="page">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="api-reference">API reference<a class="docs-heading-link" aria-label="Link to this section" href="#api-reference">#</a></h1>
+      <article class="docs-article"><h1 id="api-reference">API <span class="docs-heading-tail"><span>reference</span><a class="docs-heading-link" aria-label="Link to this section" href="#api-reference">#</a></span></h1>
 <p>Every public entry point of the <code>waynestate/helmet</code> core, with signatures exactly as they appear in the code under <code>src/</code>. For what each part does to a request, see the usage guides; for the environment variables behind the Laravel adapter, see <a href="configuration.html">Environment variables</a>.</p>
-<h2 id="global-functions">Global functions<a class="docs-heading-link" aria-label="Link to this section" href="#global-functions">#</a></h2>
+<h2 id="global-functions">Global <span class="docs-heading-tail"><span>functions</span><a class="docs-heading-link" aria-label="Link to this section" href="#global-functions">#</a></span></h2>
 <p>File <code>src/functions.php</code>, namespace <code>Waynestate\Helmet</code>:</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -142,8 +142,8 @@
 </tbody>
 </table></div>
 <p>A convenience helper for raw PHP apps: it creates a <code>Ribbon</code> for the given environment, which you render with its <code>html()</code> method and inject near the top of the page. When a policy path is given, the ribbon also shows a version warning for the running PHP version from CREED's policy.json; a missing, unreadable or invalid policy file produces no warning and never breaks the page.</p>
-<h2 id="advisor">Advisor<a class="docs-heading-link" aria-label="Link to this section" href="#advisor">#</a></h2>
-<h3 id="advisor-helmetmodule"><code>Advisor\HelmetModule</code><a class="docs-heading-link" aria-label="Link to this section" href="#advisor-helmetmodule">#</a></h3>
+<h2 id="advisor"><span class="docs-heading-tail"><span>Advisor</span><a class="docs-heading-link" aria-label="Link to this section" href="#advisor">#</a></span></h2>
+<h3 id="advisor-helmetmodule"><span class="docs-heading-tail"><code>Advisor\HelmetModule</code><a class="docs-heading-link" aria-label="Link to this section" href="#advisor-helmetmodule">#</a></span></h3>
 <p><code>final class HelmetModule implements Module</code> in <code>src/Advisor/HelmetModule.php</code>. HELMET's <a href="../guides/advisor.html">ADVISOR</a> module: two read-only tools, <code>helmet_headers</code> and <code>helmet_php_support</code>, that answer from HELMET's own code, in-process, about an app inside the project root. It loads only inside ADVISOR (<code>waynestate/advisor</code> is a suggestion, never a requirement) when the app's <code>modules.json</code> names it.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -187,8 +187,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="csrf">Csrf<a class="docs-heading-link" aria-label="Link to this section" href="#csrf">#</a></h2>
-<h3 id="csrf-requestforgeryguard"><code>Csrf\RequestForgeryGuard</code><a class="docs-heading-link" aria-label="Link to this section" href="#csrf-requestforgeryguard">#</a></h3>
+<h2 id="csrf"><span class="docs-heading-tail"><span>Csrf</span><a class="docs-heading-link" aria-label="Link to this section" href="#csrf">#</a></span></h2>
+<h3 id="csrf-requestforgeryguard"><span class="docs-heading-tail"><code>Csrf\RequestForgeryGuard</code><a class="docs-heading-link" aria-label="Link to this section" href="#csrf-requestforgeryguard">#</a></span></h3>
 <p><code>final class RequestForgeryGuard implements MiddlewareInterface</code> in <code>src/Csrf/RequestForgeryGuard.php</code>. PSR-15 middleware that rejects cross-site request forgery. Safe methods always pass; for every other method it reads <code>Sec-Fetch-Site</code> first (<code>same-origin</code> and <code>none</code> pass, <code>same-site</code> passes only when <code>allowSameSite</code> is true, cross-site or an unknown value is rejected), then falls back to the <code>Origin</code> header (the request's own origin and configured trusted origins pass, <code>Origin: null</code> and an unparseable origin are rejected, an absent origin passes). The rejection is 403, <code>text/plain</code>, <code>Cache-Control: no-store</code>, body &quot;Forbidden&quot;; it never echoes request headers.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -224,8 +224,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="error">Error<a class="docs-heading-link" aria-label="Link to this section" href="#error">#</a></h2>
-<h3 id="error-genericerrorresponse"><code>Error\GenericErrorResponse</code><a class="docs-heading-link" aria-label="Link to this section" href="#error-genericerrorresponse">#</a></h3>
+<h2 id="error"><span class="docs-heading-tail"><span>Error</span><a class="docs-heading-link" aria-label="Link to this section" href="#error">#</a></span></h2>
+<h3 id="error-genericerrorresponse"><span class="docs-heading-tail"><code>Error\GenericErrorResponse</code><a class="docs-heading-link" aria-label="Link to this section" href="#error-genericerrorresponse">#</a></span></h3>
 <p><code>final class GenericErrorResponse</code> in <code>src/Error/GenericErrorResponse.php</code>. Builds the generic error pages HELMET serves instead of a stack trace. For an uncaught exception the user gets a neutral 500 page that says nothing about what broke; the full detail goes to the log at error level, and a logger that throws never changes the answer. For a client fault the app asks for a fixed 4xx page by status code. The page text comes only from a constant map, so nothing from the request or an exception can ever reach the body.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -245,8 +245,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="headers">Headers<a class="docs-heading-link" aria-label="Link to this section" href="#headers">#</a></h2>
-<h3 id="headers-securityheaders"><code>Headers\SecurityHeaders</code><a class="docs-heading-link" aria-label="Link to this section" href="#headers-securityheaders">#</a></h3>
+<h2 id="headers"><span class="docs-heading-tail"><span>Headers</span><a class="docs-heading-link" aria-label="Link to this section" href="#headers">#</a></span></h2>
+<h3 id="headers-securityheaders"><span class="docs-heading-tail"><code>Headers\SecurityHeaders</code><a class="docs-heading-link" aria-label="Link to this section" href="#headers-securityheaders">#</a></span></h3>
 <p><code>final class SecurityHeaders</code> in <code>src/Headers/SecurityHeaders.php</code>. The header builders: the default CSP policy, per-request nonces, HSTS, cross-origin isolation, the permissions policy, and the full header set for one request.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -318,7 +318,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="headers-headerreasons"><code>Headers\HeaderReasons</code><a class="docs-heading-link" aria-label="Link to this section" href="#headers-headerreasons">#</a></h3>
+<h3 id="headers-headerreasons"><span class="docs-heading-tail"><code>Headers\HeaderReasons</code><a class="docs-heading-link" aria-label="Link to this section" href="#headers-headerreasons">#</a></span></h3>
 <p><code>final class HeaderReasons</code> in <code>src/Headers/HeaderReasons.php</code>. Why HELMET sends each header and each CSP directive, a sentence or two apiece, kept next to the policy it explains. The ADVISOR tool <code>helmet_headers</code> and the docs read it, and a test fails when a header or directive is added without a reason.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -346,7 +346,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="headers-securityheadersmiddleware"><code>Headers\SecurityHeadersMiddleware</code><a class="docs-heading-link" aria-label="Link to this section" href="#headers-securityheadersmiddleware">#</a></h3>
+<h3 id="headers-securityheadersmiddleware"><span class="docs-heading-tail"><code>Headers\SecurityHeadersMiddleware</code><a class="docs-heading-link" aria-label="Link to this section" href="#headers-securityheadersmiddleware">#</a></span></h3>
 <p><code>final class SecurityHeadersMiddleware implements MiddlewareInterface</code> in <code>src/Headers/SecurityHeadersMiddleware.php</code>. PSR-15 middleware that sends HELMET's security headers. It decides whether the request is HTTPS from the trusted-proxy list, builds the headers (including a per-request CSP nonce), exposes the nonce to the application as the <code>helmet.csp_nonce</code> request attribute, and removes the <code>X-Powered-By</code> header. With the optional PSR-3 <code>logger</code> it logs <code>helmet.forwarded_proto_rejected</code> when a peer that is not a trusted proxy sends <code>X-Forwarded-Proto</code> (<code>null</code>, the default, logs nothing). When the inner handler throws, the default <code>rethrow</code> true lets the exception pass through to the framework's error handler, whose response carries no security headers; with <code>rethrow</code> false the middleware itself returns a 500 response carrying the same headers.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -366,7 +366,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="headers-invalidcspreporturiexception"><code>Headers\InvalidCspReportUriException</code><a class="docs-heading-link" aria-label="Link to this section" href="#headers-invalidcspreporturiexception">#</a></h3>
+<h3 id="headers-invalidcspreporturiexception"><span class="docs-heading-tail"><code>Headers\InvalidCspReportUriException</code><a class="docs-heading-link" aria-label="Link to this section" href="#headers-invalidcspreporturiexception">#</a></span></h3>
 <p><code>final class InvalidCspReportUriException extends InvalidArgumentException</code> in <code>src/Headers/InvalidCspReportUriException.php</code>. Thrown when the configured CSP report URI is not a valid report destination: it must be an absolute <code>https://</code> URL with a host, or a path relative to the page's origin that starts with a single slash. A report endpoint the browser cannot reach is worse than none, and a malformed value can break the Reporting-Endpoints header or inject a second header line.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -382,8 +382,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="health">Health<a class="docs-heading-link" aria-label="Link to this section" href="#health">#</a></h2>
-<h3 id="health-healthcheck"><code>Health\HealthCheck</code><a class="docs-heading-link" aria-label="Link to this section" href="#health-healthcheck">#</a></h3>
+<h2 id="health"><span class="docs-heading-tail"><span>Health</span><a class="docs-heading-link" aria-label="Link to this section" href="#health">#</a></span></h2>
+<h3 id="health-healthcheck"><span class="docs-heading-tail"><code>Health\HealthCheck</code><a class="docs-heading-link" aria-label="Link to this section" href="#health-healthcheck">#</a></span></h3>
 <p><code>final class HealthCheck implements MiddlewareInterface</code> in <code>src/Health/HealthCheck.php</code>. Answers the health check path (default <code>/up</code>) with 200 and the body &quot;ok&quot; without touching the application, so a running container reports up even while the app is slow. Any other request is passed through unchanged.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -403,7 +403,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="health-readiness"><code>Health\Readiness</code><a class="docs-heading-link" aria-label="Link to this section" href="#health-readiness">#</a></h3>
+<h3 id="health-readiness"><span class="docs-heading-tail"><code>Health\Readiness</code><a class="docs-heading-link" aria-label="Link to this section" href="#health-readiness">#</a></span></h3>
 <p><code>final class Readiness</code> in <code>src/Health/Readiness.php</code>. The readiness report: named checks, each <code>pass</code>, <code>warn</code> or <code>fail</code>, answered as JSON with 200 while none failed and 503 once one did. Immutable; every <code>with*()</code> returns a copy. HELMET's own checks are <code>headers</code> (the header set builds and carries a CSP, and in which mode), <code>trusted_proxies</code> (a count and a broad count, never an address; warns when empty or broad) and <code>debug_output</code> (warns when on). An app check returns true or null to pass and false to fail; one that throws fails, and its class and message go to the logger as <code>helmet.readiness_check_failed</code>, never to the body. Check names are lowercase letters, digits and underscores; a bad or duplicate name throws <code>\InvalidArgumentException</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -467,7 +467,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="health-readinesscheck"><code>Health\ReadinessCheck</code><a class="docs-heading-link" aria-label="Link to this section" href="#health-readinesscheck">#</a></h3>
+<h3 id="health-readinesscheck"><span class="docs-heading-tail"><code>Health\ReadinessCheck</code><a class="docs-heading-link" aria-label="Link to this section" href="#health-readinesscheck">#</a></span></h3>
 <p><code>final class ReadinessCheck implements MiddlewareInterface</code> in <code>src/Health/ReadinessCheck.php</code>. Answers a GET or HEAD on the readiness path (default <code>/ready</code>) with the <code>Readiness</code> report; any other request is passed through unchanged. Put it next to <code>HealthCheck</code>, never in its place.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -487,9 +487,9 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h2>
+<h2 id="laravel"><span class="docs-heading-tail"><span>Laravel</span><a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></span></h2>
 <p>The Laravel adapter. The service provider wires the config into the app; the four middlewares put the core classes into the request pipeline; the three route classes register the optional endpoints (CSP reports, metrics, readiness), which stay off until an app opts in.</p>
-<h3 id="laravel-helmetserviceprovider"><code>Laravel\HelmetServiceProvider</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-helmetserviceprovider">#</a></h3>
+<h3 id="laravel-helmetserviceprovider"><span class="docs-heading-tail"><code>Laravel\HelmetServiceProvider</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-helmetserviceprovider">#</a></span></h3>
 <p><code>final class HelmetServiceProvider extends ServiceProvider</code> in <code>src/Laravel/HelmetServiceProvider.php</code>. Merges and publishes <code>config/helmet.php</code>, copies <code>helmet.proxies</code> into Laravel's trusted-proxy list when the app has not set <code>trustedproxy.proxies</code> itself (an explicit <code>trustProxies(at: ...)</code> call still wins), registers the <code>cspReport</code>, <code>helmetMetrics</code> and <code>helmetReady</code> route macros, and adds <code>ClientErrorPages</code> to the exception handler (inert until <code>helmet.error_pages</code> is on). It maps <code>helmet.session.secure</code> onto Laravel's <code>session.secure</code> at boot (<code>always</code> sets it to <code>true</code>, <code>auto</code> leaves it unset; an app value wins). It registers no routes of its own; the <code>/up</code> health route is left to Laravel's built-in <code>health: '/up'</code> option.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -509,7 +509,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-clienterrorpages"><code>Laravel\ClientErrorPages</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-clienterrorpages">#</a></h3>
+<h3 id="laravel-clienterrorpages"><span class="docs-heading-tail"><code>Laravel\ClientErrorPages</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-clienterrorpages">#</a></span></h3>
 <p><code>final class ClientErrorPages</code> in <code>src/Laravel/ClientErrorPages.php</code>. With <code>helmet.error_pages</code> on (env <code>HELMET_ERROR_PAGES</code>, default off), answers a 4xx HTTP exception with the page <code>helmet_client_error_response()</code> builds, keeping the exception's own headers (<code>Allow</code>, <code>Retry-After</code>) under HELMET's <code>Content-Type</code> and <code>Cache-Control</code>. It returns null, so Laravel answers as usual, for every 5xx, for a request that expects JSON, and while the switch is off; a <code>ValidationException</code> or an <code>AuthenticationException</code> is not an HTTP exception, so it never reaches the callback. The service provider adds it to the framework's exception handler as a renderable callback.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -529,7 +529,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-securityheaders"><code>Laravel\SecurityHeaders</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-securityheaders">#</a></h3>
+<h3 id="laravel-securityheaders"><span class="docs-heading-tail"><code>Laravel\SecurityHeaders</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-securityheaders">#</a></span></h3>
 <p><code>final class SecurityHeaders</code> in <code>src/Laravel/SecurityHeaders.php</code>. The Laravel adapter for the security headers. It logs <code>helmet.forwarded_proto_rejected</code> through the app's logger when a peer that is not a trusted proxy sends <code>X-Forwarded-Proto</code>, as <code>helmet_boot()</code> does. It reads the <code>helmet</code> config and merges per-directive CSP overrides over the core default, sends the same header set as the core middleware, resets the Vite nonce to a fresh random one after the response (a nonce that outlives its request is a nonce an attacker may have seen), and injects a <code>&lt;meta property=&quot;csp-nonce&quot;&gt;</code> tag right after the opening <code>&lt;head&gt;</code> tag in HTML responses. A nonce page differs per request, so on an HTML response whose <code>Cache-Control</code> names <code>public</code> or <code>s-maxage</code> it replaces <code>public</code> with <code>private</code> and drops <code>s-maxage</code>; every other directive, and every non-HTML response, is left exactly as written.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -554,7 +554,7 @@
 </tbody>
 </table></div>
 <p><code>configuredHeaders()</code> builds the header set from the <code>helmet</code> config for a given policy, nonce and scheme; the readiness controller uses it to prove the config builds.</p>
-<h3 id="laravel-requestforgeryguard"><code>Laravel\RequestForgeryGuard</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-requestforgeryguard">#</a></h3>
+<h3 id="laravel-requestforgeryguard"><span class="docs-heading-tail"><code>Laravel\RequestForgeryGuard</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-requestforgeryguard">#</a></span></h3>
 <p><code>final class RequestForgeryGuard</code> in <code>src/Laravel/RequestForgeryGuard.php</code>. The Laravel adapter for the request-forgery guard. When it is enabled it applies the same rule the core PSR-15 middleware and <code>helmet_boot()</code> use, through the core <code>RequestForgeryGuard</code>, so every consumer path agrees; otherwise the request passes through untouched.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -570,7 +570,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-forwardedprotonormalizer"><code>Laravel\ForwardedProtoNormalizer</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-forwardedprotonormalizer">#</a></h3>
+<h3 id="laravel-forwardedprotonormalizer"><span class="docs-heading-tail"><code>Laravel\ForwardedProtoNormalizer</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-forwardedprotonormalizer">#</a></span></h3>
 <p><code>final class ForwardedProtoNormalizer</code> in <code>src/Laravel/ForwardedProtoNormalizer.php</code>. Makes Laravel agree with HELMET's HTTPS detection. When the request comes from a trusted proxy and <code>X-Forwarded-Proto</code> carries more than one value, the header is rewritten to the last value (the one the closest proxy appended) before any code reads it, because Symfony's <code>Request::isSecure()</code> reads the first value, which is the client's. Requests from untrusted peers are left alone.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -586,7 +586,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-injectribbon"><code>Laravel\InjectRibbon</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-injectribbon">#</a></h3>
+<h3 id="laravel-injectribbon"><span class="docs-heading-tail"><code>Laravel\InjectRibbon</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-injectribbon">#</a></span></h3>
 <p><code>final class InjectRibbon</code> in <code>src/Laravel/InjectRibbon.php</code>. Injects the environment ribbon into HTML responses so a developer or operator can see at a glance that they are not looking at production. It is injected only when <code>config('helmet.ribbon')</code> is true, the response <code>Content-Type</code> is HTML, and the environment is one of the non-production ones (local, development, dev, testing, test, staging); it is never injected for production, prod, live, or an empty environment. The ribbon HTML goes right after the opening <code>&lt;body&gt;</code> tag, and a ribbon error never breaks the page.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -602,7 +602,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-cspreportcontroller"><code>Laravel\CspReportController</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-cspreportcontroller">#</a></h3>
+<h3 id="laravel-cspreportcontroller"><span class="docs-heading-tail"><code>Laravel\CspReportController</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-cspreportcontroller">#</a></span></h3>
 <p><code>final class CspReportController</code> in <code>src/Laravel/CspReportController.php</code>. Receives browser CSP violation reports. Reports can be numerous and can be large, so the controller caps the body size, accepts only the two report content types, and logs one line per violation (the violated directive, the blocked URI's host, and the document path), never the full body. The legacy <code>application/csp-report</code> body is a single object with the report under <code>csp-report</code> (kebab-case fields); the Reporting API <code>application/reports+json</code> body is a JSON array of report objects, and only the csp-violation entries are logged because browsers batch other report types into the same POST.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -626,7 +626,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-cspreportroute"><code>Laravel\CspReportRoute</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-cspreportroute">#</a></h3>
+<h3 id="laravel-cspreportroute"><span class="docs-heading-tail"><code>Laravel\CspReportRoute</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-cspreportroute">#</a></span></h3>
 <p><code>final class CspReportRoute</code> in <code>src/Laravel/CspReportRoute.php</code>. Registers the <code>Route::cspReport()</code> macro and the POST route it creates. The route carries no authentication of its own (an app that wants to keep the endpoint private should wrap it in its own middleware or route group), excludes the web group's CSRF middleware (browsers POST reports without a CSRF token, and the middleware would reject them with 419), and is throttled by default because the endpoint is public and its input is attacker-influenced; pass <code>null</code> as the second argument to register it without a throttle.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -658,7 +658,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-metricscontroller"><code>Laravel\MetricsController</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-metricscontroller">#</a></h3>
+<h3 id="laravel-metricscontroller"><span class="docs-heading-tail"><code>Laravel\MetricsController</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-metricscontroller">#</a></span></h3>
 <p><code>final class MetricsController</code> in <code>src/Laravel/MetricsController.php</code>. Serves the metrics endpoint, fail-closed. When <code>helmet.metrics.enabled</code> is false (the default) it answers 404 so the route is not advertised; when it is enabled, a request is served only if it presents the configured bearer token or comes from an allowed client IP, anything else is 403; when it is enabled but neither a token nor an allow list is configured, it answers 404 and logs a warning, because a misconfiguration must not serve metrics. The client IP is resolved through the <code>helmet.proxies</code> trusted-proxy list, so a spoofed <code>X-Forwarded-For</code> from an untrusted peer cannot grant access; an unparseable entry from a trusted proxy fails closed on the peer and logs <code>helmet.forwarded_for_rejected</code> through the app's logger.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -675,7 +675,7 @@
 </tbody>
 </table></div>
 <p>The PHP support metrics come from a bound <code>PolicySource</code>, else from <code>helmet.policy_path</code>. The request metrics come from <code>RequestMetricsBinding</code> when <code>helmet.metrics.storage</code> is set.</p>
-<h3 id="laravel-recordrequestmetrics"><code>Laravel\RecordRequestMetrics</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-recordrequestmetrics">#</a></h3>
+<h3 id="laravel-recordrequestmetrics"><span class="docs-heading-tail"><code>Laravel\RecordRequestMetrics</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-recordrequestmetrics">#</a></span></h3>
 <p><code>final class RecordRequestMetrics</code> in <code>src/Laravel/RecordRequestMetrics.php</code>. The outermost global middleware, added by the provider only when <code>helmet.metrics.enabled</code> is true and <code>helmet.metrics.storage</code> names a store. It records in <code>terminate()</code>, after the response is sent. The route group is the route name, else its URI template, else <code>unmatched</code>; the path is never a label.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -703,7 +703,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-requestmetricsbinding"><code>Laravel\RequestMetricsBinding</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-requestmetricsbinding">#</a></h3>
+<h3 id="laravel-requestmetricsbinding"><span class="docs-heading-tail"><code>Laravel\RequestMetricsBinding</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-requestmetricsbinding">#</a></span></h3>
 <p><code>final class RequestMetricsBinding</code> in <code>src/Laravel/RequestMetricsBinding.php</code>. A container singleton that builds the <code>RequestMetrics</code> recorder from <code>helmet.metrics</code> once and memoizes it (or its absence), for the middleware, <code>MetricsController</code> and <code>CspReportController</code>, which counts each violation it logs.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -727,7 +727,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-metricsroute"><code>Laravel\MetricsRoute</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-metricsroute">#</a></h3>
+<h3 id="laravel-metricsroute"><span class="docs-heading-tail"><code>Laravel\MetricsRoute</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-metricsroute">#</a></span></h3>
 <p><code>final class MetricsRoute</code> in <code>src/Laravel/MetricsRoute.php</code>. Registers the <code>Route::helmetMetrics()</code> macro and the GET route it creates. The route is a plain GET to <code>MetricsController</code> and carries no authentication of its own: the controller enforces the bearer token and the client IP allow list from the <code>helmet.metrics</code> config. It is throttled by default because, even protected, it is a public URL that a scraper or a curious client can hit; pass <code>null</code> as the second argument to register it without a throttle.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -759,7 +759,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-readinessroute"><code>Laravel\ReadinessRoute</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-readinessroute">#</a></h3>
+<h3 id="laravel-readinessroute"><span class="docs-heading-tail"><code>Laravel\ReadinessRoute</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-readinessroute">#</a></span></h3>
 <p><code>final class ReadinessRoute</code> in <code>src/Laravel/ReadinessRoute.php</code>. Registers the <code>Route::helmetReady()</code> macro and the GET route it creates (name <code>helmet.ready</code>). App checks are a map of name to invokable class name, carried as a route default so <code>route:cache</code> works. No throttle by default: a throttled probe reads as &quot;not ready&quot;. A check that is not a name and class-name pair throws <code>\InvalidArgumentException</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -787,7 +787,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="laravel-readinesscontroller"><code>Laravel\ReadinessController</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-readinesscontroller">#</a></h3>
+<h3 id="laravel-readinesscontroller"><span class="docs-heading-tail"><code>Laravel\ReadinessController</code><a class="docs-heading-link" aria-label="Link to this section" href="#laravel-readinesscontroller">#</a></span></h3>
 <p><code>final class ReadinessController</code> in <code>src/Laravel/ReadinessController.php</code>. Runs HELMET's checks against the app's config (the header middleware is registered and the set builds, the trusted-proxy count, <code>app.debug</code> in production) plus the route's app checks, each resolved from the container, and answers with the report.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -803,8 +803,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="logging">Logging<a class="docs-heading-link" aria-label="Link to this section" href="#logging">#</a></h2>
-<h3 id="logging-logging"><code>Logging\Logging</code><a class="docs-heading-link" aria-label="Link to this section" href="#logging-logging">#</a></h3>
+<h2 id="logging"><span class="docs-heading-tail"><span>Logging</span><a class="docs-heading-link" aria-label="Link to this section" href="#logging">#</a></span></h2>
+<h3 id="logging-logging"><span class="docs-heading-tail"><code>Logging\Logging</code><a class="docs-heading-link" aria-label="Link to this section" href="#logging-logging">#</a></span></h3>
 <p><code>final class Logging</code> in <code>src/Logging/Logging.php</code>. Creates a Monolog logger that writes JSON lines at the given minimum level, easy to ship to a log aggregator and to grep on the host. Secrets stay out of the logs: a processor redacts known sensitive keys (passwords, tokens, session IDs, keys, connection strings) from the record's context and extra before anything is written. A logging failure never takes the request down: the configured stream is wrapped in a fallback, so if it cannot be written the record goes to <code>php://stderr</code> instead. Every record also carries a request ID in <code>extra.request_id</code>, generated by HELMET and never taken from an inbound header, so the lines of one request can be tied together.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -840,8 +840,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="metrics">Metrics<a class="docs-heading-link" aria-label="Link to this section" href="#metrics">#</a></h2>
-<h3 id="metrics-metrics"><code>Metrics\Metrics</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metrics">#</a></h3>
+<h2 id="metrics"><span class="docs-heading-tail"><span>Metrics</span><a class="docs-heading-link" aria-label="Link to this section" href="#metrics">#</a></span></h2>
+<h3 id="metrics-metrics"><span class="docs-heading-tail"><code>Metrics\Metrics</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metrics">#</a></span></h3>
 <p><code>final class Metrics</code> in <code>src/Metrics/Metrics.php</code>. Framework-free builder of the metrics payload: it knows nothing about Laravel, raw PHP, or any web framework. It builds a CollectorRegistry of request-free gauges (<code>helmet_info</code>, <code>wsu_stack_info</code> and, when a policy source is given, <code>helmet_php_version_status</code> and <code>helmet_php_eol_timestamp_seconds</code>, looked up by the running PHP's major.minor), adds the request metrics when a <code>RequestMetrics</code> is given (with <code>helmet_metrics_storage_up</code>, 0 when the store did not answer), and renders the result in the Prometheus text exposition format. The request-free gauges stay in an InMemory registry built for each scrape, so a stale label never outlives a restart.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -869,7 +869,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="metrics-requestmetrics"><code>Metrics\RequestMetrics</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-requestmetrics">#</a></h3>
+<h3 id="metrics-requestmetrics"><span class="docs-heading-tail"><code>Metrics\RequestMetrics</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-requestmetrics">#</a></span></h3>
 <p><code>final class RequestMetrics</code> in <code>src/Metrics/RequestMetrics.php</code>. The opt-in request metrics on shared storage: <code>helmet_http_request_duration_seconds</code> (a histogram by <code>route</code>, <code>method</code> and <code>status</code> class; its <code>_count</code> is the request count) and <code>helmet_csp_violations_total</code> (by <code>directive</code>). Every label is bounded by HELMET: a route group must match <code>^[a-z0-9._/{}:-]{1,64}$</code> or becomes <code>other</code>, a method outside the standard verbs is <code>OTHER</code>, a status is its class (<code>2xx</code>), and a directive outside the CSP Level 3 list is <code>other</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -921,7 +921,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="metrics-metricsstorage"><code>Metrics\MetricsStorage</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsstorage">#</a></h3>
+<h3 id="metrics-metricsstorage"><span class="docs-heading-tail"><code>Metrics\MetricsStorage</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsstorage">#</a></span></h3>
 <p><code>final class MetricsStorage</code> in <code>src/Metrics/MetricsStorage.php</code>. Picks the shared store for the request metrics from promphp's own adapters: <code>apcu</code> (APCng), <code>redis</code> (ext-redis) or <code>sqlite</code> (PDO). Anything else means no request metrics. A store that is named but cannot be used throws <code>MetricsStorageException</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -957,9 +957,9 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="metrics-metricsstorageexception"><code>Metrics\MetricsStorageException</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsstorageexception">#</a></h3>
+<h3 id="metrics-metricsstorageexception"><span class="docs-heading-tail"><code>Metrics\MetricsStorageException</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsstorageexception">#</a></span></h3>
 <p><code>final class MetricsStorageException extends \RuntimeException</code> in <code>src/Metrics/MetricsStorageException.php</code>. Thrown when a named store cannot be used. It has no public members of its own.</p>
-<h3 id="metrics-requesttimer"><code>Metrics\RequestTimer</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-requesttimer">#</a></h3>
+<h3 id="metrics-requesttimer"><span class="docs-heading-tail"><code>Metrics\RequestTimer</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-requesttimer">#</a></span></h3>
 <p><code>final class RequestTimer</code> in <code>src/Metrics/RequestTimer.php</code>. Times one raw PHP request and records it once. The route group defaults to <code>app</code>; a recording failure is logged and swallowed, because the page has already been served.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -991,7 +991,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="metrics-metricsgate"><code>Metrics\MetricsGate</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsgate">#</a></h3>
+<h3 id="metrics-metricsgate"><span class="docs-heading-tail"><code>Metrics\MetricsGate</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsgate">#</a></span></h3>
 <p><code>final class MetricsGate</code> in <code>src/Metrics/MetricsGate.php</code>. Decides whether a request may read the metrics endpoint. The decision is fail-closed: disabled gives 404 (the route is not advertised), enabled but neither a token nor an allow list configured gives 404 plus a warning (a misconfiguration must not serve metrics), a correct bearer token or an allowed client IP gives 200, and anything else gives 403. The token is compared with <code>hash_equals</code> (constant time); the client IP is the one resolved by <code>ClientIp</code>, which already honors the trusted-proxy list. An empty token is the same as no token.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1011,7 +1011,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="metrics-metricsdecision"><code>Metrics\MetricsDecision</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsdecision">#</a></h3>
+<h3 id="metrics-metricsdecision"><span class="docs-heading-tail"><code>Metrics\MetricsDecision</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-metricsdecision">#</a></span></h3>
 <p><code>final class MetricsDecision</code> in <code>src/Metrics/MetricsDecision.php</code>. The outcome of the metrics gate: one of the four states above, with its status code and reason.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1051,7 +1051,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="metrics-bearertoken"><code>Metrics\BearerToken</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-bearertoken">#</a></h3>
+<h3 id="metrics-bearertoken"><span class="docs-heading-tail"><code>Metrics\BearerToken</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-bearertoken">#</a></span></h3>
 <p><code>final class BearerToken</code> in <code>src/Metrics/BearerToken.php</code>. Extracts the bearer token from an authorization header value, or returns null when there is none. <code>fromServer()</code> finds the header for a framework-free app: <code>HTTP_AUTHORIZATION</code>, then <code>REDIRECT_HTTP_AUTHORIZATION</code>, then <code>getallheaders()</code>, because Apache with mod_php keeps it out of <code>$_SERVER</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1071,8 +1071,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="platform">Platform<a class="docs-heading-link" aria-label="Link to this section" href="#platform">#</a></h2>
-<h3 id="platform-presets"><code>Platform\Presets</code><a class="docs-heading-link" aria-label="Link to this section" href="#platform-presets">#</a></h3>
+<h2 id="platform"><span class="docs-heading-tail"><span>Platform</span><a class="docs-heading-link" aria-label="Link to this section" href="#platform">#</a></span></h2>
+<h3 id="platform-presets"><span class="docs-heading-tail"><code>Platform\Presets</code><a class="docs-heading-link" aria-label="Link to this section" href="#platform-presets">#</a></span></h3>
 <p><code>final class Presets</code> in <code>src/Platform/Presets.php</code>. The platform presets: each preset names the trusted proxies for a deployment platform, so an app does not hard-code addresses that belong to the platform. <code>citadel</code> trusts the Docker bridge gateway to the HA-Proxy front (a published app port that is source-NATed to the gateway address would make a direct client look like the proxy); <code>docker</code> trusts nothing, for a plain Docker deployment with no front proxy. The headers a trusted front proxy may set are the same for every preset: <code>X-Forwarded-For</code> and <code>X-Forwarded-Proto</code>. <code>X-Forwarded-Host</code> and <code>X-Forwarded-Prefix</code> are deliberately not in the set (a platform that rewrites the host would let a client pre-seed them), and <code>X-Forwarded-Port</code> is out too, because Citadel's HA-Proxy never sends it.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1100,7 +1100,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="platform-unknownpresetexception"><code>Platform\UnknownPresetException</code><a class="docs-heading-link" aria-label="Link to this section" href="#platform-unknownpresetexception">#</a></h3>
+<h3 id="platform-unknownpresetexception"><span class="docs-heading-tail"><code>Platform\UnknownPresetException</code><a class="docs-heading-link" aria-label="Link to this section" href="#platform-unknownpresetexception">#</a></span></h3>
 <p><code>final class UnknownPresetException extends \InvalidArgumentException</code> in <code>src/Platform/UnknownPresetException.php</code>. Thrown when a config names a preset the package does not know, so a typo fails loudly at boot instead of silently trusting nothing.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1116,8 +1116,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="policy">Policy<a class="docs-heading-link" aria-label="Link to this section" href="#policy">#</a></h2>
-<h3 id="policy-policysource"><code>Policy\PolicySource</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-policysource">#</a></h3>
+<h2 id="policy"><span class="docs-heading-tail"><span>Policy</span><a class="docs-heading-link" aria-label="Link to this section" href="#policy">#</a></span></h2>
+<h3 id="policy-policysource"><span class="docs-heading-tail"><code>Policy\PolicySource</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-policysource">#</a></span></h3>
 <p><code>interface PolicySource</code> in <code>src/Policy/PolicySource.php</code>. The interface a component-version policy source implements.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1133,7 +1133,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="policy-jsonfilepolicysource"><code>Policy\JsonFilePolicySource</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-jsonfilepolicysource">#</a></h3>
+<h3 id="policy-jsonfilepolicysource"><span class="docs-heading-tail"><code>Policy\JsonFilePolicySource</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-jsonfilepolicysource">#</a></span></h3>
 <p><code>final class JsonFilePolicySource implements PolicySource</code> in <code>src/Policy/JsonFilePolicySource.php</code>. Reads a CREED-format policy file: a JSON object with a <code>schema_version</code> and a <code>components</code> object, each component's versions under <code>versions</code> (CREED's schema) or, in an older flat file, directly on the component. A version with no <code>security_until</code> is skipped; one with no <code>active_until</code> counts as security-only. It throws <code>PolicyReadException</code> on any problem it finds: a missing or unreadable file, invalid JSON, a schema_version it does not know, or a missing <code>components</code> object. Callers that must not throw (such as the version warning at request time) catch <code>PolicyReadException</code>.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1153,9 +1153,9 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="policy-policyreadexception"><code>Policy\PolicyReadException</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-policyreadexception">#</a></h3>
+<h3 id="policy-policyreadexception"><span class="docs-heading-tail"><code>Policy\PolicyReadException</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-policyreadexception">#</a></span></h3>
 <p><code>final class PolicyReadException extends \RuntimeException</code> in <code>src/Policy/PolicyReadException.php</code>. Thrown by <code>JsonFilePolicySource</code> when the policy file cannot be read or parsed. It has no public members of its own.</p>
-<h3 id="policy-versionstatus"><code>Policy\VersionStatus</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-versionstatus">#</a></h3>
+<h3 id="policy-versionstatus"><span class="docs-heading-tail"><code>Policy\VersionStatus</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-versionstatus">#</a></span></h3>
 <p><code>final class VersionStatus</code> in <code>src/Policy/VersionStatus.php</code>. Determines the support status of a component version on a given date: <code>active</code> on or before its active_until date, <code>security</code> after active_until and on or before its security_until date, <code>eol</code> after security_until, and <code>unknown</code> when the component or version is not in the policy. The date is injected, so the result is a pure function of the policy, the component, the version, and the date, which makes the boundaries testable without waiting for real support windows to close.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1195,7 +1195,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="policy-versionwarning"><code>Policy\VersionWarning</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-versionwarning">#</a></h3>
+<h3 id="policy-versionwarning"><span class="docs-heading-tail"><code>Policy\VersionWarning</code><a class="docs-heading-link" aria-label="Link to this section" href="#policy-versionwarning">#</a></span></h3>
 <p><code>final class VersionWarning</code> in <code>src/Policy/VersionWarning.php</code>. Produces a human-readable warning when a component version is in its security-only phase or is end of life; no warning when the version is active or unknown. The date is injected, so the result is a pure function of the policy, the component, the version, and the date.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1215,8 +1215,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="proxy">Proxy<a class="docs-heading-link" aria-label="Link to this section" href="#proxy">#</a></h2>
-<h3 id="proxy-clientip"><code>Proxy\ClientIp</code><a class="docs-heading-link" aria-label="Link to this section" href="#proxy-clientip">#</a></h3>
+<h2 id="proxy"><span class="docs-heading-tail"><span>Proxy</span><a class="docs-heading-link" aria-label="Link to this section" href="#proxy">#</a></span></h2>
+<h3 id="proxy-clientip"><span class="docs-heading-tail"><code>Proxy\ClientIp</code><a class="docs-heading-link" aria-label="Link to this section" href="#proxy-clientip">#</a></span></h3>
 <p><code>final class ClientIp</code> in <code>src/Proxy/ClientIp.php</code>. Resolves the client IP. When the peer (<code>REMOTE_ADDR</code>) is a trusted proxy, the client IP is read from <code>X-Forwarded-For</code>: the header is a comma-separated list in which the rightmost entry is the one the closest proxy recorded, so walk from the right, skipping trusted proxies, and the first remaining entry is the client. An entry that is not a valid IP address fails closed: the peer is returned instead of continuing to an earlier entry. IPv4-mapped IPv6 addresses (<code>::ffff:a.b.c.d</code>) are unmapped to <code>a.b.c.d</code> before matching, so a dual-stack proxy still matches an IPv4 trust list. When the peer is not a trusted proxy, the header is ignored entirely and <code>REMOTE_ADDR</code> is the client.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1232,7 +1232,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="proxy-httpsdetector"><code>Proxy\HttpsDetector</code><a class="docs-heading-link" aria-label="Link to this section" href="#proxy-httpsdetector">#</a></h3>
+<h3 id="proxy-httpsdetector"><span class="docs-heading-tail"><code>Proxy\HttpsDetector</code><a class="docs-heading-link" aria-label="Link to this section" href="#proxy-httpsdetector">#</a></span></h3>
 <p><code>final class HttpsDetector</code> in <code>src/Proxy/HttpsDetector.php</code>. Decides whether the request arrived over HTTPS. If the SAPI reports a TLS connection, the request is HTTPS; this is the only signal trusted unconditionally. Otherwise, only a trusted proxy's <code>X-Forwarded-Proto: https</code> counts, and only the last non-empty value of the list is read (the one the closest proxy appended), trimmed and lower-cased before comparison. <code>X-Forwarded-Port</code> is deliberately never read: the front proxy sets <code>X-Forwarded-Proto</code> and the port is always 443 on the TLS edge, so the port header adds no information and only creates a spoofing surface.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1248,7 +1248,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="proxy-ipallowlist"><code>Proxy\IpAllowList</code><a class="docs-heading-link" aria-label="Link to this section" href="#proxy-ipallowlist">#</a></h3>
+<h3 id="proxy-ipallowlist"><span class="docs-heading-tail"><code>Proxy\IpAllowList</code><a class="docs-heading-link" aria-label="Link to this section" href="#proxy-ipallowlist">#</a></span></h3>
 <p><code>final class IpAllowList</code> in <code>src/Proxy/IpAllowList.php</code>. Matches a client IP address against an allow list of exact IPv4 or IPv6 addresses and CIDR ranges. Every entry is validated at construction time: an entry that is not a valid address or CIDR throws, a /0 prefix (which would allow every address of its family) is refused, and the wildcard &quot;*&quot; is refused, so bad config fails loudly instead of looking like working config while allowing nothing, or the wrong thing. The matching itself is delegated to Symfony's IpUtils.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1272,7 +1272,7 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="proxy-trustedproxies"><code>Proxy\TrustedProxies</code><a class="docs-heading-link" aria-label="Link to this section" href="#proxy-trustedproxies">#</a></h3>
+<h3 id="proxy-trustedproxies"><span class="docs-heading-tail"><code>Proxy\TrustedProxies</code><a class="docs-heading-link" aria-label="Link to this section" href="#proxy-trustedproxies">#</a></span></h3>
 <p><code>final class TrustedProxies</code> in <code>src/Proxy/TrustedProxies.php</code>. Matches a client or peer IP address against the list of trusted proxies. The list may contain exact IPv4 or IPv6 addresses and CIDR ranges, with the same validation rules as <code>IpAllowList</code>: an invalid entry throws, a /0 prefix is refused, and the wildcard &quot;*&quot; is refused, so bad config fails loudly at boot. The matching itself is delegated to Symfony's IpUtils.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1308,8 +1308,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="ribbon">Ribbon<a class="docs-heading-link" aria-label="Link to this section" href="#ribbon">#</a></h2>
-<h3 id="ribbon-ribbon"><code>Ribbon\Ribbon</code><a class="docs-heading-link" aria-label="Link to this section" href="#ribbon-ribbon">#</a></h3>
+<h2 id="ribbon"><span class="docs-heading-tail"><span>Ribbon</span><a class="docs-heading-link" aria-label="Link to this section" href="#ribbon">#</a></span></h2>
+<h3 id="ribbon-ribbon"><span class="docs-heading-tail"><code>Ribbon\Ribbon</code><a class="docs-heading-link" aria-label="Link to this section" href="#ribbon-ribbon">#</a></span></h3>
 <p><code>final class Ribbon</code> in <code>src/Ribbon/Ribbon.php</code>. An environment ribbon: a small visual indicator that shows which environment an app is running in (for example &quot;STAGING&quot; or &quot;DEVELOPMENT&quot;), meant to be injected near the top of the page so a developer or operator can see at a glance that they are not looking at production. It is disabled by default in production and enabled in every other environment. The environment name is escaped to prevent XSS. When a policy file is configured, the ribbon also shows a warning line for each component version that is in its security-only phase or end of life, from CREED's policy.json; a missing, unreadable or invalid policy file produces no warning and never breaks the page.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1337,8 +1337,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="session">Session<a class="docs-heading-link" aria-label="Link to this section" href="#session">#</a></h2>
-<h3 id="session-sessionhardening"><code>Session\SessionHardening</code><a class="docs-heading-link" aria-label="Link to this section" href="#session-sessionhardening">#</a></h3>
+<h2 id="session"><span class="docs-heading-tail"><span>Session</span><a class="docs-heading-link" aria-label="Link to this section" href="#session">#</a></span></h2>
+<h3 id="session-sessionhardening"><span class="docs-heading-tail"><code>Session\SessionHardening</code><a class="docs-heading-link" aria-label="Link to this section" href="#session-sessionhardening">#</a></span></h3>
 <p><code>final class SessionHardening</code> in <code>src/Session/SessionHardening.php</code>. Applies hardened session settings before the session starts: the secure cookie mode (<code>auto</code> or <code>always</code>, so in always mode the cookie is only sent over TLS), <code>cookie_lifetime</code> 0 (a browser-session cookie that ends when the browser closes), <code>cache_limiter</code> nocache (so pages cannot be cached and replayed with the session attached), <code>cookie_path</code> and <code>cookie_domain</code> of <code>/</code> and empty (so the cookie is host-only), and the name <code>__Host-WSUSESSID</code> on HTTPS or <code>WSUSESSID</code> on HTTP, but only while the name is still PHP's default <code>PHPSESSID</code> (an app-chosen name is left alone, because SESAME reads whatever <code>session_name()</code> returns). <code>session.sid_length</code> is deliberately not touched: it is deprecated as of PHP 8.4 and the platform image sets it to 26.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1362,8 +1362,8 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="support">Support<a class="docs-heading-link" aria-label="Link to this section" href="#support">#</a></h2>
-<h3 id="support-setting"><code>Support\Setting</code><a class="docs-heading-link" aria-label="Link to this section" href="#support-setting">#</a></h3>
+<h2 id="support"><span class="docs-heading-tail"><span>Support</span><a class="docs-heading-link" aria-label="Link to this section" href="#support">#</a></span></h2>
+<h3 id="support-setting"><span class="docs-heading-tail"><code>Support\Setting</code><a class="docs-heading-link" aria-label="Link to this section" href="#support-setting">#</a></span></h3>
 <p><code>final class Setting</code> in <code>src/Support/Setting.php</code>. Resolves one HELMET setting from outside the package. The real environment wins (getenv, then <code>$_ENV</code>, then <code>$_SERVER</code>); an empty string counts as not set, so a blank value in the environment falls through to Playbook. When the environment has no value for the key, the private <code>waynestate/playbook</code> package supplies it, if it is installed. When neither has it, null comes back and the caller applies its own default. Playbook is optional by design: the package never requires it, it only looks for the class. That is how a WSU value can arrive at an app without this public repo naming a single one of them.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -1379,7 +1379,7 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="configuration.html">Environment variables</a></li>
 <li><a href="proof.html">Proof and tests</a></li>

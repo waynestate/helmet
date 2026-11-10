@@ -6,11 +6,11 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Proof and tests[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof-and-tests)
+# Proof and tests [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof-and-tests)
 
 How HELMET is proven against real Wayne State applications, and how to run its test suite on a machine with no PHP. Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://github.com/waynestate/helmet/blob/HEAD/MAINTAINING.md).
 
-## Last run[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#last-run)
+## Last run [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#last-run)
 
 | Check | Date | Commit | Result | Duration |
 | --- | --- | --- | --- | --- |
@@ -22,7 +22,7 @@ How HELMET is proven against real Wayne State applications, and how to run its t
 
 To refresh this table, run `composer ci` and the Docker commands below on the commit you want to record, then copy the summary lines into the rows. The proof runs against real Wayne State applications are not in the table: they live on the private site behind a Wayne State employee sign-in, so they cannot run on a developer machine.
 
-## Accessibility[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#accessibility)
+## Accessibility [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#accessibility)
 
 The front page and every docs page are checked with [axe-core](https://github.com/dequelabs/axe-core) in a real Chromium, through Playwright, at WCAG 2.2 AA, in light and dark, at 320 px and 1280 px, with the WCAG 1.4.10 reflow check. Two gates, both blocking, and both running the same checker, so they cannot drift apart:
 
@@ -40,7 +40,7 @@ The items to review are axe-core's "incomplete" results: it cannot compute contr
 
 In the pipeline, 2026-11-08: the `a11y` job of pipeline 4680 (Preflight 0.3.0, main) passed with no violations, and so did `secret-detection`, the first run of both on the 0.3.0 pins.
 
-## Secret scanning[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#secret-scanning)
+## Secret scanning [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#secret-scanning)
 
 Gitleaks v8.30.1 with its built-in rules (the configuration Preflight's `secret-detection` component uses), 2026-11-07:
 
@@ -52,11 +52,11 @@ Gitleaks v8.30.1 with its built-in rules (the configuration Preflight's `secret-
 
 How to run the same scans is in [Secret scanning](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html).
 
-## Proof[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof)
+## Proof [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof)
 
 Proof runs against real Wayne State applications live on a private site, [proof.apps.wayne.edu/helmet](https://proof.apps.wayne.edu/helmet/), behind a Wayne State employee sign-in.
 
-## Tests[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#tests)
+## Tests [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#tests)
 
 The header contract suite (`vendor/bin/phpunit tests/Contract`) runs one request through raw PHP, PSR-15, Laravel HTML and Laravel JSON and checks that the security headers agree on every path.
 
@@ -82,7 +82,7 @@ docker run --rm -v "$PWD:/app" -w /app php:8.3-cli vendor/bin/phpunit
 
 Style and static analysis come from [Pinstripe](https://github.com/waynestate/pinstripe), the stack's coding standard: `phpstan.neon` includes `vendor/waynestate/pinstripe/phpstan/raw.neon`, and `pint.json` uses the same `per` preset Pinstripe ships.
 
-## Related[#](https://helmet.apps.wayne.edu/docs/reference/proof.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#related)
 
 - [API](https://helmet.apps.wayne.edu/docs/reference/api.html)
 - [Environment variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html)

@@ -6,17 +6,17 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# The session[#](https://helmet.apps.wayne.edu/docs/guides/session.html#the-session)
+# The session [#](https://helmet.apps.wayne.edu/docs/guides/session.html#the-session)
 
 This page covers the session hardening HELMET applies before the first `session_start()`: the `ini` values it sets, the cookie name rule, and how Secure mode works. Read it before you deploy a raw PHP app, then move on to [The request-forgery guard](https://helmet.apps.wayne.edu/docs/guides/csrf.html) for the next layer.
 
 A session is the one thing you want nobody to forge, steal, or pin down early. HELMET tightens the screws before the first `session_start()`, so the cookie is as hard to misuse as the headers are to spoof.
 
-## The goal[#](https://helmet.apps.wayne.edu/docs/guides/session.html#the-goal)
+## The goal [#](https://helmet.apps.wayne.edu/docs/guides/session.html#the-goal)
 
 Call `SessionHardening::apply()` once, before the session starts, and let it set the session `ini` values that the platform's shared `php.ini` leaves at insecure defaults. It refuses to run once a session is active, because changing them mid-session does nothing. In raw PHP the call happens inside `helmet_boot()`; in Laravel the adapter does not apply it, so the framework's own session config applies instead.
 
-## The settings[#](https://helmet.apps.wayne.edu/docs/guides/session.html#the-settings)
+## The settings [#](https://helmet.apps.wayne.edu/docs/guides/session.html#the-settings)
 
 `SessionHardening::apply()` sets these `ini` values before the session starts:
 
@@ -37,7 +37,7 @@ Note
 
 `session.sid_length` is deliberately not touched. It is deprecated as of PHP 8.4 and the platform image sets it to 26, so changing it here would fight the platform. That change is left to the Upgrade project.
 
-## The cookie name rule[#](https://helmet.apps.wayne.edu/docs/guides/session.html#the-cookie-name-rule)
+## The cookie name rule [#](https://helmet.apps.wayne.edu/docs/guides/session.html#the-cookie-name-rule)
 
 The name rule applies only while the name is still PHP's default `PHPSESSID`. An app that chose its own name keeps it, and SESAME reads whatever `session_name()` returns, so a changed name is safe for it. When an app first runs this version, existing sessions under the old name end: the next request still carries the old cookie, the app finds no session under the new name and starts a fresh one.
 
@@ -45,7 +45,7 @@ Warning
 
 Deploying this version ends every session that still uses the default `PHPSESSID` name. Signed-in users sign in once more after the deploy.
 
-## Secure mode[#](https://helmet.apps.wayne.edu/docs/guides/session.html#secure-mode)
+## Secure mode [#](https://helmet.apps.wayne.edu/docs/guides/session.html#secure-mode)
 
 By default (`auto`) the Secure flag follows HELMET's HTTPS decision, the same one the headers use. On Citadel, HA-Proxy ends TLS before the request reaches PHP; with the `citadel` preset HELMET trusts the proxy's `X-Forwarded-Proto`, so `auto` still sets `Secure` on HTTPS pages. Where TLS ends in front of an app that trusts no proxy, the request looks plain; force the flag with `'session' => ['secure' => 'always']` to `helmet_boot()`. `helmet_boot()` reads no environment, so in raw PHP the `session` option is the only switch.
 
@@ -57,11 +57,11 @@ Note
 
 The rest of session hardening in Laravel is the framework's own session config: set `http_only` and `same_site` in `config/session.php`. The adapter does not apply raw-PHP `SessionHardening`, because Laravel does not use PHP's native session.
 
-## Failure behavior[#](https://helmet.apps.wayne.edu/docs/guides/session.html#failure-behavior)
+## Failure behavior [#](https://helmet.apps.wayne.edu/docs/guides/session.html#failure-behavior)
 
 `apply()` throws a `LogicException` if a session is already active, and a `RuntimeException` naming the first setting that could not be changed if any `ini` value refuses to be set. A setting that cannot be changed is a loud failure, not a silent insecure default.
 
-## Related[#](https://helmet.apps.wayne.edu/docs/guides/session.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/guides/session.html#related)
 
 - [The request-forgery guard](https://helmet.apps.wayne.edu/docs/guides/csrf.html)
 - [Metrics](https://helmet.apps.wayne.edu/docs/guides/metrics.html)

@@ -6,11 +6,11 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# API reference[#](https://helmet.apps.wayne.edu/docs/reference/api.html#api-reference)
+# API reference [#](https://helmet.apps.wayne.edu/docs/reference/api.html#api-reference)
 
 Every public entry point of the `waynestate/helmet` core, with signatures exactly as they appear in the code under `src/`. For what each part does to a request, see the usage guides; for the environment variables behind the Laravel adapter, see [Environment variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html).
 
-## Global functions[#](https://helmet.apps.wayne.edu/docs/reference/api.html#global-functions)
+## Global functions [#](https://helmet.apps.wayne.edu/docs/reference/api.html#global-functions)
 
 File `src/functions.php`, namespace `Waynestate\Helmet`:
 
@@ -53,7 +53,7 @@ File `src/Ribbon/functions.php`, namespace `Waynestate\Helmet\Ribbon`, deprecate
 
 A convenience helper for raw PHP apps: it creates a `Ribbon` for the given environment, which you render with its `html()` method and inject near the top of the page. When a policy path is given, the ribbon also shows a version warning for the running PHP version from CREED's policy.json; a missing, unreadable or invalid policy file produces no warning and never breaks the page.
 
-## Advisor[#](https://helmet.apps.wayne.edu/docs/reference/api.html#advisor)
+## Advisor [#](https://helmet.apps.wayne.edu/docs/reference/api.html#advisor)
 
 ### `Advisor\HelmetModule` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#advisor-helmetmodule)
 
@@ -70,7 +70,7 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | `resources()` | `public function resources(): array` |
 | `prompts()` | `public function prompts(): array` |
 
-## Csrf[#](https://helmet.apps.wayne.edu/docs/reference/api.html#csrf)
+## Csrf [#](https://helmet.apps.wayne.edu/docs/reference/api.html#csrf)
 
 ### `Csrf\RequestForgeryGuard` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#csrf-requestforgeryguard)
 
@@ -85,7 +85,7 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | `originFromServerParams()` | `public static function originFromServerParams(array $serverParams, TrustedProxies $proxies): ?string` |
 | `canonicalOrigin()` | `public static function canonicalOrigin(string $origin): ?string` |
 
-## Error[#](https://helmet.apps.wayne.edu/docs/reference/api.html#error)
+## Error [#](https://helmet.apps.wayne.edu/docs/reference/api.html#error)
 
 ### `Error\GenericErrorResponse` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#error-genericerrorresponse)
 
@@ -96,7 +96,7 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | `build()` | `public function build(\Throwable $e, ?LoggerInterface $logger = null): array` |
 | `clientError()` | `public function clientError(int $status): array` |
 
-## Headers[#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers)
+## Headers [#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers)
 
 ### `Headers\SecurityHeaders` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers-securityheaders)
 
@@ -148,7 +148,7 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | --- | --- |
 | `__construct()` | `public function __construct(string $uri)` |
 
-## Health[#](https://helmet.apps.wayne.edu/docs/reference/api.html#health)
+## Health [#](https://helmet.apps.wayne.edu/docs/reference/api.html#health)
 
 ### `Health\HealthCheck` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#health-healthcheck)
 
@@ -188,7 +188,7 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | `__construct()` | `public function __construct(private readonly ResponseFactoryInterface $responseFactory, private readonly StreamFactoryInterface $streamFactory, private readonly Readiness $readiness, private readonly string $path = Readiness::DEFAULT_PATH)` |
 | `process()` | `public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface` |
 
-## Laravel[#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel)
+## Laravel [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel)
 
 The Laravel adapter. The service provider wires the config into the app; the four middlewares put the core classes into the request pipeline; the three route classes register the optional endpoints (CSP reports, metrics, readiness), which stay off until an app opts in.
 
@@ -330,7 +330,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | --- | --- |
 | `__invoke()` | `public function __invoke(Request $request): Response` |
 
-## Logging[#](https://helmet.apps.wayne.edu/docs/reference/api.html#logging)
+## Logging [#](https://helmet.apps.wayne.edu/docs/reference/api.html#logging)
 
 ### `Logging\Logging` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#logging-logging)
 
@@ -345,7 +345,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `addRequestContext()` | `public static function addRequestContext(LogRecord $record): LogRecord` |
 | `redact()` | `public static function redact(LogRecord $record): LogRecord` |
 
-## Metrics[#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics)
+## Metrics [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics)
 
 ### `Metrics\Metrics` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#metrics-metrics)
 
@@ -436,7 +436,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `from()` | `public static function from(?string $authorizationHeader): ?string` |
 | `fromServer()` | `public static function fromServer(array $server, ?array $headers = null): ?string` |
 
-## Platform[#](https://helmet.apps.wayne.edu/docs/reference/api.html#platform)
+## Platform [#](https://helmet.apps.wayne.edu/docs/reference/api.html#platform)
 
 ### `Platform\Presets` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#platform-presets)
 
@@ -457,7 +457,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | --- | --- |
 | `__construct()` | `public function __construct(string $name)` |
 
-## Policy[#](https://helmet.apps.wayne.edu/docs/reference/api.html#policy)
+## Policy [#](https://helmet.apps.wayne.edu/docs/reference/api.html#policy)
 
 ### `Policy\PolicySource` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#policy-policysource)
 
@@ -503,7 +503,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `__construct()` | `public function __construct(private readonly PolicySource $source, private readonly DateTimeInterface $now)` |
 | `warning()` | `public function warning(string $component, string $version): ?string` |
 
-## Proxy[#](https://helmet.apps.wayne.edu/docs/reference/api.html#proxy)
+## Proxy [#](https://helmet.apps.wayne.edu/docs/reference/api.html#proxy)
 
 ### `Proxy\ClientIp` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#proxy-clientip)
 
@@ -544,7 +544,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `count()` | `public function count(): int` |
 | `broadEntries()` | `public function broadEntries(): array` |
 
-## Ribbon[#](https://helmet.apps.wayne.edu/docs/reference/api.html#ribbon)
+## Ribbon [#](https://helmet.apps.wayne.edu/docs/reference/api.html#ribbon)
 
 ### `Ribbon\Ribbon` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#ribbon-ribbon)
 
@@ -557,7 +557,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `environment()` | `public function environment(): string` |
 | `html()` | `public function html(): string` |
 
-## Session[#](https://helmet.apps.wayne.edu/docs/reference/api.html#session)
+## Session [#](https://helmet.apps.wayne.edu/docs/reference/api.html#session)
 
 ### `Session\SessionHardening` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#session-sessionhardening)
 
@@ -569,7 +569,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | `SECURE_ALWAYS` | `public const SECURE_ALWAYS = 'always';` |
 | `apply()` | `public static function apply(bool $https, ?array $settings = null, string $secureMode = self::SECURE_AUTO): void` |
 
-## Support[#](https://helmet.apps.wayne.edu/docs/reference/api.html#support)
+## Support [#](https://helmet.apps.wayne.edu/docs/reference/api.html#support)
 
 ### `Support\Setting` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#support-setting)
 
@@ -579,7 +579,7 @@ The PHP support metrics come from a bound `PolicySource`, else from `helmet.poli
 | --- | --- |
 | `get()` | `public static function get(string $key): ?string` |
 
-## Related[#](https://helmet.apps.wayne.edu/docs/reference/api.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/reference/api.html#related)
 
 - [Environment variables](https://helmet.apps.wayne.edu/docs/reference/configuration.html)
 - [Proof and tests](https://helmet.apps.wayne.edu/docs/reference/proof.html)

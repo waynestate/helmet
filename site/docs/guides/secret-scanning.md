@@ -6,13 +6,13 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Secret scanning[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#secret-scanning)
+# Secret scanning [#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#secret-scanning)
 
 HELMET hardens what an app sends. It cannot help once a database password or an API key is in the repository: every clone, fork and CI cache has it, and deleting the line later does not take it out of history. So the stack scans for secrets with a maintained tool, [Gitleaks](https://github.com/gitleaks/gitleaks), instead of writing a scanner of its own. Gitleaks ships a few hundred rules for real token formats (cloud keys, Git hosting tokens, private keys, JWTs, database URLs with a password) and is kept current by people who do only that.
 
 The pipeline runs it on every push, and a finding fails the pipeline. You can run the same scan before you push.
 
-## In CI: Preflight's component[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#in-ci-preflight-s-component)
+## In CI: Preflight's component [#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#in-ci-preflight-s-component)
 
 Add one include to the app's `.gitlab-ci.yml`:
 
@@ -31,7 +31,7 @@ Note
 
 The job scans the tree, not history: it answers "is a secret in what we are about to ship?". To check the history once, run the history scan below on your machine.
 
-## On your machine[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#on-your-machine)
+## On your machine [#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#on-your-machine)
 
 The same image and the same rules, with Docker. Run from the project root.
 
@@ -78,7 +78,7 @@ docker run --rm -v "$PWD:/repo:ro" --entrypoint sh \
   -c 'git config --global --add safe.directory "*" && gitleaks git --redact --no-banner --log-opts="--all" /repo'
 ```
 
-## When it finds something[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#when-it-finds-something)
+## When it finds something [#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#when-it-finds-something)
 
 1. **Treat the secret as leaked.** Rotate it first, at the service that issued it. Removing the line does not un-leak it: the value is in history, in every clone and in CI caches.
 2. Move the value out of the code, into the environment (`.env`, which stays out of Git, or the platform's secret store), and read it with `getenv()` or `env()` in config.
@@ -86,7 +86,7 @@ docker run --rm -v "$PWD:/repo:ro" --entrypoint sh \
 
 A false positive (a test fixture, an example key in docs) is allowlisted in review, like code: add its fingerprint (`file:rule:line`, from the job log or the artifact) to a `.gitleaksignore` at the project root, or commit your own `.gitleaks.toml` and set the component's `config_path`. Prefer a fixture that does not look like a secret at all.
 
-## What HELMET's own scan found[#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#what-helmet-s-own-scan-found)
+## What HELMET's own scan found [#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#what-helmet-s-own-scan-found)
 
 The first run of this job's rules over HELMET's tree and its full history (359 commits) found nothing, so HELMET carries no `.gitleaksignore`. A planted fake cloud key in a scratch copy of the tree was caught (exit 1), so the job does fail when it should. Both runs are recorded on the [Proof](https://helmet.apps.wayne.edu/docs/reference/proof.html) page.
 

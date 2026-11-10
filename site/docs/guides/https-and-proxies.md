@@ -6,7 +6,7 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# HTTPS, and why the proxy list matters[#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#https-and-why-the-proxy-list-matters)
+# HTTPS, and why the proxy list matters [#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#https-and-why-the-proxy-list-matters)
 
 This page explains how HELMET decides whether a request really arrived over HTTPS, and why the trusted proxy list is the load-bearing part of that decision. When you understand it, pick your list on [Platform presets](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html) or [Running off Citadel](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.html).
 
@@ -14,7 +14,7 @@ Citadel sits behind HA-Proxy, so the PHP process sees the proxy's address, not t
 
 The proxy check is the Unsung hero of the headers. Nobody notices it until a forged `X-Forwarded-Proto` walks in and gets nowhere.
 
-## How the scheme is decided[#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#how-the-scheme-is-decided)
+## How the scheme is decided [#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#how-the-scheme-is-decided)
 
 `HttpsDetector` makes the decision from the raw `$_SERVER` array, so it works identically in the framework-free boot path and in any adapter:
 
@@ -23,7 +23,7 @@ The proxy check is the Unsung hero of the headers. Nobody notices it until a for
 
 A comma-separated `X-Forwarded-Proto` list keeps one rule everywhere: the last non-empty value wins, because it is the one the closest proxy appended. Values are trimmed and lower-cased, and empty tokens are ignored, so a trailing comma cannot hide the real value.
 
-## What the proxy list accepts[#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#what-the-proxy-list-accepts)
+## What the proxy list accepts [#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#what-the-proxy-list-accepts)
 
 `TrustedProxies` takes exact IPv4 or IPv6 addresses and IPv4 or IPv6 CIDR ranges. Every entry is validated at construction time, so bad config fails loudly at boot instead of looking like working config while trusting nothing, or the wrong thing:
 
@@ -33,7 +33,7 @@ A comma-separated `X-Forwarded-Proto` list keeps one rule everywhere: the last n
 
 The matching itself is delegated to Symfony's `IpUtils`, maintained security code; the class only validates the config. An IPv4-mapped IPv6 address (`::ffff:a.b.c.d`) is unmapped to `a.b.c.d` before matching, so a dual-stack peer presenting its IPv4 address in mapped form still matches an IPv4 entry in the list. An empty list trusts nothing.
 
-## What happens with no list[#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#what-happens-with-no-list)
+## What happens with no list [#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#what-happens-with-no-list)
 
 With neither a preset nor a list, no address is trusted, so forwarded headers such as `X-Forwarded-Proto` are ignored and the request is read as it arrived. An explicitly empty `HELMET_PROXIES=` means trust nobody, even when a preset is set; only an unset variable falls back to the preset. An unknown preset name throws at boot, so a typo fails loudly instead of silently trusting nothing.
 
@@ -43,7 +43,7 @@ List only the address the front proxy connects from, never a whole private range
 
 When the list does hold a broad entry, an IPv4 range shorter than `/16` or an IPv6 range shorter than `/48`, HELMET writes one `helmet.broad_trusted_proxy` warning at boot so the range is hard to miss in the logs. Set `HELMET_WARN_BROAD_PROXIES=false` (or pass `warn_broad_proxies: false` to `helmet_boot()`) once you have reviewed the range and accepted it.
 
-## Resolving the client IP[#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#resolving-the-client-ip)
+## Resolving the client IP [#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#resolving-the-client-ip)
 
 The same trust list drives `ClientIp::resolve()`. When the peer is a trusted proxy, the client IP is read from `X-Forwarded-For` right to left (closest proxy first), and the walk stops at the first untrusted hop, so a client-chosen entry behind that hop can never be returned. Two failure rules keep it honest:
 
@@ -52,11 +52,11 @@ The same trust list drives `ClientIp::resolve()`. When the peer is a trusted pro
 
 IPv4-mapped IPv6 addresses are unmapped for both the peer and the forwarded entries, so a dual-stack proxy still matches its IPv4 entry instead of slipping past the trust check. The metrics endpoint uses the same list through `IpAllowList`, which applies the same validation rules to `HELMET_METRICS_ALLOW`.
 
-## Where to set it[#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#where-to-set-it)
+## Where to set it [#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#where-to-set-it)
 
 Raw PHP passes the list as `trusted_proxies` (or a `preset` name) to `helmet_boot()`; Laravel reads `HELMET_PROXIES` (comma-separated), which wins over `HELMET_PRESET`. Per-platform values live in [Running off Citadel](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.html), and the presets themselves in [Platform presets](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html).
 
-## Related[#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/guides/https-and-proxies.html#related)
 
 - [Platform presets](https://helmet.apps.wayne.edu/docs/guides/platform-presets.html)
 - [Running off Citadel](https://helmet.apps.wayne.edu/docs/guides/running-off-citadel.html)

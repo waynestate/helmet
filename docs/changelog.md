@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Changed: the docs, agent-ready and deploy kits are Squire 0.10.6 (was 0.10.5): the docs builder and agent-ready generator see every file on Docker Desktop mounts.
 - Site: `assets/stack-env.js` knows Parity, so a pre-production page links Parity's pre-production site and a dev page links its local `site/` folder. Until now Parity, of all parts, was the one link that ignored its environment.
 - Site: Parity is out; the party list links its site.
 - Changed: the deploy kit is Squire 0.10.5 (was 0.10.2): the template comments drop their internal item IDs, and Squire reports the parity group as deprecated (removed no sooner than 0.12.0; Parity runs Citadel on your computer now and carries the kit over with `parity init --from-squire`).
@@ -85,7 +86,7 @@ A patch release: no public function, option or header changes. It adds tests tha
 
 ## 1.0.0 (2026-11-08)
 
-1.0 notes: from 1.0 HELMET follows semantic versioning, so a `^1.0` constraint gets no breaking change, with one default change announced here. Before you move from `^0.4`, know two things. An unknown quoted source in the CSP (a typo such as `'unsafe-inlined'` in the `csp` option or `HELMET_CSP`) now throws `\InvalidArgumentException` at boot, when the headers are built, instead of shipping a token the browser ignores, so boot the app once on a test host before you deploy. And `style_src_attr` stays `inline` by default: the policy still sends `style-src-attr 'unsafe-inline'` until WayneUI drops its inline `style` attributes. A later 1.x minor then moves the default to `none`; set `style_src_attr` to `inline` to keep today's header, or run `report` now to see what `none` would block. That plan is the decision recorded in [ADR-0001](https://github.com/waynestate/helmet/-/blob/main/docs/adr/0001-style-src-attr.md). Upgrade with `composer require waynestate/helmet:^1.0`.
+1.0 notes: from 1.0 HELMET follows semantic versioning, so a `^1.0` constraint gets no breaking change, with one default change announced here. Before you move from `^0.4`, know two things. An unknown quoted source in the CSP (a typo such as `'unsafe-inlined'` in the `csp` option or `HELMET_CSP`) now throws `\InvalidArgumentException` at boot, when the headers are built, instead of shipping a token the browser ignores, so boot the app once on a test host before you deploy. And `style_src_attr` stays `inline` by default: the policy still sends `style-src-attr 'unsafe-inline'` until WayneUI drops its inline `style` attributes. A later 1.x minor then moves the default to `none`; set `style_src_attr` to `inline` to keep today's header, or run `report` now to see what `none` would block. That plan is the decision recorded in [ADR-0001](https://github.com/waynestate/helmet/blob/main/docs/adr/0001-style-src-attr.md). Upgrade with `composer require waynestate/helmet:^1.0`.
 
 ### Added
 

@@ -6,30 +6,30 @@ llms: https://helmet.apps.wayne.edu/llms.txt
 generator: Squire agent-ready
 ---
 
-# Upgrading[#](https://helmet.apps.wayne.edu/docs/upgrading.html#upgrading)
+# Upgrading [#](https://helmet.apps.wayne.edu/docs/upgrading.html#upgrading)
 
 This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.3.1.
 
-## 1.3.1 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-3-1-2026-11-09)
+## 1.3.1 (2026-11-09) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-3-1-2026-11-09)
 
 A patch release: `composer update waynestate/helmet` within `^1.0`. No header, option or event changes, so there is nothing to change in the code. It carries the docs, HELMET's own CI on Composer 2.11.1 and Preflight 0.5.0, and the front page's deploy kit on Squire 0.10.2. Same bucket, fresh decal.
 
-## 1.3.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-3-0-2026-11-09)
+## 1.3.0 (2026-11-09) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-3-0-2026-11-09)
 
 A minor release, backward compatible: `composer update waynestate/helmet` within `^1.0`. Nothing to change in the code.
 
-### Changed behavior[#](https://helmet.apps.wayne.edu/docs/upgrading.html#changed-behavior)
+### Changed behavior [#](https://helmet.apps.wayne.edu/docs/upgrading.html#changed-behavior)
 
 - Laravel: `HELMET_SESSION_SECURE` now reaches the session cookie. With the default `auto`, nothing changes: Laravel already marked the cookie `Secure` on HTTPS requests, and HELMET leaves `session.secure` unset. With `always`, the adapter sets `session.secure` to `true`, so the cookie is `Secure` even on plain HTTP. If an app set `HELMET_SESSION_SECURE=always` before (it did nothing then), check that plain HTTP development keeps `auto`, or the browser drops the cookie and nobody stays signed in. An app that sets `session.secure` itself (`SESSION_SECURE_COOKIE`) keeps its value.
 - Laravel: the adapter logs `helmet.forwarded_proto_rejected` (from `SecurityHeaders`) and `helmet.forwarded_for_rejected` (from the metrics endpoint) through the app's logger. Expect the warning in the logs of an app that trusts a proxy and is also reached directly.
 - PSR-15: `SecurityHeadersMiddleware` takes an optional PSR-3 `logger` as its last argument. Pass one (for example `logger: $logger`) to log `helmet.forwarded_proto_rejected`; without it nothing is logged, as before.
 - Nothing is deprecated in 1.3.0.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify)
+### How to verify [#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify)
 
 In Laravel, send a request from an address outside `HELMET_PROXIES` with `X-Forwarded-Proto: https` and expect one `helmet.forwarded_proto_rejected` warning with `event`, `reason` and `peer` in the context. With `HELMET_SESSION_SECURE=always`, a plain HTTP response's session `Set-Cookie` carries `secure`.
 
-## 1.2.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-2-0-2026-11-09)
+## 1.2.0 (2026-11-09) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-2-0-2026-11-09)
 
 A minor release, backward compatible: `composer update waynestate/helmet` within `^1.0`. Nothing changes until you opt in.
 
@@ -37,48 +37,48 @@ A minor release, backward compatible: `composer update waynestate/helmet` within
 - Laravel gains `HELMET_ERROR_PAGES` (`helmet.error_pages`, default `false`). Set it `true` to answer every 4xx HTTP exception with the same fixed page instead of the framework's error view; JSON clients, validation errors, authentication redirects and every 5xx stay with Laravel. An app with its own `resources/views/errors/4xx` views should check them first: with the setting on, HELMET's page answers instead.
 - Nothing is deprecated in 1.2.0.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-1)
+### How to verify [#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-1)
 
 With `HELMET_ERROR_PAGES=true`, ask for a page that does not exist and expect `404`, `Cache-Control: no-store` and HELMET's fixed page, never the exception message.
 
-## 1.1.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-1-0-2026-11-09)
+## 1.1.0 (2026-11-09) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-1-0-2026-11-09)
 
 A minor release, backward compatible: `composer update waynestate/helmet` within `^1.0`.
 
-### Deprecated[#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated)
+### Deprecated [#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated)
 
 - `Waynestate\Helmet\Ribbon\helmet_ribbon()` moves to `Waynestate\Helmet\helmet_ribbon()`, next to `helmet_boot()`, with the same arguments. The old name still works for one release and raises `E_USER_DEPRECATED`. Change the import to `use function Waynestate\Helmet\helmet_ribbon;`.
 
-### Changed behavior[#](https://helmet.apps.wayne.edu/docs/upgrading.html#changed-behavior-1)
+### Changed behavior [#](https://helmet.apps.wayne.edu/docs/upgrading.html#changed-behavior-1)
 
 - The raw PHP ribbon no longer renders in production or for an environment name HELMET does not know; it follows the Laravel adapter's list (`Ribbon::ENVIRONMENTS`), matched in any case. A test site whose `APP_ENV` was a name outside that list loses its ribbon; use one of the listed names.
 - `helmet_boot()` logs `helmet.forwarded_proto_rejected` when a peer that is not a trusted proxy sends `X-Forwarded-Proto`. Nothing to do, but expect the warning in the logs of an app that is reached directly as well as through its proxy.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-2)
+### How to verify [#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-2)
 
 Run the app's tests with deprecations shown, and check that no `Waynestate\Helmet\Ribbon\helmet_ribbon() is deprecated` notice is left.
 
-## 1.0.1 (2026-11-08)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-0-1-2026-11-08)
+## 1.0.1 (2026-11-08) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-0-1-2026-11-08)
 
 A patch release: no public function, option or header changes. Nothing to do.
 
-## 1.0.0 (2026-11-08)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-0-0-2026-11-08)
+## 1.0.0 (2026-11-08) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-0-0-2026-11-08)
 
 From 1.0, HELMET follows semantic versioning: a `^1.0` constraint gets no breaking change, with one default change announced below. The release adds a readiness check on `/ready`, the `style_src_attr` mode, and Gitleaks and accessibility gates in HELMET's own pipeline, and fixes how quoted CSP sources are written.
 
-### Breaking[#](https://helmet.apps.wayne.edu/docs/upgrading.html#breaking)
+### Breaking [#](https://helmet.apps.wayne.edu/docs/upgrading.html#breaking)
 
 - An unknown quoted source in the CSP now throws `\InvalidArgumentException` at boot, when the headers are built. A typo such as `'unsafe-inlined'` in the `csp` option (raw PHP, PSR-15) or `HELMET_CSP` (Laravel) used to ship as a token the browser ignored; now the app stops on its first request with the bad token named. Hashes (`'sha256-...'`), fixed nonces, every CSP keyword (`'unsafe-eval'`, `'unsafe-hashes'`, `'wasm-unsafe-eval'`, `'report-sample'`, `'strict-dynamic'`) and the `https:`, `mediastream:` and `filesystem:` schemes are accepted and now come out as written; before, they were mangled into host sources.
 
-### Deprecated[#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated-1)
+### Deprecated [#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated-1)
 
 Nothing is deprecated in 1.0.0.
 
-### Announced: the `style_src_attr` default[#](https://helmet.apps.wayne.edu/docs/upgrading.html#announced-the-style-src-attr-default)
+### Announced: the `style_src_attr` default [#](https://helmet.apps.wayne.edu/docs/upgrading.html#announced-the-style-src-attr-default)
 
 `style_src_attr` stays `inline` in 1.0, so the policy still sends `style-src-attr 'unsafe-inline'`, exactly as 0.4 did, because WayneUI's recipes set inline `style` attributes. Once WayneUI drops them, a later 1.x minor moves the default to `none`. To be ready, run `report` now (`'style_src_attr' => 'report'`, or `HELMET_CSP_STYLE_SRC_ATTR=report`) and read what the browser reports; an app that needs inline style attributes of its own sets `inline` explicitly. The decision and its reasons are in [ADR-0001](https://helmet.apps.wayne.edu/docs/adr/0001-style-src-attr.html).
 
-### Steps[#](https://helmet.apps.wayne.edu/docs/upgrading.html#steps)
+### Steps [#](https://helmet.apps.wayne.edu/docs/upgrading.html#steps)
 
 1. Move the constraint in `composer.json` from `^0.4` to `^1.0`, then update:
    ```
@@ -87,13 +87,13 @@ Nothing is deprecated in 1.0.0.
 2. Read your `csp` option or `HELMET_CSP` value: every quoted source must be one CSP accepts (see Breaking).
 3. Optional: turn on `/ready` for your platform's readiness probe (the [Readiness guide](https://helmet.apps.wayne.edu/docs/guides/readiness.html)).
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-3)
+### How to verify [#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-3)
 
 Boot the app once on a test host. It starts, and `curl -sI` on a page shows the same `Content-Security-Policy` as before, with any hashes or keywords you set written as you wrote them. A typo in a quoted source stops the boot with `\InvalidArgumentException` naming it; fix it and boot again.
 
 ---
 
-## 0.4.0 (2026-11-07)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-4-0-2026-11-07)
+## 0.4.0 (2026-11-07) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-4-0-2026-11-07)
 
 No breaks: an ADVISOR module (`helmet_headers` and `helmet_php_support`, read-only), opt-in request metrics (`HELMET_METRICS_STORAGE`), PHP end-of-support and stack-info metrics, `extra.http` on web request log records, and fixes to the metrics and policy file readers. This is a pre-1.0 minor: apps that pin `^0.3` stay on 0.3.x until they move their constraint to `^0.4`. Upgrade with:
 
@@ -103,7 +103,7 @@ composer require waynestate/helmet:^0.4
 
 ---
 
-## 0.3.1 (2026-11-05)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-3-1-2026-11-05)
+## 0.3.1 (2026-11-05) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-3-1-2026-11-05)
 
 No breaks: a boot warning for a broad trusted-proxy list (`helmet.broad_trusted_proxy`), `helmet_csp_nonce_swap()` and `GenericErrorResponse::clientError()`, and the rest of the release is docs and deploy-layer refreshes. Upgrade with:
 
@@ -113,9 +113,9 @@ composer update waynestate/helmet
 
 ---
 
-## 0.3.0 (2026-11-03)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-3-0-2026-11-03)
+## 0.3.0 (2026-11-03) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-3-0-2026-11-03)
 
-### Breaking[#](https://helmet.apps.wayne.edu/docs/upgrading.html#breaking-1)
+### Breaking [#](https://helmet.apps.wayne.edu/docs/upgrading.html#breaking-1)
 
 This is a pre-1.0 minor: apps that pin `^0.2` stay on 0.2.x until they move their constraint to `^0.3`. The proxy and forwarded-header changes make some requests resolve differently, so read the Security lines first:
 
@@ -126,11 +126,11 @@ This is a pre-1.0 minor: apps that pin `^0.2` stay on 0.2.x until they move thei
 - The CSP nonce meta tag is injected only into the real `<head>`, so a literal `<head>` inside a comment, an attribute value, or a script, style, textarea or title element no longer receives it.
 - An HTML response that carries a CSP nonce has `public` changed to `private` and `s-maxage` dropped from its `Cache-Control`, so a shared cache cannot store a page whose nonce differs per request.
 
-### Deprecated[#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated-2)
+### Deprecated [#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated-2)
 
 None listed in the changelog for this release.
 
-### Steps[#](https://helmet.apps.wayne.edu/docs/upgrading.html#steps-1)
+### Steps [#](https://helmet.apps.wayne.edu/docs/upgrading.html#steps-1)
 
 1. Move the constraint in `composer.json` from `^0.2` to `^0.3`, then update:
    ```
@@ -140,7 +140,7 @@ None listed in the changelog for this release.
 3. On Citadel, confirm the `citadel` preset's NAT assumption: `172.18.0.1` is the Docker bridge gateway, the preset is safe only when the front proxy reaches the app over that bridge, and a published app port that is source-NATed to the gateway address would make a direct client look like the proxy, so the platform must not publish the app's port.
 4. If you rely on `X-Forwarded-For` values, expect the fail-closed behavior: an unparseable entry makes the resolved client IP the peer, and the warning `helmet.forwarded_for_rejected` is logged with `event` (`forwarded_for_rejected`), `reason` (`unparseable_entry`) and `peer` in the context. The Origin value, cookies, Authorization, the header and the bad entry are never logged.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-4)
+### How to verify [#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-4)
 
 ```
 composer ci
@@ -156,7 +156,7 @@ Expected: `200 ok`, the baseline headers, and `Strict-Transport-Security` on a r
 
 ---
 
-## 0.2.6 (2026-11-02)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-6-2026-11-02)
+## 0.2.6 (2026-11-02) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-6-2026-11-02)
 
 No breaks: HTML rewrites (CSP nonce meta, environment ribbon) keep the response's view object, so `assertInertia()` and `assertViewHas()` work in apps that use HELMET, and the rest of the release is fixes, deploy-layer refreshes and docs. Upgrade with:
 
@@ -166,7 +166,7 @@ composer update waynestate/helmet
 
 ---
 
-## 0.2.5 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-5-2026-10-29)
+## 0.2.5 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-5-2026-10-29)
 
 No breaks: adds the agent-ready site (prompt blocks, Markdown twins, llms.txt) from Squire's kit and `HELMET_SESSION_SECURE=always`, which keeps the session cookie Secure even when HTTPS is not detected, and moves the proof page to a private site that needs a Wayne State sign-in. Upgrade with:
 
@@ -176,7 +176,7 @@ composer update waynestate/helmet
 
 ---
 
-## 0.2.4 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-4-2026-10-29)
+## 0.2.4 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-4-2026-10-29)
 
 No breaks: `HELMET_PRESET` (Laravel) now also comes from the private `waynestate/playbook` package when the environment has no value; the config reads it through `Waynestate\Helmet\Support\Setting`, which checks the environment first, then Playbook, then gives up. A missing preset is still not an error, and `waynestate/playbook` is suggested, never required. Upgrade with:
 
@@ -186,7 +186,7 @@ composer update waynestate/helmet
 
 ---
 
-## 0.2.3 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-3-2026-10-29)
+## 0.2.3 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-3-2026-10-29)
 
 No breaks: a fix. `helmet_boot()` removed `X-Powered-By` only after it had already answered the health check path, so a GET or HEAD to `/up` (the default `health_path`) still sent the header; the removal now runs before the health answer and the request-forgery rejection, so both early exits leave the response clean. Upgrade with:
 
@@ -196,7 +196,7 @@ composer update waynestate/helmet
 
 ---
 
-## 0.2.2 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-2-2026-10-29)
+## 0.2.2 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-2-2026-10-29)
 
 No breaks: every JSON log record now carries a request ID in `extra.request_id`, 16 lowercase hex characters generated by HELMET (`Logging::requestId()`), stamped by a processor pushed before the redaction processor. An inbound header is never trusted for the ID. `Logging::create()` takes an optional fourth argument for a caller-supplied ID (8 to 64 letters, digits, dots, underscores or dashes; anything else is ignored), and `helmet_boot()` accepts it as `log.request_id`, which must be a string, and now also returns the ID as `request_id`. Upgrade with:
 
@@ -206,17 +206,17 @@ composer update waynestate/helmet
 
 ---
 
-## 0.2.1 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-1-2026-10-29)
+## 0.2.1 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-1-2026-10-29)
 
-### Breaking[#](https://helmet.apps.wayne.edu/docs/upgrading.html#breaking-2)
+### Breaking [#](https://helmet.apps.wayne.edu/docs/upgrading.html#breaking-2)
 
 A raw-PHP app that still used the default `PHPSESSID` cookie gets the new `WSUSESSID` name (`__Host-WSUSESSID` on HTTPS), so signed-in users sign in once more after deploying. Laravel apps are unaffected (Laravel names its own cookie). The rename happens only while the name is still the PHP default `PHPSESSID`; an app-chosen name is left alone, and SESAME reads whatever `session_name()` returns. `SessionHardening::apply()` also sets `cookie_lifetime=0` (a browser-session cookie), `cache_limiter=nocache`, `cookie_path=/`, an empty `cookie_domain` (host-only) and the cookie name.
 
-### Deprecated[#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated-3)
+### Deprecated [#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated-3)
 
 None listed in the changelog for this release.
 
-### Steps[#](https://helmet.apps.wayne.edu/docs/upgrading.html#steps-2)
+### Steps [#](https://helmet.apps.wayne.edu/docs/upgrading.html#steps-2)
 
 1. Update the package:
    ```
@@ -225,7 +225,7 @@ None listed in the changelog for this release.
 2. If your app chose its own session cookie name, nothing changes for it.
 3. Expect one more sign-in for raw-PHP users after the deploy; tell app owners it is expected.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-5)
+### How to verify [#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-5)
 
 ```
 curl -sI http://localhost/up
@@ -235,20 +235,20 @@ Expected: the `Set-Cookie` name is `__Host-WSUSESSID` on HTTPS and `WSUSESSID` o
 
 ---
 
-## 0.2.0 (2026-10-29)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-0-2026-10-29)
+## 0.2.0 (2026-10-29) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-2-0-2026-10-29)
 
-### Breaking[#](https://helmet.apps.wayne.edu/docs/upgrading.html#breaking-3)
+### Breaking [#](https://helmet.apps.wayne.edu/docs/upgrading.html#breaking-3)
 
 - An unknown `HELMET_PRESET` now throws even when `HELMET_PROXIES` is set. A typo in the preset name fails loudly at boot instead of going silently unused.
 - The trusted-header set in the Laravel adapter was narrowed. `X-Forwarded-Host`, `X-Forwarded-Prefix` and now `X-Forwarded-Port` are no longer trusted by default. Port is out because Citadel's HA-Proxy never sends it, so a client-sent value would pass through untouched and change the port Laravel reports and the URLs it generates. Apps that need any of them choose the set themselves with `trustProxies(at: ..., headers: ...)` or `TrustProxies::withHeaders()`.
 - Laravel now agrees with HELMET on multi-value `X-Forwarded-Proto`. Citadel's HA-Proxy appends the header instead of replacing it, so a client can produce `https, http`. Symfony reads the first value of such a list (the client's), while HELMET reads the last (the one the closest proxy appended). A new middleware prepended to the global chain rewrites the header to its last value when the request comes from a trusted proxy; a single value is left alone, and requests from untrusted peers are ignored as before.
 - The `<head>` match when injecting the csp-nonce meta tag was fixed: the old pattern also matched `<header>` and `<headline>` and injected the tag after the wrong element. Responses that carry a `Content-Length` header now have it refreshed to the new body length after injection, so a stale length cannot cut the page off mid-tag.
 
-### Deprecated[#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated-4)
+### Deprecated [#](https://helmet.apps.wayne.edu/docs/upgrading.html#deprecated-4)
 
 None listed in the changelog for this release.
 
-### Steps[#](https://helmet.apps.wayne.edu/docs/upgrading.html#steps-3)
+### Steps [#](https://helmet.apps.wayne.edu/docs/upgrading.html#steps-3)
 
 1. Update the package:
    ```
@@ -257,7 +257,7 @@ None listed in the changelog for this release.
 2. Check `HELMET_PRESET` for typos; the only names are `citadel` and `docker`.
 3. If your app relied on `X-Forwarded-Host`, `X-Forwarded-Prefix` or `X-Forwarded-Port`, choose the set yourself with `trustProxies(at: ..., headers: ...)` or `TrustProxies::withHeaders()` in `bootstrap/app.php`.
 
-### How to verify[#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-6)
+### How to verify [#](https://helmet.apps.wayne.edu/docs/upgrading.html#how-to-verify-6)
 
 ```
 composer ci
@@ -273,7 +273,7 @@ Expected: `200 ok`, the baseline headers, and the csp-nonce meta tag in the real
 
 ---
 
-## 0.1.0 (2026-10-27)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-1-0-2026-10-27)
+## 0.1.0 (2026-10-27) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#0-1-0-2026-10-27)
 
 First tagged release. There is nothing below it to upgrade from: install with
 
@@ -283,7 +283,7 @@ composer require waynestate/helmet
 
 and follow the [Quick start](https://helmet.apps.wayne.edu/docs/guides/quick-start.html).
 
-## Related[#](https://helmet.apps.wayne.edu/docs/upgrading.html#related)
+## Related [#](https://helmet.apps.wayne.edu/docs/upgrading.html#related)
 
 - [Install](https://helmet.apps.wayne.edu/docs/install.html)
 - [Quick start](https://helmet.apps.wayne.edu/docs/guides/quick-start.html)

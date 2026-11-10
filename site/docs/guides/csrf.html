@@ -39,12 +39,12 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html" aria-current="page">The request-forgery guard</a></li><li><a href="../../docs/guides/readiness.html">Readiness</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="the-request-forgery-guard">The request-forgery guard<a class="docs-heading-link" aria-label="Link to this section" href="#the-request-forgery-guard">#</a></h1>
+      <article class="docs-article"><h1 id="the-request-forgery-guard">The request-forgery <span class="docs-heading-tail"><span>guard</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-request-forgery-guard">#</a></span></h1>
 <p>This page is for the opt-in request-forgery (CSRF) guard: the rule HELMET applies to state-changing requests before they reach the app, and how to turn it on in raw PHP, PSR-15 and Laravel. Read it before you enable the guard, then wire it up in the section that matches your stack.</p>
 <p><code>SameSite=Lax</code> is a layer, not a wall. The guard is the second layer: it checks the request, and if the check fails the request never reaches your code.</p>
-<h2 id="the-goal">The goal<a class="docs-heading-link" aria-label="Link to this section" href="#the-goal">#</a></h2>
+<h2 id="the-goal">The <span class="docs-heading-tail"><span>goal</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-goal">#</a></span></h2>
 <p>Turn the guard on and let the same rule run on every consumer path. The guard is off by default; when it is on, it is the same rule on every consumer path, because the raw PHP path and the Laravel adapter both call the one <code>allows()</code> decision in <code>Waynestate\Helmet\Csrf\RequestForgeryGuard</code>.</p>
-<h2 id="the-rule">The rule<a class="docs-heading-link" aria-label="Link to this section" href="#the-rule">#</a></h2>
+<h2 id="the-rule">The <span class="docs-heading-tail"><span>rule</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-rule">#</a></span></h2>
 <p>For <code>GET</code>, <code>HEAD</code> and <code>OPTIONS</code> the request passes. Those are the only methods in <code>SAFE_METHODS</code>. For anything else:</p>
 <ol>
 <li><code>Sec-Fetch-Site</code> is the primary signal when the browser sends it. <code>same-origin</code> and <code>none</code> pass, <code>same-site</code> passes only when <code>allow_same_site</code> is true, and <code>cross-site</code> or an unknown value is rejected.</li>
@@ -52,10 +52,10 @@
 <li>A path in <code>except</code> skips the guard. A pattern is an exact path, a prefix ending in <code>*</code>, or <code>*</code> for every path.</li>
 </ol>
 <p>The request's own origin comes from <code>HTTP_HOST</code> plus the same trusted-proxy HTTPS decision the security headers use, so a spoofed <code>X-Forwarded-Proto</code> from an untrusted peer cannot change the origin. Origins are compared in canonical form: lowercase <code>scheme://host:port</code>, with the default port dropped (<code>443</code> for https, <code>80</code> for http), and user info, a query, a fragment, or a path all rejected, so a URL with a path cannot silently become an origin.</p>
-<h2 id="the-rejection-answer">The rejection answer<a class="docs-heading-link" aria-label="Link to this section" href="#the-rejection-answer">#</a></h2>
+<h2 id="the-rejection-answer">The rejection <span class="docs-heading-tail"><span>answer</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-rejection-answer">#</a></span></h2>
 <p>A rejected request receives <code>403</code>, <code>Content-Type: text/plain; charset=utf-8</code>, <code>Cache-Control: no-store</code> and the body <code>Forbidden</code>. The answer never echoes request headers.</p>
 <p>When a logger is set, a refused request is also logged as the <code>helmet.request_refused</code> security event. Its context carries <code>event</code> (<code>request_refused</code>), <code>method</code> (upper case), <code>path</code> (no query string), <code>sec_fetch_site</code> (<code>same-origin</code>, <code>same-site</code>, <code>cross-site</code>, <code>none</code>, <code>other</code>, or null when the header is absent), and <code>origin_present</code> (bool). It never carries the Origin value, cookies, Authorization, or any other header value, and a logger that throws never changes the <code>403</code> answer.</p>
-<h2 id="raw-php">Raw PHP<a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></h2>
+<h2 id="raw-php">Raw <span class="docs-heading-tail"><span>PHP</span><a class="docs-heading-link" aria-label="Link to this section" href="#raw-php">#</a></span></h2>
 <pre tabindex="0"><code class="language-php">$helmet = helmet_boot([
     'preset' =&gt; 'citadel',
     'csrf' =&gt; [
@@ -67,7 +67,7 @@
 ]);
 </code></pre>
 <p><code>helmet_boot()</code> runs the check after the health path and before the security headers. A rejected request stops there.</p>
-<h2 id="psr-15">PSR-15<a class="docs-heading-link" aria-label="Link to this section" href="#psr-15">#</a></h2>
+<h2 id="psr-15"><span class="docs-heading-tail"><span>PSR-15</span><a class="docs-heading-link" aria-label="Link to this section" href="#psr-15">#</a></span></h2>
 <pre tabindex="0"><code class="language-php">use Waynestate\Helmet\Csrf\RequestForgeryGuard;
 
 $guard = new RequestForgeryGuard(
@@ -81,14 +81,14 @@ $guard = new RequestForgeryGuard(
 </code></pre>
 <p>The guard needs the PSR-17 response and stream factories only when it rejects a request. A PSR-15 user passes a <code>LoggerInterface</code> as the last constructor argument <code>$logger</code> to log refusals.</p>
 <aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>The constructor validates its configuration. A trusted origin that is not a valid <code>http</code> or <code>https</code> origin, or an <code>except</code> pattern that is not a non-empty string, throws <code>InvalidArgumentException</code> at construction, so a typo fails loudly instead of letting a forged request through.</p></aside>
-<h2 id="laravel">Laravel<a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></h2>
+<h2 id="laravel"><span class="docs-heading-tail"><span>Laravel</span><a class="docs-heading-link" aria-label="Link to this section" href="#laravel">#</a></span></h2>
 <p>Set the config or the environment:</p>
 <pre tabindex="0"><code>HELMET_CSRF_ENABLED=true
 HELMET_CSRF_TRUSTED_ORIGINS=https://forms.example.edu
 HELMET_CSRF_EXCEPT=/api/webhooks/*
 </code></pre>
 <p>The provider registers the <code>RequestForgeryGuard</code> middleware in the <code>web</code> group only when <code>helmet.csrf.enabled</code> is true. It calls the same core rule, so a Laravel app and a raw PHP app with the same settings make the same decision.</p>
-<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="session.html">The session</a></li>
 <li><a href="metrics.html">Metrics</a></li>

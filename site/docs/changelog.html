@@ -40,16 +40,17 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><!-- Generated from CHANGELOG.md by bin/docs-site.php. Edit CHANGELOG.md, not this file. -->
-<h1 id="changelog">Changelog<a class="docs-heading-link" aria-label="Link to this section" href="#changelog">#</a></h1>
+<h1 id="changelog"><span class="docs-heading-tail"><span>Changelog</span><a class="docs-heading-link" aria-label="Link to this section" href="#changelog">#</a></span></h1>
 <p>All notable changes to this project are documented in this file.</p>
-<h2 id="unreleased">Unreleased<a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></h2>
+<h2 id="unreleased"><span class="docs-heading-tail"><span>Unreleased</span><a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></span></h2>
 <ul>
+<li>Changed: the docs, agent-ready and deploy kits are Squire 0.10.6 (was 0.10.5): the docs builder and agent-ready generator see every file on Docker Desktop mounts.</li>
 <li>Site: <code>assets/stack-env.js</code> knows Parity, so a pre-production page links Parity's pre-production site and a dev page links its local <code>site/</code> folder. Until now Parity, of all parts, was the one link that ignored its environment.</li>
 <li>Site: Parity is out; the party list links its site.</li>
 <li>Changed: the deploy kit is Squire 0.10.5 (was 0.10.2): the template comments drop their internal item IDs, and Squire reports the parity group as deprecated (removed no sooner than 0.12.0; Parity runs Citadel on your computer now and carries the kit over with <code>parity init --from-squire</code>).</li>
 <li>Changed: the dev dependency requires waynestate/advisor ^0.3 (locked 0.3.0, was ^0.2 and 0.2.0); the same update moves CREED from 0.1.8 to 0.1.9.</li>
 </ul>
-<h2 id="1-3-1-2026-11-09">1.3.1 (2026-11-09)<a class="docs-heading-link" aria-label="Link to this section" href="#1-3-1-2026-11-09">#</a></h2>
+<h2 id="1-3-1-2026-11-09">1.3.1 <span class="docs-heading-tail"><span>(2026-11-09)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-3-1-2026-11-09">#</a></span></h2>
 <p>A patch release: no header, option or event changes. Docs, version mentions, HELMET's own CI and the front page's deploy kit catch up with the stack.</p>
 <ul>
 <li>Docs: Parity joins the party. The README cast, the instance runner page's team list and the front page's WELD depth chart (sideline, after Squire, at SCOUT with a &quot;next&quot; chip) carry Parity with its spirit-level mark: the stack's new tool that runs Citadel on your computer (its PHP image, its proxy and MySQL 5.6). 0.1.0 is coming and it has no site yet, so its row links nowhere. The scout team runs the other side's plays all week, so game day holds no surprises.</li>
@@ -59,7 +60,7 @@
 <li>Changed: the deploy layer requires CREED ^0.1.8 (locked 0.1.8, was ^0.1 and 0.1.7) and PROCTOR ^0.11.1 (locked 0.11.1, was ^0.11 and 0.11.0); the dev dependency on Pinstripe is ^0.1.4 (locked 0.1.4, was ^0.1 and 0.1.0, with phpstan-strict-rules 2.1.1). Pinstripe 0.1.4's base cut stops reporting <code>@var</code> tag mismatches, so phpstan.neon drops its two <code>varTag.type</code> ignores, which no longer matched anything.</li>
 <li>Docs: MAINTAINING names the maintainer as a role (the stack maintainer, reached through an issue on git.wayne.edu), not a person; internal item and decision IDs are replaced with plain words in the CI comments, <code>config/helmet.php</code>, the code comments, the tests and the metrics guide.</li>
 </ul>
-<h2 id="1-3-0-2026-11-09">1.3.0 (2026-11-09)<a class="docs-heading-link" aria-label="Link to this section" href="#1-3-0-2026-11-09">#</a></h2>
+<h2 id="1-3-0-2026-11-09">1.3.0 <span class="docs-heading-tail"><span>(2026-11-09)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-3-0-2026-11-09">#</a></span></h2>
 <p>A minor release, backward compatible. Two promises now hold on every consumer path: <code>HELMET_SESSION_SECURE</code> reaches the Laravel session cookie (it was validated but nothing read it), and the spoofed forwarded headers HELMET ignores are logged by the PSR-15 middleware and the Laravel adapter as well as by raw PHP. Same bucket, better chin strap.</p>
 <ul>
 <li>Added: the Laravel adapter reads <code>helmet.session.secure</code> (env <code>HELMET_SESSION_SECURE</code>) and maps it onto Laravel's own <code>session.secure</code> at boot. <code>auto</code> (the default) leaves it unset, so the session cookie is <code>Secure</code> on each request the trusted-proxy check calls HTTPS; <code>always</code> sets it to <code>true</code>, so the cookie is <code>Secure</code> on plain HTTP too. An app that sets <code>session.secure</code> itself (<code>SESSION_SECURE_COOKIE</code>) keeps its value. Before, the key was validated but nothing read it. <code>helmet_boot()</code> still reads no environment; raw PHP keeps the <code>session</code> option.</li>
@@ -67,7 +68,7 @@
 <li>Added: the Laravel adapter logs <code>helmet.forwarded_proto_rejected</code> from <code>SecurityHeaders</code> and <code>helmet.forwarded_for_rejected</code> from the metrics endpoint through the app's logger, with the same events and context keys as raw PHP. The header values are never logged. Every security event is now logged on every consumer path.</li>
 <li>Docs: the security-events tables in the README, BEST_PRACTICES (H27, H41) and the usage guides drop &quot;raw PHP only&quot;; the Laravel guide gains a Session cookie section, and the README and Laravel guide env tables gain an <code>HELMET_SESSION_SECURE</code> row; the front page's Laravel prompt no longer asks the agent to set <code>secure</code> in <code>config/session.php</code>.</li>
 </ul>
-<h2 id="1-2-0-2026-11-09">1.2.0 (2026-11-09)<a class="docs-heading-link" aria-label="Link to this section" href="#1-2-0-2026-11-09">#</a></h2>
+<h2 id="1-2-0-2026-11-09">1.2.0 <span class="docs-heading-tail"><span>(2026-11-09)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-2-0-2026-11-09">#</a></span></h2>
 <p>A minor release, backward compatible. Raw PHP apps get <code>helmet_client_error()</code>, the 4xx sibling of <code>helmet_forbidden()</code>, and Laravel apps can opt into the same fixed 4xx page with <code>HELMET_ERROR_PAGES</code> (off by default), so an exception message never reaches a visitor (H42 is now <code>Enforced</code>). The deploy layer moves to Squire's kit 0.10.1 and PROCTOR 0.11.</p>
 <ul>
 <li>Changed: the deploy kit is Squire 0.10.1 (was 0.10.0): the fallback base image copies Composer 2.11.1 (was 2.10.3), and the deploy layer requires PROCTOR ^0.11 (locked 0.11.0, was ^0.8 and 0.8.0).</li>
@@ -75,7 +76,7 @@
 <li>Added: <code>helmet_client_error(int $status)</code> sends HELMET's fixed 4xx page and exits, and <code>helmet_client_error_response(int $status)</code> returns it as data, the 4xx siblings of <code>helmet_forbidden()</code>; a status outside 400 to 499 throws <code>\InvalidArgumentException</code>. The Laravel adapter answers every 4xx HTTP exception with the same page when <code>helmet.error_pages</code> is on (env <code>HELMET_ERROR_PAGES</code>, default false), leaving JSON clients, validation, authentication redirects and every 5xx to Laravel. BEST_PRACTICES H42 is now <code>Enforced</code>.</li>
 <li>Fixed: scripts/a11y.ps1 works on a Windows checkout with CRLF line endings; it strips the carriage returns from the shell command it hands to Docker, which sh rejected with a syntax error.</li>
 </ul>
-<h2 id="1-1-0-2026-11-09">1.1.0 (2026-11-09)<a class="docs-heading-link" aria-label="Link to this section" href="#1-1-0-2026-11-09">#</a></h2>
+<h2 id="1-1-0-2026-11-09">1.1.0 <span class="docs-heading-tail"><span>(2026-11-09)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-1-0-2026-11-09">#</a></span></h2>
 <p>A minor release, backward compatible. HELMET now logs every proxy-header spoofing attempt it ignores (a spoofed X-Forwarded-Proto joins X-Forwarded-For), <code>helmet_ribbon()</code> gets its new home next to <code>helmet_boot()</code> (the old name still works for one release), and the raw PHP ribbon stays hidden in production. CI and the deploy layer move to Preflight 0.4.0 and Squire's kit 0.7.1.</p>
 <ul>
 <li>Added: <code>helmet_boot()</code> logs <code>helmet.forwarded_proto_rejected</code> when a peer that is not a trusted proxy sends X-Forwarded-Proto.</li>
@@ -89,15 +90,15 @@
 <li>Changed: the local a11y scripts run Preflight's own checker (vendored from 0.3.1 and pinned by a test), so they check what CI checks: axe-core 4.14.0, 320 and 1280 px, and the reflow check.</li>
 <li>Changed: CI pins the Preflight components to 0.3.1 (fixed cache keys, and caches saved even when a job fails; D-072).</li>
 </ul>
-<h2 id="1-0-1-2026-11-08">1.0.1 (2026-11-08)<a class="docs-heading-link" aria-label="Link to this section" href="#1-0-1-2026-11-08">#</a></h2>
+<h2 id="1-0-1-2026-11-08">1.0.1 <span class="docs-heading-tail"><span>(2026-11-08)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-0-1-2026-11-08">#</a></span></h2>
 <p>A patch release: no public function, option or header changes. It adds tests that hold the 1.0 promises (the CORP opt-in in a real browser, a bad config throwing before any header, BEST_PRACTICES citations), fixed CI cache keys, and docs and front-page fixes.</p>
-<h3 id="added">Added<a class="docs-heading-link" aria-label="Link to this section" href="#added">#</a></h3>
+<h3 id="added"><span class="docs-heading-tail"><span>Added</span><a class="docs-heading-link" aria-label="Link to this section" href="#added">#</a></span></h3>
 <ul>
 <li>Added: a real-browser check (<code>tools/a11y/corp-check.mjs</code>) proves the <code>corp</code> opt-in: own assets load, another origin's embed is blocked (H13).</li>
 <li>Added: a test keeps BEST_PRACTICES.md honest: one tag per practice, every Enforced practice names a test, and every test it names exists.</li>
 <li>Added: a test pins that a bad config makes <code>helmet_boot()</code> throw before any security header is sent (H14's last uncovered corner, on purpose: HELMET fails loudly instead of half-applying).</li>
 </ul>
-<h3 id="changed">Changed<a class="docs-heading-link" aria-label="Link to this section" href="#changed">#</a></h3>
+<h3 id="changed"><span class="docs-heading-tail"><span>Changed</span><a class="docs-heading-link" aria-label="Link to this section" href="#changed">#</a></span></h3>
 <ul>
 <li>Changed: CI saves its Composer and npm caches even when a job fails, so a retry after a dropped download fetches only what is missing (D-072).</li>
 <li>Changed: CI caches Composer and npm downloads under a fixed key, so a lock change downloads only what changed (D-072).</li>
@@ -110,23 +111,23 @@
 <li>The front page header's version chip says 1.0 (it still said 0.3).</li>
 <li>The front page's deploy layer (<code>deploy/</code>) requires HELMET <code>^1.0</code> (was <code>^0.4</code>) and locks 1.0.0, so the site runs the release it describes.</li>
 </ul>
-<h2 id="1-0-0-2026-11-08">1.0.0 (2026-11-08)<a class="docs-heading-link" aria-label="Link to this section" href="#1-0-0-2026-11-08">#</a></h2>
-<p>1.0 notes: from 1.0 HELMET follows semantic versioning, so a <code>^1.0</code> constraint gets no breaking change, with one default change announced here. Before you move from <code>^0.4</code>, know two things. An unknown quoted source in the CSP (a typo such as <code>'unsafe-inlined'</code> in the <code>csp</code> option or <code>HELMET_CSP</code>) now throws <code>\InvalidArgumentException</code> at boot, when the headers are built, instead of shipping a token the browser ignores, so boot the app once on a test host before you deploy. And <code>style_src_attr</code> stays <code>inline</code> by default: the policy still sends <code>style-src-attr 'unsafe-inline'</code> until WayneUI drops its inline <code>style</code> attributes. A later 1.x minor then moves the default to <code>none</code>; set <code>style_src_attr</code> to <code>inline</code> to keep today's header, or run <code>report</code> now to see what <code>none</code> would block. That plan is the decision recorded in <a rel="noopener" href="https://github.com/waynestate/helmet/-/blob/main/docs/adr/0001-style-src-attr.md">ADR-0001</a>. Upgrade with <code>composer require waynestate/helmet:^1.0</code>.</p>
-<h3 id="added-1">Added<a class="docs-heading-link" aria-label="Link to this section" href="#added-1">#</a></h3>
+<h2 id="1-0-0-2026-11-08">1.0.0 <span class="docs-heading-tail"><span>(2026-11-08)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-0-0-2026-11-08">#</a></span></h2>
+<p>1.0 notes: from 1.0 HELMET follows semantic versioning, so a <code>^1.0</code> constraint gets no breaking change, with one default change announced here. Before you move from <code>^0.4</code>, know two things. An unknown quoted source in the CSP (a typo such as <code>'unsafe-inlined'</code> in the <code>csp</code> option or <code>HELMET_CSP</code>) now throws <code>\InvalidArgumentException</code> at boot, when the headers are built, instead of shipping a token the browser ignores, so boot the app once on a test host before you deploy. And <code>style_src_attr</code> stays <code>inline</code> by default: the policy still sends <code>style-src-attr 'unsafe-inline'</code> until WayneUI drops its inline <code>style</code> attributes. A later 1.x minor then moves the default to <code>none</code>; set <code>style_src_attr</code> to <code>inline</code> to keep today's header, or run <code>report</code> now to see what <code>none</code> would block. That plan is the decision recorded in <a rel="noopener" href="https://github.com/waynestate/helmet/blob/main/docs/adr/0001-style-src-attr.md">ADR-0001</a>. Upgrade with <code>composer require waynestate/helmet:^1.0</code>.</p>
+<h3 id="added-1"><span class="docs-heading-tail"><span>Added</span><a class="docs-heading-link" aria-label="Link to this section" href="#added-1">#</a></span></h3>
 <ul>
 <li>Readiness (HELMET-7): a &quot;send me traffic?&quot; answer on its own path, <code>/ready</code>, apart from the liveness answer on <code>/up</code>, which is unchanged. <code>Health\Readiness</code> runs named checks and answers JSON, <code>no-store</code>, 200 while none failed and 503 once one did. HELMET's own checks report config sanity: <code>headers</code> (the header set builds and carries a CSP, in <code>enforce</code> or <code>report-only</code> mode), <code>trusted_proxies</code> (a count and a broad count, never an address; warns when empty or broad) and <code>debug_output</code> (warns when on). App checks join by name; one that throws fails, and its message goes to the log as <code>helmet.readiness_check_failed</code>, never the body. Raw PHP gains the <code>readiness</code> option to <code>helmet_boot()</code> (off by default, validated on every request) and <code>helmet_ready()</code> for a <code>public/ready.php</code>; PSR-15 gains the <code>ReadinessCheck</code> middleware; Laravel gains <code>Route::helmetReady()</code> (invokable check classes, so <code>route:cache</code> works; no throttle by default). New docs guide: &quot;Readiness&quot;, with probe settings for Citadel, OpenShift, Coolify and Docker. An app that sets nothing behaves exactly as before.</li>
 <li>Inline style attributes (HELMET-17, ADR-0001): a <code>style_src_attr</code> option (<code>helmet_boot()</code>, the last <code>SecurityHeadersMiddleware</code> argument, Laravel <code>csp_style_src_attr</code> / <code>HELMET_CSP_STYLE_SRC_ATTR</code>). <code>inline</code>, the default, sends exactly what earlier releases sent (<code>style-src-attr 'unsafe-inline'</code>, which WayneUI's recipes need). <code>report</code> keeps enforcing it and adds <code>Content-Security-Policy-Report-Only: style-src-attr 'none'</code> (plus the app's report destination), so the browser names each inline style attribute a strict policy would block. <code>none</code> sends <code>style-src-attr 'none'</code>. Both only replace HELMET's own allowance: an app that sets <code>style-src-attr</code> in <code>csp</code> keeps its value. An unknown mode throws at boot. The readiness report names the mode. New docs: &quot;Inline style attributes&quot; in the CSP guide, and the ADR under Decisions.</li>
 <li>Secret scanning (HELMET-5): HELMET's pipeline includes Preflight's <code>secret-detection</code> component (0.2.0), which runs Gitleaks v8.30.1, pinned by digest and pulled through the Dependency Proxy, over the tree; a finding fails the pipeline and the match is redacted. HELMET writes no scanner of its own. New docs guide: &quot;Secret scanning&quot;, with the include for an app, the same scan on a developer machine (PowerShell and sh), a history scan, and what to do with a finding. HELMET's tree and its full history scan clean.</li>
 <li>Accessibility (HELMET-23): the pipeline includes Preflight's <code>a11y</code> component (0.2.0) over the front page and every docs page at WCAG 2.2 AA, light and dark, 320 px (with the reflow check) and 1280 px, blocking. The Proof page records the last run of both gates and what was checked by hand.</li>
 </ul>
-<h3 id="fixed">Fixed<a class="docs-heading-link" aria-label="Link to this section" href="#fixed">#</a></h3>
+<h3 id="fixed"><span class="docs-heading-tail"><span>Fixed</span><a class="docs-heading-link" aria-label="Link to this section" href="#fixed">#</a></span></h3>
 <ul>
 <li>The pipeline's PROCTOR jobs no longer pass <code>--policy</code>, which PROCTOR 0.7 refuses in CI; PROCTOR checks against the CREED policy it bundles.</li>
 <li>Front page: the headers list and the practice squad named themselves with <code>aria-labelledby</code> on a plain <code>div</code>, which ARIA does not allow (axe-core 4.14 flags it for review); both are now <code>role=&quot;group&quot;</code>. The practice squad lists what is still on the backlog, now that readiness and secret scanning shipped.</li>
 <li>CSP: a quoted source in the <code>csp</code> option other than <code>'self'</code>, <code>'none'</code> and <code>'unsafe-inline'</code> was handed to the policy builder as a host, so <code>'sha256-...'</code> came out as <code>https://'sha256-...' http://'sha256-...' 'sha256-...'</code> and <code>'unsafe-eval'</code>, <code>'unsafe-hashes'</code>, <code>'wasm-unsafe-eval'</code>, <code>'report-sample'</code> and <code>'strict-dynamic'</code> the same way, none of which a browser accepts. Hashes, fixed nonces, every CSP keyword and the <code>https:</code>, <code>mediastream:</code> and <code>filesystem:</code> schemes now come out as written. An unknown quoted source (a typo such as <code>'unsafe-inlined'</code>) now throws <code>\InvalidArgumentException</code> when the headers are built, instead of shipping a token the browser ignores: check your <code>csp</code> / <code>HELMET_CSP</code> before you upgrade.</li>
 <li>The front page roster says Sourdough starts all five app shapes, from raw PHP to Inertia and Vue; it no longer says Blade and Inertia come later.</li>
 </ul>
-<h3 id="changed-1">Changed<a class="docs-heading-link" aria-label="Link to this section" href="#changed-1">#</a></h3>
+<h3 id="changed-1"><span class="docs-heading-tail"><span>Changed</span><a class="docs-heading-link" aria-label="Link to this section" href="#changed-1">#</a></span></h3>
 <ul>
 <li>The GitLab pipeline pins every Preflight component to one release, 0.3.0 (was 0.2.0), with plain image names: Preflight 0.3.0 adds the Dependency Proxy prefix itself (<code>image_prefix</code>). A new test, <code>PreflightPinTest</code>, fails when the includes name more than one Preflight version or an input carries the proxy prefix.</li>
 <li>The front page's deploy layer (<code>deploy/</code>) runs Squire's kit 0.6.0 (was 0.5.0): <code>scripts/release.sh</code> asks PROCTOR's deploy gate for a go or no-go on each release (a report, not a stop, unless <code>SQUIRE_PROCTOR=enforce</code>), and <code>.env.squire.example</code> lists the new setting. The layer's pins move to HELMET <code>^0.4</code> (locked 0.4.0) and PROCTOR <code>^0.7</code> (locked 0.7.0).</li>
@@ -135,8 +136,8 @@
 <li>CI caches Composer downloads per lock file (<code>.composer-cache</code>, keyed on <code>composer.lock</code> and <code>deploy/composer.lock</code>), so a pipeline stops fetching every package from Packagist on every run. Images already come through the Dependency Proxy.</li>
 <li>Docs: every page checked against the code. Fixed the preset log path (presets supply trusted proxies only, never a log path), the CSP report URI rule (a single-slash path relative to the page's origin is valid; an absolute URL must be <code>https</code> with a host), HSTS preload (opt-in, appended only with a <code>max-age</code> of at least a year and <code>includeSubDomains</code>), the HSTS constructor positions, the PSR-15 rethrow behavior, and the COOP <code>unsafe-none</code> wording. Completed the API reference with the members it missed: <code>styleSrcAttr</code> in <code>build()</code> and the middleware, <code>validateStyleSrcAttr()</code>, <code>STYLE_SRC_ATTR_MODES</code>, <code>Laravel\SecurityHeaders::styleSrcAttr()</code>, <code>Logging\Logging::addRequestContext()</code>, <code>Proxy\TrustedProxies::broadEntries()</code>, <code>Metrics\MetricsStorageException</code>, the <code>Health\Readiness</code> <code>PASS</code>/<code>WARN</code>/<code>FAIL</code> constants, <code>Metrics\MetricsStorage::PREFIX</code>, and the <code>RecordRequestMetrics</code>, <code>RequestMetricsBinding</code> and <code>RequestTimer</code> constructors. Made the README &quot;Security events&quot; a real heading so its anchor resolves.</li>
 </ul>
-<h2 id="0-4-0-2026-11-07">0.4.0 (2026-11-07)<a class="docs-heading-link" aria-label="Link to this section" href="#0-4-0-2026-11-07">#</a></h2>
-<h3 id="added-2">Added<a class="docs-heading-link" aria-label="Link to this section" href="#added-2">#</a></h3>
+<h2 id="0-4-0-2026-11-07">0.4.0 <span class="docs-heading-tail"><span>(2026-11-07)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-4-0-2026-11-07">#</a></span></h2>
+<h3 id="added-2"><span class="docs-heading-tail"><span>Added</span><a class="docs-heading-link" aria-label="Link to this section" href="#added-2">#</a></span></h3>
 <ul>
 <li>ADVISOR module (<code>Waynestate\Helmet\Advisor\HelmetModule</code>): a coding agent that runs ADVISOR gains two read-only tools. <code>helmet_headers</code> returns the headers and CSP HELMET sends, built by <code>SecurityHeaders::build()</code>, each header and directive with its reason, plus how the app folder is wired to HELMET and the settings that change the answer. <code>helmet_php_support</code> reads the PHP constraint from the app's <code>composer.json</code> and reports the support status of its floor, and of every version it allows, from the CREED policy ADVISOR bundles, read with HELMET's own <code>JsonFilePolicySource</code> and <code>VersionStatus</code>. Both take one path inside the project, run in-process, write nothing and never read <code>.env</code>. <code>waynestate/advisor</code> is a dev dependency and a suggestion, never a requirement. New docs guide: &quot;Your coding agent (ADVISOR)&quot;.</li>
 <li><code>Headers\HeaderReasons</code>: one reason per header and CSP directive, next to the policy; a test fails when one is added without a reason.</li>
@@ -148,7 +149,7 @@
 <li>Grafana dashboard (<code>docs/grafana/helmet.json</code>): <code>job</code> and <code>instance</code> variables on every query, and new panels for targets down, days to PHP end of support, stack packages, requests by route group and by status class, latency p50 and p95, p95 by route group, server errors, metrics storage and CSP violations by directive. Checked by importing it into Grafana 12 through the API against a local Prometheus scraping three HELMET apps, one per store. Scrape health is a state timeline (up or down per target) and the version panels are bar charts.</li>
 <li>Added: an accessibility gate for the site (axe-core in Playwright, Docker). <code>scripts/a11y.sh</code> and <code>scripts/a11y.ps1</code> check <code>site/index.html</code> and every page under <code>site/docs/</code> in light and dark at 360 px and 1280 px, and fail on any WCAG 2.2 AA violation; <code>tools/a11y/check.mjs</code> is the runner.</li>
 </ul>
-<h3 id="fixed-1">Fixed<a class="docs-heading-link" aria-label="Link to this section" href="#fixed-1">#</a></h3>
+<h3 id="fixed-1"><span class="docs-heading-tail"><span>Fixed</span><a class="docs-heading-link" aria-label="Link to this section" href="#fixed-1">#</a></span></h3>
 <ul>
 <li>Metrics: <code>helmet_php_version_status</code> looked up the full PHP release (<code>8.3.12</code>) in CREED's policy, which names versions by major.minor (<code>8.3</code>), so every real app reported <code>unknown</code>. It now looks up major.minor.</li>
 <li>Policy: <code>JsonFilePolicySource</code> read each component as a flat version map, but CREED's <code>policy.json</code> (and its schema) keeps the versions under <code>versions</code>, so against the real file the ribbon never warned and the PHP support metrics said <code>unknown</code>. It now reads both shapes, skips a version with no <code>security_until</code>, and treats one with no <code>active_until</code> as security-only.</li>
@@ -157,16 +158,16 @@
 <li>Grafana dashboard: the data source was declared under <code>inputs</code>, which Grafana's import ignores, so every panel pointed at an unresolved <code>${DS_PROMETHEUS}</code>; it is now <code>__inputs</code> (with <code>__requires</code>). &quot;Scrape health&quot; joined <code>up</code> to <code>helmet_info</code>, which drops exactly the targets that are down; it now graphs <code>up</code> directly.</li>
 <li>Fixed: two violations the new gate found. A code block wider than its box now joins the tab order so a keyboard user can scroll it (axe <code>scrollable-region-focusable</code>, WCAG 2.1.1), and table-of-contents sub-items get a full-width link target of at least 24 px (axe <code>target-size</code>, WCAG 2.5.8). Both come from syncing the Squire-owned docs kit (<code>bin/docs-site.php</code>, <code>site/assets/docs.css</code>, <code>site/assets/docs.js</code>) to the current stack version, and the docs site and agent-ready files are rebuilt from it.</li>
 </ul>
-<h3 id="changed-2">Changed<a class="docs-heading-link" aria-label="Link to this section" href="#changed-2">#</a></h3>
+<h3 id="changed-2"><span class="docs-heading-tail"><span>Changed</span><a class="docs-heading-link" aria-label="Link to this section" href="#changed-2">#</a></span></h3>
 <ul>
 <li>The canonical repository is git.wayne.edu (ADR-0021); docs, links and package metadata no longer point at the archived nougat copy.</li>
 <li>Changed: the docs site renders fenced blocks tagged <code>tab=</code> as a labeled tablist (the previous builder ignored the tag and stacked the blocks), and the changelog mirror keeps its top-level heading, per the current shared builder.</li>
 </ul>
-<h3 id="security">Security<a class="docs-heading-link" aria-label="Link to this section" href="#security">#</a></h3>
+<h3 id="security"><span class="docs-heading-tail"><span>Security</span><a class="docs-heading-link" aria-label="Link to this section" href="#security">#</a></span></h3>
 <ul>
 <li>The front-page deploy layer moves to Symfony 7.4.23 (symfony/http-foundation and symfony/yaml advisories, including CVE-2026-118514).</li>
 </ul>
-<h2 id="0-3-1-2026-11-05">0.3.1 (2026-11-05)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-1-2026-11-05">#</a></h2>
+<h2 id="0-3-1-2026-11-05">0.3.1 <span class="docs-heading-tail"><span>(2026-11-05)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-3-1-2026-11-05">#</a></span></h2>
 <p>No breaks: new boot warning for a broad trusted-proxy list, <code>helmet_csp_nonce_swap()</code>, <code>GenericErrorResponse::clientError()</code>, a Grafana dashboard, a contract test suite and the docs site, plus docs and deploy-layer refreshes.</p>
 <ul>
 <li>
@@ -218,7 +219,7 @@
 <p>Added: <code>GenericErrorResponse::clientError(int $status)</code> returns a fixed 4xx page (status, headers, body) for client faults, with its own title and sentence for 400, 401, 403, 404, 405, 410 and 429 and the Bad request text for any other 4xx; a status outside the 400s throws <code>InvalidArgumentException</code>, and nothing from the request or an exception reaches the body. An app calls it from its router; nothing wires it into <code>helmet_boot()</code> automatically.</p>
 </li>
 </ul>
-<h2 id="0-3-0-2026-11-03">0.3.0 (2026-11-03)<a class="docs-heading-link" aria-label="Link to this section" href="#0-3-0-2026-11-03">#</a></h2>
+<h2 id="0-3-0-2026-11-03">0.3.0 <span class="docs-heading-tail"><span>(2026-11-03)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-3-0-2026-11-03">#</a></span></h2>
 <ul>
 <li>
 <p>This is a pre-1.0 minor: apps that pin <code>^0.2</code> stay on 0.2.x until they move their constraint to <code>^0.3</code>. The proxy and forwarded-header changes below make some requests resolve differently (an empty <code>HELMET_PROXIES=</code> now trusts nobody), so read the Security lines first.</p>
@@ -269,7 +270,7 @@
 <p>Changed: docs and package metadata name nougat as the canonical repository, with git.wayne.edu and GitHub as read-only mirrors, until git.wayne.edu has CI runners.</p>
 </li>
 </ul>
-<h2 id="0-2-6-2026-11-02">0.2.6 (2026-11-02)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-6-2026-11-02">#</a></h2>
+<h2 id="0-2-6-2026-11-02">0.2.6 <span class="docs-heading-tail"><span>(2026-11-02)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-6-2026-11-02">#</a></span></h2>
 <ul>
 <li>Fixed: HTML rewrites (CSP nonce meta, environment ribbon) keep the response's view object, so <code>assertInertia()</code> and <code>assertViewHas()</code> work in apps that use HELMET.</li>
 <li>Changed: the deploy layer's Squire kit is refreshed to 0.3.3 (release options can now live in ./.env.squire).</li>
@@ -278,7 +279,7 @@
 <li>Changed: composer.json sets config.audit.abandoned to report, making the Composer audit policy explicit.</li>
 <li>Docs: README Docker test commands cover PHP 8.5, 8.4 and 8.3 on both PowerShell and sh, and the middleware error-path wording matches the default rethrow behaviour.</li>
 </ul>
-<h2 id="0-2-5-2026-10-29">0.2.5 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-5-2026-10-29">#</a></h2>
+<h2 id="0-2-5-2026-10-29">0.2.5 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-5-2026-10-29">#</a></span></h2>
 <ul>
 <li>Added: agent-ready site (prompt blocks, Markdown twins, llms.txt), from Squire's kit.</li>
 <li>Added: HELMET_SESSION_SECURE=always keeps the session cookie Secure even when HTTPS is not detected.</li>
@@ -286,7 +287,7 @@
 <li>Changed: project names written as words except acronyms.</li>
 <li>Fixed: stale capability claims in the site and docs.</li>
 </ul>
-<h2 id="0-2-4-2026-10-29">0.2.4 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-4-2026-10-29">#</a></h2>
+<h2 id="0-2-4-2026-10-29">0.2.4 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-4-2026-10-29">#</a></span></h2>
 <ul>
 <li><code>HELMET_PRESET</code> (Laravel) now also comes from the private
 <code>waynestate/playbook</code> package when the environment has no value: the config
@@ -295,7 +296,7 @@ environment first, then PLAYBOOK, then gives up. A missing preset is still
 not an error, and <code>waynestate/playbook</code> is suggested, never required. The
 README gains a &quot;WSU values (PLAYBOOK)&quot; section with the fetch commands.</li>
 </ul>
-<h2 id="0-2-3-2026-10-29">0.2.3 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-3-2026-10-29">#</a></h2>
+<h2 id="0-2-3-2026-10-29">0.2.3 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-3-2026-10-29">#</a></span></h2>
 <ul>
 <li>Fixed: <code>helmet_boot()</code> removed <code>X-Powered-By</code> only after it had already
 answered the health check path, so a GET or HEAD to <code>/up</code> (the default
@@ -303,7 +304,7 @@ answered the health check path, so a GET or HEAD to <code>/up</code> (the defaul
 health answer and the request-forgery rejection, so both early exits leave
 the response clean.</li>
 </ul>
-<h2 id="0-2-2-2026-10-29">0.2.2 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-2-2026-10-29">#</a></h2>
+<h2 id="0-2-2-2026-10-29">0.2.2 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-2-2026-10-29">#</a></span></h2>
 <ul>
 <li>Every JSON log record now carries a request ID in <code>extra.request_id</code>: 16
 lowercase hex characters generated by HELMET (<code>Logging::requestId()</code>),
@@ -315,7 +316,7 @@ dots, underscores or dashes; anything else is ignored), and <code>helmet_boot()<
 accepts it as <code>log.request_id</code>, which must be a string. <code>helmet_boot()</code> now
 also returns the ID as <code>request_id</code>.</li>
 </ul>
-<h2 id="0-2-1-2026-10-29">0.2.1 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-1-2026-10-29">#</a></h2>
+<h2 id="0-2-1-2026-10-29">0.2.1 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-1-2026-10-29">#</a></span></h2>
 <ul>
 <li>
 <p>Upgrade note: a raw-PHP app that still used the default <code>PHPSESSID</code> cookie gets the new <code>WSUSESSID</code> name (<code>__Host-WSUSESSID</code> on HTTPS), so signed-in users sign in once more after deploying. Laravel apps are unaffected (Laravel names its own cookie).</p>
@@ -338,7 +339,7 @@ still the PHP default <code>PHPSESSID</code>; an app-chosen name is left alone, 
 SESAME reads whatever <code>session_name()</code> returns.</p>
 </li>
 </ul>
-<h2 id="0-2-0-2026-10-29">0.2.0 (2026-10-29)<a class="docs-heading-link" aria-label="Link to this section" href="#0-2-0-2026-10-29">#</a></h2>
+<h2 id="0-2-0-2026-10-29">0.2.0 <span class="docs-heading-tail"><span>(2026-10-29)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-2-0-2026-10-29">#</a></span></h2>
 <ul>
 <li>
 <p>Fixed the <code>&lt;head&gt;</code> match when injecting the csp-nonce meta tag into HTML
@@ -450,7 +451,7 @@ repo's paths, PHP version range and three commented exceptions), and
 the code is just cut from the same cloth now.</p>
 </li>
 </ul>
-<h2 id="0-1-0-2026-10-27">0.1.0 (2026-10-27)<a class="docs-heading-link" aria-label="Link to this section" href="#0-1-0-2026-10-27">#</a></h2>
+<h2 id="0-1-0-2026-10-27">0.1.0 <span class="docs-heading-tail"><span>(2026-10-27)</span><a class="docs-heading-link" aria-label="Link to this section" href="#0-1-0-2026-10-27">#</a></span></h2>
 <ul>
 <li>First tagged release.</li>
 </ul>

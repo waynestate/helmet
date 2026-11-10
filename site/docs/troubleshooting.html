@@ -39,9 +39,9 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../docs/index.html">Overview</a></li><li><a href="../docs/install.html">Install</a></li><li><a href="../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../docs/guides/headers.html">The headers</a></li><li><a href="../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../docs/guides/session.html">The session</a></li><li><a href="../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../docs/guides/readiness.html">Readiness</a></li><li><a href="../docs/guides/metrics.html">Metrics</a></li><li><a href="../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../docs/reference/configuration.html">Environment variables</a></li><li><a href="../docs/reference/api.html">API</a></li><li><a href="../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../docs/troubleshooting.html" aria-current="page">Troubleshooting</a></li><li><a href="../docs/upgrading.html">Upgrading</a></li><li><a href="../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="troubleshooting">Troubleshooting<a class="docs-heading-link" aria-label="Link to this section" href="#troubleshooting">#</a></h1>
+      <article class="docs-article"><h1 id="troubleshooting"><span class="docs-heading-tail"><span>Troubleshooting</span><a class="docs-heading-link" aria-label="Link to this section" href="#troubleshooting">#</a></span></h1>
 <p>This page lists the symptoms HELMET's README, CHANGELOG and test suite justify, each with its cause, the fix and a check command. If your symptom is not here, start from <a href="install.html">Install</a> and verify <code>/up</code> first; the band's advice applies: short songs, no filler, every part earning its place.</p>
-<h2 id="check-the-baseline-first">Check the baseline first<a class="docs-heading-link" aria-label="Link to this section" href="#check-the-baseline-first">#</a></h2>
+<h2 id="check-the-baseline-first">Check the baseline <span class="docs-heading-tail"><span>first</span><a class="docs-heading-link" aria-label="Link to this section" href="#check-the-baseline-first">#</a></span></h2>
 <p>Before anything else, ask the load balancer's question and confirm the floor is on:</p>
 <div class="docs-tabs" data-tabs="linux|windows"><div class="docs-tabs__panel" data-tab-label="linux"><p class="docs-tabs__label">linux</p><pre tabindex="0"><code class="language-bash">curl -sI http://localhost/up
 </code></pre></div>
@@ -51,8 +51,8 @@
 <code>X-Frame-Options: SAMEORIGIN</code>, and the rest), and no <code>X-Powered-By</code> header. If <code>/up</code> does not answer before your code
 runs, boot HELMET at the top of the front controller, before anything is echoed, as the
 <a href="guides/quick-start.html">Quick start</a> shows.</p>
-<h2 id="headers-and-the-proxy">Headers and the proxy<a class="docs-heading-link" aria-label="Link to this section" href="#headers-and-the-proxy">#</a></h2>
-<h3 id="a-request-that-was-really-https-is-read-as-plain-http-and-no-hsts-header-is-sent">A request that was really HTTPS is read as plain HTTP, and no HSTS header is sent<a class="docs-heading-link" aria-label="Link to this section" href="#a-request-that-was-really-https-is-read-as-plain-http-and-no-hsts-header-is-sent">#</a></h3>
+<h2 id="headers-and-the-proxy">Headers and the <span class="docs-heading-tail"><span>proxy</span><a class="docs-heading-link" aria-label="Link to this section" href="#headers-and-the-proxy">#</a></span></h2>
+<h3 id="a-request-that-was-really-https-is-read-as-plain-http-and-no-hsts-header-is-sent">A request that was really HTTPS is read as plain HTTP, and no HSTS header is <span class="docs-heading-tail"><span>sent</span><a class="docs-heading-link" aria-label="Link to this section" href="#a-request-that-was-really-https-is-read-as-plain-http-and-no-hsts-header-is-sent">#</a></span></h3>
 <p>Cause: HELMET only honors <code>X-Forwarded-Proto</code> when the connection came from a trusted proxy. A spoofed
 <code>X-Forwarded-Proto: https</code> from the public internet is ignored, and no HSTS header is sent for a request that was not
 really secure. The usual miss is a missing or wrong trusted-proxy list: the preset name is a typo, or an explicitly
@@ -68,7 +68,7 @@ containers on the same network, and any of them could then set <code>X-Forwarded
 </code></pre>
 <p>Expected: <code>Strict-Transport-Security</code> present on a request that arrived over HTTPS through the proxy, and absent for a
 request that was not really secure.</p>
-<h3 id="boot-throws-because-of-the-preset-name">Boot throws because of the preset name<a class="docs-heading-link" aria-label="Link to this section" href="#boot-throws-because-of-the-preset-name">#</a></h3>
+<h3 id="boot-throws-because-of-the-preset-name">Boot throws because of the preset <span class="docs-heading-tail"><span>name</span><a class="docs-heading-link" aria-label="Link to this section" href="#boot-throws-because-of-the-preset-name">#</a></span></h3>
 <p>Cause: an unknown <code>HELMET_PRESET</code> name throws at boot, so a typo fails loudly instead of silently trusting nothing.
 Since 0.2.0 it throws even when <code>HELMET_PROXIES</code> is set: a typo in the preset name fails loudly at boot instead of
 going silently unused. The only preset names are <code>citadel</code> and <code>docker</code>.</p>
@@ -78,7 +78,7 @@ preset and pass your own list of the addresses your front proxy connects from.</
 <pre tabindex="0"><code>composer ci
 </code></pre>
 <p>The suite includes <code>tests/Platform/PresetsTest.php</code>, which pins the preset names and the unknown-name failure.</p>
-<h3 id="headers-are-missing-on-routes-outside-web-or-on-unmatched-404s-laravel">Headers are missing on routes outside <code>web</code> or on unmatched 404s (Laravel)<a class="docs-heading-link" aria-label="Link to this section" href="#headers-are-missing-on-routes-outside-web-or-on-unmatched-404s-laravel">#</a></h3>
+<h3 id="headers-are-missing-on-routes-outside-web-or-on-unmatched-404s-laravel">Headers are missing on routes outside <code>web</code> or on unmatched 404s <span class="docs-heading-tail"><span>(Laravel)</span><a class="docs-heading-link" aria-label="Link to this section" href="#headers-are-missing-on-routes-outside-web-or-on-unmatched-404s-laravel">#</a></span></h3>
 <p>Cause: <code>HELMET_SCOPE=web</code> keeps <code>SecurityHeaders</code> in the <code>web</code> group only; then routes outside <code>web</code> and unmatched 404s
 do not carry its headers. By default the scope is <code>global</code>, so 404s and JSON routes carry them too.</p>
 <p>Fix: leave <code>HELMET_SCOPE</code> at its default <code>global</code>, or set it to <code>global</code> again, if you want every response to carry the
@@ -88,8 +88,8 @@ headers.</p>
 </code></pre>
 <p>Expected: the baseline headers on the 404 response when the scope is <code>global</code>. The suite pins both scopes in
 <code>tests/Laravel/GlobalScopeTest.php</code> and <code>tests/Laravel/WebScopeTest.php</code>.</p>
-<h2 id="the-session">The session<a class="docs-heading-link" aria-label="Link to this section" href="#the-session">#</a></h2>
-<h3 id="signed-in-users-sign-in-once-more-after-deploying-0-2-1-or-newer-raw-php">Signed-in users sign in once more after deploying 0.2.1 or newer (raw PHP)<a class="docs-heading-link" aria-label="Link to this section" href="#signed-in-users-sign-in-once-more-after-deploying-0-2-1-or-newer-raw-php">#</a></h3>
+<h2 id="the-session">The <span class="docs-heading-tail"><span>session</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-session">#</a></span></h2>
+<h3 id="signed-in-users-sign-in-once-more-after-deploying-0-2-1-or-newer-raw-php">Signed-in users sign in once more after deploying 0.2.1 or newer (raw <span class="docs-heading-tail"><span>PHP)</span><a class="docs-heading-link" aria-label="Link to this section" href="#signed-in-users-sign-in-once-more-after-deploying-0-2-1-or-newer-raw-php">#</a></span></h3>
 <p>Cause: <code>SessionHardening::apply()</code> renames the cookie while the name is still PHP's default <code>PHPSESSID</code>: it becomes
 <code>__Host-WSUSESSID</code> on HTTPS and <code>WSUSESSID</code> on HTTP. When an app first runs this version, existing sessions under the
 old name end: the next request still carries the old cookie, the app finds no session under the new name and starts a
@@ -103,7 +103,7 @@ deploy.</p>
 </code></pre>
 <p>Expected: the <code>Set-Cookie</code> name is <code>__Host-WSUSESSID</code> on HTTPS and <code>WSUSESSID</code> on HTTP. The values are pinned in
 <code>tests/Session/SessionHardeningTest.php</code>.</p>
-<h3 id="the-session-cookie-has-no-secure-flag-on-citadel">The session cookie has no <code>Secure</code> flag on Citadel<a class="docs-heading-link" aria-label="Link to this section" href="#the-session-cookie-has-no-secure-flag-on-citadel">#</a></h3>
+<h3 id="the-session-cookie-has-no-secure-flag-on-citadel">The session cookie has no <code>Secure</code> flag on <span class="docs-heading-tail"><span>Citadel</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-session-cookie-has-no-secure-flag-on-citadel">#</a></span></h3>
 <p>Cause: by default (<code>auto</code>) the Secure flag follows HELMET's HTTPS decision. On Citadel, HA-Proxy ends TLS before the
 request reaches PHP, so without a trusted proxy (no <code>citadel</code> preset, no <code>trusted_proxies</code>) the request looks plain
 even though the client connected over HTTPS.</p>
@@ -117,8 +117,8 @@ plain-HTTP request.</p>
 <pre tabindex="0"><code>curl -sI http://localhost/up
 </code></pre>
 <p>Expected: the session cookie carries the <code>Secure</code> flag on HTTPS responses. See <a href="guides/session.html">The session</a>.</p>
-<h2 id="the-request-forgery-guard">The request-forgery guard<a class="docs-heading-link" aria-label="Link to this section" href="#the-request-forgery-guard">#</a></h2>
-<h3 id="the-guard-answers-403-for-a-request-that-should-pass">The guard answers 403 for a request that should pass<a class="docs-heading-link" aria-label="Link to this section" href="#the-guard-answers-403-for-a-request-that-should-pass">#</a></h3>
+<h2 id="the-request-forgery-guard">The request-forgery <span class="docs-heading-tail"><span>guard</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-request-forgery-guard">#</a></span></h2>
+<h3 id="the-guard-answers-403-for-a-request-that-should-pass">The guard answers 403 for a request that should <span class="docs-heading-tail"><span>pass</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-guard-answers-403-for-a-request-that-should-pass">#</a></span></h3>
 <p>Cause: for state-changing requests, <code>Sec-Fetch-Site</code> is the primary signal when the browser sends it. <code>same-origin</code>
 and <code>none</code> pass, <code>same-site</code> passes only when <code>allow_same_site</code> is true, and <code>cross-site</code> or an unknown value is
 rejected. When <code>Sec-Fetch-Site</code> is absent, the <code>Origin</code> header is checked against the request's own origin and
@@ -134,8 +134,8 @@ or <code>*</code> for every path).</p>
 you exactly which rule rejected the request. The Origin value, cookies, Authorization, the <code>X-Forwarded-For</code> header,
 or the bad entry are never logged. The rule is pinned in <code>tests/Csrf/RequestForgeryGuardTest.php</code> and
 <code>tests/Laravel/RequestForgeryGuardTest.php</code>. See <a href="guides/csrf.html">The request-forgery guard</a>.</p>
-<h2 id="content-security-policy">Content Security Policy<a class="docs-heading-link" aria-label="Link to this section" href="#content-security-policy">#</a></h2>
-<h3 id="boot-throws-unknown-csp-source-after-upgrading-to-1-0">Boot throws <code>Unknown CSP source</code> after upgrading to 1.0<a class="docs-heading-link" aria-label="Link to this section" href="#boot-throws-unknown-csp-source-after-upgrading-to-1-0">#</a></h3>
+<h2 id="content-security-policy">Content Security <span class="docs-heading-tail"><span>Policy</span><a class="docs-heading-link" aria-label="Link to this section" href="#content-security-policy">#</a></span></h2>
+<h3 id="boot-throws-unknown-csp-source-after-upgrading-to-1-0">Boot throws <code>Unknown CSP source</code> after upgrading to <span class="docs-heading-tail"><span>1.0</span><a class="docs-heading-link" aria-label="Link to this section" href="#boot-throws-unknown-csp-source-after-upgrading-to-1-0">#</a></span></h3>
 <p>Cause: since 1.0.0 a quoted source in the <code>csp</code> option or <code>HELMET_CSP</code> must be a CSP keyword (<code>'self'</code>, <code>'none'</code>,
 <code>'unsafe-inline'</code>, <code>'unsafe-eval'</code>, <code>'unsafe-hashes'</code>, <code>'wasm-unsafe-eval'</code>, <code>'report-sample'</code>, <code>'strict-dynamic'</code>),
 a hash (<code>'sha256-...'</code>, <code>'sha384-...'</code>, <code>'sha512-...'</code>) or a fixed nonce (<code>'nonce-...'</code>). Anything else, such as
@@ -147,7 +147,7 @@ shipped and the browser ignored it.</p>
 </code></pre>
 <p>Expected: the app answers, and the <code>Content-Security-Policy</code> header carries the source as you wrote it. See
 <a href="guides/csp.html">Customizing the CSP</a>.</p>
-<h3 id="inline-styles-vanished-after-overriding-style-src-with-unsafe-inline">Inline styles vanished after overriding <code>style-src</code> with <code>'unsafe-inline'</code><a class="docs-heading-link" aria-label="Link to this section" href="#inline-styles-vanished-after-overriding-style-src-with-unsafe-inline">#</a></h3>
+<h3 id="inline-styles-vanished-after-overriding-style-src-with-unsafe-inline">Inline styles vanished after overriding <code>style-src</code> with <span class="docs-heading-tail"><code>'unsafe-inline'</code><a class="docs-heading-link" aria-label="Link to this section" href="#inline-styles-vanished-after-overriding-style-src-with-unsafe-inline">#</a></span></h3>
 <p>Cause: the policy adds the per-request nonce to <code>style-src</code> and <code>style-src-elem</code>. A browser ignores <code>'unsafe-inline'</code>
 once a nonce is present, so setting <code>style-src</code> to <code>[&quot;'unsafe-inline'&quot;]</code> does not restore inline styles; it removes
 them.</p>
@@ -157,7 +157,7 @@ them.</p>
 </code></pre>
 <p>Expected: the <code>Content-Security-Policy</code> header carries the per-request nonce in <code>style-src</code> and <code>style-src-elem</code>. See
 <a href="guides/csp.html">Customizing the CSP</a>.</p>
-<h3 id="scripts-or-styles-are-blocked-in-a-laravel-app-that-uses-vite-or-inertia">Scripts or styles are blocked in a Laravel app that uses Vite or Inertia<a class="docs-heading-link" aria-label="Link to this section" href="#scripts-or-styles-are-blocked-in-a-laravel-app-that-uses-vite-or-inertia">#</a></h3>
+<h3 id="scripts-or-styles-are-blocked-in-a-laravel-app-that-uses-vite-or-inertia">Scripts or styles are blocked in a Laravel app that uses Vite or <span class="docs-heading-tail"><span>Inertia</span><a class="docs-heading-link" aria-label="Link to this section" href="#scripts-or-styles-are-blocked-in-a-laravel-app-that-uses-vite-or-inertia">#</a></span></h3>
 <p>Cause: one of the rules that keep the CSP honest is being broken. The CSP has no <code>'unsafe-inline'</code> for scripts, so
 every <code>&lt;script&gt;</code> without a <code>src</code> needs <code>nonce=&quot;{{ Vite::cspNonce() }}&quot;</code>. Inertia's <code>&lt;Head&gt;</code> renders into the document
 head after the page loads, so a <code>&lt;script&gt;</code> there would not carry the nonce and the browser blocks it. If another
@@ -175,8 +175,8 @@ print the meta tag in <code>&lt;head&gt;</code> with the nonce <code>helmet_boot
 <p>Expected: the nonce in the <code>Content-Security-Policy</code> header matches the <code>helmet.csp_nonce</code> request attribute (in a
 controller, <code>$request-&gt;attributes-&gt;get('helmet.csp_nonce')</code>). The agreement between paths is pinned in
 <code>tests/Headers/SecurityHeadersTest.php</code> and <code>tests/Laravel/SecurityHeadersTest.php</code>.</p>
-<h2 id="logs-and-metrics">Logs and metrics<a class="docs-heading-link" aria-label="Link to this section" href="#logs-and-metrics">#</a></h2>
-<h3 id="a-json-log-record-is-missing-its-request-id">A JSON log record is missing its request ID<a class="docs-heading-link" aria-label="Link to this section" href="#a-json-log-record-is-missing-its-request-id">#</a></h3>
+<h2 id="logs-and-metrics">Logs and <span class="docs-heading-tail"><span>metrics</span><a class="docs-heading-link" aria-label="Link to this section" href="#logs-and-metrics">#</a></span></h2>
+<h3 id="a-json-log-record-is-missing-its-request-id">A JSON log record is missing its request <span class="docs-heading-tail"><span>ID</span><a class="docs-heading-link" aria-label="Link to this section" href="#a-json-log-record-is-missing-its-request-id">#</a></span></h3>
 <p>Cause: every JSON log record carries a request ID in <code>extra.request_id</code>: 16 lowercase hex characters generated by
 HELMET, stamped by a processor pushed before the redaction processor, so a record with a <code>password</code> context key still
 comes out redacted and keeps its ID. An inbound header is never trusted for the ID. If the ID is missing, the logger
@@ -188,20 +188,20 @@ To reuse an ID you already have, set <code>request_id</code> (8 to 64 letters, d
 <pre tabindex="0"><code class="language-json">{&quot;message&quot;:&quot;login&quot;,&quot;context&quot;:{&quot;user&quot;:&quot;alice&quot;},&quot;level&quot;:200,&quot;level_name&quot;:&quot;INFO&quot;,&quot;channel&quot;:&quot;app&quot;,&quot;datetime&quot;:&quot;2026-10-29T12:00:00.000000+00:00&quot;,&quot;extra&quot;:{&quot;request_id&quot;:&quot;9f2c1ab04d5e6f70&quot;}}
 </code></pre>
 <p>Pinned in <code>tests/Logging/LoggingTest.php</code>.</p>
-<h3 id="metrics-answers-404-even-though-helmet-metrics-enabled-true"><code>/metrics</code> answers 404 even though <code>HELMET_METRICS_ENABLED=true</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-answers-404-even-though-helmet-metrics-enabled-true">#</a></h3>
+<h3 id="metrics-answers-404-even-though-helmet-metrics-enabled-true"><code>/metrics</code> answers 404 even though <span class="docs-heading-tail"><code>HELMET_METRICS_ENABLED=true</code><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-answers-404-even-though-helmet-metrics-enabled-true">#</a></span></h3>
 <p>Cause: with neither a token nor an allow list set, the endpoint returns <code>404</code> and logs a warning, so a misconfigured
 app does not hand its metrics to the whole network.</p>
 <p>Fix: choose at least one way to prove who is asking: <code>HELMET_METRICS_TOKEN</code> (a bearer token, compared with
 <code>hash_equals</code>) or <code>HELMET_METRICS_ALLOW</code> (comma-separated IPs or CIDR ranges allowed to scrape without a token).</p>
 <p>Check: scrape the endpoint with the token and expect the <code>helmet_info</code> gauge with the PHP and HELMET versions. Pinned
 in <code>tests/Metrics/MetricsGateTest.php</code> and <code>tests/Metrics/BearerTokenTest.php</code>. See <a href="guides/metrics.html">Metrics</a>.</p>
-<h3 id="metrics-answers-403-on-apache-even-with-the-right-token"><code>/metrics</code> answers 403 on Apache even with the right token<a class="docs-heading-link" aria-label="Link to this section" href="#metrics-answers-403-on-apache-even-with-the-right-token">#</a></h3>
+<h3 id="metrics-answers-403-on-apache-even-with-the-right-token"><code>/metrics</code> answers 403 on Apache even with the right <span class="docs-heading-tail"><span>token</span><a class="docs-heading-link" aria-label="Link to this section" href="#metrics-answers-403-on-apache-even-with-the-right-token">#</a></span></h3>
 <p>Cause: Apache with mod_php does not copy the <code>Authorization</code> header into <code>$_SERVER</code>, so a release before this one
 never saw the token and denied the scrape.</p>
 <p>Fix: upgrade. HELMET now reads the token from <code>HTTP_AUTHORIZATION</code>, then <code>REDIRECT_HTTP_AUTHORIZATION</code>, then the
 request headers themselves. No <code>.htaccess</code> rewrite is needed.</p>
 <p>Check: scrape with the token and expect <code>200</code> and <code>helmet_info</code>. Pinned in <code>tests/Metrics/BearerTokenTest.php</code>.</p>
-<h3 id="the-request-panels-are-empty-or-helmet-metrics-storage-up-is-0">The request panels are empty, or <code>helmet_metrics_storage_up</code> is 0<a class="docs-heading-link" aria-label="Link to this section" href="#the-request-panels-are-empty-or-helmet-metrics-storage-up-is-0">#</a></h3>
+<h3 id="the-request-panels-are-empty-or-helmet-metrics-storage-up-is-0">The request panels are empty, or <code>helmet_metrics_storage_up</code> is <span class="docs-heading-tail"><span>0</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-request-panels-are-empty-or-helmet-metrics-storage-up-is-0">#</a></span></h3>
 <p>Cause: request and CSP metrics only count when <code>HELMET_METRICS_STORAGE</code> names a store (<code>apcu</code>, <code>redis</code> or
 <code>sqlite</code>). Unset, the endpoint serves the version and policy gauges only, on purpose. When it is set but the store
 cannot be used (the extension is missing, Redis is unreachable, the SQLite file is not writable), the app logs
@@ -211,13 +211,13 @@ Redis, that <code>HELMET_METRICS_REDIS_URL</code> points where the app can reach
 <p>Check: load a page, then scrape: <code>helmet_http_request_duration_seconds_count</code> appears and
 <code>helmet_metrics_storage_up</code> is <code>1</code>. Pinned in <code>tests/Metrics/MetricsStorageTest.php</code> and
 <code>tests/FunctionsMetricsRequestsTest.php</code>. See <a href="guides/metrics.html#pick-a-store">Pick a store</a>.</p>
-<h3 id="helmet-php-version-status-says-unknown"><code>helmet_php_version_status</code> says <code>unknown</code><a class="docs-heading-link" aria-label="Link to this section" href="#helmet-php-version-status-says-unknown">#</a></h3>
+<h3 id="helmet-php-version-status-says-unknown"><code>helmet_php_version_status</code> says <span class="docs-heading-tail"><code>unknown</code><a class="docs-heading-link" aria-label="Link to this section" href="#helmet-php-version-status-says-unknown">#</a></span></h3>
 <p>Cause: no policy is set, or the policy has no entry for the running PHP release. Status is looked up by major and
 minor version (<code>8.5</code>), in either the flat shape or CREED's <code>versions</code> shape.</p>
 <p>Fix: set <code>HELMET_POLICY_PATH</code> to a CREED <code>policy.json</code> that lists the release.</p>
 <p>Check: scrape and expect <code>helmet_php_version_status{status=&quot;active&quot;} 1</code> (or <code>security</code>, or <code>eol</code>). Pinned in
 <code>tests/Policy/JsonFilePolicySourceTest.php</code>.</p>
-<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="install.html">Install</a></li>
 <li><a href="guides/quick-start.html">Quick start</a></li>

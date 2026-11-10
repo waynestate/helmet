@@ -39,11 +39,11 @@
   <nav class="docs-nav docs-nav--sidebar" aria-label="Documentation"><ul class="docs-nav__list"><li class="docs-nav__group"><span class="docs-nav__label">Getting Started</span><ul><li><a href="../../docs/index.html">Overview</a></li><li><a href="../../docs/install.html">Install</a></li><li><a href="../../docs/guides/quick-start.html">Quick start</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Guides</span><ul><li><a href="../../docs/guides/platform-presets.html">Platform presets</a></li><li><a href="../../docs/guides/wsu-values.html">WSU values (Playbook)</a></li><li><a href="../../docs/guides/running-off-citadel.html">Running off Citadel</a></li><li><a href="../../docs/guides/usage-raw-php.html">Raw PHP</a></li><li><a href="../../docs/guides/usage-psr15.html">PSR-15 middleware</a></li><li><a href="../../docs/guides/usage-laravel.html">Laravel</a></li><li><a href="../../docs/guides/headers.html">The headers</a></li><li><a href="../../docs/guides/csp.html">Customizing the CSP</a></li><li><a href="../../docs/guides/hsts.html">Configuring HSTS</a></li><li><a href="../../docs/guides/cross-origin-isolation.html">Cross-origin isolation and feature policy</a></li><li><a href="../../docs/guides/https-and-proxies.html">HTTPS, and why the proxy list matters</a></li><li><a href="../../docs/guides/session.html">The session</a></li><li><a href="../../docs/guides/csrf.html">The request-forgery guard</a></li><li><a href="../../docs/guides/readiness.html">Readiness</a></li><li><a href="../../docs/guides/metrics.html">Metrics</a></li><li><a href="../../docs/guides/secret-scanning.html">Secret scanning</a></li><li><a href="../../docs/guides/advisor.html">Your coding agent (ADVISOR)</a></li><li><a href="../../docs/guides/instance-runner.html">Strongly recommended: a git.wayne.edu instance runner</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Reference</span><ul><li><a href="../../docs/reference/configuration.html" aria-current="page">Environment variables</a></li><li><a href="../../docs/reference/api.html">API</a></li><li><a href="../../docs/reference/proof.html">Proof</a></li></ul></li><li class="docs-nav__group"><span class="docs-nav__label">Decisions</span><ul><li><a href="../../docs/adr/0001-style-src-attr.html">ADR-0001: Inline style attributes in the CSP</a></li></ul></li><li><a href="../../docs/troubleshooting.html">Troubleshooting</a></li><li><a href="../../docs/upgrading.html">Upgrading</a></li><li><a href="../../docs/changelog.html">Changelog</a></li></ul></nav>
   <div class="docs-content">
     <main id="main">
-      <article class="docs-article"><h1 id="configuration">Configuration<a class="docs-heading-link" aria-label="Link to this section" href="#configuration">#</a></h1>
+      <article class="docs-article"><h1 id="configuration"><span class="docs-heading-tail"><span>Configuration</span><a class="docs-heading-link" aria-label="Link to this section" href="#configuration">#</a></span></h1>
 <p>Every <code>HELMET_</code> environment variable the package reads, its meaning, its default, and the file that reads it. The table below is generated from the code, so it cannot drift from what the package actually reads. To set a value, add it to your environment or <code>.env</code>; for how the platform presets choose the trusted proxies, see <a href="../guides/platform-presets.html">Platform presets</a>.</p>
-<h2 id="how-a-value-is-read">How a value is read<a class="docs-heading-link" aria-label="Link to this section" href="#how-a-value-is-read">#</a></h2>
+<h2 id="how-a-value-is-read">How a value is <span class="docs-heading-tail"><span>read</span><a class="docs-heading-link" aria-label="Link to this section" href="#how-a-value-is-read">#</a></span></h2>
 <p>Every setting except <code>HELMET_PRESET</code> is read from the environment with Laravel's <code>env()</code>; the config file treats an empty value as not set, so a blank value keeps the default in the table. <code>HELMET_PRESET</code> alone goes through <code>Waynestate\Helmet\Support\Setting::get()</code>: the real environment wins (getenv, then <code>$_ENV</code>, then <code>$_SERVER</code>), an empty string counts as not set, and when the environment has no value for the key the private <code>waynestate/playbook</code> package (Playbook) supplies it, if it is installed; when neither has it, null comes back and no preset is applied. Playbook is optional by design: the package never requires it, it only looks for the class. That is how a WSU value can arrive at an app without this public repo naming a single one of them.</p>
-<h2 id="the-config-keys">The config keys<a class="docs-heading-link" aria-label="Link to this section" href="#the-config-keys">#</a></h2>
+<h2 id="the-config-keys">The config <span class="docs-heading-tail"><span>keys</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-config-keys">#</a></span></h2>
 <p>Every value above lands in the <code>helmet</code> config repo, and every other part of the package reads it through <code>config()</code>. This lists every key, one level deep; the environment variable that fills each one is in <a href="#the-variables">The variables</a> below. Publish the config (<code>php artisan vendor:publish --tag=helmet-config</code>) to edit a key directly instead of through the environment.</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -211,7 +211,7 @@
 </tr>
 </tbody>
 </table></div>
-<h2 id="platform-presets">Platform presets<a class="docs-heading-link" aria-label="Link to this section" href="#platform-presets">#</a></h2>
+<h2 id="platform-presets">Platform <span class="docs-heading-tail"><span>presets</span><a class="docs-heading-link" aria-label="Link to this section" href="#platform-presets">#</a></span></h2>
 <p>A preset names a platform's trusted-proxy list, so an app does not hard-code an address that belongs to the platform, not the app. The presets live in <code>Waynestate\Helmet\Platform\Presets</code>:</p>
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -232,7 +232,7 @@
 </tbody>
 </table></div>
 <p>Laravel reads the preset from <code>HELMET_PRESET</code> (Playbook supplies it when the environment has none); an explicit <code>HELMET_PROXIES</code> always wins over the preset. Off the WSU platform, skip the preset and pass your own list of the addresses your front proxy connects from. An unknown preset name throws at boot, so a typo fails loudly instead of silently trusting nothing.</p>
-<h2 id="the-variables">The variables<a class="docs-heading-link" aria-label="Link to this section" href="#the-variables">#</a></h2>
+<h2 id="the-variables">The <span class="docs-heading-tail"><span>variables</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-variables">#</a></span></h2>
 <!-- generated:env -->
 <div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
 <thead>
@@ -452,14 +452,14 @@
 </table></div>
 <!-- /generated -->
 <p>Seven of these variables are also read by the raw PHP path: <code>helmet_metrics_env()</code> in <code>src/functions.php</code> reads <code>HELMET_METRICS_ALLOW</code>, <code>HELMET_METRICS_ENABLED</code>, <code>HELMET_METRICS_REDIS_URL</code>, <code>HELMET_METRICS_SQLITE_PATH</code>, <code>HELMET_METRICS_STORAGE</code>, <code>HELMET_METRICS_TOKEN</code> and <code>HELMET_POLICY_PATH</code> through the same <code>Setting::get()</code> (environment first, then Playbook), so the same values drive <code>helmet_metrics()</code> and <code>helmet_metrics_track()</code> outside Laravel. The table's &quot;Read in&quot; column names the first reader it finds, which is why those rows point at <code>config/helmet.php</code>.</p>
-<h2 id="example-env">Example .env<a class="docs-heading-link" aria-label="Link to this section" href="#example-env">#</a></h2>
+<h2 id="example-env">Example <span class="docs-heading-tail"><span>.env</span><a class="docs-heading-link" aria-label="Link to this section" href="#example-env">#</a></span></h2>
 <pre tabindex="0"><code>HELMET_PRESET=citadel
 HELMET_CSP_REPORT_URI=https://app.apps.wayne.edu/csp-report
 HELMET_METRICS_ENABLED=true
 HELMET_METRICS_TOKEN=change-me
 </code></pre>
 <aside class="docs-callout docs-callout--warning" role="note"><p class="docs-callout__label">Warning</p><p><code>HELMET_METRICS_TOKEN</code> is a secret. Set a different value per environment and never commit it; the scraper sends it as <code>Authorization: Bearer &lt;token&gt;</code> and the package compares it with <code>hash_equals</code>.</p></aside>
-<h2 id="related">Related<a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></h2>
+<h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="api.html">API</a></li>
 <li><a href="proof.html">Proof</a></li>
