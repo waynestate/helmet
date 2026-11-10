@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Docs: BEST_PRACTICES, MAINTAINING and the Proof page name the pins in use (Preflight 0.5.0 for secret detection and the a11y checker, Pinstripe ^0.3, Squire 0.10.6 on main); they still said 0.4.0, ^0.1.4 and 0.10.2.
 - Changed: the docs, agent-ready and deploy kits are Squire 0.10.6 (was 0.10.5): the docs builder and agent-ready generator see every file on Docker Desktop mounts.
 - Site: `assets/stack-env.js` knows Parity, so a pre-production page links Parity's pre-production site and a dev page links its local `site/` folder. Until now Parity, of all parts, was the one link that ignored its environment.
 - Site: Parity is out; the party list links its site.

@@ -26,8 +26,8 @@ To refresh this table, run `composer ci` and the Docker commands below on the co
 
 The front page and every docs page are checked with [axe-core](https://github.com/dequelabs/axe-core) in a real Chromium, through Playwright, at WCAG 2.2 AA, in light and dark, at 320 px and 1280 px, with the WCAG 1.4.10 reflow check. Two gates, both blocking, and both running the same checker, so they cannot drift apart:
 
-- **Local, before a release:** `scripts/a11y.sh` (Linux, macOS, Git Bash) or `scripts/a11y.ps1` (Windows) runs `tools/a11y/check.mjs` in Docker. That file is a byte-for-byte copy of Preflight's a11y checker at the tag the pipeline pins (0.4.0), and `tests/A11yCheckerPinTest.php` fails `composer ci` if it drifts. Reduced motion is on, so scroll reveals never hide content from the check.
-- **In the pipeline:** Preflight's `a11y` component (0.4.0) over the same pages.
+- **Local, before a release:** `scripts/a11y.sh` (Linux, macOS, Git Bash) or `scripts/a11y.ps1` (Windows) runs `tools/a11y/check.mjs` in Docker. That file is a byte-for-byte copy of Preflight's a11y checker at the tag the pipeline pins (0.5.0), and `tests/A11yCheckerPinTest.php` fails `composer ci` if it drifts. Reduced motion is on, so scroll reveals never hide content from the check.
+- **In the pipeline:** Preflight's `a11y` component (0.5.0) over the same pages.
 
 Last run, 2026-11-08, on the branch that vendors Preflight's checker into the local gate (29 pages):
 
