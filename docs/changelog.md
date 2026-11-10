@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Added: `tools/a11y/coep-check.mjs`, a Chromium check that HELMET's front page survives `Cross-Origin-Embedder-Policy: require-corp` and that a third-party image without CORP is blocked under it (H13).
 - Site: the front page's stale facts are current (the roster no longer tags Drawbridge "next"; 0.6.1 is released).
 - Changed: the deploy kit is Squire 0.10.7 (was 0.10.6): it ships a `.gitattributes` that pins line endings, so the deploy layer clears PROCTOR's line-ending warnings.
 - Changed: the PROCTOR job on the deploy layer blocks (it was allowed to fail for findings that are gone: PROCTOR 0.11.1 passes deploy/), and tests/Support/ProctorJobTest.php keeps it pinned and blocking.
