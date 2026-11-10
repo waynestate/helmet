@@ -44,6 +44,7 @@
 <p>All notable changes to this project are documented in this file.</p>
 <h2 id="unreleased"><span class="docs-heading-tail"><span>Unreleased</span><a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></span></h2>
 <ul>
+<li>Changed: the PROCTOR job on the deploy layer blocks (it was allowed to fail for findings that are gone: PROCTOR 0.11.1 passes deploy/), and tests/Support/ProctorJobTest.php keeps it pinned and blocking.</li>
 <li>Docs: BEST_PRACTICES, MAINTAINING and the Proof page name the pins in use (Preflight 0.5.0 for secret detection and the a11y checker, Pinstripe ^0.3, Squire 0.10.6 on main); they still said 0.4.0, ^0.1.4 and 0.10.2.</li>
 <li>Changed: the docs, agent-ready and deploy kits are Squire 0.10.6 (was 0.10.5): the docs builder and agent-ready generator see every file on Docker Desktop mounts.</li>
 <li>Site: <code>assets/stack-env.js</code> knows Parity, so a pre-production page links Parity's pre-production site and a dev page links its local <code>site/</code> folder. Until now Parity, of all parts, was the one link that ignored its environment.</li>
