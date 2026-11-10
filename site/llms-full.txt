@@ -1715,8 +1715,8 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
-- Site: the front page and the chalkboard play put Cross-Origin-Embedder-Policy on the bench next to Cross-Origin-Resource-Policy (both opt-in since 1.4.0).
 - Changed: the deploy layer requires PROCTOR ^0.12 (locked 0.12.0, was ^0.11.1): two new warning-only checks, nothing breaks.
+- Site: the front page and the chalkboard play put Cross-Origin-Embedder-Policy on the bench next to Cross-Origin-Resource-Policy (both opt-in since 1.4.0).
 
 ### 1.4.0 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-0-2026-11-10)
 
