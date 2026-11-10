@@ -426,6 +426,28 @@ URIs by default. The default policy already allows `data:` in `font-src` and
 `img-src`, so inlined fonts and images pass; if you would rather not inline
 at all, set `build.assetsInlineLimit: 0`.
 
+And one rule Vue itself sets: **precompile your templates.** Single-file
+components (`.vue` files) are compiled at build time, so they need nothing.
+A string `template:` option or an in-DOM template needs Vue's full build,
+whose runtime compiler calls `eval`, and HELMET's policy never allows
+`'unsafe-eval'`: the browser refuses it and nothing renders.
+
+This recipe is proven in a real browser on every pipeline. `tools/vue-vite`
+is a small Vue app built exactly this way, and `tools/a11y/vue-check.mjs`
+serves its build in Chromium with HELMET's default headers and the swapped
+nonce. It checks that the app mounts with no CSP violation, its stylesheets
+and an inlined image load, a click updates the page, and a lazily imported
+chunk renders with its stylesheet carrying the response nonce. It also
+checks the two ways this goes wrong: the same build without the swap never
+mounts, and a runtime-compiled template is refused. To run it yourself,
+from the repository root:
+
+```sh
+php tools/a11y/corp-headers.php > build/helmet-headers.json
+npm --prefix tools/a11y ci && npm --prefix tools/vue-vite ci && npm --prefix tools/vue-vite run build
+node tools/a11y/vue-check.mjs --headers=build/helmet-headers.json
+```
+
 #### PSR-15 middleware
 
 The same core, mounted in a middleware pipeline:
@@ -657,7 +679,9 @@ A few rules keep the CSP honest:
   scripts. Every `` without a `src` needs
   `nonce="{{ Vite::cspNonce() }}"`.
 - **No `'unsafe-eval'`.** The CSP never allows it. If your bundle needs
-  `eval`, fix the bundle.
+  `eval`, fix the bundle. Vue's runtime template compiler is the usual
+  culprit: keep templates in `.vue` files (compiled at build time), not in
+  string `template:` options.
 - **No scripts in Inertia's ``.** Inertia's `` renders into the
   document head after the page loads. A `` there would not carry the
   nonce, and the browser would block it. Put scripts in your layout, where
@@ -1714,6 +1738,10 @@ Source: https://helmet.apps.wayne.edu/docs/changelog.html
 All notable changes to this project are documented in this file.
 
 ### Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
+
+- Added: `tools/a11y/vue-check.mjs` and its fixture `tools/vue-vite`, a Chromium check that a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder runs under the default CSP once the nonce is swapped in (lazy chunks and their stylesheets included), that the unswapped build never mounts, and that Vue's runtime template compiler is refused. The `browser-headers` CI job runs it after the CORP and COEP checks; `tests/VueFixtureTest.php` keeps the fixture, the check and `helmet_csp_nonce_swap()` on one placeholder (H51).
+- Changed: the Composer package leaves out `tools/` (the browser checks and the Vue fixture are CI tools, not code an app runs).
+- Docs: the Vue recipes say to precompile templates (`.vue` files), because Vue's runtime compiler needs `eval` and the policy never allows `'unsafe-eval'`; the Proof page records the three browser checks.
 
 ### 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-1-2026-11-10)
 
@@ -3343,7 +3371,7 @@ The middleware hands the per-request nonce to Laravel's Vite helper and injects 
 A few rules keep the CSP honest:
 
 - **Nonce every inline script.** The CSP has no `'unsafe-inline'` for scripts. Every `<script>` without a `src` needs `nonce="{{ Vite::cspNonce() }}"`.
-- **No `'unsafe-eval'`.** The CSP never allows it. If your bundle needs `eval`, fix the bundle.
+- **No `'unsafe-eval'`.** The CSP never allows it. If your bundle needs `eval`, fix the bundle. Vue's runtime template compiler is the usual culprit: keep templates in `.vue` files (compiled at build time), not in string `template:` options.
 - **No scripts in Inertia's `<Head>`.** Inertia's `<Head>` renders into the document head after the page loads. A `<script>` there would not carry the nonce, and the browser would block it. Put scripts in your layout, where `@vite` and the nonce reach them.
 - **No second nonce-producing package.** If another package calls `Vite::useCspNonce()` after HELMET, the `@vite` tags carry a different nonce than the CSP header, and the browser blocks the scripts. The middleware logs a warning when it detects this.
 - **No shared caching of nonced HTML.** The nonce changes every request. A cached page would carry a stale nonce, and the browser would block its scripts. Do not cache HTML at a layer that shares it across requests.
@@ -3725,6 +3753,18 @@ echo helmet_csp_nonce_swap(file_get_contents('dist/index.html'), $helmet['nonce'
 `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder with the nonce, HTML-escaped exactly the way `helmet_csp_nonce_meta()` escapes it. A placeholder shorter than 16 characters throws, so it cannot collide with page text, an empty nonce throws, and a page that carries no placeholder is returned unchanged.
 
 One more setting keeps the CSP honest: Vite inlines small assets as `data:` URIs by default. The default policy already allows `data:` in `font-src` and `img-src`, so inlined fonts and images pass; if you would rather not inline at all, set `build.assetsInlineLimit: 0`.
+
+And one rule Vue itself sets: **precompile your templates.** Single-file components (`.vue` files) are compiled at build time, so they need nothing. A string `template:` option or an in-DOM template needs Vue's full build, whose runtime compiler calls `eval`, and HELMET's policy never allows `'unsafe-eval'`: the browser refuses it and nothing renders.
+
+This recipe is proven in a real browser on every pipeline. `tools/vue-vite` is a small Vue app built exactly this way, and `tools/a11y/vue-check.mjs` serves its build in Chromium with HELMET's default headers and the swapped nonce. It checks that the app mounts with no CSP violation, its stylesheets and an inlined image load, a click updates the page, and a lazily imported chunk renders with its stylesheet carrying the response nonce. It also checks the two ways this goes wrong: the same build without the swap never mounts, and a runtime-compiled template is refused. To run it yourself, from the repository root:
+
+```sh
+php tools/a11y/corp-headers.php > build/helmet-headers.json
+npm --prefix tools/a11y ci && npm --prefix tools/vue-vite ci && npm --prefix tools/vue-vite run build
+node tools/a11y/vue-check.mjs --headers=build/helmet-headers.json
+```
+
+The latest recorded run is on the [Proof](https://helmet.apps.wayne.edu/docs/reference/proof.html#browser-checks) page.
 
 ### The environment ribbon [#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#the-environment-ribbon)
 
@@ -4684,6 +4724,22 @@ Gitleaks v8.30.1 with its built-in rules (the configuration Preflight's `secret-
 | A scratch copy of the tree with a planted fake cloud key | 1 leak found, exit 1 (the gate fails when it should) |
 
 How to run the same scans is in [Secret scanning](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html).
+
+### Browser checks [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#browser-checks)
+
+Three checks run HELMET's real headers (printed by `tools/a11y/corp-headers.php` from `SecurityHeaders::build()`) in Chromium, in the pipeline's `browser-headers` job and the same Playwright image as the accessibility gate:
+
+- `tools/a11y/corp-check.mjs`: the `corp` opt-in keeps the front page whole and blocks another origin's embed of its assets (H13).
+- `tools/a11y/coep-check.mjs`: under `Cross-Origin-Embedder-Policy: require-corp` the front page stays whole and cross-origin isolated, and a third-party image without CORP is blocked (H13).
+- `tools/a11y/vue-check.mjs`: a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder (`tools/vue-vite`) runs under the default CSP once the nonce is swapped in, including a lazily imported chunk whose stylesheet Vite adds at runtime; without the swap it never mounts, and a runtime-compiled template is refused (H51).
+
+Last run, 2026-11-10, on the branch that adds the Vue check (base e942c75, Playwright 1.65.0, Vite 6.4.5, Vue 3.5.45):
+
+| Check | Result |
+| --- | --- |
+| `corp-check.mjs` | `CORP CHECK: PASS` |
+| `coep-check.mjs` | `COEP CHECK: PASS` (6 checks) |
+| `vue-check.mjs` | `VUE CHECK: PASS` (19 checks, including the two that must refuse) |
 
 ### Proof [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof)
 

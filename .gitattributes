@@ -21,6 +21,9 @@ tools/a11y/check.mjs text eol=lf
 /.gitattributes   export-ignore
 /.gitignore       export-ignore
 
+# Browser checks and their Vue fixture: CI tools, not part of the package.
+/tools            export-ignore
+
 # README art: generated images and their generator, not part of the package.
 /docs/readme export-ignore
 /scripts/readme-art export-ignore

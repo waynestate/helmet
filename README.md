@@ -432,6 +432,28 @@ URIs by default. The default policy already allows `data:` in `font-src` and
 `img-src`, so inlined fonts and images pass; if you would rather not inline
 at all, set `build.assetsInlineLimit: 0`.
 
+And one rule Vue itself sets: **precompile your templates.** Single-file
+components (`.vue` files) are compiled at build time, so they need nothing.
+A string `template:` option or an in-DOM template needs Vue's full build,
+whose runtime compiler calls `eval`, and HELMET's policy never allows
+`'unsafe-eval'`: the browser refuses it and nothing renders.
+
+This recipe is proven in a real browser on every pipeline. `tools/vue-vite`
+is a small Vue app built exactly this way, and `tools/a11y/vue-check.mjs`
+serves its build in Chromium with HELMET's default headers and the swapped
+nonce. It checks that the app mounts with no CSP violation, its stylesheets
+and an inlined image load, a click updates the page, and a lazily imported
+chunk renders with its stylesheet carrying the response nonce. It also
+checks the two ways this goes wrong: the same build without the swap never
+mounts, and a runtime-compiled template is refused. To run it yourself,
+from the repository root:
+
+```sh
+php tools/a11y/corp-headers.php > build/helmet-headers.json
+npm --prefix tools/a11y ci && npm --prefix tools/vue-vite ci && npm --prefix tools/vue-vite run build
+node tools/a11y/vue-check.mjs --headers=build/helmet-headers.json
+```
+
 ### PSR-15 middleware
 
 The same core, mounted in a middleware pipeline:
@@ -663,7 +685,9 @@ A few rules keep the CSP honest:
   scripts. Every `<script>` without a `src` needs
   `nonce="{{ Vite::cspNonce() }}"`.
 - **No `'unsafe-eval'`.** The CSP never allows it. If your bundle needs
-  `eval`, fix the bundle.
+  `eval`, fix the bundle. Vue's runtime template compiler is the usual
+  culprit: keep templates in `.vue` files (compiled at build time), not in
+  string `template:` options.
 - **No scripts in Inertia's `<Head>`.** Inertia's `<Head>` renders into the
   document head after the page loads. A `<script>` there would not carry the
   nonce, and the browser would block it. Put scripts in your layout, where

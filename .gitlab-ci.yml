@@ -80,9 +80,10 @@ browser-headers-json:
     paths: [build/helmet-headers.json]
     expire_in: 1 day
 
-# Runs the H13 CORP opt-in check and the COEP readiness check in real
-# Chromium, in the same Playwright image as the a11y component. It stays
-# untagged.
+# Runs the H13 CORP opt-in check, the COEP readiness check and the Vue check
+# (H51: a Vite-built Vue app under the default CSP) in real Chromium, in the
+# same Playwright image as the a11y component. The Vue fixture installs
+# without install scripts. It stays untagged.
 browser-headers:
   needs: [browser-headers-json]
   image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
@@ -90,3 +91,6 @@ browser-headers:
     - npm --prefix tools/a11y ci --no-audit --no-fund
     - node tools/a11y/corp-check.mjs --headers=build/helmet-headers.json
     - node tools/a11y/coep-check.mjs --headers=build/helmet-headers.json
+    - npm --prefix tools/vue-vite ci --no-audit --no-fund --ignore-scripts
+    - npm --prefix tools/vue-vite run build
+    - node tools/a11y/vue-check.mjs --headers=build/helmet-headers.json

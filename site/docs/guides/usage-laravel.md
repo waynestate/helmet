@@ -127,7 +127,7 @@ The middleware hands the per-request nonce to Laravel's Vite helper and injects 
 A few rules keep the CSP honest:
 
 - **Nonce every inline script.** The CSP has no `'unsafe-inline'` for scripts. Every `<script>` without a `src` needs `nonce="{{ Vite::cspNonce() }}"`.
-- **No `'unsafe-eval'`.** The CSP never allows it. If your bundle needs `eval`, fix the bundle.
+- **No `'unsafe-eval'`.** The CSP never allows it. If your bundle needs `eval`, fix the bundle. Vue's runtime template compiler is the usual culprit: keep templates in `.vue` files (compiled at build time), not in string `template:` options.
 - **No scripts in Inertia's `<Head>`.** Inertia's `<Head>` renders into the document head after the page loads. A `<script>` there would not carry the nonce, and the browser would block it. Put scripts in your layout, where `@vite` and the nonce reach them.
 - **No second nonce-producing package.** If another package calls `Vite::useCspNonce()` after HELMET, the `@vite` tags carry a different nonce than the CSP header, and the browser blocks the scripts. The middleware logs a warning when it detects this.
 - **No shared caching of nonced HTML.** The nonce changes every request. A cached page would carry a stale nonce, and the browser would block its scripts. Do not cache HTML at a layer that shares it across requests.

@@ -1,12 +1,13 @@
 {
   "name": "helmet-a11y",
-  "description": "Site gates in a real Chromium browser: axe-core (WCAG 2.2 AA), the CORP opt-in and COEP readiness (H13).",
+  "description": "Site gates in a real Chromium browser: axe-core (WCAG 2.2 AA), the CORP opt-in and COEP readiness (H13), and a Vite-built Vue app under the default CSP (H51).",
   "private": true,
   "type": "module",
   "scripts": {
     "check": "node check.mjs",
     "corp": "node corp-check.mjs",
-    "coep": "node coep-check.mjs"
+    "coep": "node coep-check.mjs",
+    "vue": "node vue-check.mjs"
   },
   "dependencies": {
     "@axe-core/playwright": "4.14.0",

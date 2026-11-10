@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Added: `tools/a11y/vue-check.mjs` and its fixture `tools/vue-vite`, a Chromium check that a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder runs under the default CSP once the nonce is swapped in (lazy chunks and their stylesheets included), that the unswapped build never mounts, and that Vue's runtime template compiler is refused. The `browser-headers` CI job runs it after the CORP and COEP checks; `tests/VueFixtureTest.php` keeps the fixture, the check and `helmet_csp_nonce_swap()` on one placeholder (H51).
+- Changed: the Composer package leaves out `tools/` (the browser checks and the Vue fixture are CI tools, not code an app runs).
+- Docs: the Vue recipes say to precompile templates (`.vue` files), because Vue's runtime compiler needs `eval` and the policy never allows `'unsafe-eval'`; the Proof page records the three browser checks.
+
 ## 1.4.1 (2026-11-10)
 - Added: CI runs the CORP opt-in and COEP readiness browser checks (`browser-headers`, after `browser-headers-json` prints the headers), guarded by `tests/BrowserHeadersJobTest.php`; the a11y scripts' comments name Preflight 0.5.0's image.
 - Changed: the deploy layer requires PROCTOR ^0.15 (locked 0.15.0, was ^0.12): 0.13 checks the release cooldown against the CREED policy and 0.14 adds `script-pair`; 0.15 adds `mysql56-ci`; all of these only warn, nothing breaks.

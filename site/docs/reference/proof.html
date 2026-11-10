@@ -146,6 +146,36 @@
 </tbody>
 </table></div>
 <p>How to run the same scans is in <a href="../guides/secret-scanning.html">Secret scanning</a>.</p>
+<h2 id="browser-checks">Browser <span class="docs-heading-tail"><span>checks</span><a class="docs-heading-link" aria-label="Link to this section" href="#browser-checks">#</a></span></h2>
+<p>Three checks run HELMET's real headers (printed by <code>tools/a11y/corp-headers.php</code> from <code>SecurityHeaders::build()</code>) in Chromium, in the pipeline's <code>browser-headers</code> job and the same Playwright image as the accessibility gate:</p>
+<ul>
+<li><code>tools/a11y/corp-check.mjs</code>: the <code>corp</code> opt-in keeps the front page whole and blocks another origin's embed of its assets (H13).</li>
+<li><code>tools/a11y/coep-check.mjs</code>: under <code>Cross-Origin-Embedder-Policy: require-corp</code> the front page stays whole and cross-origin isolated, and a third-party image without CORP is blocked (H13).</li>
+<li><code>tools/a11y/vue-check.mjs</code>: a Vue app built by Vite with <code>html.cspNonce</code> set to HELMET's placeholder (<code>tools/vue-vite</code>) runs under the default CSP once the nonce is swapped in, including a lazily imported chunk whose stylesheet Vite adds at runtime; without the swap it never mounts, and a runtime-compiled template is refused (H51).</li>
+</ul>
+<p>Last run, 2026-11-10, on the branch that adds the Vue check (base e942c75, Playwright 1.65.0, Vite 6.4.5, Vue 3.5.45):</p>
+<div class="docs-table" role="region" aria-label="Table" tabindex="0"><table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>corp-check.mjs</code></td>
+<td><code>CORP CHECK: PASS</code></td>
+</tr>
+<tr>
+<td><code>coep-check.mjs</code></td>
+<td><code>COEP CHECK: PASS</code> (6 checks)</td>
+</tr>
+<tr>
+<td><code>vue-check.mjs</code></td>
+<td><code>VUE CHECK: PASS</code> (19 checks, including the two that must refuse)</td>
+</tr>
+</tbody>
+</table></div>
 <h2 id="proof"><span class="docs-heading-tail"><span>Proof</span><a class="docs-heading-link" aria-label="Link to this section" href="#proof">#</a></span></h2>
 <p>Proof runs against real Wayne State applications live on a private site, <a rel="noopener" href="https://proof.apps.wayne.edu/helmet/">proof.apps.wayne.edu/helmet</a>, behind a Wayne State employee sign-in.</p>
 <h2 id="tests"><span class="docs-heading-tail"><span>Tests</span><a class="docs-heading-link" aria-label="Link to this section" href="#tests">#</a></span></h2>
@@ -172,7 +202,7 @@ docker run --rm -v &quot;$PWD:/app&quot; -w /app php:8.3-cli vendor/bin/phpunit
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/reference/api.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">API</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/adr/0001-style-src-attr.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">ADR-0001: Inline style attributes in the CSP</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#last-run">Last run</a></li><li class="docs-toc__item"><a href="#accessibility">Accessibility</a></li><li class="docs-toc__item"><a href="#secret-scanning">Secret scanning</a></li><li class="docs-toc__item"><a href="#proof">Proof</a></li><li class="docs-toc__item"><a href="#tests">Tests</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#last-run">Last run</a></li><li class="docs-toc__item"><a href="#accessibility">Accessibility</a></li><li class="docs-toc__item"><a href="#secret-scanning">Secret scanning</a></li><li class="docs-toc__item"><a href="#browser-checks">Browser checks</a></li><li class="docs-toc__item"><a href="#proof">Proof</a></li><li class="docs-toc__item"><a href="#tests">Tests</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>1.4.1</span></span>

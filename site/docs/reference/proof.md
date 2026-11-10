@@ -52,6 +52,22 @@ Gitleaks v8.30.1 with its built-in rules (the configuration Preflight's `secret-
 
 How to run the same scans is in [Secret scanning](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html).
 
+## Browser checks [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#browser-checks)
+
+Three checks run HELMET's real headers (printed by `tools/a11y/corp-headers.php` from `SecurityHeaders::build()`) in Chromium, in the pipeline's `browser-headers` job and the same Playwright image as the accessibility gate:
+
+- `tools/a11y/corp-check.mjs`: the `corp` opt-in keeps the front page whole and blocks another origin's embed of its assets (H13).
+- `tools/a11y/coep-check.mjs`: under `Cross-Origin-Embedder-Policy: require-corp` the front page stays whole and cross-origin isolated, and a third-party image without CORP is blocked (H13).
+- `tools/a11y/vue-check.mjs`: a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder (`tools/vue-vite`) runs under the default CSP once the nonce is swapped in, including a lazily imported chunk whose stylesheet Vite adds at runtime; without the swap it never mounts, and a runtime-compiled template is refused (H51).
+
+Last run, 2026-11-10, on the branch that adds the Vue check (base e942c75, Playwright 1.65.0, Vite 6.4.5, Vue 3.5.45):
+
+| Check | Result |
+| --- | --- |
+| `corp-check.mjs` | `CORP CHECK: PASS` |
+| `coep-check.mjs` | `COEP CHECK: PASS` (6 checks) |
+| `vue-check.mjs` | `VUE CHECK: PASS` (19 checks, including the two that must refuse) |
+
 ## Proof [#](https://helmet.apps.wayne.edu/docs/reference/proof.html#proof)
 
 Proof runs against real Wayne State applications live on a private site, [proof.apps.wayne.edu/helmet](https://proof.apps.wayne.edu/helmet/), behind a Wayne State employee sign-in.

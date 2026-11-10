@@ -253,7 +253,7 @@
 <p>A few rules keep the CSP honest:</p>
 <ul>
 <li><strong>Nonce every inline script.</strong> The CSP has no <code>'unsafe-inline'</code> for scripts. Every <code>&lt;script&gt;</code> without a <code>src</code> needs <code>nonce=&quot;{{ Vite::cspNonce() }}&quot;</code>.</li>
-<li><strong>No <code>'unsafe-eval'</code>.</strong> The CSP never allows it. If your bundle needs <code>eval</code>, fix the bundle.</li>
+<li><strong>No <code>'unsafe-eval'</code>.</strong> The CSP never allows it. If your bundle needs <code>eval</code>, fix the bundle. Vue's runtime template compiler is the usual culprit: keep templates in <code>.vue</code> files (compiled at build time), not in string <code>template:</code> options.</li>
 <li><strong>No scripts in Inertia's <code>&lt;Head&gt;</code>.</strong> Inertia's <code>&lt;Head&gt;</code> renders into the document head after the page loads. A <code>&lt;script&gt;</code> there would not carry the nonce, and the browser would block it. Put scripts in your layout, where <code>@vite</code> and the nonce reach them.</li>
 <li><strong>No second nonce-producing package.</strong> If another package calls <code>Vite::useCspNonce()</code> after HELMET, the <code>@vite</code> tags carry a different nonce than the CSP header, and the browser blocks the scripts. The middleware logs a warning when it detects this.</li>
 <li><strong>No shared caching of nonced HTML.</strong> The nonce changes every request. A cached page would carry a stale nonce, and the browser would block its scripts. Do not cache HTML at a layer that shares it across requests.</li>

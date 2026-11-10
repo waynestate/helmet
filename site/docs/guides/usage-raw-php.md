@@ -205,6 +205,18 @@ echo helmet_csp_nonce_swap(file_get_contents('dist/index.html'), $helmet['nonce'
 
 One more setting keeps the CSP honest: Vite inlines small assets as `data:` URIs by default. The default policy already allows `data:` in `font-src` and `img-src`, so inlined fonts and images pass; if you would rather not inline at all, set `build.assetsInlineLimit: 0`.
 
+And one rule Vue itself sets: **precompile your templates.** Single-file components (`.vue` files) are compiled at build time, so they need nothing. A string `template:` option or an in-DOM template needs Vue's full build, whose runtime compiler calls `eval`, and HELMET's policy never allows `'unsafe-eval'`: the browser refuses it and nothing renders.
+
+This recipe is proven in a real browser on every pipeline. `tools/vue-vite` is a small Vue app built exactly this way, and `tools/a11y/vue-check.mjs` serves its build in Chromium with HELMET's default headers and the swapped nonce. It checks that the app mounts with no CSP violation, its stylesheets and an inlined image load, a click updates the page, and a lazily imported chunk renders with its stylesheet carrying the response nonce. It also checks the two ways this goes wrong: the same build without the swap never mounts, and a runtime-compiled template is refused. To run it yourself, from the repository root:
+
+```sh
+php tools/a11y/corp-headers.php > build/helmet-headers.json
+npm --prefix tools/a11y ci && npm --prefix tools/vue-vite ci && npm --prefix tools/vue-vite run build
+node tools/a11y/vue-check.mjs --headers=build/helmet-headers.json
+```
+
+The latest recorded run is on the [Proof](https://helmet.apps.wayne.edu/docs/reference/proof.html#browser-checks) page.
+
 ## The environment ribbon [#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#the-environment-ribbon)
 
 `helmet_ribbon()` gives a raw PHP app the same ribbon the Laravel adapter injects, so nobody mistakes a test site for the real one. Print its `html()` right after your `<body>` tag, and style `.helmet-ribbon` (and `.helmet-ribbon-warning`) in your own CSS:

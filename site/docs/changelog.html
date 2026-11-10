@@ -43,6 +43,11 @@
 <h1 id="changelog"><span class="docs-heading-tail"><span>Changelog</span><a class="docs-heading-link" aria-label="Link to this section" href="#changelog">#</a></span></h1>
 <p>All notable changes to this project are documented in this file.</p>
 <h2 id="unreleased"><span class="docs-heading-tail"><span>Unreleased</span><a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></span></h2>
+<ul>
+<li>Added: <code>tools/a11y/vue-check.mjs</code> and its fixture <code>tools/vue-vite</code>, a Chromium check that a Vue app built by Vite with <code>html.cspNonce</code> set to HELMET's placeholder runs under the default CSP once the nonce is swapped in (lazy chunks and their stylesheets included), that the unswapped build never mounts, and that Vue's runtime template compiler is refused. The <code>browser-headers</code> CI job runs it after the CORP and COEP checks; <code>tests/VueFixtureTest.php</code> keeps the fixture, the check and <code>helmet_csp_nonce_swap()</code> on one placeholder (H51).</li>
+<li>Changed: the Composer package leaves out <code>tools/</code> (the browser checks and the Vue fixture are CI tools, not code an app runs).</li>
+<li>Docs: the Vue recipes say to precompile templates (<code>.vue</code> files), because Vue's runtime compiler needs <code>eval</code> and the policy never allows <code>'unsafe-eval'</code>; the Proof page records the three browser checks.</li>
+</ul>
 <h2 id="1-4-1-2026-11-10">1.4.1 <span class="docs-heading-tail"><span>(2026-11-10)</span><a class="docs-heading-link" aria-label="Link to this section" href="#1-4-1-2026-11-10">#</a></span></h2>
 <ul>
 <li>

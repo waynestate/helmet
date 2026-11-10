@@ -7,10 +7,10 @@ namespace Waynestate\Helmet\Tests;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The pipeline runs the CORP opt-in (H13) and the COEP readiness checks in
- * a real Chromium browser: browser-headers-json prints HELMET's headers to
- * build/helmet-headers.json and browser-headers feeds them to the two
- * checks. This test fails when either job is unwired or when its Playwright
+ * The pipeline runs the CORP opt-in (H13), the COEP readiness and the Vue
+ * (H51) checks in a real Chromium browser: browser-headers-json prints
+ * HELMET's headers to build/helmet-headers.json and browser-headers feeds
+ * them to the three checks. This test fails when either job is unwired or when its Playwright
  * image drifts from the one scripts/a11y.sh runs, so a page that passes
  * locally passes the pipeline. No surprises: if the wiring moves, this says
  * so first.
@@ -34,6 +34,14 @@ final class BrowserHeadersJobTest extends TestCase
     /** The COEP readiness check, reading the printed headers. */
     private const COEP_CHECK = 'node tools/a11y/coep-check.mjs --headers=build/helmet-headers.json';
 
+    /** The Vue fixture (H51): installed without install scripts, then built by Vite. */
+    private const VUE_INSTALL = 'npm --prefix tools/vue-vite ci --no-audit --no-fund --ignore-scripts';
+
+    private const VUE_BUILD = 'npm --prefix tools/vue-vite run build';
+
+    /** The Vue check: the built fixture under HELMET's default CSP, reading the printed headers. */
+    private const VUE_CHECK = 'node tools/a11y/vue-check.mjs --headers=build/helmet-headers.json';
+
     /** How to bring a drifted wire back, in one commit. */
     private const UPDATE = 'To update the browser-headers wiring, in one commit: move the jobs in .gitlab-ci.yml, '
         . 'move the image string in scripts/a11y.sh and scripts/a11y.ps1 and the image in the browser-headers '
@@ -49,6 +57,23 @@ final class BrowserHeadersJobTest extends TestCase
         $this->assertStringContainsString(self::CORP_CHECK, $ci, 'browser-headers does not run the CORP check on the printed headers. ' . self::UPDATE);
         $this->assertStringContainsString(self::COEP_CHECK, $ci, 'browser-headers does not run the COEP check on the printed headers. ' . self::UPDATE);
         $this->assertStringContainsString('needs: [browser-headers-json]', $ci, 'browser-headers does not need browser-headers-json. ' . self::UPDATE);
+    }
+
+    public function test_the_browser_job_builds_the_vue_fixture_before_checking_it(): void
+    {
+        $ci = (string) file_get_contents(self::ROOT . '/.gitlab-ci.yml');
+        if (!preg_match('/^browser-headers:\n((?:^[ \t].*$\n?)+)/m', $ci, $job)) {
+            $this->fail('.gitlab-ci.yml has no browser-headers job body. ' . self::UPDATE);
+        }
+
+        $install = strpos($job[1], self::VUE_INSTALL);
+        $build = strpos($job[1], self::VUE_BUILD);
+        $check = strpos($job[1], self::VUE_CHECK);
+
+        $this->assertNotFalse($install, 'browser-headers does not install the Vue fixture without install scripts. ' . self::UPDATE);
+        $this->assertNotFalse($build, 'browser-headers does not build the Vue fixture. ' . self::UPDATE);
+        $this->assertNotFalse($check, 'browser-headers does not run the Vue check on the printed headers. ' . self::UPDATE);
+        $this->assertTrue($install < $build && $build < $check, 'browser-headers must install, then build, then check the Vue fixture. ' . self::UPDATE);
     }
 
     public function test_the_browser_job_uses_the_same_image_as_the_local_a11y_script(): void
