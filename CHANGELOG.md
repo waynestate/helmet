@@ -3,6 +3,7 @@
 All notable changes to this project are documented in this file.
 
 ## Unreleased
+- Changed: the GitHub workflow calls Preflight 0.5.0's reusable workflow (pinned to its release commit), the same release as the GitLab pipeline; it was on 0.1.4 because GitHub's copy of Preflight had no later tag.
 - Changed: the deploy layer requires PROCTOR ^0.12 (locked 0.12.0, was ^0.11.1): two new warning-only checks, nothing breaks.
 
 - Site: the front page and the chalkboard play put Cross-Origin-Embedder-Policy on the bench next to Cross-Origin-Resource-Policy (both opt-in since 1.4.0).
