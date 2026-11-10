@@ -7,7 +7,11 @@ description: How to move an app from one HELMET release to the next.
 
 This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 1.4.0.
+release is 1.4.1.
+
+## 1.4.1 (2026-11-10)
+
+A patch release: `composer update waynestate/helmet` within `^1.0`. No header, option or event changes, so there is nothing to change in the code. It carries HELMET's own CI (the CORP and COEP browser checks run on every pipeline), the GitHub workflow on Preflight 0.5.0, the deploy layer on PROCTOR ^0.15, and the docs. Same helmet, new strap.
 
 ## 1.4.0 (2026-11-10)
 

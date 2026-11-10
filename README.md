@@ -46,7 +46,7 @@ rules live in one place, and every consumer path agrees.
 composer require waynestate/helmet
 ```
 
-Composer picks the latest release, 1.4.0, and writes `^1.4` into `composer.json`. From 1.0 HELMET
+Composer picks the latest release, 1.4.1, and writes `^1.4` into `composer.json`. From 1.0 HELMET
 follows semantic versioning; [Upgrading](docs/upgrading.md) has what changed since 0.4, starting with the one that
 bites: an unknown quoted CSP source now throws at boot.
 

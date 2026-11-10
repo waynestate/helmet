@@ -16,7 +16,7 @@ rest (Monolog, the PSR interfaces, csp-builder, the Prometheus client and symfon
 composer require waynestate/helmet
 ```
 
-Composer picks the latest release, 1.4.0, and writes `^1.4` into `composer.json`. Coming from 0.4? Read
+Composer picks the latest release, 1.4.1, and writes `^1.4` into `composer.json`. Coming from 0.4? Read
 [Upgrading](upgrading.md) first: an unknown quoted CSP source now throws at boot.
 
 The same line works for a raw PHP app, a Laravel app, or a PSR-15 stack: HELMET ships one package for every platform,
