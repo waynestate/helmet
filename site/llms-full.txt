@@ -1633,7 +1633,7 @@ Starters, deploys, local runs, sign-in and upgrades
 
 - [Sourdough](https://sourdough.apps.wayne.edu/) Starts a new app in any of the five formations, from raw PHP to Inertia and Vue.
 - [Squire](https://squire.apps.wayne.edu/) The deploy kit for Citadel: build.sh, a release script and local runs on the same images.
-- Parity next The scout team: runs Citadel's own plays on your computer. Site coming.
+- [Parity](https://parity.apps.wayne.edu/) The scout team: runs Citadel's own plays on your computer.
 - [Drawbridge](https://drawbridge.apps.wayne.edu/) next Signs people in through Entra ID before they reach a Citadel app.
 - [Booster](https://booster.apps.wayne.edu/) Upgrades PHP 7 to 8 and Laravel one version at a time.
 - [Rollcall](https://rollcall.apps.wayne.edu/) Every app answers “present”, with its PHP version.
@@ -1700,6 +1700,7 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Site: Parity is out; the party list links its site.
 - Changed: the deploy kit is Squire 0.10.5 (was 0.10.2): the template comments drop their internal item IDs, and Squire reports the parity group as deprecated (removed no sooner than 0.12.0; Parity runs Citadel on your computer now and carries the kit over with `parity init --from-squire`).
 - Changed: the dev dependency requires waynestate/advisor ^0.3 (locked 0.3.0, was ^0.2 and 0.2.0); the same update moves CREED from 0.1.8 to 0.1.9.
 

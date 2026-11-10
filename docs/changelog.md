@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Site: Parity is out; the party list links its site.
 - Changed: the deploy kit is Squire 0.10.5 (was 0.10.2): the template comments drop their internal item IDs, and Squire reports the parity group as deprecated (removed no sooner than 0.12.0; Parity runs Citadel on your computer now and carries the kit over with `parity init --from-squire`).
 - Changed: the dev dependency requires waynestate/advisor ^0.3 (locked 0.3.0, was ^0.2 and 0.2.0); the same update moves CREED from 0.1.8 to 0.1.9.
 
