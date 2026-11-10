@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Site: the front page's stale facts are current (the roster no longer tags Drawbridge "next"; 0.6.1 is released).
 - Changed: the deploy kit is Squire 0.10.7 (was 0.10.6): it ships a `.gitattributes` that pins line endings, so the deploy layer clears PROCTOR's line-ending warnings.
 - Changed: the PROCTOR job on the deploy layer blocks (it was allowed to fail for findings that are gone: PROCTOR 0.11.1 passes deploy/), and tests/Support/ProctorJobTest.php keeps it pinned and blocking.
 - Docs: BEST_PRACTICES, MAINTAINING and the Proof page name the pins in use (Preflight 0.5.0 for secret detection and the a11y checker, Pinstripe ^0.3, Squire 0.10.6 on main); they still said 0.4.0, ^0.1.4 and 0.10.2.

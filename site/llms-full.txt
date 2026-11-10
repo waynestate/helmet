@@ -1634,7 +1634,7 @@ Starters, deploys, local runs, sign-in and upgrades
 - [Sourdough](https://sourdough.apps.wayne.edu/) Starts a new app in any of the five formations, from raw PHP to Inertia and Vue.
 - [Squire](https://squire.apps.wayne.edu/) The deploy kit for Citadel: build.sh, a release script and local runs on the same images.
 - [Parity](https://parity.apps.wayne.edu/) The scout team: runs Citadel's own plays on your computer.
-- [Drawbridge](https://drawbridge.apps.wayne.edu/) next Signs people in through Entra ID before they reach a Citadel app.
+- [Drawbridge](https://drawbridge.apps.wayne.edu/) Signs people in through Entra ID before they reach a Citadel app.
 - [Booster](https://booster.apps.wayne.edu/) Upgrades PHP 7 to 8 and Laravel one version at a time.
 - [Rollcall](https://rollcall.apps.wayne.edu/) Every app answers “present”, with its PHP version.
 
@@ -1700,6 +1700,7 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Site: the front page's stale facts are current (the roster no longer tags Drawbridge "next"; 0.6.1 is released).
 - Changed: the deploy kit is Squire 0.10.7 (was 0.10.6): it ships a `.gitattributes` that pins line endings, so the deploy layer clears PROCTOR's line-ending warnings.
 - Changed: the PROCTOR job on the deploy layer blocks (it was allowed to fail for findings that are gone: PROCTOR 0.11.1 passes deploy/), and tests/Support/ProctorJobTest.php keeps it pinned and blocking.
 - Docs: BEST_PRACTICES, MAINTAINING and the Proof page name the pins in use (Preflight 0.5.0 for secret detection and the a11y checker, Pinstripe ^0.3, Squire 0.10.6 on main); they still said 0.4.0, ^0.1.4 and 0.10.2.
