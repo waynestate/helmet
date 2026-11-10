@@ -18,7 +18,7 @@ Set-Location -LiteralPath (Split-Path -Parent $PSScriptRoot)
 New-Item -ItemType Directory -Force -Path 'tools/a11y/node_modules' | Out-Null
 
 # The a11y component's image default, digest included (templates/a11y/template.yml
-# of Preflight 0.4.0). Its tag sets the playwright npm version, so the package
+# of Preflight 0.5.0). Its tag sets the playwright npm version, so the package
 # and the image's browsers always match.
 $image = "mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d"
 $pw = ([regex]::Match($image, 'playwright:v(\d+\.\d+\.\d+)')).Groups[1].Value
