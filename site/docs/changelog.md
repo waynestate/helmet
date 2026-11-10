@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file.
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
 - Added: CI runs the CORP opt-in and COEP readiness browser checks (`browser-headers`, after `browser-headers-json` prints the headers), guarded by `tests/BrowserHeadersJobTest.php`; the a11y scripts' comments name Preflight 0.5.0's image.
+- Changed: the deploy layer requires PROCTOR ^0.15 (locked 0.15.0, was ^0.12): 0.13 checks the release cooldown against the CREED policy and 0.14 adds `script-pair`; 0.15 adds `mysql56-ci`; all of these only warn, nothing breaks.
 - Docs: the a11y scripts' header says the vendored checker comes from Preflight 0.5.0 (the pinned release; the file is unchanged since 0.4.0).
 - Docs: BEST_PRACTICES says the 1.4.0 release carries Squire 0.10.7 (it said main carried 0.10.6, unreleased); the Proof page says its recorded run was on Preflight 0.3.0 and the pipeline now pins 0.5.0.
 - Changed: the GitHub workflow calls Preflight 0.5.0's reusable workflow (pinned to its release commit), the same release as the GitLab pipeline; it was on 0.1.4 because GitHub's copy of Preflight had no later tag.
