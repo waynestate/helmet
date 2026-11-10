@@ -69,7 +69,7 @@ Each play is one protection and the attack it stops. Laminated, because coffee h
 
 ### Equipment check: the headers on every response
 
-`SecurityHeaders::build()` makes these seven for raw PHP and Laravel alike, and a test checks that both send the same names and values. `Cross-Origin-Resource-Policy` stays on the bench until you turn it on.
+`SecurityHeaders::build()` makes these seven for raw PHP and Laravel alike, and a test checks that both send the same names and values. `Cross-Origin-Resource-Policy` and `Cross-Origin-Embedder-Policy` stay on the bench until you call their number.
 
 - `Content-Security-Policy`the WayneUI default policy, a fresh nonce and `strict-dynamic`
 - `X-Content-Type-Options``nosniff`
@@ -78,6 +78,11 @@ Each play is one protection and the attack it stops. Laminated, because coffee h
 - `Permissions-Policy``camera=(), geolocation=(), microphone=(), payment=(), usb=()`
 - `Cross-Origin-Opener-Policy``same-origin`, configurable
 - `Strict-Transport-Security`one year with `includeSubDomains`, on HTTPS only
+
+#### On the bench, opt-in, off by default
+
+- `Cross-Origin-Resource-Policy``corp` or `HELMET_CORP`: `same-site`, `same-origin` or `cross-origin`
+- `Cross-Origin-Embedder-Policy``coep` or `HELMET_COEP`: `require-corp`, `credentialless` or `unsafe-none`
 
 **Even on a fumble.** The middleware still sends the headers when the inner handler throws, and `X-Powered-By` is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.
 

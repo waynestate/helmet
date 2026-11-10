@@ -769,6 +769,7 @@ Every response gets the same set, built by one shared function:
 | `Permissions-Policy` | `camera=(), geolocation=(), microphone=(), payment=(), usb=()` by default, configurable |
 | `Cross-Origin-Opener-Policy` | `same-origin` by default, configurable, `null` sends no header |
 | `Cross-Origin-Resource-Policy` | not sent by default, opt-in |
+| `Cross-Origin-Embedder-Policy` | not sent by default, opt-in |
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` by default, HTTPS only, configurable |
 
 The default CSP is the union of the WayneUI recipes, with `frame-ancestors
@@ -1309,7 +1310,7 @@ Each play is one protection and the attack it stops. Laminated, because coffee h
 
 #### Equipment check: the headers on every response
 
-`SecurityHeaders::build()` makes these seven for raw PHP and Laravel alike, and a test checks that both send the same names and values. `Cross-Origin-Resource-Policy` stays on the bench until you turn it on.
+`SecurityHeaders::build()` makes these seven for raw PHP and Laravel alike, and a test checks that both send the same names and values. `Cross-Origin-Resource-Policy` and `Cross-Origin-Embedder-Policy` stay on the bench until you call their number.
 
 - `Content-Security-Policy`the WayneUI default policy, a fresh nonce and `strict-dynamic`
 - `X-Content-Type-Options``nosniff`
@@ -1318,6 +1319,11 @@ Each play is one protection and the attack it stops. Laminated, because coffee h
 - `Permissions-Policy``camera=(), geolocation=(), microphone=(), payment=(), usb=()`
 - `Cross-Origin-Opener-Policy``same-origin`, configurable
 - `Strict-Transport-Security`one year with `includeSubDomains`, on HTTPS only
+
+##### On the bench, opt-in, off by default
+
+- `Cross-Origin-Resource-Policy``corp` or `HELMET_CORP`: `same-site`, `same-origin` or `cross-origin`
+- `Cross-Origin-Embedder-Policy``coep` or `HELMET_COEP`: `require-corp`, `credentialless` or `unsafe-none`
 
 **Even on a fumble.** The middleware still sends the headers when the inner handler throws, and `X-Powered-By` is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.
 
@@ -1708,6 +1714,8 @@ Source: https://helmet.apps.wayne.edu/docs/changelog.html
 All notable changes to this project are documented in this file.
 
 ### Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
+
+- Site: the front page and the chalkboard play put Cross-Origin-Embedder-Policy on the bench next to Cross-Origin-Resource-Policy (both opt-in since 1.4.0).
 
 ### 1.4.0 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-0-2026-11-10)
 
@@ -2265,9 +2273,9 @@ Source: https://helmet.apps.wayne.edu/docs/guides/headers.html
 
 Every response gets the same set, built by one shared function. This page shows the set, the default Content-Security-Policy exactly as the code defines it, and the rule behind each header. To change the policy itself, see [Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html).
 
-![A chalkboard play of HELMET's default headers. Seven O's on the line of scrimmage each run a route to one header: Content-Security-Policy (default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self', plus 7 more directives, a fresh nonce and 'strict-dynamic'), X-Content-Type-Options nosniff, X-Frame-Options SAMEORIGIN, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy camera=(), geolocation=(), microphone=(), payment=(), usb=(), Cross-Origin-Opener-Policy same-origin, and Strict-Transport-Security max-age=31536000; includeSubDomains on HTTPS responses only. Cross-Origin-Resource-Policy is on the bench, opt-in. The HELMET mark sits in the pocket.](https://helmet.apps.wayne.edu/docs/readme/play.svg)
+![A chalkboard play of HELMET's default headers. Seven O's on the line of scrimmage each run a route to one header: Content-Security-Policy (default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self', plus 7 more directives, a fresh nonce and 'strict-dynamic'), X-Content-Type-Options nosniff, X-Frame-Options SAMEORIGIN, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy camera=(), geolocation=(), microphone=(), payment=(), usb=(), Cross-Origin-Opener-Policy same-origin, and Strict-Transport-Security max-age=31536000; includeSubDomains on HTTPS responses only. Cross-Origin-Resource-Policy and Cross-Origin-Embedder-Policy wait on the bench, both opt-in. The HELMET mark sits in the pocket.](https://helmet.apps.wayne.edu/docs/readme/play.svg)
 
-The play is read from `src/Headers/SecurityHeaders.php`: seven routes, one per default header, drawn in the order HELMET sets them. Cross-Origin-Resource-Policy waits on the bench until you opt in. With reduced motion on, you get the finished play.
+The play is read from `src/Headers/SecurityHeaders.php`: seven routes, one per default header, drawn in the order HELMET sets them. Cross-Origin-Resource-Policy and Cross-Origin-Embedder-Policy wait on the bench until you opt in. With reduced motion on, you get the finished play.
 
 ### The set [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#the-set)
 

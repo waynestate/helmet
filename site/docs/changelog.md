@@ -12,6 +12,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Site: the front page and the chalkboard play put Cross-Origin-Embedder-Policy on the bench next to Cross-Origin-Resource-Policy (both opt-in since 1.4.0).
+
 ## 1.4.0 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-0-2026-11-10)
 
 - Added: SecurityHeaders::build() and SecurityHeadersMiddleware take an opt-in coep (Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none); nothing is sent by default, and an invalid value throws at construction. helmet_boot() takes "coep" and Laravel reads HELMET_COEP (helmet.coep); ADVISOR lists HELMET_COEP.
