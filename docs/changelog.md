@@ -11,6 +11,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.4.0 (2026-11-10)
+
 - Added: SecurityHeaders::build() and SecurityHeadersMiddleware take an opt-in coep (Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none); nothing is sent by default, and an invalid value throws at construction. helmet_boot() takes "coep" and Laravel reads HELMET_COEP (helmet.coep); ADVISOR lists HELMET_COEP.
 - Added: `tools/a11y/coep-check.mjs`, a Chromium check that HELMET's front page survives `Cross-Origin-Embedder-Policy: require-corp` and that a third-party image without CORP is blocked under it (H13).
 - Site: the front page's stale facts are current (the roster no longer tags Drawbridge "next"; 0.6.1 is released).
