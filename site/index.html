@@ -391,7 +391,7 @@
       <div class="kit" role="group" aria-labelledby="kit-title">
         <div class="kit__head">
           <h3 class="kit__title" id="kit-title">Equipment check: the headers on every response</h3>
-          <p class="kit__sub"><code>SecurityHeaders::build()</code> makes these seven for raw PHP and Laravel alike, and a test checks that both send the same names and values. <code>Cross-Origin-Resource-Policy</code> stays on the bench until you turn it on.</p>
+          <p class="kit__sub"><code>SecurityHeaders::build()</code> makes these seven for raw PHP and Laravel alike, and a test checks that both send the same names and values. <code>Cross-Origin-Resource-Policy</code> and <code>Cross-Origin-Embedder-Policy</code> stay on the bench until you call their number.</p>
         </div>
         <ul class="kit__list">
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Content-Security-Policy</code><span class="kit__val">the WayneUI default policy, a fresh nonce and <code>strict-dynamic</code></span></li>
@@ -402,6 +402,15 @@
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Cross-Origin-Opener-Policy</code><span class="kit__val"><code>same-origin</code>, configurable</span></li>
           <li><span class="tick" aria-hidden="true"></span><code class="kit__name">Strict-Transport-Security</code><span class="kit__val">one year with <code>includeSubDomains</code>, on HTTPS only</span></li>
         </ul>
+        <!-- The bench: headers SecurityHeaders::build() can send but does not
+             by default. Both are opt-in; an invalid value throws at boot. -->
+        <div class="kit__bench">
+          <h4 class="kit__bench-title" id="bench-title">On the bench <span class="kit__bench-note">opt-in, off by default</span></h4>
+          <ul class="kit__list kit__list--bench" aria-labelledby="bench-title">
+            <li><span class="tick tick--bench" aria-hidden="true"></span><code class="kit__name">Cross-Origin-Resource-Policy</code><span class="kit__val"><code>corp</code> or <code>HELMET_CORP</code>: <code>same-site</code>, <code>same-origin</code> or <code>cross-origin</code></span></li>
+            <li><span class="tick tick--bench" aria-hidden="true"></span><code class="kit__name">Cross-Origin-Embedder-Policy</code><span class="kit__val"><code>coep</code> or <code>HELMET_COEP</code>: <code>require-corp</code>, <code>credentialless</code> or <code>unsafe-none</code></span></li>
+          </ul>
+        </div>
         <p class="kit__fumble"><strong>Even on a fumble.</strong> The middleware still sends the headers when the inner handler throws, and <code>X-Powered-By</code> is stripped from every response. Milquetoast is a Helmet song. It is not a Content-Security-Policy.</p>
       </div>
     </div>

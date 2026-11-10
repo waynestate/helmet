@@ -765,10 +765,10 @@ For the session cookie's Secure flag in Laravel, the adapter reads `helmet.sessi
 ## The headers
 
 <div align="center">
-  <img src="docs/readme/play.svg" width="100%" alt="A chalkboard play of HELMET's default headers. Seven O's on the line of scrimmage each run a route to one header: Content-Security-Policy (default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self', plus 7 more directives, a fresh nonce and 'strict-dynamic'), X-Content-Type-Options nosniff, X-Frame-Options SAMEORIGIN, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy camera=(), geolocation=(), microphone=(), payment=(), usb=(), Cross-Origin-Opener-Policy same-origin, and Strict-Transport-Security max-age=31536000; includeSubDomains on HTTPS responses only. Cross-Origin-Resource-Policy is on the bench, opt-in. The HELMET mark sits in the pocket.">
+  <img src="docs/readme/play.svg" width="100%" alt="A chalkboard play of HELMET's default headers. Seven O's on the line of scrimmage each run a route to one header: Content-Security-Policy (default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'self', plus 7 more directives, a fresh nonce and 'strict-dynamic'), X-Content-Type-Options nosniff, X-Frame-Options SAMEORIGIN, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy camera=(), geolocation=(), microphone=(), payment=(), usb=(), Cross-Origin-Opener-Policy same-origin, and Strict-Transport-Security max-age=31536000; includeSubDomains on HTTPS responses only. Cross-Origin-Resource-Policy and Cross-Origin-Embedder-Policy wait on the bench, both opt-in. The HELMET mark sits in the pocket.">
   <br>
   <sub>The play is read from <code>src/Headers/SecurityHeaders.php</code>: seven routes, one per default header,
-  drawn in the order HELMET sets them. Cross-Origin-Resource-Policy waits on the bench until you opt in. With
+  drawn in the order HELMET sets them. Cross-Origin-Resource-Policy and Cross-Origin-Embedder-Policy wait on the bench until you opt in. With
   reduced motion on, you get the finished play.</sub>
 </div>
 
@@ -783,6 +783,7 @@ Every response gets the same set, built by one shared function:
 | `Permissions-Policy` | `camera=(), geolocation=(), microphone=(), payment=(), usb=()` by default, configurable |
 | `Cross-Origin-Opener-Policy` | `same-origin` by default, configurable, `null` sends no header |
 | `Cross-Origin-Resource-Policy` | not sent by default, opt-in |
+| `Cross-Origin-Embedder-Policy` | not sent by default, opt-in |
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` by default, HTTPS only, configurable |
 
 The default CSP is the union of the WayneUI recipes, with `frame-ancestors

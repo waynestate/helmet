@@ -414,6 +414,18 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
   content: ""; position: absolute; left: 0.28rem; top: -0.18rem; width: 0.4rem; height: 0.85rem;
   border: solid var(--h-gold); border-width: 0 3px 3px 0; transform: rotate(40deg);
 }
+/* The bench: the two opt-in headers, in the berry chalk the play's bench uses.
+   An empty box (dashed, no tick) says "not sent until you ask". */
+.kit__bench { margin-top: 1.4rem; padding-top: 0.9rem; border-top: 2px dashed rgba(245, 154, 185, 0.55); }
+.kit__bench-title {
+  margin: 0 0 0.35rem; font-family: var(--h-marker); font-weight: 400; font-size: 1.15rem; letter-spacing: 0.02em;
+  color: var(--h-berry-chalk); transform: rotate(-1deg); transform-origin: 0 50%;
+}
+.kit__bench-note { margin-left: 0.45rem; font-family: var(--h-marker); font-size: 0.92rem; color: var(--h-chalk-dim); }
+.kit__list--bench li { border-bottom-color: rgba(245, 154, 185, 0.18); }
+.kit__list--bench .kit__name { color: var(--h-berry-chalk); }
+.tick--bench { border-style: dashed; border-color: var(--h-berry-chalk); }
+.tick--bench::after { content: none; }
 .kit__fumble { margin: 1.1rem 0 0; color: var(--h-chalk); line-height: 1.55; }
 .kit__fumble code, .kit__val code { color: var(--h-gold-soft); }
 
