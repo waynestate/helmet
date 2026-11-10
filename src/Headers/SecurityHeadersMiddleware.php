@@ -78,9 +78,12 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
      * @param LoggerInterface|null $logger Optional PSR-3 logger for the
      *        helmet.forwarded_proto_rejected warning. null (the default) logs
      *        nothing. A logger that throws never changes the response.
+     * @param string|null $coep The Cross-Origin-Embedder-Policy value, or
+     *        null to send no COEP header.
      *
-     * @throws \InvalidArgumentException If $coop, $corp, $permissionsPolicy,
-     *         $trustedTypesPolicies or $styleSrcAttr is invalid.
+     * @throws \InvalidArgumentException If $coop, $corp, $coep,
+     *         $permissionsPolicy, $trustedTypesPolicies or $styleSrcAttr is
+     *         invalid.
      */
     public function __construct(
         private readonly TrustedProxies $proxies,
@@ -101,6 +104,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         private readonly array $noStorePaths = [],
         private readonly string $styleSrcAttr = 'inline',
         private readonly ?LoggerInterface $logger = null,
+        private readonly ?string $coep = null,
     ) {
         SecurityHeaders::validateStyleSrcAttr($styleSrcAttr);
 
@@ -117,6 +121,9 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
         }
         if ($corp !== null) {
             SecurityHeaders::buildCorp($corp);
+        }
+        if ($coep !== null) {
+            SecurityHeaders::buildCoep($coep);
         }
         if ($permissionsPolicy !== null) {
             SecurityHeaders::buildPermissionsPolicy($permissionsPolicy);
@@ -146,6 +153,7 @@ final class SecurityHeadersMiddleware implements MiddlewareInterface
             $this->trustedTypesEnabled,
             $this->trustedTypesPolicies,
             $this->styleSrcAttr,
+            $this->coep,
         );
 
         $request = $request->withAttribute('helmet.csp_nonce', $nonce);

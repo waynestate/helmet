@@ -479,6 +479,46 @@ final class SecurityHeadersTest extends TestCase
         self::assertSame('same-site', $headers['Cross-Origin-Resource-Policy']);
     }
 
+    public function testBuildOmitsCoepByDefault(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+        );
+
+        self::assertArrayNotHasKey('Cross-Origin-Embedder-Policy', $headers);
+    }
+
+    public function testBuildSendsConfiguredCoep(): void
+    {
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            coep: 'require-corp',
+        );
+
+        self::assertSame('require-corp', $headers['Cross-Origin-Embedder-Policy']);
+
+        $headers = SecurityHeaders::build(
+            SecurityHeaders::defaultCspPolicy(),
+            'testnonce',
+            false,
+            coep: 'credentialless',
+        );
+
+        self::assertSame('credentialless', $headers['Cross-Origin-Embedder-Policy']);
+    }
+
+    public function testBuildCoepRejectsAnInvalidValue(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('COEP must be one of');
+
+        SecurityHeaders::buildCoep('bogus');
+    }
+
     public function testBuildRejectsInvalidCoop(): void
     {
         $this->expectException(\InvalidArgumentException::class);

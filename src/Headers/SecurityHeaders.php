@@ -266,12 +266,14 @@ final class SecurityHeaders
      *        names, used when $trustedTypesEnabled is true.
      * @param string $styleSrcAttr The inline style attribute mode: "inline"
      *        (the default), "report" or "none" (see STYLE_SRC_ATTR_MODES).
+     * @param string|null $coep The Cross-Origin-Embedder-Policy value, or
+     *        null to send no COEP header.
      *
      * @return array<string, string> Header name to value.
      *
-     * @throws \InvalidArgumentException If $coop, $corp, $permissionsPolicy,
-     *         $trustedTypesPolicies, $styleSrcAttr or the HSTS preload
-     *         combination is invalid.
+     * @throws \InvalidArgumentException If $coop, $corp, $coep,
+     *         $permissionsPolicy, $trustedTypesPolicies, $styleSrcAttr or the
+     *         HSTS preload combination is invalid.
      */
     public static function build(
         array $policy,
@@ -288,6 +290,7 @@ final class SecurityHeaders
         bool $trustedTypesEnabled = false,
         array $trustedTypesPolicies = ['default'],
         string $styleSrcAttr = 'inline',
+        ?string $coep = null,
     ): array {
         self::validateStyleSrcAttr($styleSrcAttr);
 
@@ -353,6 +356,10 @@ final class SecurityHeaders
 
         if ($corp !== null) {
             $headers['Cross-Origin-Resource-Policy'] = self::buildCorp($corp);
+        }
+
+        if ($coep !== null) {
+            $headers['Cross-Origin-Embedder-Policy'] = self::buildCoep($coep);
         }
 
         if ($cspReportUri !== null) {
@@ -573,6 +580,29 @@ final class SecurityHeaders
         if (! in_array($value, $allowed, true)) {
             throw new \InvalidArgumentException(
                 'CORP must be one of: ' . implode(', ', $allowed) . '.',
+            );
+        }
+
+        return $value;
+    }
+
+    /**
+     * Build the Cross-Origin-Embedder-Policy header value.
+     *
+     * COEP decides whether the page may load cross-origin resources that did
+     * not opt in (CORP or CORS): require-corp blocks them, credentialless
+     * loads them without credentials. It is the embedder-side half that, with
+     * COOP same-origin, makes the page cross-origin isolated.
+     *
+     * @throws \InvalidArgumentException If $value is not a valid COEP value.
+     */
+    public static function buildCoep(string $value): string
+    {
+        $allowed = ['require-corp', 'credentialless', 'unsafe-none'];
+
+        if (! in_array($value, $allowed, true)) {
+            throw new \InvalidArgumentException(
+                'COEP must be one of: ' . implode(', ', $allowed) . '.',
             );
         }
 

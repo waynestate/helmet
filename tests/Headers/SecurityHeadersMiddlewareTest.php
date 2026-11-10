@@ -244,6 +244,37 @@ final class SecurityHeadersMiddlewareTest extends TestCase
         );
     }
 
+    public function testConstructorRejectsInvalidCoep(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('COEP must be one of');
+
+        new SecurityHeadersMiddleware(
+            $proxies,
+            coep: 'bogus',
+        );
+    }
+
+    public function testSendsConfiguredCoep(): void
+    {
+        $proxies = new TrustedProxies(['10.0.0.0/8']);
+        $middleware = new SecurityHeadersMiddleware(
+            $proxies,
+            coep: 'require-corp',
+        );
+
+        $request = $this->makeRequest([
+            'REMOTE_ADDR' => '10.1.2.3',
+            'HTTP_X_FORWARDED_PROTO' => 'https',
+        ]);
+
+        $response = $middleware->process($request, $this->passthroughHandler());
+
+        self::assertSame('require-corp', $response->getHeaderLine('Cross-Origin-Embedder-Policy'));
+    }
+
     public function testConstructorRejectsInvalidPermissionsPolicy(): void
     {
         $proxies = new TrustedProxies(['10.0.0.0/8']);
