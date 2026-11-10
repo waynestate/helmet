@@ -46,6 +46,8 @@
 <ul>
 <li>
 <p>Added: CI runs the CORP opt-in and COEP readiness browser checks (<code>browser-headers</code>, after <code>browser-headers-json</code> prints the headers), guarded by <code>tests/BrowserHeadersJobTest.php</code>; the a11y scripts' comments name Preflight 0.5.0's image.</p>
+</li>
+<li>
 <p>Changed: the deploy layer requires PROCTOR ^0.15 (locked 0.15.0, was ^0.12): 0.13 checks the release cooldown against the CREED policy and 0.14 adds <code>script-pair</code>; 0.15 adds <code>mysql56-ci</code>; all of these only warn, nothing breaks.</p>
 </li>
 <li>
