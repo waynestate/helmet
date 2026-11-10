@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Cross-origin isolation and feature policy | HELMET docs</title>
-<meta name="description" content="Three more headers round out the baseline: Cross-Origin-Opener-Policy and Permissions-Policy are on by default, Cross-Origin-Resource-Policy is opt-in.">
+<meta name="description" content="Four more headers round out the baseline: Cross-Origin-Opener-Policy and Permissions-Policy are on by default, Cross-Origin-Resource-Policy and Cross-Origin-Embedder-Policy are opt-in.">
 <meta name="docs-version" content="1.3.1">
 <link rel="stylesheet" href="../../assets/wayne-ui/wayne-ui.css">
 <link rel="stylesheet" href="../../assets/docs.css">
@@ -40,11 +40,14 @@
   <div class="docs-content">
     <main id="main">
       <article class="docs-article"><h1 id="cross-origin-isolation-and-feature-policy">Cross-origin isolation and feature <span class="docs-heading-tail"><span>policy</span><a class="docs-heading-link" aria-label="Link to this section" href="#cross-origin-isolation-and-feature-policy">#</a></span></h1>
-<p>This page covers the three headers that round out the baseline beyond the CSP: <code>Cross-Origin-Opener-Policy</code>, <code>Cross-Origin-Resource-Policy</code> and <code>Permissions-Policy</code>. Two are on by default, one is opt-in. When you are done here, see <a href="headers.html">The headers</a> for the full set.</p>
+<p>This page covers the four headers that round out the baseline beyond the CSP: <code>Cross-Origin-Opener-Policy</code>, <code>Cross-Origin-Resource-Policy</code>, <code>Cross-Origin-Embedder-Policy</code> and <code>Permissions-Policy</code>. Two are on by default, two are opt-in. When you are done here, see <a href="headers.html">The headers</a> for the full set.</p>
 <h2 id="cross-origin-opener-policy"><span class="docs-heading-tail"><span>Cross-Origin-Opener-Policy</span><a class="docs-heading-link" aria-label="Link to this section" href="#cross-origin-opener-policy">#</a></span></h2>
 <p><code>Cross-Origin-Opener-Policy</code> defaults to <code>same-origin</code>, which puts the page in its own browsing-context group so an opener or parent page cannot read it. Set <code>coop</code> (raw PHP) or <code>HELMET_COOP</code> (Laravel) to <code>same-origin-allow-popups</code> or <code>noopener-allow-popups</code> to keep the isolation but let a popup window (such as an OAuth login popup to the IdP) stay cross-origin, or to <code>unsafe-none</code> to drop the isolation while still sending the header with that value. Set it to <code>null</code> to send no COOP header at all.</p>
 <h2 id="cross-origin-resource-policy"><span class="docs-heading-tail"><span>Cross-Origin-Resource-Policy</span><a class="docs-heading-link" aria-label="Link to this section" href="#cross-origin-resource-policy">#</a></span></h2>
 <p><code>Cross-Origin-Resource-Policy</code> is opt-in: HELMET sends no CORP header by default, because a blanket <code>same-site</code> can break an app whose assets are read cross-origin. Set <code>corp</code> (raw PHP) or <code>HELMET_CORP</code> (Laravel) to <code>same-site</code>, <code>same-origin</code> or <code>cross-origin</code> to send it.</p>
+<h2 id="cross-origin-embedder-policy"><span class="docs-heading-tail"><span>Cross-Origin-Embedder-Policy</span><a class="docs-heading-link" aria-label="Link to this section" href="#cross-origin-embedder-policy">#</a></span></h2>
+<p><code>Cross-Origin-Embedder-Policy</code> is opt-in, and the strictest of the four. CORP is the resource saying who may load it; COEP is the page saying what it is willing to load. With <code>require-corp</code> the browser blocks every cross-origin resource that does not opt in with CORP or CORS, so a WayneUI font, a CDN image or an embedded video from another origin can stop loading. <code>credentialless</code> loads those resources without cookies instead of blocking them. Together with COOP <code>same-origin</code>, either value makes the page cross-origin isolated, which a few browser features (such as <code>SharedArrayBuffer</code>) require.</p>
+<p>HELMET sends no COEP header by default. Set <code>coep</code> (raw PHP) or <code>HELMET_COEP</code> (Laravel) to <code>require-corp</code>, <code>credentialless</code> or <code>unsafe-none</code> to send it, and load every page of the app in a browser first: blocked resources show up in the console as <code>ERR_BLOCKED_BY_RESPONSE</code>.</p>
 <h2 id="permissions-policy"><span class="docs-heading-tail"><span>Permissions-Policy</span><a class="docs-heading-link" aria-label="Link to this section" href="#permissions-policy">#</a></span></h2>
 <p><code>Permissions-Policy</code> defaults to a deny list: <code>camera</code>, <code>geolocation</code>, <code>microphone</code>, <code>payment</code> and <code>usb</code> are all denied, so an injected script cannot use a feature the page has switched off. Set <code>permissions_policy</code> (raw PHP) or <code>HELMET_PERMISSIONS_POLICY</code> (Laravel) to a feature map to change it: each feature maps to an allowlist of <code>self</code> and https origins, and an empty allowlist denies the feature. An empty map sends no Permissions-Policy header.</p>
 <h2 id="example"><span class="docs-heading-tail"><span>Example</span><a class="docs-heading-link" aria-label="Link to this section" href="#example">#</a></span></h2>
@@ -52,6 +55,7 @@
     'preset' =&gt; 'citadel',
     'coop' =&gt; 'same-origin-allow-popups',
     'corp' =&gt; 'same-site',
+    'coep' =&gt; 'credentialless',
     'permissions_policy' =&gt; [
         'camera' =&gt; ['self'],
         'geolocation' =&gt; [],
@@ -79,6 +83,11 @@
 <td><code>HELMET_CORP</code> / <code>helmet.corp</code>, default <code>null</code> (no header)</td>
 </tr>
 <tr>
+<td>COEP</td>
+<td><code>coep</code></td>
+<td><code>HELMET_COEP</code> / <code>helmet.coep</code>, default <code>null</code> (no header)</td>
+</tr>
+<tr>
 <td>Permissions-Policy</td>
 <td><code>permissions_policy</code></td>
 <td><code>HELMET_PERMISSIONS_POLICY</code> / <code>helmet.permissions_policy</code>, default deny list, <code>[]</code> sends no header</td>
@@ -86,7 +95,7 @@
 </tbody>
 </table></div>
 <h2 id="validation"><span class="docs-heading-tail"><span>Validation</span><a class="docs-heading-link" aria-label="Link to this section" href="#validation">#</a></span></h2>
-<p>An invalid COOP or CORP value, or a Permissions-Policy feature name or allowlist entry that is not <code>self</code> or an https origin, throws, so a typo fails loudly instead of sending a header the browser will ignore.</p>
+<p>An invalid COOP, CORP or COEP value, or a Permissions-Policy feature name or allowlist entry that is not <code>self</code> or an https origin, throws, so a typo fails loudly instead of sending a header the browser will ignore.</p>
 <h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="headers.html">The headers</a></li>
@@ -100,7 +109,7 @@
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/hsts.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">Configuring HSTS</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/https-and-proxies.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">HTTPS, and why the proxy list matters</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#cross-origin-opener-policy">Cross-Origin-Opener-Policy</a></li><li class="docs-toc__item"><a href="#cross-origin-resource-policy">Cross-Origin-Resource-Policy</a></li><li class="docs-toc__item"><a href="#permissions-policy">Permissions-Policy</a></li><li class="docs-toc__item"><a href="#example">Example</a></li><li class="docs-toc__item"><a href="#settings">Settings</a></li><li class="docs-toc__item"><a href="#validation">Validation</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#cross-origin-opener-policy">Cross-Origin-Opener-Policy</a></li><li class="docs-toc__item"><a href="#cross-origin-resource-policy">Cross-Origin-Resource-Policy</a></li><li class="docs-toc__item"><a href="#cross-origin-embedder-policy">Cross-Origin-Embedder-Policy</a></li><li class="docs-toc__item"><a href="#permissions-policy">Permissions-Policy</a></li><li class="docs-toc__item"><a href="#example">Example</a></li><li class="docs-toc__item"><a href="#settings">Settings</a></li><li class="docs-toc__item"><a href="#validation">Validation</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>1.3.1</span></span>

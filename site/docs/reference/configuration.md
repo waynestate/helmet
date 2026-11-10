@@ -32,6 +32,7 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `csp_style_src_attr` | The inline style attribute mode: `inline` (the default) keeps `style-src-attr 'unsafe-inline'` for WayneUI's recipes, `report` adds a report-only probe with `style-src-attr 'none'`, and `none` blocks inline style attributes. An app that sets `style-src-attr` in `csp` keeps its own value. Set with `HELMET_CSP_STYLE_SRC_ATTR`. See [Inline style attributes](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes). |
 | `coop` | The Cross-Origin-Opener-Policy value, default `same-origin`; null sends no COOP header. Set with `HELMET_COOP`. |
 | `corp` | The Cross-Origin-Resource-Policy value; null (the default) sends no CORP header. Set with `HELMET_CORP`. |
+| `coep` | The Cross-Origin-Embedder-Policy value: `require-corp`, `credentialless` or `unsafe-none`; null (the default) sends no COEP header. Set with `HELMET_COEP`. |
 | `permissions_policy` | The Permissions-Policy feature map: each feature maps to its allowlist, and an empty allowlist denies the feature. The default is a deny list; an empty map sends no header. Filled from `HELMET_PERMISSIONS_POLICY` when it parses as JSON. |
 | `hsts` | The Strict-Transport-Security max-age in seconds, sent on HTTPS responses only. Set with `HELMET_HSTS_MAX_AGE`. |
 | `hsts_include_subdomains` | Whether the HSTS header carries the `includeSubDomains` directive. Set with `HELMET_HSTS_INCLUDE_SUBDOMAINS`. |
@@ -75,6 +76,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 
 | Variable | Meaning | Default | Read in |
 | --- | --- | --- | --- |
+| HELMET_COEP | Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none; off by default. | none | config/helmet.php |
 | HELMET_COOP | Value of the Cross-Origin-Opener-Policy header; an empty value sends no header. | same-origin | config/helmet.php |
 | HELMET_CORP | Value of the Cross-Origin-Resource-Policy header; unset sends no header. | none | config/helmet.php |
 | HELMET_CSP | JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default. | the core default policy | config/helmet.php |

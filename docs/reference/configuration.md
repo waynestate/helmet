@@ -74,6 +74,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 <!-- generated:env -->
 | Variable | Meaning | Default | Read in |
 | --- | --- | --- | --- |
+| HELMET_COEP | Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none; off by default. | none | config/helmet.php |
 | HELMET_COOP | Value of the Cross-Origin-Opener-Policy header; an empty value sends no header. | same-origin | config/helmet.php |
 | HELMET_CORP | Value of the Cross-Origin-Resource-Policy header; unset sends no header. | none | config/helmet.php |
 | HELMET_CSP | JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default. | the core default policy | config/helmet.php |

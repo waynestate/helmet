@@ -102,6 +102,10 @@
 <td>The Cross-Origin-Resource-Policy value; null (the default) sends no CORP header. Set with <code>HELMET_CORP</code>.</td>
 </tr>
 <tr>
+<td><code>coep</code></td>
+<td>The Cross-Origin-Embedder-Policy value: <code>require-corp</code>, <code>credentialless</code> or <code>unsafe-none</code>; null (the default) sends no COEP header. Set with <code>HELMET_COEP</code>.</td>
+</tr>
+<tr>
 <td><code>permissions_policy</code></td>
 <td>The Permissions-Policy feature map: each feature maps to its allowlist, and an empty allowlist denies the feature. The default is a deny list; an empty map sends no header. Filled from <code>HELMET_PERMISSIONS_POLICY</code> when it parses as JSON.</td>
 </tr>
@@ -244,6 +248,12 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>HELMET_COEP</td>
+<td>Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none; off by default.</td>
+<td>none</td>
+<td>config/helmet.php</td>
+</tr>
 <tr>
 <td>HELMET_COOP</td>
 <td>Value of the Cross-Origin-Opener-Policy header; an empty value sends no header.</td>

@@ -208,7 +208,7 @@ $helmet = helmet_boot([
 
 Every other `helmet_boot()` option is covered in its own section below:
 `csp` and `style_src_attr` (Customizing the CSP), `csp_report_uri` and `csp_report_only`
-(CSP reports), `coop`, `corp` and `permissions_policy` (Cross-origin
+(CSP reports), `coop`, `corp`, `coep` and `permissions_policy` (Cross-origin
 isolation and feature policy), `hsts_max_age`, `hsts_include_subdomains`
 and `hsts_preload` (Configuring HSTS), `no_store` (the no-store rows of
 [Raw PHP and Laravel agree](#raw-php-and-laravel-agree)), `csrf`
@@ -744,6 +744,7 @@ like this:
 | CSP report-only | `csp_report_only` | `HELMET_CSP_REPORT_ONLY` / `helmet.csp_report_only`, default `false` |
 | COOP | `coop` | `HELMET_COOP` / `helmet.coop`, default `same-origin`, `null` sends no header |
 | CORP | `corp` | `HELMET_CORP` / `helmet.corp`, default `null` (no header) |
+| COEP | `coep` | `HELMET_COEP` / `helmet.coep`, default `null` (no header) |
 | Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
@@ -903,6 +904,14 @@ default, because a blanket `same-site` can break an app whose assets are read
 cross-origin. Set `corp` (raw PHP) or `HELMET_CORP` (Laravel) to `same-site`,
 `same-origin` or `cross-origin` to send it.
 
+`Cross-Origin-Embedder-Policy` is opt-in too, and stricter: with
+`require-corp` the browser blocks every cross-origin resource that does not
+opt in with CORP or CORS, which can break CDN fonts, images and embeds, so
+test before turning it on. Set `coep` (raw PHP) or `HELMET_COEP` (Laravel) to
+`require-corp`, `credentialless` (loads them without cookies instead) or
+`unsafe-none` to send it. With COOP `same-origin` it makes the page
+cross-origin isolated.
+
 `Permissions-Policy` defaults to a deny list: `camera`, `geolocation`,
 `microphone`, `payment` and `usb` are all denied, so an injected script cannot
 use a feature the page has switched off. Set `permissions_policy` (raw PHP) or
@@ -922,7 +931,7 @@ $helmet = helmet_boot([
 ]);
 ```
 
-An invalid COOP or CORP value, or a Permissions-Policy feature name or
+An invalid COOP, CORP or COEP value, or a Permissions-Policy feature name or
 allowlist entry that is not `self` or an https origin, throws, so a typo fails
 loudly instead of sending a header the browser will ignore.
 
@@ -1700,7 +1709,7 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
-- Added: SecurityHeaders::build() and SecurityHeadersMiddleware take an opt-in coep (Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none); nothing is sent by default, and an invalid value throws at construction. helmet_boot() and Laravel config come next.
+- Added: SecurityHeaders::build() and SecurityHeadersMiddleware take an opt-in coep (Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none); nothing is sent by default, and an invalid value throws at construction. helmet_boot() takes "coep" and Laravel reads HELMET_COEP (helmet.coep); ADVISOR lists HELMET_COEP.
 - Added: `tools/a11y/coep-check.mjs`, a Chromium check that HELMET's front page survives `Cross-Origin-Embedder-Policy: require-corp` and that a third-party image without CORP is blocked under it (H13).
 - Site: the front page's stale facts are current (the roster no longer tags Drawbridge "next"; 0.6.1 is released).
 - Changed: the deploy kit is Squire 0.10.7 (was 0.10.6): it ships a `.gitattributes` that pins line endings, so the deploy layer clears PROCTOR's line-ending warnings.
@@ -2009,7 +2018,7 @@ Source: https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html
 
 ## Cross-origin isolation and feature policy [#](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html#cross-origin-isolation-and-feature-policy)
 
-This page covers the three headers that round out the baseline beyond the CSP: `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy` and `Permissions-Policy`. Two are on by default, one is opt-in. When you are done here, see [The headers](https://helmet.apps.wayne.edu/docs/guides/headers.html) for the full set.
+This page covers the four headers that round out the baseline beyond the CSP: `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, `Cross-Origin-Embedder-Policy` and `Permissions-Policy`. Two are on by default, two are opt-in. When you are done here, see [The headers](https://helmet.apps.wayne.edu/docs/guides/headers.html) for the full set.
 
 ### Cross-Origin-Opener-Policy [#](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html#cross-origin-opener-policy)
 
@@ -2018,6 +2027,12 @@ This page covers the three headers that round out the baseline beyond the CSP: `
 ### Cross-Origin-Resource-Policy [#](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html#cross-origin-resource-policy)
 
 `Cross-Origin-Resource-Policy` is opt-in: HELMET sends no CORP header by default, because a blanket `same-site` can break an app whose assets are read cross-origin. Set `corp` (raw PHP) or `HELMET_CORP` (Laravel) to `same-site`, `same-origin` or `cross-origin` to send it.
+
+### Cross-Origin-Embedder-Policy [#](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html#cross-origin-embedder-policy)
+
+`Cross-Origin-Embedder-Policy` is opt-in, and the strictest of the four. CORP is the resource saying who may load it; COEP is the page saying what it is willing to load. With `require-corp` the browser blocks every cross-origin resource that does not opt in with CORP or CORS, so a WayneUI font, a CDN image or an embedded video from another origin can stop loading. `credentialless` loads those resources without cookies instead of blocking them. Together with COOP `same-origin`, either value makes the page cross-origin isolated, which a few browser features (such as `SharedArrayBuffer`) require.
+
+HELMET sends no COEP header by default. Set `coep` (raw PHP) or `HELMET_COEP` (Laravel) to `require-corp`, `credentialless` or `unsafe-none` to send it, and load every page of the app in a browser first: blocked resources show up in the console as `ERR_BLOCKED_BY_RESPONSE`.
 
 ### Permissions-Policy [#](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html#permissions-policy)
 
@@ -2030,6 +2045,7 @@ $helmet = helmet_boot([
     'preset' => 'citadel',
     'coop' => 'same-origin-allow-popups',
     'corp' => 'same-site',
+    'coep' => 'credentialless',
     'permissions_policy' => [
         'camera' => ['self'],
         'geolocation' => [],
@@ -2043,11 +2059,12 @@ $helmet = helmet_boot([
 | --- | --- | --- |
 | COOP | `coop` | `HELMET_COOP` / `helmet.coop`, default `same-origin`, `null` sends no header |
 | CORP | `corp` | `HELMET_CORP` / `helmet.corp`, default `null` (no header) |
+| COEP | `coep` | `HELMET_COEP` / `helmet.coep`, default `null` (no header) |
 | Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
 
 ### Validation [#](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html#validation)
 
-An invalid COOP or CORP value, or a Permissions-Policy feature name or allowlist entry that is not `self` or an https origin, throws, so a typo fails loudly instead of sending a header the browser will ignore.
+An invalid COOP, CORP or COEP value, or a Permissions-Policy feature name or allowlist entry that is not `self` or an https origin, throws, so a typo fails loudly instead of sending a header the browser will ignore.
 
 ### Related [#](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html#related)
 
@@ -2261,6 +2278,7 @@ The play is read from `src/Headers/SecurityHeaders.php`: seven routes, one per d
 | `Permissions-Policy` | `camera=(), geolocation=(), microphone=(), payment=(), usb=()` by default, configurable |
 | `Cross-Origin-Opener-Policy` | `same-origin` by default, configurable, `null` sends no header |
 | `Cross-Origin-Resource-Policy` | not sent by default, opt-in |
+| `Cross-Origin-Embedder-Policy` | not sent by default, opt-in |
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` by default, HTTPS only, configurable |
 
 The default CSP is the union of the WayneUI recipes, with `frame-ancestors 'self'`, `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` added so an app can never be framed by a stranger, have its base tag hijacked, load plugins, or post its forms to an attacker. `script-src` carries a per-request nonce plus `strict-dynamic`, so a script loaded with the nonce can load other scripts without opening the door to `'unsafe-inline'`.
@@ -2306,11 +2324,13 @@ The default denies the browser features a typical app never uses: `camera`, `geo
 
 The header renders as `feature=(allowlist)`: an empty list denies the feature, `self` allows the page's own origin unquoted, and an https origin is quoted. Passing `null` (the default) uses the deny list above; an empty map sends no `Permissions-Policy` header at all.
 
-### Cross-Origin-Opener-Policy and Cross-Origin-Resource-Policy [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#cross-origin-opener-policy-and-cross-origin-resource-policy)
+### Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy and Cross-Origin-Embedder-Policy [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#cross-origin-opener-policy-cross-origin-resource-policy-and-cross-origin-embedder-policy)
 
 COOP puts the page in its own browsing context group, so a cross-origin page cannot reach it through `window.opener` or the cross-origin Web APIs. The default is `same-origin`: only same-origin pages may open it. The accepted values are `unsafe-none`, `same-origin-allow-popups`, `same-origin` and `noopener-allow-popups`; anything else throws. Set COOP to `null` to send no header.
 
-CORP declares who may load this page's resources cross-origin. It is the resource-side half of the cross-origin isolation pair with COOP, and its accepted values are `same-site`, `same-origin` and `cross-origin`. CORP is off by default: pass a value to send it. See [Cross-origin isolation and feature policy](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html) for the pair working together.
+CORP declares who may load this page's resources cross-origin. It is the resource-side half of the cross-origin isolation pair with COOP, and its accepted values are `same-site`, `same-origin` and `cross-origin`. CORP is off by default: pass a value to send it.
+
+COEP is the page-side half: it says which cross-origin resources the page is willing to load. `require-corp` blocks every one that does not opt in with CORP or CORS, `credentialless` loads them without cookies, and `unsafe-none` is the browser's default. COEP is off by default, because `require-corp` can break third-party fonts, images and embeds; pass a value to send it. See [Cross-origin isolation and feature policy](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html) for the three working together.
 
 ### Strict-Transport-Security [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#strict-transport-security)
 
@@ -3368,6 +3388,7 @@ Both paths call `SecurityHeaders::build()`, so for the same request and settings
 | CSP report-only | `csp_report_only` | `HELMET_CSP_REPORT_ONLY` / `helmet.csp_report_only`, default `false` |
 | COOP | `coop` | `HELMET_COOP` / `helmet.coop`, default `same-origin`, `null` sends no header |
 | CORP | `corp` | `HELMET_CORP` / `helmet.corp`, default `null` (no header) |
+| COEP | `coep` | `HELMET_COEP` / `helmet.coep`, default `null` (no header) |
 | Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |
@@ -3470,10 +3491,11 @@ Order decides whether an error page gets the headers. A response built by a laye
 | `noStorePaths` | `[]` | path prefixes that carry no-store, or empty for every response |
 | `styleSrcAttr` | `'inline'` | the inline style attribute mode: `inline` (keeps `style-src-attr 'unsafe-inline'`), `report` or `none` |
 | `logger` | `null` | a PSR-3 logger for the `helmet.forwarded_proto_rejected` warning, written when a peer that is not a trusted proxy sends `X-Forwarded-Proto` (context `event`, `reason`, `peer`; never the header value); `null` logs nothing, and a logger that throws never changes the response |
+| `coep` | `null` | the Cross-Origin-Embedder-Policy value (`require-corp`, `credentialless` or `unsafe-none`), or `null` to send no COEP header |
 
 Note
 
-These settings are validated at construction, not per request: a bad `coop`, `corp`, `permissionsPolicy`, `trustedTypesPolicies` or `styleSrcAttr` value is a config error, and it fails where the app starts, not on the first request, with an `\InvalidArgumentException`.
+These settings are validated at construction, not per request: a bad `coop`, `corp`, `coep`, `permissionsPolicy`, `trustedTypesPolicies` or `styleSrcAttr` value is a config error, and it fails where the app starts, not on the first request, with an `\InvalidArgumentException`.
 
 ### Related [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#related)
 
@@ -4492,6 +4514,7 @@ Every value above lands in the `helmet` config repo, and every other part of the
 | `csp_style_src_attr` | The inline style attribute mode: `inline` (the default) keeps `style-src-attr 'unsafe-inline'` for WayneUI's recipes, `report` adds a report-only probe with `style-src-attr 'none'`, and `none` blocks inline style attributes. An app that sets `style-src-attr` in `csp` keeps its own value. Set with `HELMET_CSP_STYLE_SRC_ATTR`. See [Inline style attributes](https://helmet.apps.wayne.edu/docs/guides/csp.html#inline-style-attributes). |
 | `coop` | The Cross-Origin-Opener-Policy value, default `same-origin`; null sends no COOP header. Set with `HELMET_COOP`. |
 | `corp` | The Cross-Origin-Resource-Policy value; null (the default) sends no CORP header. Set with `HELMET_CORP`. |
+| `coep` | The Cross-Origin-Embedder-Policy value: `require-corp`, `credentialless` or `unsafe-none`; null (the default) sends no COEP header. Set with `HELMET_COEP`. |
 | `permissions_policy` | The Permissions-Policy feature map: each feature maps to its allowlist, and an empty allowlist denies the feature. The default is a deny list; an empty map sends no header. Filled from `HELMET_PERMISSIONS_POLICY` when it parses as JSON. |
 | `hsts` | The Strict-Transport-Security max-age in seconds, sent on HTTPS responses only. Set with `HELMET_HSTS_MAX_AGE`. |
 | `hsts_include_subdomains` | Whether the HSTS header carries the `includeSubDomains` directive. Set with `HELMET_HSTS_INCLUDE_SUBDOMAINS`. |
@@ -4535,6 +4558,7 @@ Laravel reads the preset from `HELMET_PRESET` (Playbook supplies it when the env
 
 | Variable | Meaning | Default | Read in |
 | --- | --- | --- | --- |
+| HELMET_COEP | Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none; off by default. | none | config/helmet.php |
 | HELMET_COOP | Value of the Cross-Origin-Opener-Policy header; an empty value sends no header. | same-origin | config/helmet.php |
 | HELMET_CORP | Value of the Cross-Origin-Resource-Policy header; unset sends no header. | none | config/helmet.php |
 | HELMET_CSP | JSON policy array merged over the default CSP per directive; empty or invalid JSON keeps the default. | the core default policy | config/helmet.php |

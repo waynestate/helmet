@@ -79,10 +79,11 @@ Order decides whether an error page gets the headers. A response built by a laye
 | `noStorePaths` | `[]` | path prefixes that carry no-store, or empty for every response |
 | `styleSrcAttr` | `'inline'` | the inline style attribute mode: `inline` (keeps `style-src-attr 'unsafe-inline'`), `report` or `none` |
 | `logger` | `null` | a PSR-3 logger for the `helmet.forwarded_proto_rejected` warning, written when a peer that is not a trusted proxy sends `X-Forwarded-Proto` (context `event`, `reason`, `peer`; never the header value); `null` logs nothing, and a logger that throws never changes the response |
+| `coep` | `null` | the Cross-Origin-Embedder-Policy value (`require-corp`, `credentialless` or `unsafe-none`), or `null` to send no COEP header |
 
 Note
 
-These settings are validated at construction, not per request: a bad `coop`, `corp`, `permissionsPolicy`, `trustedTypesPolicies` or `styleSrcAttr` value is a config error, and it fails where the app starts, not on the first request, with an `\InvalidArgumentException`.
+These settings are validated at construction, not per request: a bad `coop`, `corp`, `coep`, `permissionsPolicy`, `trustedTypesPolicies` or `styleSrcAttr` value is a config error, and it fails where the app starts, not on the first request, with an `\InvalidArgumentException`.
 
 ## Related [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#related)
 

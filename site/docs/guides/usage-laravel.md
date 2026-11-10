@@ -190,6 +190,7 @@ Both paths call `SecurityHeaders::build()`, so for the same request and settings
 | CSP report-only | `csp_report_only` | `HELMET_CSP_REPORT_ONLY` / `helmet.csp_report_only`, default `false` |
 | COOP | `coop` | `HELMET_COOP` / `helmet.coop`, default `same-origin`, `null` sends no header |
 | CORP | `corp` | `HELMET_CORP` / `helmet.corp`, default `null` (no header) |
+| COEP | `coep` | `HELMET_COEP` / `helmet.coep`, default `null` (no header) |
 | Permissions-Policy | `permissions_policy` | `HELMET_PERMISSIONS_POLICY` / `helmet.permissions_policy`, default deny list, `[]` sends no header |
 | Nonce | `$helmet['nonce']` | `request()->attributes->get('helmet.csp_nonce')` |
 | Health check | `health_path`, answered by `helmet_boot()` | Laravel's `health: '/up'` |

@@ -25,6 +25,7 @@ The play is read from `src/Headers/SecurityHeaders.php`: seven routes, one per d
 | `Permissions-Policy` | `camera=(), geolocation=(), microphone=(), payment=(), usb=()` by default, configurable |
 | `Cross-Origin-Opener-Policy` | `same-origin` by default, configurable, `null` sends no header |
 | `Cross-Origin-Resource-Policy` | not sent by default, opt-in |
+| `Cross-Origin-Embedder-Policy` | not sent by default, opt-in |
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` by default, HTTPS only, configurable |
 
 The default CSP is the union of the WayneUI recipes, with `frame-ancestors 'self'`, `base-uri 'self'`, `object-src 'none'` and `form-action 'self'` added so an app can never be framed by a stranger, have its base tag hijacked, load plugins, or post its forms to an attacker. `script-src` carries a per-request nonce plus `strict-dynamic`, so a script loaded with the nonce can load other scripts without opening the door to `'unsafe-inline'`.
@@ -70,11 +71,13 @@ The default denies the browser features a typical app never uses: `camera`, `geo
 
 The header renders as `feature=(allowlist)`: an empty list denies the feature, `self` allows the page's own origin unquoted, and an https origin is quoted. Passing `null` (the default) uses the deny list above; an empty map sends no `Permissions-Policy` header at all.
 
-## Cross-Origin-Opener-Policy and Cross-Origin-Resource-Policy [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#cross-origin-opener-policy-and-cross-origin-resource-policy)
+## Cross-Origin-Opener-Policy, Cross-Origin-Resource-Policy and Cross-Origin-Embedder-Policy [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#cross-origin-opener-policy-cross-origin-resource-policy-and-cross-origin-embedder-policy)
 
 COOP puts the page in its own browsing context group, so a cross-origin page cannot reach it through `window.opener` or the cross-origin Web APIs. The default is `same-origin`: only same-origin pages may open it. The accepted values are `unsafe-none`, `same-origin-allow-popups`, `same-origin` and `noopener-allow-popups`; anything else throws. Set COOP to `null` to send no header.
 
-CORP declares who may load this page's resources cross-origin. It is the resource-side half of the cross-origin isolation pair with COOP, and its accepted values are `same-site`, `same-origin` and `cross-origin`. CORP is off by default: pass a value to send it. See [Cross-origin isolation and feature policy](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html) for the pair working together.
+CORP declares who may load this page's resources cross-origin. It is the resource-side half of the cross-origin isolation pair with COOP, and its accepted values are `same-site`, `same-origin` and `cross-origin`. CORP is off by default: pass a value to send it.
+
+COEP is the page-side half: it says which cross-origin resources the page is willing to load. `require-corp` blocks every one that does not opt in with CORP or CORS, `credentialless` loads them without cookies, and `unsafe-none` is the browser's default. COEP is off by default, because `require-corp` can break third-party fonts, images and embeds; pass a value to send it. See [Cross-origin isolation and feature policy](https://helmet.apps.wayne.edu/docs/guides/cross-origin-isolation.html) for the three working together.
 
 ## Strict-Transport-Security [#](https://helmet.apps.wayne.edu/docs/guides/headers.html#strict-transport-security)
 

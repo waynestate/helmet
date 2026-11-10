@@ -178,9 +178,14 @@ $middleware = [
 <td><code>null</code></td>
 <td>a PSR-3 logger for the <code>helmet.forwarded_proto_rejected</code> warning, written when a peer that is not a trusted proxy sends <code>X-Forwarded-Proto</code> (context <code>event</code>, <code>reason</code>, <code>peer</code>; never the header value); <code>null</code> logs nothing, and a logger that throws never changes the response</td>
 </tr>
+<tr>
+<td><code>coep</code></td>
+<td><code>null</code></td>
+<td>the Cross-Origin-Embedder-Policy value (<code>require-corp</code>, <code>credentialless</code> or <code>unsafe-none</code>), or <code>null</code> to send no COEP header</td>
+</tr>
 </tbody>
 </table></div>
-<aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>These settings are validated at construction, not per request: a bad <code>coop</code>, <code>corp</code>, <code>permissionsPolicy</code>, <code>trustedTypesPolicies</code> or <code>styleSrcAttr</code> value is a config error, and it fails where the app starts, not on the first request, with an <code>\InvalidArgumentException</code>.</p></aside>
+<aside class="docs-callout docs-callout--note" role="note"><p class="docs-callout__label">Note</p><p>These settings are validated at construction, not per request: a bad <code>coop</code>, <code>corp</code>, <code>coep</code>, <code>permissionsPolicy</code>, <code>trustedTypesPolicies</code> or <code>styleSrcAttr</code> value is a config error, and it fails where the app starts, not on the first request, with an <code>\InvalidArgumentException</code>.</p></aside>
 <h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="quick-start.html">Quick start</a></li>
