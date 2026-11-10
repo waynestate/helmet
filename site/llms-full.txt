@@ -46,7 +46,7 @@ rules live in one place, and every consumer path agrees.
 composer require waynestate/helmet
 ```
 
-Composer picks the latest release, 1.4.0, and writes `^1.4` into `composer.json`. From 1.0 HELMET
+Composer picks the latest release, 1.4.1, and writes `^1.4` into `composer.json`. From 1.0 HELMET
 follows semantic versioning; [Upgrading](https://github.com/waynestate/helmet/blob/HEAD/docs/upgrading.md) has what changed since 0.4, starting with the one that
 bites: an unknown quoted CSP source now throws at boot.
 
@@ -1714,6 +1714,8 @@ Source: https://helmet.apps.wayne.edu/docs/changelog.html
 All notable changes to this project are documented in this file.
 
 ### Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
+
+### 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-1-2026-11-10)
 
 - Added: CI runs the CORP opt-in and COEP readiness browser checks (`browser-headers`, after `browser-headers-json` prints the headers), guarded by `tests/BrowserHeadersJobTest.php`; the a11y scripts' comments name Preflight 0.5.0's image.
 - Changed: the deploy layer requires PROCTOR ^0.15 (locked 0.15.0, was ^0.12): 0.13 checks the release cooldown against the CREED policy and 0.14 adds `script-pair`; 0.15 adds `mysql56-ci`; all of these only warn, nothing breaks.
@@ -3865,7 +3867,7 @@ $helmet = helmet_boot([
 
 `helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up` with `200 ok` before your code runs. It returns the nonce, the logger and the request ID so the rest of the app can use them.
 
-Version 1.4.0, MIT licensed.
+Version 1.4.1, MIT licensed.
 
 Agents: the machine-readable map of these docs lives at [https://helmet.apps.wayne.edu/llms.txt](https://helmet.apps.wayne.edu/llms.txt).
 
@@ -3889,7 +3891,7 @@ PHP `^8.3`. `composer.json` declares no `ext-*` extensions, so plain PHP 8.3 or 
 composer require waynestate/helmet
 ```
 
-Composer picks the latest release, 1.4.0, and writes `^1.4` into `composer.json`. Coming from 0.4? Read [Upgrading](https://helmet.apps.wayne.edu/docs/upgrading.html) first: an unknown quoted CSP source now throws at boot.
+Composer picks the latest release, 1.4.1, and writes `^1.4` into `composer.json`. Coming from 0.4? Read [Upgrading](https://helmet.apps.wayne.edu/docs/upgrading.html) first: an unknown quoted CSP source now throws at boot.
 
 The same line works for a raw PHP app, a Laravel app, or a PSR-15 stack: HELMET ships one package for every platform, so the adapters come with it, nothing extra to require.
 
@@ -4945,7 +4947,11 @@ Source: https://helmet.apps.wayne.edu/docs/upgrading.html
 
 ## Upgrading [#](https://helmet.apps.wayne.edu/docs/upgrading.html#upgrading)
 
-This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.4.0.
+This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.4.1.
+
+### 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-4-1-2026-11-10)
+
+A patch release: `composer update waynestate/helmet` within `^1.0`. No header, option or event changes, so there is nothing to change in the code. It carries HELMET's own CI (the CORP and COEP browser checks run on every pipeline), the GitHub workflow on Preflight 0.5.0, the deploy layer on PROCTOR ^0.15, and the docs. Same helmet, new strap.
 
 ### 1.4.0 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-4-0-2026-11-10)
 

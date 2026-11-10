@@ -12,6 +12,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+## 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-1-2026-11-10)
+
 - Added: CI runs the CORP opt-in and COEP readiness browser checks (`browser-headers`, after `browser-headers-json` prints the headers), guarded by `tests/BrowserHeadersJobTest.php`; the a11y scripts' comments name Preflight 0.5.0's image.
 - Changed: the deploy layer requires PROCTOR ^0.15 (locked 0.15.0, was ^0.12): 0.13 checks the release cooldown against the CREED policy and 0.14 adds `script-pair`; 0.15 adds `mysql56-ci`; all of these only warn, nothing breaks.
 - Docs: the a11y scripts' header says the vendored checker comes from Preflight 0.5.0 (the pinned release; the file is unchanged since 0.4.0).

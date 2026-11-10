@@ -18,7 +18,7 @@ PHP `^8.3`. `composer.json` declares no `ext-*` extensions, so plain PHP 8.3 or 
 composer require waynestate/helmet
 ```
 
-Composer picks the latest release, 1.4.0, and writes `^1.4` into `composer.json`. Coming from 0.4? Read [Upgrading](https://helmet.apps.wayne.edu/docs/upgrading.html) first: an unknown quoted CSP source now throws at boot.
+Composer picks the latest release, 1.4.1, and writes `^1.4` into `composer.json`. Coming from 0.4? Read [Upgrading](https://helmet.apps.wayne.edu/docs/upgrading.html) first: an unknown quoted CSP source now throws at boot.
 
 The same line works for a raw PHP app, a Laravel app, or a PSR-15 stack: HELMET ships one package for every platform, so the adapters come with it, nothing extra to require.
 
