@@ -10,6 +10,7 @@ description: All notable changes to this project.
 All notable changes to this project are documented in this file.
 
 ## Unreleased
+- Changed: the deploy layer requires PROCTOR ^0.12 (locked 0.12.0, was ^0.11.1): two new warning-only checks, nothing breaks.
 
 - Site: the front page and the chalkboard play put Cross-Origin-Embedder-Policy on the bench next to Cross-Origin-Resource-Policy (both opt-in since 1.4.0).
 
