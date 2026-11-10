@@ -7,7 +7,21 @@ description: How to move an app from one HELMET release to the next.
 
 This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 1.3.1.
+release is 1.4.0.
+
+## 1.4.0 (2026-11-10)
+
+A minor release, backward compatible: `composer update waynestate/helmet` within `^1.0`. Nothing to change in the code: no header HELMET already sends changes, and the new one is off until you ask for it.
+
+### Added
+
+- Cross-Origin-Embedder-Policy, opt-in. Pass `coep` to `helmet_boot()`, `coep:` to `SecurityHeadersMiddleware`, or set `HELMET_COEP` (`helmet.coep`) in Laravel, to `require-corp`, `credentialless` or `unsafe-none`. Without it no COEP header is sent, as before. An invalid value throws at boot. See [Cross-origin isolation and feature policy](guides/cross-origin-isolation.md).
+- `tools/a11y/coep-check.mjs`, a Chromium check that HELMET's own front page still loads under `require-corp` and that a third-party image without CORP is blocked.
+- Nothing is deprecated in 1.4.0.
+
+### How to verify
+
+Set `HELMET_COEP=credentialless` (or pass `'coep' => 'credentialless'`), load a page, and expect `Cross-Origin-Embedder-Policy: credentialless` on the response. Then load every page of the app and look in the browser console for `ERR_BLOCKED_BY_RESPONSE`, which names a resource the policy blocked. Leave it unset and expect no COEP header. The helmet now has a chin strap; buckle it when you are ready.
 
 ## 1.3.1 (2026-11-09)
 
