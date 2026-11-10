@@ -88,6 +88,76 @@ final class BestPracticesTest extends TestCase
     }
 
     /**
+     * A line cite into a test file (`tests/X.php:N`) points at the
+     * declaration of a test the same guide line names, so a test that moves
+     * takes its cite with it instead of leaving it pointing at the wrong
+     * method, a comment or a blank line.
+     */
+    public function testEveryCitedTestLineDeclaresATestNamedOnTheSameLine(): void
+    {
+        $checked = 0;
+        $wrong = [];
+        foreach (explode("\n", $this->bestPracticesContent()) as $index => $line) {
+            preg_match_all('/`(tests\/[A-Za-z0-9_\/]+\.php):(\d+)`/', $line, $cites, PREG_SET_ORDER);
+            foreach ($cites as [, $file, $number]) {
+                $checked++;
+                $declared = $this->lineOf($file, (int) $number);
+                if ($declared === null) {
+                    $wrong[] = "{$file}:{$number} (BEST_PRACTICES.md line " . ($index + 1) . ', no such line)';
+                } elseif (preg_match('/function\s+(test[A-Za-z0-9_]+)\s*\(/', $declared, $method) !== 1) {
+                    $wrong[] = "{$file}:{$number} (BEST_PRACTICES.md line " . ($index + 1) . ', not a test declaration: ' . trim($declared) . ')';
+                } elseif (!str_contains($line, '`' . $method[1] . '`')) {
+                    $wrong[] = "{$file}:{$number} (BEST_PRACTICES.md line " . ($index + 1) . ', declares ' . $method[1] . ', which that line does not name)';
+                }
+            }
+        }
+
+        self::assertGreaterThan(0, $checked, 'expected line cites into tests/ in BEST_PRACTICES.md, so this check cannot pass vacuously');
+        self::assertSame([], $wrong, 'BEST_PRACTICES.md line cites into tests/ that drifted: ' . implode('; ', $wrong));
+    }
+
+    /**
+     * A line cite into the source (`src/X.php:N` or `:N-M`) names a file that
+     * exists and a range inside it that does not start on a blank line. It
+     * cannot prove the line is the right one, but code that moves usually
+     * leaves its old cite on a blank line or past the end of the file.
+     */
+    public function testEverySourceLineCiteIsInsideItsFile(): void
+    {
+        preg_match_all('/`(src\/[A-Za-z0-9_\/]+\.php):(\d+)(?:-(\d+))?`/', $this->bestPracticesContent(), $cites, PREG_SET_ORDER);
+        self::assertNotSame([], $cites, 'expected line cites into src/ in BEST_PRACTICES.md, so this check cannot pass vacuously');
+
+        $wrong = [];
+        foreach ($cites as $cite) {
+            [$whole, $file, $start] = $cite;
+            $end = isset($cite[3]) ? (int) $cite[3] : (int) $start;
+            $first = $this->lineOf($file, (int) $start);
+            if ($first === null || $this->lineOf($file, $end) === null || $end < (int) $start) {
+                $wrong[] = $whole . ' (outside the file)';
+            } elseif (trim($first) === '') {
+                $wrong[] = $whole . ' (starts on a blank line)';
+            }
+        }
+
+        self::assertSame([], array_values(array_unique($wrong)), 'BEST_PRACTICES.md line cites into src/ that drifted: ' . implode('; ', array_unique($wrong)));
+    }
+
+    /**
+     * Line $number (1-based) of a repo file, or null when the file or the line does not exist.
+     */
+    private function lineOf(string $file, int $number): ?string
+    {
+        $path = $this->repoRoot() . '/' . $file;
+        if ($number < 1 || !is_file($path)) {
+            return null;
+        }
+
+        $lines = explode("\n", str_replace("\r\n", "\n", (string) file_get_contents($path)));
+
+        return $lines[$number - 1] ?? null;
+    }
+
+    /**
      * Every testX token the guide names, anywhere in it, unique.
      *
      * @return list<string>
