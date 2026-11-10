@@ -160,7 +160,7 @@ function buildBadges() {
   const psr15 = composer.require["psr/http-server-middleware"];
   const defs = [
     { key: "php", label: "php", message: composer.require.php },
-    { key: "license", label: "licence", message: composer.license },
+    { key: "license", label: "license", message: composer.license },
     // PSR-15 is what the middleware path implements; the badge only exists
     // while composer.json requires the PSR-15 interfaces.
     { key: "psr15", label: "psr-15", message: psr15 ? "middleware" : undefined },
@@ -227,9 +227,12 @@ function readHeaders() {
     note: `+ ${directives.length - locks.length} more directives, a fresh nonce, 'strict-dynamic'`,
   });
 
-  // The fixed three, straight out of the $headers literal.
-  const literal = need(/\$headers = \[([\s\S]*?)\];/, build.body, "the $headers literal")[1];
-  for (const m of literal.matchAll(/'([\w-]+)' => '([^']*)'/g)) headers.push({ name: m[1], value: m[2] });
+  // The fixed three, straight out of the $headers literals (build() starts
+  // the array with the CSP, then adds the fixed ones with +=).
+  need(/\$headers \+?= \[([\s\S]*?)\];/, build.body, "the $headers literal");
+  for (const lit of build.body.matchAll(/\$headers \+?= \[([\s\S]*?)\];/g)) {
+    for (const m of lit[1].matchAll(/'([\w-]+)' => '([^']*)'/g)) headers.push({ name: m[1], value: m[2] });
+  }
 
   // Permissions-Policy: the default deny list, rendered feature=().
   need(/\$headers\['Permissions-Policy'\]/, build.body, "the Permissions-Policy header");
@@ -258,9 +261,18 @@ function readHeaders() {
     note: "HTTPS responses only",
   });
 
-  // Cross-Origin-Resource-Policy: off unless asked for. Not on the field.
-  need(/\?string \$corp = null/, build.sig, "the CORP default");
-  const bench = "Cross-Origin-Resource-Policy";
+  // The bench: headers build() can send but does not by default. Each must
+  // default to null in the signature and be set only behind its own null
+  // check, or it has no business on the bench.
+  const bench = [];
+  for (const [arg, name] of [
+    ["corp", "Cross-Origin-Resource-Policy"],
+    ["coep", "Cross-Origin-Embedder-Policy"],
+  ]) {
+    need(new RegExp(`\\?string \\$${arg} = null`), build.sig, `the ${arg} default`);
+    need(new RegExp(`if \\(\\$${arg} !== null\\) \\{\\s*\\$headers\\['${name}'\\]`), build.body, `the opt-in ${name}`);
+    bench.push(name);
+  }
 
   // The published config must agree with the core's defaults, or the board
   // would show one app's defaults and the other path would ship another.
@@ -270,6 +282,7 @@ function readHeaders() {
     [new RegExp(`'HELMET_COOP', '${coop}'\\)`), "COOP"],
     [/'HELMET_CSP_REPORT_ONLY', false\)/, "CSP report-only"],
     [/\$corp = env\('HELMET_CORP'\);/, "CORP"],
+    [/\$coep = env\('HELMET_COEP'\);/, "COEP"],
   ];
   for (const [re, what] of agree) if (!re.test(cfg)) fail(`config/helmet.php disagrees with the core on ${what}`);
 
@@ -417,10 +430,32 @@ async function buildPlay(page, headers, bench) {
   const START = 1.7; // after the line and the O's are drawn
   const STEP = 0.95;
 
+  // The bench, bottom right: the seat line, one row per opt-in header above
+  // it, a title above the rows. Measured, so the longest name sets the width.
+  const BENCH_R = 7;
+  const benchX = RIGHT - 8; // right end of the seat
+  const seatY = H - 40;
+  const BENCH_ROW = 25;
+  const benchWs = await measure(bench.map((b) => [b, T.note.family, 15]));
+  const benchNameX = benchX - Math.ceil(Math.max(...benchWs));
+  const benchO = benchNameX - 16; // the O's centre
+  const benchL = benchO - BENCH_R - 12; // left end of the seat
+  const benchRows = bench.map((name, i) => ({ name, y: seatY - 14 - (bench.length - 1 - i) * BENCH_ROW }));
+  const benchTitle = "the bench: opt-in, off by default";
+  const benchTitleY = benchRows[0].y - 28;
+  const [benchTitleW] = await measure([[benchTitle, T.note.family, 15]]);
+  const rightO = Math.max(...slots.map((sl) => sl.ox)) + O_R;
+  if (benchL < rightO + 24) fail(`the bench runs into the line (${benchL} < ${rightO + 24})`);
+  if (benchL + benchTitleW > RIGHT) fail(`the bench title runs off the board (${Math.round(benchL + benchTitleW)} > ${RIGHT})`);
+  if (benchTitleY - 16 < BOTTOM) fail(`the bench is too tall for the board (${benchTitleY})`);
+  const benchD = START + 7 * STEP; // after the last route lands
+  benchRows.forEach((b, i) => (b.d = benchD + 0.45 + i * 0.25));
+
   const s = [];
+  const benchList = bench.length === 1 ? bench[0] : `${bench.slice(0, -1).join(", ")} and ${bench.at(-1)}`;
   const desc = `A chalk play diagram. Seven circles on the line of scrimmage are the seven headers HELMET sends by default, and each runs a route to its name and value, in the order HELMET sets them: ${headers
     .map((h) => `${h.name}: ${h.value}${h.note ? ` (${h.note})` : ""}`)
-    .join("; ")}. ${bench} waits on the bench: it is opt-in.`;
+    .join("; ")}. ${benchList} ${bench.length === 1 ? "waits on the bench: it is" : "wait on the bench: each is"} opt-in.`;
 
   s.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-labelledby="play-title play-desc">`);
   s.push(`  <title id="play-title">HELMET's default response headers, drawn as a play</title>`);
@@ -518,14 +553,20 @@ async function buildPlay(page, headers, bench) {
   }
   // The pocket around the app.
   s.push(`    <path class="pocket a-draw" style="--d:1.2s;--t:.5s" pathLength="1" d="M584 ${O_Y + 74} A56 56 0 0 0 696 ${O_Y + 74}"/>`);
-  // The bench: the one header HELMET can send but does not by default.
-  const benchX = RIGHT - 8;
-  const benchY = H - 52;
-  s.push(`    <line class="bench a-draw" style="--d:${(START + 7 * STEP + 0.3).toFixed(2)}s;--t:.4s" pathLength="1" x1="${benchX - 330}" y1="${benchY + 12}" x2="${benchX}" y2="${benchY + 12}"/>`);
+  // The bench: the headers HELMET can send but does not by default. A small
+  // berry O per header, sitting above the bench, its name beside it; the
+  // bench is drawn first, then they take their seats, last row on the seat.
+  s.push(`    <line class="bench a-draw" style="--d:${benchD.toFixed(2)}s;--t:.4s" pathLength="1" x1="${benchL}" y1="${seatY}" x2="${benchX}" y2="${seatY}"/>`);
+  for (const [i, b] of benchRows.entries()) {
+    s.push(`    <circle class="bench a-draw" style="--d:${b.d.toFixed(2)}s;--t:.3s" pathLength="1" cx="${benchO}" cy="${b.y - 5}" r="${BENCH_R}"/>`);
+  }
   s.push(`  </g>`);
 
   s.push(`  <text class="los-l a-fade" style="--d:.35s" x="${LEFT - 10}" y="${LOS_Y - 10}" filter="url(#chalk-t)">LOS</text>`);
-  s.push(`  <text class="bench-t a-fade" style="--d:${(START + 7 * STEP).toFixed(2)}s" x="${benchX}" y="${benchY}" text-anchor="end" filter="url(#chalk-t)">bench: ${esc(bench)}, opt-in</text>`);
+  s.push(`  <g class="bench-t" filter="url(#chalk-t)">`);
+  s.push(`    <text class="a-fade" style="--d:${(benchD + 0.2).toFixed(2)}s" x="${benchL}" y="${benchTitleY}" transform="rotate(-2 ${benchL} ${benchTitleY})">${benchTitle}</text>`);
+  for (const b of benchRows) s.push(`    <text class="a-fade" style="--d:${(b.d + 0.05).toFixed(2)}s" x="${benchNameX}" y="${b.y}">${esc(b.name)}</text>`);
+  s.push(`  </g>`);
 
   // The labels, each written in after its route lands.
   for (const [i, h] of prepared.entries()) {

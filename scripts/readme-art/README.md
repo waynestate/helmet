@@ -28,8 +28,10 @@ same outputs.
   route per default header, written in the order the code sets them. Every
   name and value is parsed out of `src/Headers/SecurityHeaders.php` and
   checked against `config/helmet.php`; if the two disagree, or the parse
-  finds nothing, the build fails. `Cross-Origin-Resource-Policy` sits on the
-  bench because it is opt-in. Text is measured in the real fonts (Graduate and
+  finds nothing, the build fails. `Cross-Origin-Resource-Policy` and
+  `Cross-Origin-Embedder-Policy` sit on the bench because they are opt-in:
+  each must default to `null` in `build()` and be sent only behind its own
+  null check, or the build fails. Text is measured in the real fonts (Graduate and
   Permanent Marker, embedded), so the layout fits the chalk. Under
   `prefers-reduced-motion` it is the finished play, standing still.
 - `docs/readme/gallery.jpg`: three phone crops from `site/screenshots/sections/`.
