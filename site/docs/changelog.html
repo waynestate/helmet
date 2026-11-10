@@ -44,6 +44,7 @@
 <p>All notable changes to this project are documented in this file.</p>
 <h2 id="unreleased"><span class="docs-heading-tail"><span>Unreleased</span><a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></span></h2>
 <ul>
+<li>Added: SecurityHeaders::build() and SecurityHeadersMiddleware take an opt-in coep (Cross-Origin-Embedder-Policy: require-corp, credentialless or unsafe-none); nothing is sent by default, and an invalid value throws at construction. helmet_boot() and Laravel config come next.</li>
 <li>Added: <code>tools/a11y/coep-check.mjs</code>, a Chromium check that HELMET's front page survives <code>Cross-Origin-Embedder-Policy: require-corp</code> and that a third-party image without CORP is blocked under it (H13).</li>
 <li>Site: the front page's stale facts are current (the roster no longer tags Drawbridge &quot;next&quot;; 0.6.1 is released).</li>
 <li>Changed: the deploy kit is Squire 0.10.7 (was 0.10.6): it ships a <code>.gitattributes</code> that pins line endings, so the deploy layer clears PROCTOR's line-ending warnings.</li>
