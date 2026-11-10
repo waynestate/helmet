@@ -46,7 +46,7 @@ rules live in one place, and every consumer path agrees.
 composer require waynestate/helmet
 ```
 
-Composer picks the latest release, 1.3.0, and writes `^1.3` into `composer.json`. From 1.0 HELMET
+Composer picks the latest release, 1.3.1, and writes `^1.3` into `composer.json`. From 1.0 HELMET
 follows semantic versioning; [Upgrading](https://github.com/waynestate/helmet/blob/HEAD/docs/upgrading.md) has what changed since 0.4, starting with the one that
 bites: an unknown quoted CSP source now throws at boot.
 
@@ -1575,7 +1575,7 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
    ```
    # TYPE helmet_info gauge
    helmet_info{php_version="8.5.12",
-    helmet_version="1.3.0"} 1
+    helmet_version="1.3.1"} 1
    helmet_php_eol_timestamp_seconds{
     php_minor="8.5"} 1893369600
    helmet_http_request_duration_seconds_count{
@@ -1699,6 +1699,10 @@ Source: https://helmet.apps.wayne.edu/docs/changelog.html
 All notable changes to this project are documented in this file.
 
 ### Unreleased[#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
+
+### 1.3.1 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/changelog.html#1-3-1-2026-11-09)
+
+A patch release: no header, option or event changes. Docs, version mentions, HELMET's own CI and the front page's deploy kit catch up with the stack.
 
 - Docs: Parity joins the party. The README cast, the instance runner page's team list and the front page's WELD depth chart (sideline, after Squire, at SCOUT with a "next" chip) carry Parity with its spirit-level mark: the stack's new tool that runs Citadel on your computer (its PHP image, its proxy and MySQL 5.6). 0.1.0 is coming and it has no site yet, so its row links nowhere. The scout team runs the other side's plays all week, so game day holds no surprises.
 - Changed: refreshed version mentions. The install docs say Composer writes `^1.3`; the secret-scanning example, MAINTAINING and BEST_PRACTICES name Preflight 0.5.0, the pin CI already uses (BEST_PRACTICES records green pipeline 5199 on it). The dev dependencies move to ADVISOR ^0.2 and Pinstripe ^0.3 (Pinstripe 0.3.0 bans joined SQL and turned-off TLS checks), and the front page's deploy layer requires HELMET ^1.3, its own latest helmet size.
@@ -3811,7 +3815,7 @@ $helmet = helmet_boot([
 
 `helmet_boot()` sends the headers, strips `X-Powered-By`, and answers `/up` with `200 ok` before your code runs. It returns the nonce, the logger and the request ID so the rest of the app can use them.
 
-Version 1.3.0, MIT licensed.
+Version 1.3.1, MIT licensed.
 
 Agents: the machine-readable map of these docs lives at [https://helmet.apps.wayne.edu/llms.txt](https://helmet.apps.wayne.edu/llms.txt).
 
@@ -3835,7 +3839,7 @@ PHP `^8.3`. `composer.json` declares no `ext-*` extensions, so plain PHP 8.3 or 
 composer require waynestate/helmet
 ```
 
-Composer picks the latest release, 1.3.0, and writes `^1.3` into `composer.json`. Coming from 0.4? Read [Upgrading](https://helmet.apps.wayne.edu/docs/upgrading.html) first: an unknown quoted CSP source now throws at boot.
+Composer picks the latest release, 1.3.1, and writes `^1.3` into `composer.json`. Coming from 0.4? Read [Upgrading](https://helmet.apps.wayne.edu/docs/upgrading.html) first: an unknown quoted CSP source now throws at boot.
 
 The same line works for a raw PHP app, a Laravel app, or a PSR-15 stack: HELMET ships one package for every platform, so the adapters come with it, nothing extra to require.
 
@@ -4889,7 +4893,11 @@ Source: https://helmet.apps.wayne.edu/docs/upgrading.html
 
 ## Upgrading[#](https://helmet.apps.wayne.edu/docs/upgrading.html#upgrading)
 
-This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.3.0.
+This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.3.1.
+
+### 1.3.1 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-3-1-2026-11-09)
+
+A patch release: `composer update waynestate/helmet` within `^1.0`. No header, option or event changes, so there is nothing to change in the code. It carries the docs, HELMET's own CI on Composer 2.11.1 and Preflight 0.5.0, and the front page's deploy kit on Squire 0.10.2. Same bucket, fresh decal.
 
 ### 1.3.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-3-0-2026-11-09)
 

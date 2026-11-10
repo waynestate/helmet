@@ -4,6 +4,10 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.3.1 (2026-11-09)
+
+A patch release: no header, option or event changes. Docs, version mentions, HELMET's own CI and the front page's deploy kit catch up with the stack.
+
 - Docs: Parity joins the party. The README cast, the instance runner page's team list and the front page's WELD depth chart (sideline, after Squire, at SCOUT with a "next" chip) carry Parity with its spirit-level mark: the stack's new tool that runs Citadel on your computer (its PHP image, its proxy and MySQL 5.6). 0.1.0 is coming and it has no site yet, so its row links nowhere. The scout team runs the other side's plays all week, so game day holds no surprises.
 - Changed: refreshed version mentions. The install docs say Composer writes `^1.3`; the secret-scanning example, MAINTAINING and BEST_PRACTICES name Preflight 0.5.0, the pin CI already uses (BEST_PRACTICES records green pipeline 5199 on it). The dev dependencies move to ADVISOR ^0.2 and Pinstripe ^0.3 (Pinstripe 0.3.0 bans joined SQL and turned-off TLS checks), and the front page's deploy layer requires HELMET ^1.3, its own latest helmet size.
 - Changed: the `composer-ci` and `wayneui-copies` jobs, and the Docker line in MAINTAINING, run Composer 2.11.1 pinned by its multi-arch list digest (was 2.10.3, which Squire 0.10.1 calls unmaintained). 2.11.1 fixes GHSA-c968-33g3-wh7p and GHSA-fm2w-xgf2-f9fh.

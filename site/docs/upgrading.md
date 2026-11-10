@@ -8,7 +8,11 @@ generator: Squire agent-ready
 
 # Upgrading[#](https://helmet.apps.wayne.edu/docs/upgrading.html#upgrading)
 
-This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.3.0.
+This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.3.1.
+
+## 1.3.1 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-3-1-2026-11-09)
+
+A patch release: `composer update waynestate/helmet` within `^1.0`. No header, option or event changes, so there is nothing to change in the code. It carries the docs, HELMET's own CI on Composer 2.11.1 and Preflight 0.5.0, and the front page's deploy kit on Squire 0.10.2. Same bucket, fresh decal.
 
 ## 1.3.0 (2026-11-09)[#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-3-0-2026-11-09)
 
