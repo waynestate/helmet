@@ -10,6 +10,7 @@ description: All notable changes to this project.
 All notable changes to this project are documented in this file.
 
 ## Unreleased
+- Docs: the a11y scripts' header says the vendored checker comes from Preflight 0.5.0 (the pinned release; the file is unchanged since 0.4.0).
 - Docs: BEST_PRACTICES says the 1.4.0 release carries Squire 0.10.7 (it said main carried 0.10.6, unreleased); the Proof page says its recorded run was on Preflight 0.3.0 and the pipeline now pins 0.5.0.
 - Changed: the GitHub workflow calls Preflight 0.5.0's reusable workflow (pinned to its release commit), the same release as the GitLab pipeline; it was on 0.1.4 because GitHub's copy of Preflight had no later tag.
 - Changed: the deploy layer requires PROCTOR ^0.12 (locked 0.12.0, was ^0.11.1): two new warning-only checks, nothing breaks.
