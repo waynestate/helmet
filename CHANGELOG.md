@@ -10,6 +10,8 @@ All notable changes to this project are documented in this file.
 - Changed: the Composer package leaves out `tools/` (the browser checks and the Vue fixture are CI tools, not code an app runs).
 - Docs: BEST_PRACTICES line cites point at today's code again (twelve had drifted by a line or more, some onto blank lines), and `tests/Support/BestPracticesTest.php` now fails when a cite into `tests/` stops pointing at the declaration of a test its line names, or a cite into `src/` leaves its file or lands on a blank line.
 - Docs: the Vue recipes say to precompile templates (`.vue` files), because Vue's runtime compiler needs `eval` and the policy never allows `'unsafe-eval'`; the Proof page records the three browser checks.
+- Site: the front page's Coach's rules name Vue's runtime template compiler under "No `'unsafe-eval'`", and an "On film" stamp says every pipeline plays a Vue app in Chromium under the rules, from raw PHP and through Laravel's `@vite`.
+- Docs: BEST_PRACTICES marks gap 27 done: CREED's handbook has had its "Runtime and headers" chapter since 0.1.11.
 
 ## 1.4.1 (2026-11-10)
 - Added: CI runs the CORP opt-in and COEP readiness browser checks (`browser-headers`, after `browser-headers-json` prints the headers), guarded by `tests/BrowserHeadersJobTest.php`; the a11y scripts' comments name Preflight 0.5.0's image.

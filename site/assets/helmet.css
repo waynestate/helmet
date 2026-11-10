@@ -573,6 +573,14 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
 .rules { margin: 0; padding: 0 0 0 1.4rem; display: grid; gap: 0.75rem; line-height: 1.55; }
 .rules li::marker { font-family: var(--h-marker); color: var(--h-berry); font-size: 1.15rem; }
 .rules code { background: rgba(12, 84, 73, 0.09); padding: 0.05rem 0.25rem; border-radius: 4px; }
+.clipboard__proof { margin: 1.3rem 0 0; padding-top: 1rem; border-top: 2px dashed rgba(12, 84, 73, 0.22); color: var(--h-ink-soft); line-height: 1.55; }
+.clipboard__proof code { background: rgba(12, 84, 73, 0.09); padding: 0.05rem 0.25rem; border-radius: 4px; }
+.clipboard__stamp {
+  display: inline-block; margin: 0 0.5rem 0.2rem 0; padding: 0.1rem 0.55rem 0;
+  font-family: var(--h-marker); font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--h-berry); border: 2px solid currentColor; border-radius: 6px;
+  rotate: -4deg; vertical-align: 0.1em;
+}
 
 .whiteboard {
   position: relative; border-radius: 10px; padding: 1.5rem clamp(1rem, 3vw, 1.8rem) 1.2rem;
@@ -721,6 +729,7 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
 @keyframes write-in { from { clip-path: inset(-10% 100% -10% 0); } to { clip-path: inset(-10% 0 -10% 0); } }
 @keyframes band-in { from { opacity: 0; transform: translateX(-24px) rotate(-6deg); } to { opacity: 1; transform: rotate(-1.5deg); } }
 @keyframes line-in { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+@keyframes stamp-in { from { opacity: 0; transform: scale(1.8); } to { opacity: 1; transform: none; } }
 @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
 @keyframes smear { 0% { opacity: 0; transform: translateX(-60%); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateX(60%); } }
 
@@ -750,6 +759,8 @@ code { font-family: var(--h-mono); font-size: 0.9em; overflow-wrap: anywhere; }
 .motion .play-card[data-reveal] { transform: translateY(40px); }
 .motion .play-card[data-reveal].is-in { animation: rise 0.6s calc(var(--i) * 0.08s) var(--h-spring) forwards; }
 .motion .roster__row[data-reveal].is-in { animation-delay: calc(var(--j) * 0.05s); }
+/* The stamp lands once the clipboard has: the reveal drops data-reveal when its rise ends. */
+.motion .clipboard:not([data-reveal]) .clipboard__stamp { animation: stamp-in 0.45s 0.1s var(--h-spring) both; }
 
 /* A part's mark and name are one link: the name's link stretches over its
    whole entry, so the mark is clickable too and the entry takes the focus

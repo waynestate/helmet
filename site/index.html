@@ -732,11 +732,12 @@ helmet_http_request_duration_seconds_count{
           <p class="clipboard__sub">The CSP stays honest only if the bundle plays along.</p>
           <ol class="rules">
             <li><strong>Nonce every inline script.</strong> There is no <code>'unsafe-inline'</code> for scripts; <code>@vite</code> tags already carry the nonce.</li>
-            <li><strong>No <code>'unsafe-eval'</code>.</strong> If your bundle needs <code>eval</code>, fix the bundle.</li>
+            <li><strong>No <code>'unsafe-eval'</code>.</strong> If your bundle needs <code>eval</code>, fix the bundle. Vue's runtime template compiler is the usual suspect: let the Vite plugin precompile your templates.</li>
             <li><strong>No scripts in Inertia's <code>&lt;Head&gt;</code>.</strong> They render after load without the nonce, and the browser blocks them. Put scripts in the layout.</li>
             <li><strong>One nonce per request, from one package.</strong> A second <code>Vite::useCspNonce()</code> splits the header from the tags; HELMET logs a warning when it sees one.</li>
             <li><strong>No shared caching of nonced HTML.</strong> A cached page carries yesterday's nonce. Repetition is a fine Helmet song and a terrible nonce.</li>
           </ol>
+          <p class="clipboard__proof"><span class="clipboard__stamp">On film</span> Every pipeline builds a small Vue app and plays it in Chromium under these rules, once from raw PHP and once through Laravel's <code>@vite</code>: it mounts, its styles and lazy chunks load, and a page that skips the nonce swap or reaches for the template compiler gets flagged.</p>
         </div>
       </div>
 

@@ -467,7 +467,7 @@ Each of these follows from the research above. Items marked "inferred" depend on
 
 25. `expose_php=Off`, `ServerTokens Prod` and `TraceEnable Off` on Citadel's shared config. Squire's deploy kit ships all three for the apps it deploys (H15).
 26. A network fix so app containers are reachable only through the proxy.
-27. Written rules in the handbook for runtime and headers, which today states none.
+27. Done in CREED 0.1.11. The handbook has a "Runtime and headers" chapter (`handbook/runtime-and-headers.md` in CREED) with the written rules for headers, proxy trust, sessions and health; HELMET is what holds them.
 
 ### Added in the second pass
 

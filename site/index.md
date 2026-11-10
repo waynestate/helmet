@@ -364,10 +364,12 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
 The CSP stays honest only if the bundle plays along.
 
 1. **Nonce every inline script.** There is no `'unsafe-inline'` for scripts; `@vite` tags already carry the nonce.
-2. **No `'unsafe-eval'`.** If your bundle needs `eval`, fix the bundle.
+2. **No `'unsafe-eval'`.** If your bundle needs `eval`, fix the bundle. Vue's runtime template compiler is the usual suspect: let the Vite plugin precompile your templates.
 3. **No scripts in Inertia's `<Head>`.** They render after load without the nonce, and the browser blocks them. Put scripts in the layout.
 4. **One nonce per request, from one package.** A second `Vite::useCspNonce()` splits the header from the tags; HELMET logs a warning when it sees one.
 5. **No shared caching of nonced HTML.** A cached page carries yesterday's nonce. Repetition is a fine Helmet song and a terrible nonce.
+
+On film Every pipeline builds a small Vue app and plays it in Chromium under these rules, once from raw PHP and once through Laravel's `@vite`: it mounts, its styles and lazy chunks load, and a page that skips the nonce swap or reaches for the template compiler gets flagged.
 
 ## Practice squad
 
