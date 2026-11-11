@@ -874,8 +874,9 @@ li.roster__row:has(.part-link:hover) img { transform: translateY(-2px); }
     var(--h-slate);
 }
 .huddle .section-lede { color: var(--h-chalk-dim); }
-.calls { display: grid; gap: clamp(1.1rem, 2.4vw, 1.8rem); max-width: 60rem; }
-.calls > * { min-width: 0; }
+/* Scoped to the huddle: the hero's matchup chips are also a .calls list, and they wrap in a row. */
+.huddle .calls { display: grid; gap: clamp(1.1rem, 2.4vw, 1.8rem); max-width: 60rem; }
+.huddle .calls > * { min-width: 0; }
 .calls__title { margin: 0.6rem 0 0; font-family: var(--h-marker); font-weight: 400; font-size: 1.3rem; color: var(--h-gold); transform: rotate(-1.5deg); transform-origin: left; }
 .calls .ar-prompt:not(.ar-prompt--lead) { --ar-preview-lines: 7; }
 .calls__fine { margin: 0; max-width: 46rem; color: var(--h-chalk-dim); line-height: 1.6; }
