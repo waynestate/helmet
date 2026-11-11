@@ -21,6 +21,9 @@ All notable changes to this project are documented in this file.
 - Site: the front page's Coach's rules name Vue's runtime template compiler under "No `'unsafe-eval'`", and an "On film" stamp says every pipeline plays a Vue app in Chromium under the rules, from raw PHP and through Laravel's `@vite`.
 - Docs: BEST_PRACTICES marks gap 27 done: CREED's handbook has had its "Runtime and headers" chapter since 0.1.11.
 - CI pins Preflight 0.8.0.
+- Added: a CSP report endpoint for raw PHP. `helmet_csp_report($logger, $metrics)` answers a violation report from a `public/csp-report.php` that never calls `helmet_boot()` and exits; `helmet_csp_report_response()` returns the same answer as data. Both share `Headers\CspReport` with `Route::cspReport()`, so the two paths accept the same two formats, enforce the same 16 KiB and 20-report caps, and log the same three fields. Raw PHP adds `405` with `Allow: POST` for other methods and a warning record carrying the three fields as context (H7).
+- Changed: `Laravel\CspReportController` now delegates its parsing to `Headers\CspReport`; its answers and log lines are unchanged.
+- Docs: Troubleshooting has "Violation reports never reach the log" (CSRF, sign-in, base path and throttle causes, with a curl and a PowerShell check).
 
 ## 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-1-2026-11-10)
 

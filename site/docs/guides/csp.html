@@ -115,6 +115,19 @@ Route::cspReport('/reports/csp');   // or your own path
 <pre tabindex="0"><code class="language-php">Route::cspReport('/reports/csp', 'throttle:120,1'); // your own limit
 Route::cspReport('/reports/csp', null);             // no throttle
 </code></pre>
+<h2 id="receiving-the-reports-in-raw-php">Receiving the reports in raw <span class="docs-heading-tail"><span>PHP</span><a class="docs-heading-link" aria-label="Link to this section" href="#receiving-the-reports-in-raw-php">#</a></span></h2>
+<p>Raw PHP gets the same endpoint as one call. Give it a file of its own, so it runs without <code>helmet_boot()</code>: a browser POSTs reports with no session and no CSRF token, and the boot's CSRF guard would refuse every one of them.</p>
+<pre tabindex="0"><code class="language-php">&lt;?php
+// public/csp-report.php
+require __DIR__ . '/../vendor/autoload.php';
+
+use Waynestate\Helmet\Logging\Logging;
+use function Waynestate\Helmet\helmet_csp_report;
+
+helmet_csp_report(Logging::create('csp', 'php://stderr'));
+</code></pre>
+<p>Then point the policy at it with <code>'csp_report_uri' =&gt; '/csp-report.php'</code>. <code>helmet_csp_report()</code> answers exactly as the Laravel route does, because both go through the same core class: the same two formats, the same 16 KiB and 20-report caps, <code>204</code> with <code>Cache-Control: no-store</code> on success, <code>415</code>, <code>413</code> or <code>400</code> on a report it refuses, and <code>405</code> with <code>Allow: POST</code> on any other method. Each violation is logged at warning level with the three fields as context, and nothing else from the report is kept. The logger is optional, and a logger that throws never changes the answer. Pass <code>helmet_metrics_requests($config)</code> as the second argument to count violations by directive (see <a href="metrics.html">Metrics</a>).</p>
+<p><code>helmet_csp_report()</code> sends the answer and exits. To send it yourself (a front controller, a test), call <code>helmet_csp_report_response()</code> with the same arguments: it returns the status, the headers and the body. There is no throttle on this path; the body and batch caps bound the work one request can force, and a rate limit belongs in your web server if you want one.</p>
 <h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="headers.html">The headers</a></li>
@@ -128,7 +141,7 @@ Route::cspReport('/reports/csp', null);             // no throttle
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/headers.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">The headers</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/hsts.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Configuring HSTS</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#merging-over-the-default">Merging over the default</a></li><li class="docs-toc__item"><a href="#inline-style-attributes">Inline style attributes</a></li><li class="docs-toc__item"><a href="#reporting-setup">Reporting setup</a></li><li class="docs-toc__item"><a href="#receiving-the-reports-in-laravel">Receiving the reports in Laravel</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#merging-over-the-default">Merging over the default</a></li><li class="docs-toc__item"><a href="#inline-style-attributes">Inline style attributes</a></li><li class="docs-toc__item"><a href="#reporting-setup">Reporting setup</a></li><li class="docs-toc__item"><a href="#receiving-the-reports-in-laravel">Receiving the reports in Laravel</a></li><li class="docs-toc__item"><a href="#receiving-the-reports-in-raw-php">Receiving the reports in raw PHP</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>1.4.1</span></span>

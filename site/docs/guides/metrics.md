@@ -122,7 +122,7 @@ helmet_metrics_track($config)->route($group);
 
 `helmet_metrics_track()` starts the clock at `REQUEST_TIME_FLOAT` and records once at shutdown, so a page that ends with `exit` is still counted, with whatever status code it sent. It does nothing when request metrics are off, so the same front controller works with or without a store.
 
-To count CSP violations in raw PHP, call `helmet_metrics_requests($config)?->cspViolation($directive)` from the handler that receives your reports.
+To count CSP violations in raw PHP, pass the store to the report endpoint: `helmet_csp_report($logger, helmet_metrics_requests($config))` (see [Receiving the reports in raw PHP](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-raw-php)). A handler of your own can still call `helmet_metrics_requests($config)?->cspViolation($directive)` directly.
 
 ### Check it [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#check-it)
 

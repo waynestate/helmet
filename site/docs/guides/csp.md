@@ -89,6 +89,25 @@ Route::cspReport('/reports/csp', 'throttle:120,1'); // your own limit
 Route::cspReport('/reports/csp', null);             // no throttle
 ```
 
+## Receiving the reports in raw PHP [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-raw-php)
+
+Raw PHP gets the same endpoint as one call. Give it a file of its own, so it runs without `helmet_boot()`: a browser POSTs reports with no session and no CSRF token, and the boot's CSRF guard would refuse every one of them.
+
+```php
+<?php
+// public/csp-report.php
+require __DIR__ . '/../vendor/autoload.php';
+
+use Waynestate\Helmet\Logging\Logging;
+use function Waynestate\Helmet\helmet_csp_report;
+
+helmet_csp_report(Logging::create('csp', 'php://stderr'));
+```
+
+Then point the policy at it with `'csp_report_uri' => '/csp-report.php'`. `helmet_csp_report()` answers exactly as the Laravel route does, because both go through the same core class: the same two formats, the same 16 KiB and 20-report caps, `204` with `Cache-Control: no-store` on success, `415`, `413` or `400` on a report it refuses, and `405` with `Allow: POST` on any other method. Each violation is logged at warning level with the three fields as context, and nothing else from the report is kept. The logger is optional, and a logger that throws never changes the answer. Pass `helmet_metrics_requests($config)` as the second argument to count violations by directive (see [Metrics](https://helmet.apps.wayne.edu/docs/guides/metrics.html)).
+
+`helmet_csp_report()` sends the answer and exits. To send it yourself (a front controller, a test), call `helmet_csp_report_response()` with the same arguments: it returns the status, the headers and the body. There is no throttle on this path; the body and batch caps bound the work one request can force, and a rate limit belongs in your web server if you want one.
+
 ## Related [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#related)
 
 - [The headers](https://helmet.apps.wayne.edu/docs/guides/headers.html)

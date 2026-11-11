@@ -174,6 +174,8 @@ $helmet = helmet_boot([
 
 `GET /ready` then answers JSON, `200` or `503`, with HELMET's own config checks (headers, trusted proxies, debug output) next to yours, and no secrets. A raw app with no front controller answers from `public/ready.php` with `helmet_ready()`. The body, each check, and where each platform's probe should point are in [Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html).
 
+CSP violation reports work the same way: a small `public/csp-report.php` that never calls `helmet_boot()` answers them with `helmet_csp_report($logger)`, one log line per violation, and `csp_report_uri` points the policy at it. The file and the answers are in [Receiving the reports in raw PHP](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-raw-php).
+
 ## The nonce in your markup [#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#the-nonce-in-your-markup)
 
 Tip

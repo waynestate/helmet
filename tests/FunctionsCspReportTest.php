@@ -185,7 +185,7 @@ final class FunctionsCspReportTest extends TestCase
     public function testALoggerThatThrowsNeverBreaksTheAnswer(): void
     {
         $this->post('application/csp-report');
-        $logger = new class () extends AbstractLogger {
+        $logger = new class extends AbstractLogger {
             public function log($level, string|\Stringable $message, array $context = []): void
             {
                 throw new \RuntimeException('log down');

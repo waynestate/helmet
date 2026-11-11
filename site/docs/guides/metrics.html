@@ -238,8 +238,10 @@ helmet_metrics_track($config)-&gt;route($group);
 <p><code>helmet_metrics_track()</code> starts the clock at <code>REQUEST_TIME_FLOAT</code> and records once at shutdown, so a page that ends
 with <code>exit</code> is still counted, with whatever status code it sent. It does nothing when request metrics are off, so the
 same front controller works with or without a store.</p>
-<p>To count CSP violations in raw PHP, call <code>helmet_metrics_requests($config)?-&gt;cspViolation($directive)</code> from the
-handler that receives your reports.</p>
+<p>To count CSP violations in raw PHP, pass the store to the report endpoint:
+<code>helmet_csp_report($logger, helmet_metrics_requests($config))</code> (see
+<a href="csp.html#receiving-the-reports-in-raw-php">Receiving the reports in raw PHP</a>). A handler of your own can still call
+<code>helmet_metrics_requests($config)?-&gt;cspViolation($directive)</code> directly.</p>
 <h3 id="check-it">Check <span class="docs-heading-tail"><span>it</span><a class="docs-heading-link" aria-label="Link to this section" href="#check-it">#</a></span></h3>
 <pre tabindex="0"><code class="language-bash">curl -s -H &quot;Authorization: Bearer $HELMET_METRICS_TOKEN&quot; https://your-app.example.test/metrics | head
 </code></pre>

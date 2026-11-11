@@ -17,6 +17,8 @@ File `src/functions.php`, namespace `Waynestate\Helmet`:
 | `helmet_up_response()` | `function helmet_up_response(): array` |
 | `helmet_up()` | `function helmet_up(): never` |
 | `helmet_ready()` | `function helmet_ready(Readiness $readiness): never` |
+| `helmet_csp_report_response()` | `function helmet_csp_report_response(?LoggerInterface $logger = null, ?RequestMetrics $metrics = null, ?string $body = null): array` |
+| `helmet_csp_report()` | `function helmet_csp_report(?LoggerInterface $logger = null, ?RequestMetrics $metrics = null): never` |
 | `helmet_forbidden_response()` | `function helmet_forbidden_response(): array` |
 | `helmet_forbidden()` | `function helmet_forbidden(): never` |
 | `helmet_client_error_response()` | `function helmet_client_error_response(int $status): array` |
@@ -35,6 +37,7 @@ What each one returns, from the docblocks:
 - `helmet_up_response()` and `helmet_forbidden_response()` return the answer as data, `array{status: int, headers: array<string, string>, body: string}`, without sending anything; the caller sends it. `helmet_up()` and `helmet_forbidden()` send the same answers (200, body "ok", and 403, body "Forbidden") and exit, so a small public file can answer a probe that never reaches `helmet_boot()`.
 - `helmet_client_error_response()` returns the fixed 4xx page for a client fault as data, exactly what `GenericErrorResponse::clientError()` builds (the status, `Content-Type: text/html; charset=utf-8`, `Cache-Control: no-store`, a fixed body), and `helmet_client_error()` sends it and exits. Both take only the status code, and both throw `\InvalidArgumentException` for a status outside 400 to 499 before anything is built or sent.
 - `helmet_ready()` sends a `Readiness` report (200 or 503, JSON, `no-store`) and exits, for a `public/ready.php` with no front controller. `helmet_boot()` calls it on the readiness path when the `readiness` option is enabled. See [Readiness](../guides/readiness.md).
+- `helmet_csp_report_response()` answers a CSP violation report as data, `array{status: int, headers: array<string, string>, body: string}`, from `$_SERVER` and the request body (capped at 16 KiB plus one byte): `204` for a report it accepts, `415`, `413` or `400` for one it refuses, and `405` with `Allow: POST` for any other method. It logs one warning per violation through the optional logger and counts it in the optional `RequestMetrics`; a logger or store that throws never changes the answer. `helmet_csp_report()` sends the same answer and exits, for a `public/csp-report.php` that never calls `helmet_boot()`. Both go through `Headers\CspReport`, as the Laravel route does. See [Customizing the CSP](../guides/csp.md#receiving-the-reports-in-raw-php).
 - `helmet_csp_nonce_meta()` builds the `<meta property="csp-nonce">` tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in `<head>` of every page, with the same nonce `helmet_boot()` returned; the nonce is escaped so a quote cannot break out of the attribute.
 - `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder (default `CSP_NONCE_SLOT_FOR_HELMET`, the value a built Vue/Vite page carries where Vite's `html.cspNonce` stood) with the nonce, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws `\InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged.
 - `helmet_metrics()` builds the `/metrics` answer as data, `array{status: int, content_type: string, body: string}`. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning. With `storage` set, the request metrics are read back from that store and added to the body.
@@ -145,6 +148,19 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | --- | --- |
 | `__construct()` | `public function __construct(string $uri)` |
 
+### `Headers\CspReport`
+
+`final class CspReport` in `src/Headers/CspReport.php`. The framework-free half of the CSP report endpoint, shared by the Laravel controller and the raw PHP `helmet_csp_report()`. `parse()` is pure: it checks the media type (415), the declared and then the real length (413) and the JSON shape (400), in that order, and pulls out the violations, each as `array{directive: string, blocked_host: string, document_path: string}`; a refusal carries none. `answer()` adds the POST-only method check (405 with `Allow: POST`), one warning per violation with the three fields as context, and one metrics tick per violation. Every answer carries `Content-Type: text/plain; charset=utf-8` and `Cache-Control: no-store`.
+
+| Member | Signature |
+| --- | --- |
+| `MAX_BODY_BYTES` | `public const int MAX_BODY_BYTES = 16 * 1024;` |
+| `MAX_REPORTS` | `public const int MAX_REPORTS = 20;` |
+| `parse()` | `public static function parse(string $contentType, string $body, ?int $declaredLength = null): array` |
+| `answer()` | `public static function answer(string $method, string $contentType, string $body, ?int $declaredLength, ?LoggerInterface $logger = null, ?RequestMetrics $metrics = null): array` |
+| `logLine()` | `public static function logLine(array $violation): string` |
+| `declaredLength()` | `public static function declaredLength(mixed $value): ?int` |
+
 ## Health
 
 ### `Health\HealthCheck`
@@ -249,8 +265,8 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 
 | Member | Signature |
 | --- | --- |
-| `MAX_BODY_BYTES` | `public const int MAX_BODY_BYTES = 16 * 1024;` |
-| `MAX_REPORTS` | `public const int MAX_REPORTS = 20;` |
+| `MAX_BODY_BYTES` | `public const int MAX_BODY_BYTES = CspReport::MAX_BODY_BYTES;` |
+| `MAX_REPORTS` | `public const int MAX_REPORTS = CspReport::MAX_REPORTS;` |
 | `__invoke()` | `public function __invoke(Request $request): Response` |
 
 ### `Laravel\CspReportRoute`

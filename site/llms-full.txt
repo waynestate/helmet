@@ -917,6 +917,29 @@ Route::cspReport('/reports/csp', 'throttle:120,1'); // your own limit
 Route::cspReport('/reports/csp', null);             // no throttle
 ```
 
+Raw PHP gets the same endpoint from one call in a file of its own. It never
+calls `helmet_boot()`, because a browser POSTs reports with no session and no
+CSRF token:
+
+```php
+<?php
+// public/csp-report.php
+require __DIR__ . '/../vendor/autoload.php';
+
+use Waynestate\Helmet\Logging\Logging;
+use function Waynestate\Helmet\helmet_csp_report;
+
+helmet_csp_report(Logging::create('csp', 'php://stderr'));
+```
+
+`helmet_csp_report()` answers exactly as the Laravel route does (both go
+through `Headers\CspReport`): the same formats and caps, `204` on success,
+`405` with `Allow: POST` for any other method, one warning per violation with
+the three fields as context. It has no throttle of its own, so rate-limit at
+the web server if reports ever flood. `helmet_csp_report_response()` returns
+the same answer as data without sending it. Think of it as the referee's
+whistle without the referee's opinions.
+
 #### Cross-origin isolation and feature policy
 
 Three more headers round out the baseline: two are on by default, one is
@@ -1135,7 +1158,8 @@ Route::helmetMetrics('/metrics', null);           // no throttle
 
 With `HELMET_METRICS_STORAGE` set, a terminable middleware at the front of
 the global stack times every request and records it after the response is
-sent. `Route::cspReport()` counts violations by directive.
+sent. `Route::cspReport()` counts violations by directive; in raw PHP,
+`helmet_csp_report($logger, helmet_metrics_requests($config))` does the same.
 
 #### Raw PHP
 
@@ -1607,7 +1631,24 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
     "channel":"app"}
    ```
    Monolog JSON, one event per line, each with a request ID. Passwords, tokens and session IDs come out as `***`. If the log file can't be written, HELMET writes to stderr and the request carries on.
-2. ### Version warnings
+2. ### CSP reports, three fields
+   ```
+   CSP violation:
+    directive=script-src-elem
+    blocked_host=evil.example.com
+    document_path=/courses/12
+   ```
+   Point `csp_report_uri` at `Route::cspReport()` in Laravel or `helmet_csp_report()` in raw PHP, and every play the policy blocks becomes one log line: the directive, the host it came from, the page's path. Never the report body, never the query string, at most 16 KiB and 20 reports a POST.
+3. ### Ready, or benched
+   ```
+   GET /ready
+   {"status":"not ready",
+    "checks":{
+     "headers":{"status":"pass"},
+     "database":{"status":"fail"}}}
+   ```
+   `/up` says the player is breathing; `/ready` says he can go in. Your checks join HELMET's own, a failure answers `503` so the platform benches this instance instead of restarting it, and the body never names a host, a DSN or an exception.
+4. ### Version warnings
    ```
    Laravel 11 is end of life and
    no longer receives security
@@ -1615,18 +1656,18 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
    supported version.
    ```
    Point `HELMET_POLICY_PATH` at CREED's `policy.json` and the ribbon warns about a PHP or Laravel version in its security-only phase or past end of life. An active or unknown version gets no warning, and a missing file never breaks the page.
-3. ### Metrics, off by default
+5. ### Metrics, off by default
    ```
    # TYPE helmet_info gauge
    helmet_info{php_version="8.5.12",
-    helmet_version="1.3.1"} 1
+    helmet_version="1.4.1"} 1
    helmet_php_eol_timestamp_seconds{
     php_minor="8.5"} 1893369600
    helmet_http_request_duration_seconds_count{
     route="docs",method="GET",status="2xx"} 412
    ```
    A Prometheus endpoint you turn on with `HELMET_METRICS_ENABLED`: versions and PHP end of support, and, once you name a store, requests by route group and CSP violations. It needs a bearer token or an IP allow list; with neither, it answers `404`. The Grafana dashboard is ready for the day something scrapes it.
-4. ### The ribbon
+6. ### The ribbon
    In local, dev, testing and staging, Laravel apps get `<div class="helmet-ribbon">` right after `<body>`, so nobody mistakes the scrimmage for the game. It never shows in production or on JSON responses. No Aftertaste.
 
 ### Coach's rules for Vite and Inertia
@@ -1643,7 +1684,7 @@ On film Every pipeline builds a small Vue app and plays it in Chromium under the
 
 ### Practice squad
 
-Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on `/ready` and Gitleaks in CI.
+Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on `/ready`, Gitleaks in CI, an opt-in Cross-Origin-Embedder-Policy and a CSP report endpoint for raw PHP.
 
 - A strict `style-src-attr` by default, once WayneUI's recipes stop writing inline styles (`style_src_attr` already reports or blocks them)
 - Traded to SESAME: `Clear-Site-Data` on logout, since SESAME owns sign-out
@@ -1755,6 +1796,9 @@ All notable changes to this project are documented in this file.
 - Site: the front page's Coach's rules name Vue's runtime template compiler under "No `'unsafe-eval'`", and an "On film" stamp says every pipeline plays a Vue app in Chromium under the rules, from raw PHP and through Laravel's `@vite`.
 - Docs: BEST_PRACTICES marks gap 27 done: CREED's handbook has had its "Runtime and headers" chapter since 0.1.11.
 - CI pins Preflight 0.8.0.
+- Added: a CSP report endpoint for raw PHP. `helmet_csp_report($logger, $metrics)` answers a violation report from a `public/csp-report.php` that never calls `helmet_boot()` and exits; `helmet_csp_report_response()` returns the same answer as data. Both share `Headers\CspReport` with `Route::cspReport()`, so the two paths accept the same two formats, enforce the same 16 KiB and 20-report caps, and log the same three fields. Raw PHP adds `405` with `Allow: POST` for other methods and a warning record carrying the three fields as context (H7).
+- Changed: `Laravel\CspReportController` now delegates its parsing to `Headers\CspReport`; its answers and log lines are unchanged.
+- Docs: Troubleshooting has "Violation reports never reach the log" (CSRF, sign-in, base path and throttle causes, with a curl and a PowerShell check).
 
 ### 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-1-2026-11-10)
 
@@ -2220,6 +2264,25 @@ The endpoint caps the body at 16 KiB, returns `204`, and carries no authenticati
 Route::cspReport('/reports/csp', 'throttle:120,1'); // your own limit
 Route::cspReport('/reports/csp', null);             // no throttle
 ```
+
+### Receiving the reports in raw PHP [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-raw-php)
+
+Raw PHP gets the same endpoint as one call. Give it a file of its own, so it runs without `helmet_boot()`: a browser POSTs reports with no session and no CSRF token, and the boot's CSRF guard would refuse every one of them.
+
+```php
+<?php
+// public/csp-report.php
+require __DIR__ . '/../vendor/autoload.php';
+
+use Waynestate\Helmet\Logging\Logging;
+use function Waynestate\Helmet\helmet_csp_report;
+
+helmet_csp_report(Logging::create('csp', 'php://stderr'));
+```
+
+Then point the policy at it with `'csp_report_uri' => '/csp-report.php'`. `helmet_csp_report()` answers exactly as the Laravel route does, because both go through the same core class: the same two formats, the same 16 KiB and 20-report caps, `204` with `Cache-Control: no-store` on success, `415`, `413` or `400` on a report it refuses, and `405` with `Allow: POST` on any other method. Each violation is logged at warning level with the three fields as context, and nothing else from the report is kept. The logger is optional, and a logger that throws never changes the answer. Pass `helmet_metrics_requests($config)` as the second argument to count violations by directive (see [Metrics](https://helmet.apps.wayne.edu/docs/guides/metrics.html)).
+
+`helmet_csp_report()` sends the answer and exits. To send it yourself (a front controller, a test), call `helmet_csp_report_response()` with the same arguments: it returns the status, the headers and the body. There is no throttle on this path; the body and batch caps bound the work one request can force, and a rate limit belongs in your web server if you want one.
 
 ### Related [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#related)
 
@@ -2717,7 +2780,7 @@ helmet_metrics_track($config)->route($group);
 
 `helmet_metrics_track()` starts the clock at `REQUEST_TIME_FLOAT` and records once at shutdown, so a page that ends with `exit` is still counted, with whatever status code it sent. It does nothing when request metrics are off, so the same front controller works with or without a store.
 
-To count CSP violations in raw PHP, call `helmet_metrics_requests($config)?->cspViolation($directive)` from the handler that receives your reports.
+To count CSP violations in raw PHP, pass the store to the report endpoint: `helmet_csp_report($logger, helmet_metrics_requests($config))` (see [Receiving the reports in raw PHP](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-raw-php)). A handler of your own can still call `helmet_metrics_requests($config)?->cspViolation($directive)` directly.
 
 #### Check it [#](https://helmet.apps.wayne.edu/docs/guides/metrics.html#check-it)
 
@@ -3736,6 +3799,8 @@ $helmet = helmet_boot([
 
 `GET /ready` then answers JSON, `200` or `503`, with HELMET's own config checks (headers, trusted proxies, debug output) next to yours, and no secrets. A raw app with no front controller answers from `public/ready.php` with `helmet_ready()`. The body, each check, and where each platform's probe should point are in [Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html).
 
+CSP violation reports work the same way: a small `public/csp-report.php` that never calls `helmet_boot()` answers them with `helmet_csp_report($logger)`, one log line per violation, and `csp_report_uri` points the policy at it. The file and the answers are in [Receiving the reports in raw PHP](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-raw-php).
+
 ### The nonce in your markup [#](https://helmet.apps.wayne.edu/docs/guides/usage-raw-php.html#the-nonce-in-your-markup)
 
 Tip
@@ -3987,6 +4052,8 @@ File `src/functions.php`, namespace `Waynestate\Helmet`:
 | `helmet_up_response()` | `function helmet_up_response(): array` |
 | `helmet_up()` | `function helmet_up(): never` |
 | `helmet_ready()` | `function helmet_ready(Readiness $readiness): never` |
+| `helmet_csp_report_response()` | `function helmet_csp_report_response(?LoggerInterface $logger = null, ?RequestMetrics $metrics = null, ?string $body = null): array` |
+| `helmet_csp_report()` | `function helmet_csp_report(?LoggerInterface $logger = null, ?RequestMetrics $metrics = null): never` |
 | `helmet_forbidden_response()` | `function helmet_forbidden_response(): array` |
 | `helmet_forbidden()` | `function helmet_forbidden(): never` |
 | `helmet_client_error_response()` | `function helmet_client_error_response(int $status): array` |
@@ -4005,6 +4072,7 @@ What each one returns, from the docblocks:
 - `helmet_up_response()` and `helmet_forbidden_response()` return the answer as data, `array{status: int, headers: array<string, string>, body: string}`, without sending anything; the caller sends it. `helmet_up()` and `helmet_forbidden()` send the same answers (200, body "ok", and 403, body "Forbidden") and exit, so a small public file can answer a probe that never reaches `helmet_boot()`.
 - `helmet_client_error_response()` returns the fixed 4xx page for a client fault as data, exactly what `GenericErrorResponse::clientError()` builds (the status, `Content-Type: text/html; charset=utf-8`, `Cache-Control: no-store`, a fixed body), and `helmet_client_error()` sends it and exits. Both take only the status code, and both throw `\InvalidArgumentException` for a status outside 400 to 499 before anything is built or sent.
 - `helmet_ready()` sends a `Readiness` report (200 or 503, JSON, `no-store`) and exits, for a `public/ready.php` with no front controller. `helmet_boot()` calls it on the readiness path when the `readiness` option is enabled. See [Readiness](https://helmet.apps.wayne.edu/docs/guides/readiness.html).
+- `helmet_csp_report_response()` answers a CSP violation report as data, `array{status: int, headers: array<string, string>, body: string}`, from `$_SERVER` and the request body (capped at 16 KiB plus one byte): `204` for a report it accepts, `415`, `413` or `400` for one it refuses, and `405` with `Allow: POST` for any other method. It logs one warning per violation through the optional logger and counts it in the optional `RequestMetrics`; a logger or store that throws never changes the answer. `helmet_csp_report()` sends the same answer and exits, for a `public/csp-report.php` that never calls `helmet_boot()`. Both go through `Headers\CspReport`, as the Laravel route does. See [Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-raw-php).
 - `helmet_csp_nonce_meta()` builds the `<meta property="csp-nonce">` tag that Vite's dev runtime reads to nonce the CSS and preload tags it adds after page load. Print it in `<head>` of every page, with the same nonce `helmet_boot()` returned; the nonce is escaped so a quote cannot break out of the attribute.
 - `helmet_csp_nonce_swap()` replaces every occurrence of the placeholder (default `CSP_NONCE_SLOT_FOR_HELMET`, the value a built Vue/Vite page carries where Vite's `html.cspNonce` stood) with the nonce, HTML-escaped exactly like `helmet_csp_nonce_meta()` escapes it. It is pure: no output, no headers, no globals. A placeholder shorter than 16 characters throws `\InvalidArgumentException`, as does an empty nonce, and a page without the placeholder is returned unchanged.
 - `helmet_metrics()` builds the `/metrics` answer as data, `array{status: int, content_type: string, body: string}`. It is fail-closed: disabled gives 404, enabled but unauthorized gives 403, and enabled but misconfigured (no token and no allow list) gives 404 plus a warning. With `storage` set, the request metrics are read back from that store and added to the body.
@@ -4115,6 +4183,19 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | --- | --- |
 | `__construct()` | `public function __construct(string $uri)` |
 
+#### `Headers\CspReport` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers-cspreport)
+
+`final class CspReport` in `src/Headers/CspReport.php`. The framework-free half of the CSP report endpoint, shared by the Laravel controller and the raw PHP `helmet_csp_report()`. `parse()` is pure: it checks the media type (415), the declared and then the real length (413) and the JSON shape (400), in that order, and pulls out the violations, each as `array{directive: string, blocked_host: string, document_path: string}`; a refusal carries none. `answer()` adds the POST-only method check (405 with `Allow: POST`), one warning per violation with the three fields as context, and one metrics tick per violation. Every answer carries `Content-Type: text/plain; charset=utf-8` and `Cache-Control: no-store`.
+
+| Member | Signature |
+| --- | --- |
+| `MAX_BODY_BYTES` | `public const int MAX_BODY_BYTES = 16 * 1024;` |
+| `MAX_REPORTS` | `public const int MAX_REPORTS = 20;` |
+| `parse()` | `public static function parse(string $contentType, string $body, ?int $declaredLength = null): array` |
+| `answer()` | `public static function answer(string $method, string $contentType, string $body, ?int $declaredLength, ?LoggerInterface $logger = null, ?RequestMetrics $metrics = null): array` |
+| `logLine()` | `public static function logLine(array $violation): string` |
+| `declaredLength()` | `public static function declaredLength(mixed $value): ?int` |
+
 ### Health [#](https://helmet.apps.wayne.edu/docs/reference/api.html#health)
 
 #### `Health\HealthCheck` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#health-healthcheck)
@@ -4219,8 +4300,8 @@ The Laravel adapter. The service provider wires the config into the app; the fou
 
 | Member | Signature |
 | --- | --- |
-| `MAX_BODY_BYTES` | `public const int MAX_BODY_BYTES = 16 * 1024;` |
-| `MAX_REPORTS` | `public const int MAX_REPORTS = 20;` |
+| `MAX_BODY_BYTES` | `public const int MAX_BODY_BYTES = CspReport::MAX_BODY_BYTES;` |
+| `MAX_REPORTS` | `public const int MAX_REPORTS = CspReport::MAX_REPORTS;` |
 | `__invoke()` | `public function __invoke(Request $request): Response` |
 
 #### `Laravel\CspReportRoute` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#laravel-cspreportroute)
@@ -4947,6 +5028,37 @@ curl -sI http://localhost/up
 ```
 
 Expected: the nonce in the `Content-Security-Policy` header matches the `helmet.csp_nonce` request attribute (in a controller, `$request->attributes->get('helmet.csp_nonce')`). The agreement between paths is pinned in `tests/Headers/SecurityHeadersTest.php` and `tests/Laravel/SecurityHeadersTest.php`.
+
+#### Violation reports never reach the log [#](https://helmet.apps.wayne.edu/docs/troubleshooting.html#violation-reports-never-reach-the-log)
+
+Cause: the browser sends the report, but something in front of HELMET's endpoint answers first. The usual suspects, in the order to rule them out:
+
+- The request-forgery guard. A report is a `POST`, so the guard judges it like a form. When the endpoint is on another origin, or the browser sends the report without the request's own origin, the guard answers `403`. Laravel's `Route::cspReport()` already leaves the CSRF middleware out; raw PHP and PSR-15 do not know which path is yours.
+- Sign-in. Browsers may send reports without cookies, so an endpoint behind SESAME or any login middleware answers with a redirect to the sign-in page, and the report is gone.
+- The path. A relative `csp_report_uri` such as `/csp-report` resolves against the page's origin, not your app's base path, so an app served under `/myapp/` receives its reports at the host's root.
+- The throttle (Laravel). `Route::cspReport()` allows 60 reports a minute per IP by default; a page that violates the policy on every load can use that up, and the rest get `429`.
+
+Fix: answer the report path before the guard and before sign-in. In raw PHP, point `csp_report_uri` at a `public/csp-report.php` that calls `helmet_csp_report()` and never `helmet_boot()`, or list the path in `csrf.except` when your front controller routes it. Keep the path outside your login middleware. Write the full path, base path included, into `csp_report_uri`. In Laravel, raise the throttle with the second argument of `Route::cspReport()` while you clean up the policy.
+
+Check: send a report yourself.
+
+linux
+
+```bash
+curl -si -X POST -H 'Content-Type: application/csp-report' \
+  --data '{"csp-report":{"violated-directive":"img-src","blocked-uri":"https://cdn.example.com/x.png","document-uri":"https://your-app.example.test/"}}' \
+  https://your-app.example.test/csp-report
+```
+
+windows
+
+```powershell
+Invoke-WebRequest -Method Post -ContentType 'application/csp-report' `
+  -Body '{"csp-report":{"violated-directive":"img-src","blocked-uri":"https://cdn.example.com/x.png","document-uri":"https://your-app.example.test/"}}' `
+  https://your-app.example.test/csp-report
+```
+
+Expected: `204` with an empty body, and one log line, `CSP violation: directive=img-src blocked_host=cdn.example.com document_path=/`. A `403` is the guard, a `302` is sign-in, a `404` is the path, a `415` is the content type (the endpoint takes only `application/csp-report` and `application/reports+json`). See [Customizing the CSP](https://helmet.apps.wayne.edu/docs/guides/csp.html#reporting-setup).
 
 ### Logs and metrics [#](https://helmet.apps.wayne.edu/docs/troubleshooting.html#logs-and-metrics)
 

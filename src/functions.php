@@ -7,6 +7,7 @@ namespace Waynestate\Helmet;
 use Psr\Log\LoggerInterface;
 use Waynestate\Helmet\Csrf\RequestForgeryGuard;
 use Waynestate\Helmet\Error\GenericErrorResponse;
+use Waynestate\Helmet\Headers\CspReport;
 use Waynestate\Helmet\Headers\SecurityHeaders;
 use Waynestate\Helmet\Health\Readiness;
 use Waynestate\Helmet\Logging\Logging;
@@ -529,6 +530,80 @@ if (!function_exists('helmet_ready')) {
     function helmet_ready(Readiness $readiness): never
     {
         $response = $readiness->response();
+
+        http_response_code($response['status']);
+        foreach ($response['headers'] as $name => $value) {
+            header($name . ': ' . $value, true);
+        }
+        echo $response['body'];
+        exit;
+    }
+}
+
+if (!function_exists('helmet_csp_report_response')) {
+    /**
+     * The CSP report endpoint's answer, as data.
+     *
+     * Reads the method, Content-Type and Content-Length from $_SERVER and
+     * the body from php://input (at most CspReport::MAX_BODY_BYTES + 1
+     * bytes, never more), then answers through CspReport::answer(): 405 with
+     * Allow: POST for any other method, 415 for a content type that is not a
+     * report, 413 past 16 KiB, 400 for a body that is not a report, and 204
+     * for a report. Each violation (at most 20 per POST) is logged as one
+     * warning, "CSP violation: directive=... blocked_host=...
+     * document_path=...", with the same three fields as context, and counted
+     * in helmet_csp_violations_total when $metrics is given (see
+     * helmet_metrics_requests()). The rest of the report, the query string
+     * included, is never logged.
+     *
+     * The endpoint is public and its input is attacker-influenced. Raw PHP
+     * has no throttle of its own, so rate-limit at the proxy or the router if
+     * reports ever flood. It does not send anything; helmet_csp_report() does.
+     * $body exists for tests: leave it null and the request body is read.
+     *
+     * @return array{status: int, headers: array<string, string>, body: string}
+     */
+    function helmet_csp_report_response(?LoggerInterface $logger = null, ?RequestMetrics $metrics = null, ?string $body = null): array
+    {
+        $method = (string) ($_SERVER['REQUEST_METHOD'] ?? 'GET');
+
+        if (strtoupper($method) === 'POST' && $body === null) {
+            $read = file_get_contents('php://input', false, null, 0, CspReport::MAX_BODY_BYTES + 1);
+            $body = is_string($read) ? $read : '';
+        }
+
+        return CspReport::answer(
+            $method,
+            (string) ($_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? ''),
+            $body ?? '',
+            CspReport::declaredLength($_SERVER['CONTENT_LENGTH'] ?? $_SERVER['HTTP_CONTENT_LENGTH'] ?? null),
+            $logger,
+            $metrics,
+        );
+    }
+}
+
+if (!function_exists('helmet_csp_report')) {
+    /**
+     * Answer a CSP violation report and stop.
+     *
+     * Sends exactly what helmet_csp_report_response() returns and exits.
+     * Point csp_report_uri at a small public/csp-report.php that never calls
+     * helmet_boot(), so the request-forgery guard and your sign-in never see
+     * the browser's report:
+     *
+     *     <?php
+     *     require __DIR__ . '/../vendor/autoload.php';
+     *     use Waynestate\Helmet\Logging\Logging;
+     *     use function Waynestate\Helmet\helmet_csp_report;
+     *     helmet_csp_report(Logging::create('csp', 'php://stderr'));
+     *
+     * Pass helmet_metrics_requests($config) as the second argument to count
+     * the violations by directive as well.
+     */
+    function helmet_csp_report(?LoggerInterface $logger = null, ?RequestMetrics $metrics = null): never
+    {
+        $response = helmet_csp_report_response($logger, $metrics);
 
         http_response_code($response['status']);
         foreach ($response['headers'] as $name => $value) {

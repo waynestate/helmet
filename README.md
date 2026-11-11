@@ -931,6 +931,29 @@ Route::cspReport('/reports/csp', 'throttle:120,1'); // your own limit
 Route::cspReport('/reports/csp', null);             // no throttle
 ```
 
+Raw PHP gets the same endpoint from one call in a file of its own. It never
+calls `helmet_boot()`, because a browser POSTs reports with no session and no
+CSRF token:
+
+```php
+<?php
+// public/csp-report.php
+require __DIR__ . '/../vendor/autoload.php';
+
+use Waynestate\Helmet\Logging\Logging;
+use function Waynestate\Helmet\helmet_csp_report;
+
+helmet_csp_report(Logging::create('csp', 'php://stderr'));
+```
+
+`helmet_csp_report()` answers exactly as the Laravel route does (both go
+through `Headers\CspReport`): the same formats and caps, `204` on success,
+`405` with `Allow: POST` for any other method, one warning per violation with
+the three fields as context. It has no throttle of its own, so rate-limit at
+the web server if reports ever flood. `helmet_csp_report_response()` returns
+the same answer as data without sending it. Think of it as the referee's
+whistle without the referee's opinions.
+
 ### Cross-origin isolation and feature policy
 
 Three more headers round out the baseline: two are on by default, one is
@@ -1149,7 +1172,8 @@ Route::helmetMetrics('/metrics', null);           // no throttle
 
 With `HELMET_METRICS_STORAGE` set, a terminable middleware at the front of
 the global stack times every request and records it after the response is
-sent. `Route::cspReport()` counts violations by directive.
+sent. `Route::cspReport()` counts violations by directive; in raw PHP,
+`helmet_csp_report($logger, helmet_metrics_requests($config))` does the same.
 
 ### Raw PHP
 
