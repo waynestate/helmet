@@ -44,7 +44,7 @@ fail oddly after a Docker install, delete `vendor/` and install again.
 ## CI
 
 - **GitLab:** Preflight's `php-test` (PHP 8.3, 8.4, 8.5), `composer-audit`, `proctor`, `secret-detection` and `a11y`
-  components (all pinned to Preflight 0.5.0), plus HELMET's own `wayneui-copies` and `composer-ci` jobs.
+  components (all pinned to Preflight 0.8.0), plus HELMET's own `wayneui-copies` and `composer-ci` jobs.
 - **GitHub:** `.github/workflows/ci.yml` calls Preflight's reusable workflow with `composer ci`.
 - Green means `composer ci` passed on all three PHP versions on both.
 
