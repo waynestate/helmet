@@ -20,6 +20,7 @@ All notable changes to this project are documented in this file.
 - Docs: the Vue recipes say to precompile templates (`.vue` files), because Vue's runtime compiler needs `eval` and the policy never allows `'unsafe-eval'`; the Proof page records the three browser checks.
 - Site: the front page's Coach's rules name Vue's runtime template compiler under "No `'unsafe-eval'`", and an "On film" stamp says every pipeline plays a Vue app in Chromium under the rules, from raw PHP and through Laravel's `@vite`.
 - Docs: BEST_PRACTICES marks gap 27 done: CREED's handbook has had its "Runtime and headers" chapter since 0.1.11.
+- CI pins Preflight 0.8.0.
 
 ## 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-1-2026-11-10)
 
