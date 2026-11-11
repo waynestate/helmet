@@ -20,11 +20,11 @@ The Laravel config reads `HELMET_PRESET` from the environment first and from the
 
 ## Get Playbook with your own GitLab token [#](https://helmet.apps.wayne.edu/docs/guides/wsu-values.html#get-playbook-with-your-own-gitlab-token)
 
-Three ways.
+The repository is private, so every path below authenticates with a personal access token of your own. Pick the one that fits:
 
 ### Composer [#](https://helmet.apps.wayne.edu/docs/guides/wsu-values.html#composer)
 
-Add the repository to your app's `composer.json`, put the token in `auth.json` (Composer's credential store, never in the repo), then require the package:
+Point Composer at the instance in your `composer.json`:
 
 ```json
 {
@@ -37,39 +37,38 @@ Add the repository to your app's `composer.json`, put the token in `auth.json` (
 }
 ```
 
-```
+Then require the package:
+
+```sh
 composer require waynestate/playbook
 ```
 
+The credential goes in `auth.json` (a `gitlab-token` entry for git.wayne.edu), never in the repository.
+
 ### Fetch the values file directly [#](https://helmet.apps.wayne.edu/docs/guides/wsu-values.html#fetch-the-values-file-directly)
 
-curl
-
-```bash
-curl --fail -H "PRIVATE-TOKEN: $GITLAB_TOKEN" "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" -o .env.playbook
+```sh
+curl --fail -H "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+    "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" \
+    -o .env.playbook
 ```
-
-powershell
 
 ```powershell
-Invoke-WebRequest -Headers @{ 'PRIVATE-TOKEN' = $env:GITLAB_TOKEN } -Uri "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" -OutFile .env.playbook
+Invoke-WebRequest `
+    -Headers @{ 'PRIVATE-TOKEN' = $env:GITLAB_TOKEN } `
+    -Uri "https://git.wayne.edu/api/v4/projects/enterprise-apps%2Fplaybook/repository/files/playbook.env/raw?ref=main" `
+    -OutFile .env.playbook
 ```
 
-A fetched `.env.playbook` is plain `KEY=value` lines: copy the ones you need into your app's `.env` (or your Citadel environment).
+A fetched `.env.playbook` is plain `KEY=value` lines to copy into the app's `.env`.
 
 ### Clone [#](https://helmet.apps.wayne.edu/docs/guides/wsu-values.html#clone)
 
-```
+```sh
 git clone https://git.wayne.edu/enterprise-apps/playbook.git
 ```
 
-Warning
-
-The token is your own: `read_api` for curl, `read_repository` for clone and Composer. Keep it out of the repo; for Composer it lives in `auth.json`.
-
-Tip
-
-Playbook is private on git.wayne.edu. If you get a 404, ask the Enterprise Applications team for read access.
+The token is your own: `read_api` for curl, `read_repository` for clone and Composer; keep it out of the repo. Playbook is private, so on a 404 ask the Enterprise Applications team for read access.
 
 ## Related [#](https://helmet.apps.wayne.edu/docs/guides/wsu-values.html#related)
 

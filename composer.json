@@ -67,14 +67,15 @@
         "lint": "pint --test",
         "fix": "pint",
         "analyse": "phpstan analyse --memory-limit=1G",
-        "ci": ["@composer validate --strict", "@test", "@lint", "@analyse", "@site:agent-ready-check", "@docs:check", "@composer audit"],
+        "setting:check": "php bin/setting-sync.php --check",
+        "ci": ["@composer validate --strict", "@test", "@lint", "@analyse", "@setting:check", "@site:agent-ready-check", "@docs:check", "@composer audit"],
         "docs": "php bin/docs-site.php",
         "docs:check": "php bin/docs-site.php --check",
         "site:agent-ready": "php bin/agent-ready.php",
         "site:agent-ready-check": "php bin/agent-ready.php --check"
     },
     "scripts-descriptions": {
-        "ci": "Run every CI check: validate, tests, Pint, PHPStan, agent-ready files, docs site, audit.",
+        "ci": "Run every CI check: validate, tests, Pint, PHPStan, setting sync, agent-ready files, docs site, audit.",
         "docs": "Build the docs site into site/docs/ from docs/ (Squire's shared builder).",
         "docs:check": "Fail when site/docs/ is stale or a docs page has a broken link, block or nav entry.",
         "site:agent-ready": "Rewrite the Markdown twins, llms.txt, llms-full.txt, robots.txt and sitemap.xml in site/ (Squire's agent-ready kit).",
