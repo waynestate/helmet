@@ -16,7 +16,8 @@ use RecursiveIteratorIterator;
  * This test tokenizes every PHP file under src/ and fails if it finds a real
  * env() call. Comments and strings are separate tokens, so a docblock that
  * merely mentions env() (for example "this middleware never reads env()
- * directly") does not count.
+ * directly") does not count, and neither does a function merely named env():
+ * a declaration is not a call.
  */
 final class NoEnvInSrcTest extends TestCase
 {
@@ -25,9 +26,44 @@ final class NoEnvInSrcTest extends TestCase
         $srcDir = dirname(__DIR__, 2) . '/src';
         self::assertDirectoryExists($srcDir);
 
+        $offenders = $this->envOffenders($srcDir);
+
+        self::assertSame([], $offenders, 'env() calls found under src/: ' . implode(', ', $offenders));
+    }
+
+    /**
+     * The scanner still bites: a real env('X') call in a throwaway tree is
+     * reported, while a function merely named env() next to it is not.
+     */
+    public function testRealEnvCallIsStillCaught(): void
+    {
+        $temp = sys_get_temp_dir() . '/helmet-no-env-src-' . getmypid() . '-' . substr(md5((string) mt_rand()), 0, 8);
+        mkdir($temp, 0775, true);
+        file_put_contents($temp . '/calls-env.php', "<?php\n\necho env('X');\n");
+        file_put_contents($temp . '/declares-env.php', "<?php\n\nfunction env(): string\n{\n    return 'x';\n}\n");
+
+        try {
+            $offenders = $this->envOffenders($temp);
+
+            self::assertCount(1, $offenders);
+            self::assertStringStartsWith($temp . '/calls-env.php:', $offenders[0]);
+        } finally {
+            @unlink($temp . '/calls-env.php');
+            @unlink($temp . '/declares-env.php');
+            @rmdir($temp);
+        }
+    }
+
+    /**
+     * Every "path:line" of a global env() call in the PHP files under $dir.
+     *
+     * @return list<string>
+     */
+    private function envOffenders(string $dir): array
+    {
         $offenders = [];
         $iterator = new RecursiveIteratorIterator(
-            new RecursiveDirectoryIterator($srcDir, FilesystemIterator::SKIP_DOTS),
+            new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
         );
 
         foreach ($iterator as $file) {
@@ -41,7 +77,7 @@ final class NoEnvInSrcTest extends TestCase
             }
         }
 
-        self::assertSame([], $offenders, 'env() calls found under src/: ' . implode(', ', $offenders));
+        return $offenders;
     }
 
     /**
@@ -49,7 +85,8 @@ final class NoEnvInSrcTest extends TestCase
      *
      * A global env() call is a T_STRING "env" immediately followed by "(",
      * where the preceding meaningful token is not "->" or "::" (which would
-     * make it a method or static call).
+     * make it a method or static call) and not "function" (which would make
+     * it a declaration).
      *
      * @param list<mixed> $tokens
      *
@@ -69,7 +106,7 @@ final class NoEnvInSrcTest extends TestCase
             $next = $this->nextMeaningful($tokens, $i);
             $prev = $this->prevMeaningful($tokens, $i);
 
-            if ($next === '(' && $prev !== '->' && $prev !== '::') {
+            if ($next === '(' && $prev !== '->' && $prev !== '::' && $prev !== 'function') {
                 $lines[] = $token[2];
             }
         }
