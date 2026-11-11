@@ -693,6 +693,31 @@ Output: the changes as a diff per file, then how to check the headers locally, t
         </li>
         <li class="frame">
           <p class="frame__no" aria-hidden="true">Reel 2</p>
+          <h3 class="frame__title">CSP reports, three fields</h3>
+          <div class="frame__shot">
+            <pre class="frame__screen"><code>CSP violation:
+ directive=script-src-elem
+ blocked_host=evil.example.com
+ document_path=/courses/12</code></pre>
+            <span class="frame__stamp" aria-hidden="true">204</span>
+          </div>
+          <p class="frame__text">Point <code>csp_report_uri</code> at <code>Route::cspReport()</code> in Laravel, <code>helmet_csp_report()</code> in raw PHP or <code>CspReportMiddleware</code> in PSR-15, and every play the policy blocks becomes one log line: the directive, the host it came from, the page's path. Never the report body, never the query string, at most 16&nbsp;KiB and 20 reports a POST.</p>
+        </li>
+        <li class="frame">
+          <p class="frame__no" aria-hidden="true">Reel 3</p>
+          <h3 class="frame__title">Ready, or benched</h3>
+          <div class="frame__shot">
+            <pre class="frame__screen"><code>GET /ready
+{"status":"not ready",
+ "checks":{
+  "headers":{"status":"pass"},
+  "database":{"status":"fail"}}}</code></pre>
+            <span class="frame__stamp frame__stamp--bench" aria-hidden="true">503</span>
+          </div>
+          <p class="frame__text"><code>/up</code> says the player is breathing; <code>/ready</code> says he can go in. Your checks join HELMET's own, a failure answers <code>503</code> so the platform benches this instance instead of restarting it, and the body never names a host, a DSN or an exception.</p>
+        </li>
+        <li class="frame">
+          <p class="frame__no" aria-hidden="true">Reel 4</p>
           <h3 class="frame__title">Version warnings</h3>
           <pre class="frame__screen"><code>Laravel 11 is end of life and
 no longer receives security
@@ -701,11 +726,11 @@ supported version.</code></pre>
           <p class="frame__text">Point <code>HELMET_POLICY_PATH</code> at CREED's <code>policy.json</code> and the ribbon warns about a PHP or Laravel version in its security-only phase or past end of life. An active or unknown version gets no warning, and a missing file never breaks the page.</p>
         </li>
         <li class="frame">
-          <p class="frame__no" aria-hidden="true">Reel 3</p>
+          <p class="frame__no" aria-hidden="true">Reel 5</p>
           <h3 class="frame__title">Metrics, off by default</h3>
           <pre class="frame__screen"><code># TYPE helmet_info gauge
 helmet_info{php_version="8.5.12",
- helmet_version="1.3.1"} 1
+ helmet_version="1.4.1"} 1
 helmet_php_eol_timestamp_seconds{
  php_minor="8.5"} 1893369600
 helmet_http_request_duration_seconds_count{
@@ -713,7 +738,7 @@ helmet_http_request_duration_seconds_count{
           <p class="frame__text">A Prometheus endpoint you turn on with <code>HELMET_METRICS_ENABLED</code>: versions and PHP end of support, and, once you name a store, requests by route group and CSP violations. It needs a bearer token or an IP allow list; with neither, it answers <code>404</code>. The Grafana dashboard is ready for the day something scrapes it.</p>
         </li>
         <li class="frame">
-          <p class="frame__no" aria-hidden="true">Reel 4</p>
+          <p class="frame__no" aria-hidden="true">Reel 6</p>
           <h3 class="frame__title">The ribbon</h3>
           <div class="frame__screen frame__screen--page" aria-hidden="true"><span class="mini-ribbon">staging</span><span class="mini-line"></span><span class="mini-line mini-line--short"></span><span class="mini-line"></span></div>
           <p class="frame__text">In local, dev, testing and staging, Laravel apps get <code>&lt;div class="helmet-ribbon"&gt;</code> right after <code>&lt;body&gt;</code>, so nobody mistakes the scrimmage for the game. It never shows in production or on JSON responses. No Aftertaste.</p>
@@ -743,7 +768,7 @@ helmet_http_request_duration_seconds_count{
 
       <div class="whiteboard" role="group" aria-labelledby="squad-title">
         <h2 class="whiteboard__title" id="squad-title">Practice squad</h2>
-        <p class="whiteboard__sub">Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on <code>/ready</code> and Gitleaks in CI.</p>
+        <p class="whiteboard__sub">Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on <code>/ready</code>, Gitleaks in CI, an opt-in Cross-Origin-Embedder-Policy and CSP report endpoints for raw PHP and PSR-15.</p>
         <ul class="squad">
           <li>A strict <code>style-src-attr</code> by default, once WayneUI's recipes stop writing inline styles (<code>style_src_attr</code> already reports or blocks them)</li>
           <li>Traded to SESAME: <code>Clear-Site-Data</code> on logout, since SESAME owns sign-out</li>

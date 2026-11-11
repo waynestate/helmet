@@ -1643,7 +1643,7 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
     blocked_host=evil.example.com
     document_path=/courses/12
    ```
-   Point `csp_report_uri` at `Route::cspReport()` in Laravel or `helmet_csp_report()` in raw PHP, and every play the policy blocks becomes one log line: the directive, the host it came from, the page's path. Never the report body, never the query string, at most 16 KiB and 20 reports a POST.
+   Point `csp_report_uri` at `Route::cspReport()` in Laravel, `helmet_csp_report()` in raw PHP or `CspReportMiddleware` in PSR-15, and every play the policy blocks becomes one log line: the directive, the host it came from, the page's path. Never the report body, never the query string, at most 16 KiB and 20 reports a POST.
 3. ### Ready, or benched
    ```
    GET /ready
@@ -1689,7 +1689,7 @@ On film Every pipeline builds a small Vue app and plays it in Chromium under the
 
 ### Practice squad
 
-Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on `/ready`, Gitleaks in CI, an opt-in Cross-Origin-Embedder-Policy and a CSP report endpoint for raw PHP.
+Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on `/ready`, Gitleaks in CI, an opt-in Cross-Origin-Embedder-Policy and CSP report endpoints for raw PHP and PSR-15.
 
 - A strict `style-src-attr` by default, once WayneUI's recipes stop writing inline styles (`style_src_attr` already reports or blocks them)
 - Traded to SESAME: `Clear-Site-Data` on logout, since SESAME owns sign-out
@@ -1804,6 +1804,7 @@ All notable changes to this project are documented in this file.
 - Added: a CSP report endpoint for raw PHP. `helmet_csp_report($logger, $metrics)` answers a violation report from a `public/csp-report.php` that never calls `helmet_boot()` and exits; `helmet_csp_report_response()` returns the same answer as data. Both share `Headers\CspReport` with `Route::cspReport()`, so the two paths accept the same two formats, enforce the same 16 KiB and 20-report caps, and log the same three fields. Raw PHP adds `405` with `Allow: POST` for other methods and a warning record carrying the three fields as context (H7).
 - Added: `Headers\CspReportMiddleware`, the CSP report endpoint for PSR-15 pipelines. On its path (default `/csp-report`) it answers through `Headers\CspReport` like the raw PHP and Laravel paths, reading the body at most 16 KiB plus one byte deep; other paths pass through. A test pins that the raw PHP and PSR-15 answers agree (H7).
 - Changed: `Laravel\CspReportController` now delegates its parsing to `Headers\CspReport`; its answers and log lines are unchanged.
+- Site: the front page's film room runs six reels in a three by two grid. Two new reels show a CSP report's one log line (stamped `204`) and a `/ready` answer benched with a `503` stamp; the stamps land with a short spring once the reel scrolls in, and sit still under reduced motion. The whiteboard calls up the CSP report endpoints for raw PHP and PSR-15.
 - Docs: Troubleshooting has "Violation reports never reach the log" (CSRF, sign-in, base path and throttle causes, with a curl and a PowerShell check).
 
 ### 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-4-1-2026-11-10)

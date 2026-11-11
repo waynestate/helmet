@@ -337,7 +337,24 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
     "channel":"app"}
    ```
    Monolog JSON, one event per line, each with a request ID. Passwords, tokens and session IDs come out as `***`. If the log file can't be written, HELMET writes to stderr and the request carries on.
-2. ### Version warnings
+2. ### CSP reports, three fields
+   ```
+   CSP violation:
+    directive=script-src-elem
+    blocked_host=evil.example.com
+    document_path=/courses/12
+   ```
+   Point `csp_report_uri` at `Route::cspReport()` in Laravel, `helmet_csp_report()` in raw PHP or `CspReportMiddleware` in PSR-15, and every play the policy blocks becomes one log line: the directive, the host it came from, the page's path. Never the report body, never the query string, at most 16 KiB and 20 reports a POST.
+3. ### Ready, or benched
+   ```
+   GET /ready
+   {"status":"not ready",
+    "checks":{
+     "headers":{"status":"pass"},
+     "database":{"status":"fail"}}}
+   ```
+   `/up` says the player is breathing; `/ready` says he can go in. Your checks join HELMET's own, a failure answers `503` so the platform benches this instance instead of restarting it, and the body never names a host, a DSN or an exception.
+4. ### Version warnings
    ```
    Laravel 11 is end of life and
    no longer receives security
@@ -345,18 +362,18 @@ What HELMET writes down while the game is on, so you can watch the tape afterwar
    supported version.
    ```
    Point `HELMET_POLICY_PATH` at CREED's `policy.json` and the ribbon warns about a PHP or Laravel version in its security-only phase or past end of life. An active or unknown version gets no warning, and a missing file never breaks the page.
-3. ### Metrics, off by default
+5. ### Metrics, off by default
    ```
    # TYPE helmet_info gauge
    helmet_info{php_version="8.5.12",
-    helmet_version="1.3.1"} 1
+    helmet_version="1.4.1"} 1
    helmet_php_eol_timestamp_seconds{
     php_minor="8.5"} 1893369600
    helmet_http_request_duration_seconds_count{
     route="docs",method="GET",status="2xx"} 412
    ```
    A Prometheus endpoint you turn on with `HELMET_METRICS_ENABLED`: versions and PHP end of support, and, once you name a store, requests by route group and CSP violations. It needs a bearer token or an IP allow list; with neither, it answers `404`. The Grafana dashboard is ready for the day something scrapes it.
-4. ### The ribbon
+6. ### The ribbon
    In local, dev, testing and staging, Laravel apps get `<div class="helmet-ribbon">` right after `<body>`, so nobody mistakes the scrimmage for the game. It never shows in production or on JSON responses. No Aftertaste.
 
 ## Coach's rules for Vite and Inertia
@@ -373,7 +390,7 @@ On film Every pipeline builds a small Vue app and plays it in Chromium under the
 
 ## Practice squad
 
-Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on `/ready` and Gitleaks in CI.
+Still on HELMET's backlog. They suit up when they're ready. Called up this season: the readiness check on `/ready`, Gitleaks in CI, an opt-in Cross-Origin-Embedder-Policy and CSP report endpoints for raw PHP and PSR-15.
 
 - A strict `style-src-attr` by default, once WayneUI's recipes stop writing inline styles (`style_src_attr` already reports or blocks them)
 - Traded to SESAME: `Clear-Site-Data` on logout, since SESAME owns sign-out
