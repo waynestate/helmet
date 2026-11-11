@@ -896,7 +896,9 @@ document path) and nothing else. It accepts both report formats: the legacy
 `application/csp-report` object, and the Reporting API's
 `application/reports+json` array, from which it logs the `csp-violation`
 entries (at most 20 per POST; browsers batch other report types into the
-same request, and those are ignored). The route is off until you register it:
+same request, and those are ignored). Each field is made safe to log first:
+a run of whitespace or control characters becomes one underscore, and a field
+past 200 bytes is cut. The route is off until you register it:
 
 ```php
 // routes/web.php
@@ -1803,6 +1805,7 @@ All notable changes to this project are documented in this file.
 - CI pins Preflight 0.8.0.
 - Added: a CSP report endpoint for raw PHP. `helmet_csp_report($logger, $metrics)` answers a violation report from a `public/csp-report.php` that never calls `helmet_boot()` and exits; `helmet_csp_report_response()` returns the same answer as data. Both share `Headers\CspReport` with `Route::cspReport()`, so the two paths accept the same two formats, enforce the same 16 KiB and 20-report caps, and log the same three fields. Raw PHP adds `405` with `Allow: POST` for other methods and a warning record carrying the three fields as context (H7).
 - Added: `Headers\CspReportMiddleware`, the CSP report endpoint for PSR-15 pipelines. On its path (default `/csp-report`) it answers through `Headers\CspReport` like the raw PHP and Laravel paths, reading the body at most 16 KiB plus one byte deep; other paths pass through. A test pins that the raw PHP and PSR-15 answers agree (H7).
+- Security: the CSP report endpoint (all three paths) makes each logged field safe first. A run of whitespace or control characters becomes one underscore, so a report can no longer start a forged log line or a forged `key=value` pair in a plain-text log, and a field past 200 bytes is cut and ends in `...`. A legacy `violated-directive` that carries its value (`img-src 'self'`, as older Firefox sent it) logs the directive name alone.
 - Changed: `Laravel\CspReportController` now delegates its parsing to `Headers\CspReport`; its answers and log lines are unchanged.
 - Site: the front page's film room runs six reels in a three by two grid. Two new reels show a CSP report's one log line (stamped `204`) and a `/ready` answer benched with a `503` stamp; the stamps land with a short spring once the reel scrolls in, and sit still under reduced motion. The whiteboard calls up the CSP report endpoints for raw PHP and PSR-15.
 - Docs: Troubleshooting has "Violation reports never reach the log" (CSRF, sign-in, base path and throttle causes, with a curl and a PowerShell check).
@@ -2257,7 +2260,7 @@ Run report-only first. That is how you see what would be blocked before you enfo
 
 ### Receiving the reports in Laravel [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-laravel)
 
-Laravel ships an opt-in endpoint that receives the reports and logs one line per violation (the violated directive, the blocked URI's host, and the document path) and nothing else. It accepts both report formats: the legacy `application/csp-report` object, and the Reporting API's `application/reports+json` array, from which it logs the `csp-violation` entries (at most 20 per POST; browsers batch other report types into the same request, and those are ignored). The route is off until you register it:
+Laravel ships an opt-in endpoint that receives the reports and logs one line per violation (the violated directive, the blocked URI's host, and the document path) and nothing else. It accepts both report formats: the legacy `application/csp-report` object, and the Reporting API's `application/reports+json` array, from which it logs the `csp-violation` entries (at most 20 per POST; browsers batch other report types into the same request, and those are ignored). The three fields come from whoever sent the report, so each is made safe to log first: a run of whitespace or control characters becomes one underscore, and a field longer than 200 bytes is cut and ends in `...`. The route is off until you register it:
 
 ```php
 // routes/web.php
@@ -4219,6 +4222,7 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | --- | --- |
 | `MAX_BODY_BYTES` | `public const int MAX_BODY_BYTES = 16 * 1024;` |
 | `MAX_REPORTS` | `public const int MAX_REPORTS = 20;` |
+| `MAX_FIELD_BYTES` | `public const int MAX_FIELD_BYTES = 200;` |
 | `parse()` | `public static function parse(string $contentType, string $body, ?int $declaredLength = null): array` |
 | `answer()` | `public static function answer(string $method, string $contentType, string $body, ?int $declaredLength, ?LoggerInterface $logger = null, ?RequestMetrics $metrics = null): array` |
 | `logLine()` | `public static function logLine(array $violation): string` |

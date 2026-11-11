@@ -159,6 +159,7 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | --- | --- |
 | `MAX_BODY_BYTES` | `public const int MAX_BODY_BYTES = 16 * 1024;` |
 | `MAX_REPORTS` | `public const int MAX_REPORTS = 20;` |
+| `MAX_FIELD_BYTES` | `public const int MAX_FIELD_BYTES = 200;` |
 | `parse()` | `public static function parse(string $contentType, string $body, ?int $declaredLength = null): array` |
 | `answer()` | `public static function answer(string $method, string $contentType, string $body, ?int $declaredLength, ?LoggerInterface $logger = null, ?RequestMetrics $metrics = null): array` |
 | `logLine()` | `public static function logLine(array $violation): string` |

@@ -167,4 +167,51 @@ final class CspReportTest extends TestCase
             ]),
         );
     }
+
+    /**
+     * The three fields are attacker-supplied. A newline, a tab or a space in
+     * one of them must not start a forged log line or a forged key=value
+     * pair, so whitespace and control characters become one underscore.
+     */
+    public function testAFieldCannotForgeALogLineOrAKey(): void
+    {
+        $body = (string) json_encode(['csp-report' => [
+            'violated-directive' => "img-src\nCSP violation: directive=fake",
+            'blocked-uri' => "https://evil.example.com/x blocked_host=trusted.example.edu",
+            'document-uri' => "https://app.example.edu/a\tb\x7Fc\x00d",
+        ]]);
+
+        $violation = CspReport::parse('application/csp-report', $body)['violations'][0];
+        $line = CspReport::logLine($violation);
+
+        self::assertSame('img-src', $violation['directive']);
+        self::assertSame('evil.example.com', $violation['blocked_host']);
+        self::assertSame('/a_b_c_d', $violation['document_path']);
+        self::assertStringNotContainsString("\n", $line);
+        self::assertSame(1, substr_count($line, 'blocked_host='));
+    }
+
+    /**
+     * Older Firefox sent the whole directive, value included, as
+     * violated-directive. The name alone is what an operator triages.
+     */
+    public function testALegacyDirectiveWithItsValueKeepsTheName(): void
+    {
+        $body = (string) json_encode(['csp-report' => ['violated-directive' => "img-src 'self' data:"]]);
+
+        self::assertSame('img-src', CspReport::parse('application/csp-report', $body)['violations'][0]['directive']);
+    }
+
+    public function testALongFieldIsCut(): void
+    {
+        $body = (string) json_encode(['csp-report' => [
+            'violated-directive' => 'img-src',
+            'document-uri' => 'https://app.example.edu/' . str_repeat('a', 5000),
+        ]]);
+
+        $path = CspReport::parse('application/csp-report', $body)['violations'][0]['document_path'];
+
+        self::assertSame(CspReport::MAX_FIELD_BYTES + 3, strlen($path));
+        self::assertStringEndsWith('...', $path);
+    }
 }

@@ -51,6 +51,15 @@ final class CspReport
     public const int MAX_REPORTS = 20;
 
     /**
+     * The longest a logged field may be, in bytes, before it is cut and
+     * marked with "...".
+     *
+     * A host is at most 253 bytes; a path an operator can triage fits well
+     * inside 200. Anything longer is padding someone sent on purpose.
+     */
+    public const int MAX_FIELD_BYTES = 200;
+
+    /**
      * The content types a browser sends a CSP report with.
      *
      * @var list<string>
@@ -227,11 +236,34 @@ final class CspReport
      */
     private static function violation(string $directive, string $blockedUri, string $documentUri): array
     {
+        // Older Firefox sent the directive with its value ("img-src 'self'");
+        // the name is the first word.
+        $name = preg_split('/[\s\x00-\x1F\x7F]+/', trim($directive), 2);
+        $name = is_array($name) ? $name[0] : '';
+
         return [
-            'directive' => $directive,
-            'blocked_host' => self::hostOf($blockedUri),
-            'document_path' => self::pathOf($documentUri),
+            'directive' => self::field($name === '' ? 'unknown' : $name),
+            'blocked_host' => self::field(self::hostOf($blockedUri)),
+            'document_path' => self::field(self::pathOf($documentUri)),
         ];
+    }
+
+    /**
+     * A field as it may be logged: every run of whitespace or control
+     * characters becomes one underscore, so a field can neither start a
+     * forged log line nor a forged key=value pair, and anything past
+     * MAX_FIELD_BYTES is cut and marked. The fields come from the browser,
+     * or from whoever is pretending to be one.
+     */
+    private static function field(string $value): string
+    {
+        $value = (string) preg_replace('/[\s\x00-\x1F\x7F]+/', '_', $value);
+
+        if (strlen($value) > self::MAX_FIELD_BYTES) {
+            $value = substr($value, 0, self::MAX_FIELD_BYTES) . '...';
+        }
+
+        return $value === '' ? '-' : $value;
     }
 
     /**

@@ -74,7 +74,7 @@ Run report-only first. That is how you see what would be blocked before you enfo
 
 ## Receiving the reports in Laravel [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-laravel)
 
-Laravel ships an opt-in endpoint that receives the reports and logs one line per violation (the violated directive, the blocked URI's host, and the document path) and nothing else. It accepts both report formats: the legacy `application/csp-report` object, and the Reporting API's `application/reports+json` array, from which it logs the `csp-violation` entries (at most 20 per POST; browsers batch other report types into the same request, and those are ignored). The route is off until you register it:
+Laravel ships an opt-in endpoint that receives the reports and logs one line per violation (the violated directive, the blocked URI's host, and the document path) and nothing else. It accepts both report formats: the legacy `application/csp-report` object, and the Reporting API's `application/reports+json` array, from which it logs the `csp-violation` entries (at most 20 per POST; browsers batch other report types into the same request, and those are ignored). The three fields come from whoever sent the report, so each is made safe to log first: a run of whitespace or control characters becomes one underscore, and a field longer than 200 bytes is cut and ends in `...`. The route is off until you register it:
 
 ```php
 // routes/web.php

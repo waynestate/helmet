@@ -910,7 +910,9 @@ document path) and nothing else. It accepts both report formats: the legacy
 `application/csp-report` object, and the Reporting API's
 `application/reports+json` array, from which it logs the `csp-violation`
 entries (at most 20 per POST; browsers batch other report types into the
-same request, and those are ignored). The route is off until you register it:
+same request, and those are ignored). Each field is made safe to log first:
+a run of whitespace or control characters becomes one underscore, and a field
+past 200 bytes is cut. The route is off until you register it:
 
 ```php
 // routes/web.php
