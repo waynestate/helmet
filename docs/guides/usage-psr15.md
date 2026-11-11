@@ -14,16 +14,20 @@ The same core, mounted in a middleware pipeline:
 ```php
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Waynestate\Helmet\Csrf\RequestForgeryGuard;
+use Waynestate\Helmet\Headers\CspReportMiddleware;
 use Waynestate\Helmet\Headers\SecurityHeadersMiddleware;
 use Waynestate\Helmet\Health\HealthCheck;
+use Waynestate\Helmet\Logging\Logging;
 use Waynestate\Helmet\Platform\Presets;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
 $factory = new Psr17Factory();
 $proxies = new TrustedProxies(Presets::proxies('citadel'));
+$logger = Logging::create('app', 'php://stderr');
 
 $middleware = [
     new HealthCheck($factory, $factory, '/up'),
+    new CspReportMiddleware($factory, $factory, '/csp-report', $logger),
     new RequestForgeryGuard($proxies, $factory, $factory, except: ['/api/webhooks/*']),
     new SecurityHeadersMiddleware($proxies),
 ];
@@ -32,6 +36,7 @@ $middleware = [
 ## The middlewares
 
 - `HealthCheck` answers the health path, `/up` in the example.
+- `CspReportMiddleware` answers CSP violation reports on its path, `/csp-report` in the example, before the guard sees them (a browser sends reports with no CSRF token). It logs one warning per violation through the optional logger and answers exactly as `Route::cspReport()` and `helmet_csp_report()` do; see [Receiving the reports in PSR-15](csp.md#receiving-the-reports-in-psr-15).
 - `RequestForgeryGuard` is opt-in: mounting it turns the check on for that pipeline. The example passes `except: ['/api/webhooks/*']`. Its options are described in [The request-forgery guard](csrf.md).
 - `SecurityHeadersMiddleware` sets the request attribute `helmet.csp_nonce` so a downstream handler can read the same nonce the CSP header carries.
 

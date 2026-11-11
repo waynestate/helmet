@@ -103,6 +103,22 @@ Then point the policy at it with `'csp_report_uri' => '/csp-report.php'`. `helme
 
 `helmet_csp_report()` sends the answer and exits. To send it yourself (a front controller, a test), call `helmet_csp_report_response()` with the same arguments: it returns the status, the headers and the body. There is no throttle on this path; the body and batch caps bound the work one request can force, and a rate limit belongs in your web server if you want one.
 
+## Receiving the reports in PSR-15
+
+A PSR-15 pipeline mounts `CspReportMiddleware`. On its path it answers the report itself, through the same core class, and the app never sees the request; on any other path it passes through. Mount it before `RequestForgeryGuard` and any sign-in middleware, for the same reason the raw PHP file skips `helmet_boot()`:
+
+```php
+use Waynestate\Helmet\Headers\CspReportMiddleware;
+
+$middleware = [
+    new CspReportMiddleware($factory, $factory, '/csp-report', $logger, $metrics),
+    new RequestForgeryGuard($proxies, $factory, $factory),
+    new SecurityHeadersMiddleware($proxies, cspReportUri: '/csp-report'),
+];
+```
+
+The arguments are the PSR-17 response and stream factories, the path (default `/csp-report`), and the optional logger and `RequestMetrics`. It reads the body at most 16 KiB plus one byte deep, so an oversized report is refused without being read whole. Like the raw PHP path, it has no throttle of its own.
+
 ## Related
 
 - [The headers](headers.md)

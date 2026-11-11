@@ -21,6 +21,7 @@ All notable changes to this project are documented in this file.
 - Docs: BEST_PRACTICES marks gap 27 done: CREED's handbook has had its "Runtime and headers" chapter since 0.1.11.
 - CI pins Preflight 0.8.0.
 - Added: a CSP report endpoint for raw PHP. `helmet_csp_report($logger, $metrics)` answers a violation report from a `public/csp-report.php` that never calls `helmet_boot()` and exits; `helmet_csp_report_response()` returns the same answer as data. Both share `Headers\CspReport` with `Route::cspReport()`, so the two paths accept the same two formats, enforce the same 16 KiB and 20-report caps, and log the same three fields. Raw PHP adds `405` with `Allow: POST` for other methods and a warning record carrying the three fields as context (H7).
+- Added: `Headers\CspReportMiddleware`, the CSP report endpoint for PSR-15 pipelines. On its path (default `/csp-report`) it answers through `Headers\CspReport` like the raw PHP and Laravel paths, reading the body at most 16 KiB plus one byte deep; other paths pass through. A test pins that the raw PHP and PSR-15 answers agree (H7).
 - Changed: `Laravel\CspReportController` now delegates its parsing to `Headers\CspReport`; its answers and log lines are unchanged.
 - Docs: Troubleshooting has "Violation reports never reach the log" (CSRF, sign-in, base path and throttle causes, with a curl and a PowerShell check).
 

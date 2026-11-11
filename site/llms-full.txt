@@ -940,6 +940,11 @@ the web server if reports ever flood. `helmet_csp_report_response()` returns
 the same answer as data without sending it. Think of it as the referee's
 whistle without the referee's opinions.
 
+A PSR-15 pipeline mounts `CspReportMiddleware` before the guard instead:
+`new CspReportMiddleware($factory, $factory, '/csp-report', $logger)`. On its
+path it gives the same answers; on any other path it passes through. See
+[Receiving the reports in PSR-15](https://github.com/waynestate/helmet/blob/HEAD/docs/guides/csp.md#receiving-the-reports-in-psr-15).
+
 #### Cross-origin isolation and feature policy
 
 Three more headers round out the baseline: two are on by default, one is
@@ -1797,6 +1802,7 @@ All notable changes to this project are documented in this file.
 - Docs: BEST_PRACTICES marks gap 27 done: CREED's handbook has had its "Runtime and headers" chapter since 0.1.11.
 - CI pins Preflight 0.8.0.
 - Added: a CSP report endpoint for raw PHP. `helmet_csp_report($logger, $metrics)` answers a violation report from a `public/csp-report.php` that never calls `helmet_boot()` and exits; `helmet_csp_report_response()` returns the same answer as data. Both share `Headers\CspReport` with `Route::cspReport()`, so the two paths accept the same two formats, enforce the same 16 KiB and 20-report caps, and log the same three fields. Raw PHP adds `405` with `Allow: POST` for other methods and a warning record carrying the three fields as context (H7).
+- Added: `Headers\CspReportMiddleware`, the CSP report endpoint for PSR-15 pipelines. On its path (default `/csp-report`) it answers through `Headers\CspReport` like the raw PHP and Laravel paths, reading the body at most 16 KiB plus one byte deep; other paths pass through. A test pins that the raw PHP and PSR-15 answers agree (H7).
 - Changed: `Laravel\CspReportController` now delegates its parsing to `Headers\CspReport`; its answers and log lines are unchanged.
 - Docs: Troubleshooting has "Violation reports never reach the log" (CSRF, sign-in, base path and throttle causes, with a curl and a PowerShell check).
 
@@ -2283,6 +2289,22 @@ helmet_csp_report(Logging::create('csp', 'php://stderr'));
 Then point the policy at it with `'csp_report_uri' => '/csp-report.php'`. `helmet_csp_report()` answers exactly as the Laravel route does, because both go through the same core class: the same two formats, the same 16 KiB and 20-report caps, `204` with `Cache-Control: no-store` on success, `415`, `413` or `400` on a report it refuses, and `405` with `Allow: POST` on any other method. Each violation is logged at warning level with the three fields as context, and nothing else from the report is kept. The logger is optional, and a logger that throws never changes the answer. Pass `helmet_metrics_requests($config)` as the second argument to count violations by directive (see [Metrics](https://helmet.apps.wayne.edu/docs/guides/metrics.html)).
 
 `helmet_csp_report()` sends the answer and exits. To send it yourself (a front controller, a test), call `helmet_csp_report_response()` with the same arguments: it returns the status, the headers and the body. There is no throttle on this path; the body and batch caps bound the work one request can force, and a rate limit belongs in your web server if you want one.
+
+### Receiving the reports in PSR-15 [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-psr-15)
+
+A PSR-15 pipeline mounts `CspReportMiddleware`. On its path it answers the report itself, through the same core class, and the app never sees the request; on any other path it passes through. Mount it before `RequestForgeryGuard` and any sign-in middleware, for the same reason the raw PHP file skips `helmet_boot()`:
+
+```php
+use Waynestate\Helmet\Headers\CspReportMiddleware;
+
+$middleware = [
+    new CspReportMiddleware($factory, $factory, '/csp-report', $logger, $metrics),
+    new RequestForgeryGuard($proxies, $factory, $factory),
+    new SecurityHeadersMiddleware($proxies, cspReportUri: '/csp-report'),
+];
+```
+
+The arguments are the PSR-17 response and stream factories, the path (default `/csp-report`), and the optional logger and `RequestMetrics`. It reads the body at most 16 KiB plus one byte deep, so an oversized report is refused without being read whole. Like the raw PHP path, it has no throttle of its own.
 
 ### Related [#](https://helmet.apps.wayne.edu/docs/guides/csp.html#related)
 
@@ -3551,16 +3573,20 @@ The same core, mounted in a middleware pipeline:
 ```php
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Waynestate\Helmet\Csrf\RequestForgeryGuard;
+use Waynestate\Helmet\Headers\CspReportMiddleware;
 use Waynestate\Helmet\Headers\SecurityHeadersMiddleware;
 use Waynestate\Helmet\Health\HealthCheck;
+use Waynestate\Helmet\Logging\Logging;
 use Waynestate\Helmet\Platform\Presets;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
 $factory = new Psr17Factory();
 $proxies = new TrustedProxies(Presets::proxies('citadel'));
+$logger = Logging::create('app', 'php://stderr');
 
 $middleware = [
     new HealthCheck($factory, $factory, '/up'),
+    new CspReportMiddleware($factory, $factory, '/csp-report', $logger),
     new RequestForgeryGuard($proxies, $factory, $factory, except: ['/api/webhooks/*']),
     new SecurityHeadersMiddleware($proxies),
 ];
@@ -3569,6 +3595,7 @@ $middleware = [
 ### The middlewares [#](https://helmet.apps.wayne.edu/docs/guides/usage-psr15.html#the-middlewares)
 
 - `HealthCheck` answers the health path, `/up` in the example.
+- `CspReportMiddleware` answers CSP violation reports on its path, `/csp-report` in the example, before the guard sees them (a browser sends reports with no CSRF token). It logs one warning per violation through the optional logger and answers exactly as `Route::cspReport()` and `helmet_csp_report()` do; see [Receiving the reports in PSR-15](https://helmet.apps.wayne.edu/docs/guides/csp.html#receiving-the-reports-in-psr-15).
 - `RequestForgeryGuard` is opt-in: mounting it turns the check on for that pipeline. The example passes `except: ['/api/webhooks/*']`. Its options are described in [The request-forgery guard](https://helmet.apps.wayne.edu/docs/guides/csrf.html).
 - `SecurityHeadersMiddleware` sets the request attribute `helmet.csp_nonce` so a downstream handler can read the same nonce the CSP header carries.
 
@@ -4185,7 +4212,7 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 
 #### `Headers\CspReport` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers-cspreport)
 
-`final class CspReport` in `src/Headers/CspReport.php`. The framework-free half of the CSP report endpoint, shared by the Laravel controller and the raw PHP `helmet_csp_report()`. `parse()` is pure: it checks the media type (415), the declared and then the real length (413) and the JSON shape (400), in that order, and pulls out the violations, each as `array{directive: string, blocked_host: string, document_path: string}`; a refusal carries none. `answer()` adds the POST-only method check (405 with `Allow: POST`), one warning per violation with the three fields as context, and one metrics tick per violation. Every answer carries `Content-Type: text/plain; charset=utf-8` and `Cache-Control: no-store`.
+`final class CspReport` in `src/Headers/CspReport.php`. The framework-free half of the CSP report endpoint, shared by the Laravel controller, `CspReportMiddleware` and the raw PHP `helmet_csp_report()`. `parse()` is pure: it checks the media type (415), the declared and then the real length (413) and the JSON shape (400), in that order, and pulls out the violations, each as `array{directive: string, blocked_host: string, document_path: string}`; a refusal carries none. `answer()` adds the POST-only method check (405 with `Allow: POST`), one warning per violation with the three fields as context, and one metrics tick per violation. Every answer carries `Content-Type: text/plain; charset=utf-8` and `Cache-Control: no-store`.
 
 | Member | Signature |
 | --- | --- |
@@ -4195,6 +4222,16 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | `answer()` | `public static function answer(string $method, string $contentType, string $body, ?int $declaredLength, ?LoggerInterface $logger = null, ?RequestMetrics $metrics = null): array` |
 | `logLine()` | `public static function logLine(array $violation): string` |
 | `declaredLength()` | `public static function declaredLength(mixed $value): ?int` |
+
+#### `Headers\CspReportMiddleware` [#](https://helmet.apps.wayne.edu/docs/reference/api.html#headers-cspreportmiddleware)
+
+`final class CspReportMiddleware implements MiddlewareInterface` in `src/Headers/CspReportMiddleware.php`. PSR-15 middleware that receives CSP violation reports. On its path (default `/csp-report`) it answers the request itself through `CspReport::answer()`, so it agrees with `Route::cspReport()` and `helmet_csp_report()`, and the app never sees the request; on any other path it passes through untouched. The body is read at most `CspReport::MAX_BODY_BYTES` plus one byte deep. Mount it before `RequestForgeryGuard` and any sign-in middleware.
+
+| Member | Signature |
+| --- | --- |
+| `DEFAULT_PATH` | `public const string DEFAULT_PATH = '/csp-report';` |
+| `__construct()` | `public function __construct(private readonly ResponseFactoryInterface $responseFactory, private readonly StreamFactoryInterface $streamFactory, private readonly string $path = self::DEFAULT_PATH, private readonly ?LoggerInterface $logger = null, private readonly ?RequestMetrics $metrics = null)` |
+| `process()` | `public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface` |
 
 ### Health [#](https://helmet.apps.wayne.edu/docs/reference/api.html#health)
 
@@ -5033,12 +5070,12 @@ Expected: the nonce in the `Content-Security-Policy` header matches the `helmet.
 
 Cause: the browser sends the report, but something in front of HELMET's endpoint answers first. The usual suspects, in the order to rule them out:
 
-- The request-forgery guard. A report is a `POST`, so the guard judges it like a form. When the endpoint is on another origin, or the browser sends the report without the request's own origin, the guard answers `403`. Laravel's `Route::cspReport()` already leaves the CSRF middleware out; raw PHP and PSR-15 do not know which path is yours.
+- The request-forgery guard. A report is a `POST`, so the guard judges it like a form. When the endpoint is on another origin, or the browser sends the report without the request's own origin, the guard answers `403`. Laravel's `Route::cspReport()` already leaves the CSRF middleware out; in raw PHP and PSR-15 the order is yours to get right.
 - Sign-in. Browsers may send reports without cookies, so an endpoint behind SESAME or any login middleware answers with a redirect to the sign-in page, and the report is gone.
 - The path. A relative `csp_report_uri` such as `/csp-report` resolves against the page's origin, not your app's base path, so an app served under `/myapp/` receives its reports at the host's root.
 - The throttle (Laravel). `Route::cspReport()` allows 60 reports a minute per IP by default; a page that violates the policy on every load can use that up, and the rest get `429`.
 
-Fix: answer the report path before the guard and before sign-in. In raw PHP, point `csp_report_uri` at a `public/csp-report.php` that calls `helmet_csp_report()` and never `helmet_boot()`, or list the path in `csrf.except` when your front controller routes it. Keep the path outside your login middleware. Write the full path, base path included, into `csp_report_uri`. In Laravel, raise the throttle with the second argument of `Route::cspReport()` while you clean up the policy.
+Fix: answer the report path before the guard and before sign-in. In raw PHP, point `csp_report_uri` at a `public/csp-report.php` that calls `helmet_csp_report()` and never `helmet_boot()`, or list the path in `csrf.except` when your front controller routes it. In PSR-15, mount `CspReportMiddleware` before `RequestForgeryGuard`. Keep the path outside your login middleware. Write the full path, base path included, into `csp_report_uri`. In Laravel, raise the throttle with the second argument of `Route::cspReport()` while you clean up the policy.
 
 Check: send a report yourself.
 

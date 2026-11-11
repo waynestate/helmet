@@ -45,16 +45,20 @@
 <p>The same core, mounted in a middleware pipeline:</p>
 <pre tabindex="0"><code class="language-php">use Nyholm\Psr7\Factory\Psr17Factory;
 use Waynestate\Helmet\Csrf\RequestForgeryGuard;
+use Waynestate\Helmet\Headers\CspReportMiddleware;
 use Waynestate\Helmet\Headers\SecurityHeadersMiddleware;
 use Waynestate\Helmet\Health\HealthCheck;
+use Waynestate\Helmet\Logging\Logging;
 use Waynestate\Helmet\Platform\Presets;
 use Waynestate\Helmet\Proxy\TrustedProxies;
 
 $factory = new Psr17Factory();
 $proxies = new TrustedProxies(Presets::proxies('citadel'));
+$logger = Logging::create('app', 'php://stderr');
 
 $middleware = [
     new HealthCheck($factory, $factory, '/up'),
+    new CspReportMiddleware($factory, $factory, '/csp-report', $logger),
     new RequestForgeryGuard($proxies, $factory, $factory, except: ['/api/webhooks/*']),
     new SecurityHeadersMiddleware($proxies),
 ];
@@ -62,6 +66,7 @@ $middleware = [
 <h2 id="the-middlewares">The <span class="docs-heading-tail"><span>middlewares</span><a class="docs-heading-link" aria-label="Link to this section" href="#the-middlewares">#</a></span></h2>
 <ul>
 <li><code>HealthCheck</code> answers the health path, <code>/up</code> in the example.</li>
+<li><code>CspReportMiddleware</code> answers CSP violation reports on its path, <code>/csp-report</code> in the example, before the guard sees them (a browser sends reports with no CSRF token). It logs one warning per violation through the optional logger and answers exactly as <code>Route::cspReport()</code> and <code>helmet_csp_report()</code> do; see <a href="csp.html#receiving-the-reports-in-psr-15">Receiving the reports in PSR-15</a>.</li>
 <li><code>RequestForgeryGuard</code> is opt-in: mounting it turns the check on for that pipeline. The example passes <code>except: ['/api/webhooks/*']</code>. Its options are described in <a href="csrf.html">The request-forgery guard</a>.</li>
 <li><code>SecurityHeadersMiddleware</code> sets the request attribute <code>helmet.csp_nonce</code> so a downstream handler can read the same nonce the CSP header carries.</li>
 </ul>

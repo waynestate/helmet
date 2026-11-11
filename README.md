@@ -954,6 +954,11 @@ the web server if reports ever flood. `helmet_csp_report_response()` returns
 the same answer as data without sending it. Think of it as the referee's
 whistle without the referee's opinions.
 
+A PSR-15 pipeline mounts `CspReportMiddleware` before the guard instead:
+`new CspReportMiddleware($factory, $factory, '/csp-report', $logger)`. On its
+path it gives the same answers; on any other path it passes through. See
+[Receiving the reports in PSR-15](docs/guides/csp.md#receiving-the-reports-in-psr-15).
+
 ### Cross-origin isolation and feature policy
 
 Three more headers round out the baseline: two are on by default, one is

@@ -150,7 +150,7 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 
 ### `Headers\CspReport`
 
-`final class CspReport` in `src/Headers/CspReport.php`. The framework-free half of the CSP report endpoint, shared by the Laravel controller and the raw PHP `helmet_csp_report()`. `parse()` is pure: it checks the media type (415), the declared and then the real length (413) and the JSON shape (400), in that order, and pulls out the violations, each as `array{directive: string, blocked_host: string, document_path: string}`; a refusal carries none. `answer()` adds the POST-only method check (405 with `Allow: POST`), one warning per violation with the three fields as context, and one metrics tick per violation. Every answer carries `Content-Type: text/plain; charset=utf-8` and `Cache-Control: no-store`.
+`final class CspReport` in `src/Headers/CspReport.php`. The framework-free half of the CSP report endpoint, shared by the Laravel controller, `CspReportMiddleware` and the raw PHP `helmet_csp_report()`. `parse()` is pure: it checks the media type (415), the declared and then the real length (413) and the JSON shape (400), in that order, and pulls out the violations, each as `array{directive: string, blocked_host: string, document_path: string}`; a refusal carries none. `answer()` adds the POST-only method check (405 with `Allow: POST`), one warning per violation with the three fields as context, and one metrics tick per violation. Every answer carries `Content-Type: text/plain; charset=utf-8` and `Cache-Control: no-store`.
 
 | Member | Signature |
 | --- | --- |
@@ -160,6 +160,16 @@ A convenience helper for raw PHP apps: it creates a `Ribbon` for the given envir
 | `answer()` | `public static function answer(string $method, string $contentType, string $body, ?int $declaredLength, ?LoggerInterface $logger = null, ?RequestMetrics $metrics = null): array` |
 | `logLine()` | `public static function logLine(array $violation): string` |
 | `declaredLength()` | `public static function declaredLength(mixed $value): ?int` |
+
+### `Headers\CspReportMiddleware`
+
+`final class CspReportMiddleware implements MiddlewareInterface` in `src/Headers/CspReportMiddleware.php`. PSR-15 middleware that receives CSP violation reports. On its path (default `/csp-report`) it answers the request itself through `CspReport::answer()`, so it agrees with `Route::cspReport()` and `helmet_csp_report()`, and the app never sees the request; on any other path it passes through untouched. The body is read at most `CspReport::MAX_BODY_BYTES` plus one byte deep. Mount it before `RequestForgeryGuard` and any sign-in middleware.
+
+| Member | Signature |
+| --- | --- |
+| `DEFAULT_PATH` | `public const string DEFAULT_PATH = '/csp-report';` |
+| `__construct()` | `public function __construct(private readonly ResponseFactoryInterface $responseFactory, private readonly StreamFactoryInterface $streamFactory, private readonly string $path = self::DEFAULT_PATH, private readonly ?LoggerInterface $logger = null, private readonly ?RequestMetrics $metrics = null)` |
+| `process()` | `public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface` |
 
 ## Health
 

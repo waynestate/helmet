@@ -128,6 +128,17 @@ helmet_csp_report(Logging::create('csp', 'php://stderr'));
 </code></pre>
 <p>Then point the policy at it with <code>'csp_report_uri' =&gt; '/csp-report.php'</code>. <code>helmet_csp_report()</code> answers exactly as the Laravel route does, because both go through the same core class: the same two formats, the same 16 KiB and 20-report caps, <code>204</code> with <code>Cache-Control: no-store</code> on success, <code>415</code>, <code>413</code> or <code>400</code> on a report it refuses, and <code>405</code> with <code>Allow: POST</code> on any other method. Each violation is logged at warning level with the three fields as context, and nothing else from the report is kept. The logger is optional, and a logger that throws never changes the answer. Pass <code>helmet_metrics_requests($config)</code> as the second argument to count violations by directive (see <a href="metrics.html">Metrics</a>).</p>
 <p><code>helmet_csp_report()</code> sends the answer and exits. To send it yourself (a front controller, a test), call <code>helmet_csp_report_response()</code> with the same arguments: it returns the status, the headers and the body. There is no throttle on this path; the body and batch caps bound the work one request can force, and a rate limit belongs in your web server if you want one.</p>
+<h2 id="receiving-the-reports-in-psr-15">Receiving the reports in <span class="docs-heading-tail"><span>PSR-15</span><a class="docs-heading-link" aria-label="Link to this section" href="#receiving-the-reports-in-psr-15">#</a></span></h2>
+<p>A PSR-15 pipeline mounts <code>CspReportMiddleware</code>. On its path it answers the report itself, through the same core class, and the app never sees the request; on any other path it passes through. Mount it before <code>RequestForgeryGuard</code> and any sign-in middleware, for the same reason the raw PHP file skips <code>helmet_boot()</code>:</p>
+<pre tabindex="0"><code class="language-php">use Waynestate\Helmet\Headers\CspReportMiddleware;
+
+$middleware = [
+    new CspReportMiddleware($factory, $factory, '/csp-report', $logger, $metrics),
+    new RequestForgeryGuard($proxies, $factory, $factory),
+    new SecurityHeadersMiddleware($proxies, cspReportUri: '/csp-report'),
+];
+</code></pre>
+<p>The arguments are the PSR-17 response and stream factories, the path (default <code>/csp-report</code>), and the optional logger and <code>RequestMetrics</code>. It reads the body at most 16 KiB plus one byte deep, so an oversized report is refused without being read whole. Like the raw PHP path, it has no throttle of its own.</p>
 <h2 id="related"><span class="docs-heading-tail"><span>Related</span><a class="docs-heading-link" aria-label="Link to this section" href="#related">#</a></span></h2>
 <ul>
 <li><a href="headers.html">The headers</a></li>
@@ -141,7 +152,7 @@ helmet_csp_report(Logging::create('csp', 'php://stderr'));
     </main>
     <nav class="docs-pager" aria-label="Pages"><a class="docs-pager__link" href="../../docs/guides/headers.html"><span class="docs-pager__dir">Previous</span><span class="docs-pager__title">The headers</span></a><a class="docs-pager__link docs-pager__link--next" href="../../docs/guides/hsts.html"><span class="docs-pager__dir">Next</span><span class="docs-pager__title">Configuring HSTS</span></a></nav>
   </div>
-  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#merging-over-the-default">Merging over the default</a></li><li class="docs-toc__item"><a href="#inline-style-attributes">Inline style attributes</a></li><li class="docs-toc__item"><a href="#reporting-setup">Reporting setup</a></li><li class="docs-toc__item"><a href="#receiving-the-reports-in-laravel">Receiving the reports in Laravel</a></li><li class="docs-toc__item"><a href="#receiving-the-reports-in-raw-php">Receiving the reports in raw PHP</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
+  <nav class="docs-toc" aria-label="On this page"><h2 class="docs-toc__title">On this page</h2><ul class="docs-toc__list"><li class="docs-toc__item"><a href="#merging-over-the-default">Merging over the default</a></li><li class="docs-toc__item"><a href="#inline-style-attributes">Inline style attributes</a></li><li class="docs-toc__item"><a href="#reporting-setup">Reporting setup</a></li><li class="docs-toc__item"><a href="#receiving-the-reports-in-laravel">Receiving the reports in Laravel</a></li><li class="docs-toc__item"><a href="#receiving-the-reports-in-raw-php">Receiving the reports in raw PHP</a></li><li class="docs-toc__item"><a href="#receiving-the-reports-in-psr-15">Receiving the reports in PSR-15</a></li><li class="docs-toc__item"><a href="#related">Related</a></li></ul></nav>
 </div>
 <footer class="docs-footer">
   <span>Documents HELMET <span data-docs-version>1.4.1</span></span>

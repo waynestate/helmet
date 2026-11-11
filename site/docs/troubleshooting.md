@@ -164,12 +164,12 @@ Expected: the nonce in the `Content-Security-Policy` header matches the `helmet.
 
 Cause: the browser sends the report, but something in front of HELMET's endpoint answers first. The usual suspects, in the order to rule them out:
 
-- The request-forgery guard. A report is a `POST`, so the guard judges it like a form. When the endpoint is on another origin, or the browser sends the report without the request's own origin, the guard answers `403`. Laravel's `Route::cspReport()` already leaves the CSRF middleware out; raw PHP and PSR-15 do not know which path is yours.
+- The request-forgery guard. A report is a `POST`, so the guard judges it like a form. When the endpoint is on another origin, or the browser sends the report without the request's own origin, the guard answers `403`. Laravel's `Route::cspReport()` already leaves the CSRF middleware out; in raw PHP and PSR-15 the order is yours to get right.
 - Sign-in. Browsers may send reports without cookies, so an endpoint behind SESAME or any login middleware answers with a redirect to the sign-in page, and the report is gone.
 - The path. A relative `csp_report_uri` such as `/csp-report` resolves against the page's origin, not your app's base path, so an app served under `/myapp/` receives its reports at the host's root.
 - The throttle (Laravel). `Route::cspReport()` allows 60 reports a minute per IP by default; a page that violates the policy on every load can use that up, and the rest get `429`.
 
-Fix: answer the report path before the guard and before sign-in. In raw PHP, point `csp_report_uri` at a `public/csp-report.php` that calls `helmet_csp_report()` and never `helmet_boot()`, or list the path in `csrf.except` when your front controller routes it. Keep the path outside your login middleware. Write the full path, base path included, into `csp_report_uri`. In Laravel, raise the throttle with the second argument of `Route::cspReport()` while you clean up the policy.
+Fix: answer the report path before the guard and before sign-in. In raw PHP, point `csp_report_uri` at a `public/csp-report.php` that calls `helmet_csp_report()` and never `helmet_boot()`, or list the path in `csrf.except` when your front controller routes it. In PSR-15, mount `CspReportMiddleware` before `RequestForgeryGuard`. Keep the path outside your login middleware. Write the full path, base path included, into `csp_report_uri`. In Laravel, raise the throttle with the second argument of `Route::cspReport()` while you clean up the policy.
 
 Check: send a report yourself.
 
