@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Removed: the GitHub Actions workflow; CI runs on git.wayne.edu only (the GitHub copy is a mirror).
 - Fixed: front page matchup chips stacked in one column. The huddle's prompt list shares the `.calls` class, and its grid rule overrode the chips' wrapping row; it is now scoped to `.huddle`.
 - Changed: `src/Support/Setting.php` and the shared part of the WSU values guide now come from Playbook's `bin/setting-sync.php`, and `composer setting:check` (part of `composer ci`) fails when either drifts (D-097).
 - Added: `tools/a11y/vue-check.mjs` and its fixture `tools/vue-vite`, a Chromium check that a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder runs under the default CSP once the nonce is swapped in (lazy chunks and their stylesheets included), that the unswapped build never mounts, and that Vue's runtime template compiler is refused. The `browser-headers` CI job runs it after the CORP and COEP checks; `tests/VueFixtureTest.php` keeps the fixture, the check and `helmet_csp_nonce_swap()` on one placeholder (H51).

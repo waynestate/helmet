@@ -17,8 +17,7 @@ GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-mu
 **Put it on before you ship.** Security headers, a hardened session and an honest proxy check, snapped on before
 the first page is served.
 
-Checks: `composer ci` (the same command runs on GitLab and GitHub).
-Two mirrors, one command: the only thing in this repo that plays both sides is the CI.
+Checks: `composer ci` (the same command CI runs on git.wayne.edu).
 Front page: [`site/index.html`](https://github.com/waynestate/helmet/blob/HEAD/site/index.html), the playbook, as static files ([`site/README.md`](https://github.com/waynestate/helmet/blob/HEAD/site/README.md)).
 On Citadel it is served by the raw-PHP deploy layer in [`deploy/`](https://github.com/waynestate/helmet/blob/HEAD/deploy/): a Squire kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
 Documentation: [helmet.apps.wayne.edu/docs/](https://helmet.apps.wayne.edu/docs/) carries the overview, the install and quick start, a guide per topic (headers, CSP, HSTS, session, proxies, the request-forgery guard, readiness, metrics, platforms), the API and environment variable reference, troubleshooting and upgrading.
@@ -1810,6 +1809,7 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Removed: the GitHub Actions workflow; CI runs on git.wayne.edu only (the GitHub copy is a mirror).
 - Fixed: front page matchup chips stacked in one column. The huddle's prompt list shares the `.calls` class, and its grid rule overrode the chips' wrapping row; it is now scoped to `.huddle`.
 - Changed: `src/Support/Setting.php` and the shared part of the WSU values guide now come from Playbook's `bin/setting-sync.php`, and `composer setting:check` (part of `composer ci`) fails when either drifts (D-097).
 - Added: `tools/a11y/vue-check.mjs` and its fixture `tools/vue-vite`, a Chromium check that a Vue app built by Vite with `html.cspNonce` set to HELMET's placeholder runs under the default CSP once the nonce is swapped in (lazy chunks and their stylesheets included), that the unswapped build never mounts, and that Vue's runtime template compiler is refused. The `browser-headers` CI job runs it after the CORP and COEP checks; `tests/VueFixtureTest.php` keeps the fixture, the check and `helmet_csp_nonce_swap()` on one placeholder (H51).
@@ -4002,7 +4002,7 @@ Source: https://helmet.apps.wayne.edu/docs/
 
 [Three members of the band Helmet, two guitarists and a drummer at a Tama kit, tinted blue against a hazy orange and gold backdrop](https://media.tenor.com/WmJKjN9NQqoAAAAM/helmet-band.gif) GIF via [Tenor](https://tenor.com/view/helmet-band-wilmas-rainbow-helmet-band-music-gif-25658120)
 
-![php ^8.3](https://helmet.apps.wayne.edu/docs/readme/badges/php.svg) ![license MIT](https://helmet.apps.wayne.edu/docs/readme/badges/license.svg) ![psr-15: middleware](https://helmet.apps.wayne.edu/docs/readme/badges/psr15.svg) [GitHub CI](https://github.com/waynestate/helmet/actions/workflows/ci.yml)
+![php ^8.3](https://helmet.apps.wayne.edu/docs/readme/badges/php.svg) ![license MIT](https://helmet.apps.wayne.edu/docs/readme/badges/license.svg) ![psr-15: middleware](https://helmet.apps.wayne.edu/docs/readme/badges/psr15.svg)
 
 **Put it on before you ship.** Security headers, a hardened session and an honest proxy check, snapped on before the first page is served.
 
@@ -5191,7 +5191,7 @@ This page walks an app from one HELMET release to the next, newest first, using 
 
 ### 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-4-1-2026-11-10)
 
-A patch release: `composer update waynestate/helmet` within `^1.0`. No header, option or event changes, so there is nothing to change in the code. It carries HELMET's own CI (the CORP and COEP browser checks run on every pipeline), the GitHub workflow on Preflight 0.5.0, the deploy layer on PROCTOR ^0.15, and the docs. Same helmet, new strap.
+A patch release: `composer update waynestate/helmet` within `^1.0`. No header, option or event changes, so there is nothing to change in the code. It carries HELMET's own CI (the CORP and COEP browser checks run on every pipeline), the deploy layer on PROCTOR ^0.15, and the docs. Same helmet, new strap.
 
 ### 1.4.0 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-4-0-2026-11-10)
 

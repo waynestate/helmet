@@ -16,7 +16,6 @@ description: HELMET is the Wayne State app stack's baseline runtime: security he
   <img src="readme/badges/php.svg" alt="php ^8.3">
   <img src="readme/badges/license.svg" alt="license MIT">
   <img src="readme/badges/psr15.svg" alt="psr-15: middleware">
-  <a href="https://github.com/waynestate/helmet/actions/workflows/ci.yml"><img src="https://github.com/waynestate/helmet/actions/workflows/ci.yml/badge.svg" alt="GitHub CI"></a>
 </p>
 
 **Put it on before you ship.** Security headers, a hardened session and an honest proxy check, snapped on before

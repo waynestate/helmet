@@ -11,7 +11,7 @@ release is 1.4.1.
 
 ## 1.4.1 (2026-11-10)
 
-A patch release: `composer update waynestate/helmet` within `^1.0`. No header, option or event changes, so there is nothing to change in the code. It carries HELMET's own CI (the CORP and COEP browser checks run on every pipeline), the GitHub workflow on Preflight 0.5.0, the deploy layer on PROCTOR ^0.15, and the docs. Same helmet, new strap.
+A patch release: `composer update waynestate/helmet` within `^1.0`. No header, option or event changes, so there is nothing to change in the code. It carries HELMET's own CI (the CORP and COEP browser checks run on every pipeline), the deploy layer on PROCTOR ^0.15, and the docs. Same helmet, new strap.
 
 ## 1.4.0 (2026-11-10)
 

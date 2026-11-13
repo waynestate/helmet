@@ -11,14 +11,12 @@
   <img src="docs/readme/badges/php.svg" alt="php ^8.3">
   <img src="docs/readme/badges/license.svg" alt="license MIT">
   <img src="docs/readme/badges/psr15.svg" alt="psr-15: middleware">
-  <a href="https://github.com/waynestate/helmet/actions/workflows/ci.yml"><img src="https://github.com/waynestate/helmet/actions/workflows/ci.yml/badge.svg" alt="GitHub CI"></a>
 </p>
 
 **Put it on before you ship.** Security headers, a hardened session and an honest proxy check, snapped on before
 the first page is served.
 
-Checks: `composer ci` (the same command runs on GitLab and GitHub).
-Two mirrors, one command: the only thing in this repo that plays both sides is the CI.
+Checks: `composer ci` (the same command CI runs on git.wayne.edu).
 Front page: [`site/index.html`](site/index.html), the playbook, as static files ([`site/README.md`](site/README.md)).
 On Citadel it is served by the raw-PHP deploy layer in [`deploy/`](deploy/): a Squire kit whose front controller serves `site/` behind HELMET's security headers. For local development, keep serving `site/` directly.
 Documentation: [helmet.apps.wayne.edu/docs/](https://helmet.apps.wayne.edu/docs/) carries the overview, the install and quick start, a guide per topic (headers, CSP, HSTS, session, proxies, the request-forgery guard, readiness, metrics, platforms), the API and environment variable reference, troubleshooting and upgrading.

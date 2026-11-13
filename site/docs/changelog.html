@@ -44,6 +44,7 @@
 <p>All notable changes to this project are documented in this file.</p>
 <h2 id="unreleased"><span class="docs-heading-tail"><span>Unreleased</span><a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></span></h2>
 <ul>
+<li>Removed: the GitHub Actions workflow; CI runs on git.wayne.edu only (the GitHub copy is a mirror).</li>
 <li>Fixed: front page matchup chips stacked in one column. The huddle's prompt list shares the <code>.calls</code> class, and its grid rule overrode the chips' wrapping row; it is now scoped to <code>.huddle</code>.</li>
 <li>Changed: <code>src/Support/Setting.php</code> and the shared part of the WSU values guide now come from Playbook's <code>bin/setting-sync.php</code>, and <code>composer setting:check</code> (part of <code>composer ci</code>) fails when either drifts (D-097).</li>
 <li>Added: <code>tools/a11y/vue-check.mjs</code> and its fixture <code>tools/vue-vite</code>, a Chromium check that a Vue app built by Vite with <code>html.cspNonce</code> set to HELMET's placeholder runs under the default CSP once the nonce is swapped in (lazy chunks and their stylesheets included), that the unswapped build never mounts, and that Vue's runtime template compiler is refused. The <code>browser-headers</code> CI job runs it after the CORP and COEP checks; <code>tests/VueFixtureTest.php</code> keeps the fixture, the check and <code>helmet_csp_nonce_swap()</code> on one placeholder (H51).</li>
