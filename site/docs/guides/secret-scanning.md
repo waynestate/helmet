@@ -33,7 +33,7 @@ The job scans the tree, not history: it answers "is a secret in what we are abou
 
 ## On your machine [#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#on-your-machine)
 
-The same image and the same rules, with Docker. Run from the project root.
+Until Parity can run the scan for you, the same image and the same rules work with Docker. Run from the project root.
 
 Linux and macOS:
 

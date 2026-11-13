@@ -1244,6 +1244,22 @@ Every answer names its source. HELMET reports; PROCTOR decides. The
 
 Proof runs against real Wayne State applications are on a private site, [proof.apps.wayne.edu/helmet](https://proof.apps.wayne.edu/helmet/), behind a Wayne State employee sign-in.
 
+### Run it locally
+
+HELMET is a library, so the app you can run is its front page: the raw-PHP layer in `deploy/`,
+served the way Citadel serves it. Use [Parity](https://git.wayne.edu/enterprise-apps/parity)
+(a separate install):
+
+```sh
+cd deploy
+parity init --from-squire   # once: reads the Squire kit and writes parity.json
+parity up                   # Citadel's PHP image, proxy and MySQL 5.6, on the printed address
+parity check                # the same checks, against the running copy
+parity down
+```
+
+The library's own tests are under Tests below.
+
 ### Tests
 
 Maintainers: how to build, test and release this project, and where its data comes from, is in [MAINTAINING.md](https://github.com/waynestate/helmet/blob/HEAD/MAINTAINING.md).
@@ -3227,7 +3243,7 @@ The job scans the tree, not history: it answers "is a secret in what we are abou
 
 ### On your machine [#](https://helmet.apps.wayne.edu/docs/guides/secret-scanning.html#on-your-machine)
 
-The same image and the same rules, with Docker. Run from the project root.
+Until Parity can run the scan for you, the same image and the same rules work with Docker. Run from the project root.
 
 Linux and macOS:
 

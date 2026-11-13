@@ -29,9 +29,7 @@ HELMET's own pipeline runs exactly this include. Every input (stage, job name, y
 
 ## On your machine
 
-Until Parity can run the scan for you, the same image works with Docker:
-
-The same image and the same rules, with Docker. Run from the project root.
+Until Parity can run the scan for you, the same image and the same rules work with Docker. Run from the project root.
 
 Linux and macOS:
 
