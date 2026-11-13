@@ -18,7 +18,7 @@ include:
     inputs:
       working_dir: deploy
       proctor_command: vendor/bin/proctor check --format=codequality
-      image: "php:8.4-cli-trixie@sha256:9cf851bc2c1b37c3e59dfd677a3c3e56d485af5a47c93f629424bb039eafcb69"
+      image: "php:8.5-cli-trixie@sha256:9236fd373d3bcda0659cf94838a744bd79791419292958963f8c6b34a0071554"
   # Secret scanning: Gitleaks over the checked-out tree, through Preflight's component
   # (first released in 0.2.0). It fails the pipeline on a finding; --redact
   # keeps the secret itself out of the log and the gitleaks.json artifact.
