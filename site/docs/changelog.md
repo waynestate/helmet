@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Changed: `deploy/` requires PROCTOR `^0.16`, whose `ci-pipelines` check no longer asks for a GitHub workflow (D-069); `^0.15` failed the `wayneui-copies` job.
 - Removed: the GitHub Actions workflow; CI runs on git.wayne.edu only (the GitHub copy is a mirror).
 - Fixed: front page matchup chips stacked in one column. The huddle's prompt list shares the `.calls` class, and its grid rule overrode the chips' wrapping row; it is now scoped to `.huddle`.
 - Changed: `src/Support/Setting.php` and the shared part of the WSU values guide now come from Playbook's `bin/setting-sync.php`, and `composer setting:check` (part of `composer ci`) fails when either drifts (D-097).

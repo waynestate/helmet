@@ -44,6 +44,7 @@
 <p>All notable changes to this project are documented in this file.</p>
 <h2 id="unreleased"><span class="docs-heading-tail"><span>Unreleased</span><a class="docs-heading-link" aria-label="Link to this section" href="#unreleased">#</a></span></h2>
 <ul>
+<li>Changed: <code>deploy/</code> requires PROCTOR <code>^0.16</code>, whose <code>ci-pipelines</code> check no longer asks for a GitHub workflow (D-069); <code>^0.15</code> failed the <code>wayneui-copies</code> job.</li>
 <li>Removed: the GitHub Actions workflow; CI runs on git.wayne.edu only (the GitHub copy is a mirror).</li>
 <li>Fixed: front page matchup chips stacked in one column. The huddle's prompt list shares the <code>.calls</code> class, and its grid rule overrode the chips' wrapping row; it is now scoped to <code>.huddle</code>.</li>
 <li>Changed: <code>src/Support/Setting.php</code> and the shared part of the WSU values guide now come from Playbook's <code>bin/setting-sync.php</code>, and <code>composer setting:check</code> (part of <code>composer ci</code>) fails when either drifts (D-097).</li>
