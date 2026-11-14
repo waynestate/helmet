@@ -4,6 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Added: `contract/`, the header contract as data (one JSON file per consumer path: raw PHP, PSR-15, Laravel Blade and Laravel Inertia, each with exact `https` and `http` header maps and the CSP nonce written as `{nonce}`), enforced by `tests/Contract/VuePermutationContractTest.php`, which serves every path the way `HeaderContractTest` does, over HTTPS and plain HTTP, and asserts each file's headers are present with exactly their stated values.
 - Changed: `deploy/` requires PROCTOR `^0.16`, whose `ci-pipelines` check no longer asks for a GitHub workflow (D-069); `^0.15` failed the `wayneui-copies` job.
 - Removed: the GitHub Actions workflow; CI runs on git.wayne.edu only (the GitHub copy is a mirror).
 - Fixed: front page matchup chips stacked in one column. The huddle's prompt list shares the `.calls` class, and its grid rule overrode the chips' wrapping row; it is now scoped to `.huddle`.

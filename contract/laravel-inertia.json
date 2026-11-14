@@ -1,0 +1,20 @@
+{
+    "path": "laravel-inertia",
+    "https": {
+        "Content-Security-Policy": "base-uri 'self'; default-src 'self'; connect-src 'self' https://wayneui.apps.wayne.edu; font-src 'self' https://wayneui.apps.wayne.edu data:; form-action 'self'; frame-ancestors 'self'; img-src 'self' https://wayneui.apps.wayne.edu data:; object-src 'none'; script-src 'self' https://wayneui.apps.wayne.edu 'nonce-{nonce}' 'strict-dynamic'; style-src 'self' https://wayneui.apps.wayne.edu 'nonce-{nonce}'; style-src-elem 'self' https://wayneui.apps.wayne.edu 'nonce-{nonce}'; style-src-attr 'unsafe-inline'",
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Permissions-Policy": "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN"
+    },
+    "http": {
+        "Content-Security-Policy": "base-uri 'self'; default-src 'self'; connect-src 'self' https://wayneui.apps.wayne.edu; font-src 'self' https://wayneui.apps.wayne.edu data:; form-action 'self'; frame-ancestors 'self'; img-src 'self' https://wayneui.apps.wayne.edu data:; object-src 'none'; script-src 'self' https://wayneui.apps.wayne.edu 'nonce-{nonce}' 'strict-dynamic'; style-src 'self' https://wayneui.apps.wayne.edu 'nonce-{nonce}'; style-src-elem 'self' https://wayneui.apps.wayne.edu 'nonce-{nonce}'; style-src-attr 'unsafe-inline'",
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "Permissions-Policy": "camera=(), geolocation=(), microphone=(), payment=(), usb=()",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "X-Content-Type-Options": "nosniff",
+        "X-Frame-Options": "SAMEORIGIN"
+    }
+}
