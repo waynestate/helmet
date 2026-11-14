@@ -12,6 +12,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Changed: the dev dependency Pinstripe is `^0.4` (was `^0.3`, which does not allow 0.4.0); 0.4.0 adds two opt-in Rector presets and changes no rule this repo uses.
 - Changed: the deploy kit is Squire 0.11.1 (was 0.10.7): the release script fetches PROCTOR when `--no-dev` left it out and installs the frontend from a `yarn.lock`, the HAProxy pin is current, the fallback base follows the app's PHP line, and the parity scripts carry the deprecation note.
 - Added: `contract/`, the header contract as data (one JSON file per consumer path: raw PHP, PSR-15, Laravel Blade and Laravel Inertia, each with exact `https` and `http` header maps and the CSP nonce written as `{nonce}`), enforced by `tests/Contract/VuePermutationContractTest.php`, which serves every path the way `HeaderContractTest` does, over HTTPS and plain HTTP, and asserts each file's headers are present with exactly their stated values.
 - Changed: `deploy/` requires PROCTOR `^0.16`, whose `ci-pipelines` check no longer asks for a GitHub workflow (D-069); `^0.15` failed the `wayneui-copies` job.
