@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Fixed: the proof page records pipeline 6446 (2026-11-14, Preflight 0.9.0), where it still named pipeline 4680 on Preflight 0.3.0. Content only.
 - Fixed: the proof page names Preflight 0.9.0, the tag CI pins, where it still said 0.8.0. Content only.
 - Changed: the dev dependency Pinstripe is `^0.4` (was `^0.3`, which does not allow 0.4.0); 0.4.0 adds two opt-in Rector presets and changes no rule this repo uses.
 - Changed: the deploy kit is Squire 0.11.1 (was 0.10.7): the release script fetches PROCTOR when `--no-dev` left it out and installs the frontend from a `yarn.lock`, the HAProxy pin is current, the fallback base follows the app's PHP line, and the parity scripts carry the deprecation note.
