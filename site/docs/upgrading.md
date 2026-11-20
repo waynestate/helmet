@@ -8,7 +8,15 @@ generator: Squire agent-ready
 
 # Upgrading [#](https://helmet.apps.wayne.edu/docs/upgrading.html#upgrading)
 
-This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.4.1.
+This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current release is 1.5.0.
+
+## 1.4 to 1.5 [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-4-to-1-5)
+
+A minor release, backward compatible: `composer update waynestate/helmet` within `^1.0`. Nothing to change in the code: no header HELMET already sends changes, and every new feature is opt-in.
+
+- The CSP report endpoint exists on all three paths: `Route::cspReport()` in Laravel (off until you register it), `helmet_csp_report()` in a `public/csp-report.php` for raw PHP, and `CspReportMiddleware` for PSR-15 pipelines. Until you mount one, nothing answers reports.
+- `contract/` ships the header contract as data, enforced by a test in HELMET's own suite; an app that installs the package runs no part of it.
+- Nothing is deprecated in 1.5.0.
 
 ## 1.4.1 (2026-11-10) [#](https://helmet.apps.wayne.edu/docs/upgrading.html#1-4-1-2026-11-10)
 

@@ -12,6 +12,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+## 1.5.0 (2026-11-19) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-5-0-2026-11-19)
+
 - Fixed: the proof page records pipeline 6446 (2026-11-14, Preflight 0.9.0), where it still named pipeline 4680 on Preflight 0.3.0. Content only.
 - Fixed: the proof page names Preflight 0.9.0, the tag CI pins, where it still said 0.8.0. Content only.
 - Changed: the dev dependency Pinstripe is `^0.4` (was `^0.3`, which does not allow 0.4.0); 0.4.0 adds two opt-in Rector presets and changes no rule this repo uses.
