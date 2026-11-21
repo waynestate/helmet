@@ -1204,7 +1204,7 @@ instead of a home-made one. HELMET's pipeline includes Preflight's
 
 ```yaml
 include:
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.9.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.12.0
     inputs:
       image: "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
 ```
@@ -1811,6 +1811,7 @@ All notable changes to this project are documented in this file.
 
 ### Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+- Changed: CI pins Preflight 0.12.0 (components and the a11y checker copy). The php-test component now also runs an advisory PHP 8.6 job that may fail and never gates the pipeline.
 - Changed: the dev dependency ADVISOR is `^0.4` (was `^0.3`, which does not allow 0.4.0); 0.4.0 adds the `advisor install --runner` option and changes nothing this repo uses.
 - Docs: SECURITY.md says how to report a vulnerability privately.
 - Removed: Squire's parity kit files (D-095). Parity runs the app locally: `parity up` in `deploy/`; `deploy/parity.json` is committed.
@@ -3244,7 +3245,7 @@ Add one include to the app's `.gitlab-ci.yml`:
 
 ```yaml
 include:
-  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.9.0
+  - component: $CI_SERVER_FQDN/enterprise-apps/preflight/secret-detection@0.12.0
     inputs:
       image: "zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f"
 ```
@@ -4868,8 +4869,8 @@ To refresh this table, run `composer ci` and the Docker commands below on the co
 
 The front page and every docs page are checked with [axe-core](https://github.com/dequelabs/axe-core) in a real Chromium, through Playwright, at WCAG 2.2 AA, in light and dark, at 320 px and 1280 px, with the WCAG 1.4.10 reflow check. Two gates, both blocking, and both running the same checker, so they cannot drift apart:
 
-- **Local, before a release:** `scripts/a11y.sh` (Linux, macOS, Git Bash) or `scripts/a11y.ps1` (Windows) runs `tools/a11y/check.mjs` in Docker. That file is a byte-for-byte copy of Preflight's a11y checker at the tag the pipeline pins (0.9.0), and `tests/A11yCheckerPinTest.php` fails `composer ci` if it drifts. Reduced motion is on, so scroll reveals never hide content from the check.
-- **In the pipeline:** Preflight's `a11y` component (0.9.0) over the same pages.
+- **Local, before a release:** `scripts/a11y.sh` (Linux, macOS, Git Bash) or `scripts/a11y.ps1` (Windows) runs `tools/a11y/check.mjs` in Docker. That file is a byte-for-byte copy of Preflight's a11y checker at the tag the pipeline pins (0.12.0), and `tests/A11yCheckerPinTest.php` fails `composer ci` if it drifts. Reduced motion is on, so scroll reveals never hide content from the check.
+- **In the pipeline:** Preflight's `a11y` component (0.12.0) over the same pages.
 
 Last run, 2026-11-08, on the branch that vendors Preflight's checker into the local gate (29 pages):
 
