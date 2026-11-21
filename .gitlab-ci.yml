@@ -84,7 +84,7 @@ composer-ci:
 # browser-headers, so Node matches; no install scripts. It stays untagged.
 vue-fixture-build:
   extends: .npm-cache
-  image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
+  image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
   script:
     - npm --prefix tools/vue-vite ci --no-audit --no-fund --ignore-scripts
     - npm --prefix tools/vue-vite run build
@@ -119,7 +119,7 @@ browser-headers-json:
 browser-headers:
   extends: .npm-cache
   needs: [browser-headers-json, vue-fixture-build]
-  image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
+  image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:9beb546099e11f52d62e505537914870e01a67e0e6b00ae41da4775324e73dbe
   script:
     - npm --prefix tools/a11y ci --no-audit --no-fund
     - node tools/a11y/corp-check.mjs --headers=build/helmet-headers.json
