@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file.
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
 - Changed: the dev dependency ADVISOR is `^0.4` (was `^0.3`, which does not allow 0.4.0); 0.4.0 adds the `advisor install --runner` option and changes nothing this repo uses.
+- Docs: SECURITY.md says how to report a vulnerability privately.
 - Removed: Squire's parity kit files (D-095). Parity runs the app locally: `parity up` in `deploy/`; `deploy/parity.json` is committed.
 
 ## 1.5.0 (2026-11-19) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-5-0-2026-11-19)
