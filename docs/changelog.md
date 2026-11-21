@@ -11,6 +11,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Removed: Squire's parity kit files (D-095). Parity runs the app locally: `parity up` in `deploy/`; `deploy/parity.json` is committed.
+
 ## 1.5.0 (2026-11-19)
 
 - Fixed: the proof page records pipeline 6446 (2026-11-14, Preflight 0.9.0), where it still named pipeline 4680 on Preflight 0.3.0. Content only.
