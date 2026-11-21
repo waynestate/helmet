@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5032abecf632c947e83c6d4b679377fa",
+    "content-hash": "2114d95cc8f062967f6afc1367a7d0d5",
     "packages": [
         {
             "name": "monolog/monolog",
@@ -114,16 +114,16 @@
         },
         {
             "name": "opis/json-schema",
-            "version": "2.6.1",
+            "version": "2.6.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/opis/json-schema.git",
-                "reference": "7d8685a78db131eb6a1571cc7b4db8f4b59e8628"
+                "reference": "b87b424da3fbeaab09567910fda48dc88d9dcbd8"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/opis/json-schema/zipball/7d8685a78db131eb6a1571cc7b4db8f4b59e8628",
-                "reference": "7d8685a78db131eb6a1571cc7b4db8f4b59e8628",
+                "url": "https://api.github.com/repos/opis/json-schema/zipball/b87b424da3fbeaab09567910fda48dc88d9dcbd8",
+                "reference": "b87b424da3fbeaab09567910fda48dc88d9dcbd8",
                 "shasum": ""
             },
             "require": {
@@ -173,10 +173,10 @@
             ],
             "support": {
                 "issues": "https://github.com/opis/json-schema/issues",
-                "source": "https://github.com/opis/json-schema/tree/2.6.1"
+                "source": "https://github.com/opis/json-schema/tree/2.6.2"
             },
-            "time": "2026-11-06T04:25:16+00:00",
-            "published-time": "2026-11-06T04:35:54+00:00"
+            "time": "2026-11-08T08:09:42+00:00",
+            "published-time": "2026-11-11T10:35:41+00:00"
         },
         {
             "name": "opis/string",
@@ -9148,16 +9148,16 @@
         },
         {
             "name": "symfony/polyfill-php85",
-            "version": "v1.43.0",
+            "version": "v1.44.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-php85.git",
-                "reference": "86a42cbcc07adc331481a5ab310a4024bfc227f6"
+                "reference": "94c794cb5ba51784bc259f11e9f128593297d8dc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-php85/zipball/86a42cbcc07adc331481a5ab310a4024bfc227f6",
-                "reference": "86a42cbcc07adc331481a5ab310a4024bfc227f6",
+                "url": "https://api.github.com/repos/symfony/polyfill-php85/zipball/94c794cb5ba51784bc259f11e9f128593297d8dc",
+                "reference": "94c794cb5ba51784bc259f11e9f128593297d8dc",
                 "shasum": ""
             },
             "require": {
@@ -9204,7 +9204,7 @@
                 "shim"
             ],
             "support": {
-                "source": "https://github.com/symfony/polyfill-php85/tree/v1.43.0"
+                "source": "https://github.com/symfony/polyfill-php85/tree/v1.44.0"
             },
             "funding": [
                 {
@@ -9224,8 +9224,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-09-25T15:46:47+00:00",
-            "published-time": "2026-09-30T10:23:32+00:00"
+            "time": "2026-10-30T15:20:09+00:00",
+            "published-time": "2026-11-15T14:20:22+00:00"
         },
         {
             "name": "symfony/polyfill-php86",
@@ -10503,16 +10503,16 @@
         },
         {
             "name": "waynestate/advisor",
-            "version": "0.3.0",
+            "version": "0.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waynestate/advisor.git",
-                "reference": "d0512f3766c0d755cb8fe6421d3fafa5f9873c9b"
+                "reference": "06a1193db7af64eb696c9f8053565112fb09c874"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waynestate/advisor/zipball/d0512f3766c0d755cb8fe6421d3fafa5f9873c9b",
-                "reference": "d0512f3766c0d755cb8fe6421d3fafa5f9873c9b",
+                "url": "https://api.github.com/repos/waynestate/advisor/zipball/06a1193db7af64eb696c9f8053565112fb09c874",
+                "reference": "06a1193db7af64eb696c9f8053565112fb09c874",
                 "shasum": ""
             },
             "require": {
@@ -10535,7 +10535,7 @@
                 "orchestra/testbench": "^10.0",
                 "phpstan/phpstan": "^2.1",
                 "phpunit/phpunit": "^11.5",
-                "waynestate/pinstripe": "^0.3"
+                "waynestate/pinstripe": "^0.4"
             },
             "suggest": {
                 "laravel/mcp": "For the Laravel adapter (1.1.2): ADVISOR then runs beside Laravel Boost with `php artisan mcp:start advisor`",
@@ -10575,21 +10575,21 @@
                 "issues": "https://git.wayne.edu/enterprise-apps/advisor/-/issues",
                 "source": "https://github.com/waynestate/advisor"
             },
-            "time": "2026-11-10T02:17:40+00:00",
-            "published-time": "2026-11-10T02:37:23+00:00"
+            "time": "2026-11-20T01:44:58+00:00",
+            "published-time": "2026-11-20T01:46:34+00:00"
         },
         {
             "name": "waynestate/creed",
-            "version": "0.1.9",
+            "version": "0.1.14",
             "source": {
                 "type": "git",
                 "url": "https://github.com/waynestate/creed.git",
-                "reference": "c6fdd00277ee6e19a1a87ec44b4179638c4ecf7b"
+                "reference": "c405284b0a91560e00000d41cf94cf6056255bbf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/waynestate/creed/zipball/c6fdd00277ee6e19a1a87ec44b4179638c4ecf7b",
-                "reference": "c6fdd00277ee6e19a1a87ec44b4179638c4ecf7b",
+                "url": "https://api.github.com/repos/waynestate/creed/zipball/c405284b0a91560e00000d41cf94cf6056255bbf",
+                "reference": "c405284b0a91560e00000d41cf94cf6056255bbf",
                 "shasum": ""
             },
             "require": {
@@ -10601,7 +10601,7 @@
                 "opis/json-schema": "^2.4",
                 "phpstan/phpstan": "^2.1",
                 "phpunit/phpunit": "^11.5",
-                "waynestate/pinstripe": "^0.3"
+                "waynestate/pinstripe": "^0.4"
             },
             "type": "library",
             "extra": {
@@ -10629,8 +10629,8 @@
                 "issues": "https://git.wayne.edu/enterprise-apps/creed/-/issues",
                 "source": "https://github.com/waynestate/creed"
             },
-            "time": "2026-11-10T01:43:19+00:00",
-            "published-time": "2026-11-10T01:54:52+00:00"
+            "time": "2026-11-20T04:10:37+00:00",
+            "published-time": "2026-11-20T04:11:46+00:00"
         },
         {
             "name": "waynestate/pinstripe",
@@ -10696,16 +10696,16 @@
         },
         {
             "name": "webmozart/assert",
-            "version": "2.5.0",
+            "version": "2.5.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/webmozarts/assert.git",
-                "reference": "8a163706bbcac613733dba03f51e13b5eb1bb819"
+                "reference": "e578132c01bd0c64108386ab20d8217cd175ddec"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webmozarts/assert/zipball/8a163706bbcac613733dba03f51e13b5eb1bb819",
-                "reference": "8a163706bbcac613733dba03f51e13b5eb1bb819",
+                "url": "https://api.github.com/repos/webmozarts/assert/zipball/e578132c01bd0c64108386ab20d8217cd175ddec",
+                "reference": "e578132c01bd0c64108386ab20d8217cd175ddec",
                 "shasum": ""
             },
             "require": {
@@ -10756,10 +10756,10 @@
             ],
             "support": {
                 "issues": "https://github.com/webmozarts/assert/issues",
-                "source": "https://github.com/webmozarts/assert/tree/2.5.0"
+                "source": "https://github.com/webmozarts/assert/tree/2.5.1"
             },
-            "time": "2026-10-05T23:14:19+00:00",
-            "published-time": "2026-10-05T23:14:25+00:00"
+            "time": "2026-11-15T13:41:13+00:00",
+            "published-time": "2026-11-15T13:41:42+00:00"
         }
     ],
     "aliases": [],
