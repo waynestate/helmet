@@ -1359,3 +1359,5 @@ Matters too, which is why the core stays small enough to read in an afternoon.
 </div>
 
 <div align="center"><sub>Images are regenerated from the front page by <a href="scripts/readme-art/README.md"><code>scripts/readme-art</code></a>. Chalk dust included.</sub></div>
+
+Found a security problem? See [SECURITY.md](SECURITY.md); please do not open a public issue.
