@@ -30,7 +30,7 @@ final class RequestMetrics
     /**
      * The Prometheus namespace for every HELMET metric.
      */
-    private const NAMESPACE = 'helmet';
+    private const METRIC_NAMESPACE = 'helmet';
 
     /**
      * The latency buckets, in seconds: Prometheus' own defaults, which suit
@@ -90,7 +90,7 @@ final class RequestMetrics
     public function observe(string $route, string $method, int $status, float $seconds): void
     {
         $this->registry->getOrRegisterHistogram(
-            self::NAMESPACE,
+            self::METRIC_NAMESPACE,
             'http_request_duration_seconds',
             'Time spent answering HTTP requests, by route group, method and status class. Its _count is the request count.',
             ['route', 'method', 'status'],
@@ -108,7 +108,7 @@ final class RequestMetrics
     public function cspViolation(string $directive): void
     {
         $this->registry->getOrRegisterCounter(
-            self::NAMESPACE,
+            self::METRIC_NAMESPACE,
             'csp_violations_total',
             'Content-Security-Policy violation reports received, by directive.',
             ['directive'],

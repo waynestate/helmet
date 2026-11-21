@@ -36,7 +36,7 @@ final class Metrics
     /**
      * The Prometheus namespace for every HELMET metric.
      */
-    private const NAMESPACE = 'helmet';
+    private const METRIC_NAMESPACE = 'helmet';
 
     /**
      * The package prefix wsu_stack_info reports on.
@@ -100,7 +100,7 @@ final class Metrics
                 $storageUp = 0.0;
             }
             $this->registry->getOrRegisterGauge(
-                self::NAMESPACE,
+                self::METRIC_NAMESPACE,
                 'metrics_storage_up',
                 'Whether the request-metrics storage answered this scrape (1) or not (0).',
             )->set($storageUp);
@@ -133,7 +133,7 @@ final class Metrics
     private function registerInfo(string $version): void
     {
         $gauge = $this->registry->registerGauge(
-            self::NAMESPACE,
+            self::METRIC_NAMESPACE,
             'info',
             'HELMET is running.',
             ['php_version', 'helmet_version'],
@@ -183,7 +183,7 @@ final class Metrics
         $minor = self::phpMinor();
 
         $status = $this->registry->registerGauge(
-            self::NAMESPACE,
+            self::METRIC_NAMESPACE,
             'php_version_status',
             'Support status of the running PHP version against the policy.',
             ['status'],
@@ -196,7 +196,7 @@ final class Metrics
         }
 
         $eol = $this->registry->registerGauge(
-            self::NAMESPACE,
+            self::METRIC_NAMESPACE,
             'php_eol_timestamp_seconds',
             'End of security support for the running PHP version, from the policy (Unix time).',
             ['php_minor'],
