@@ -4,6 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Changed: CI pins Preflight 0.12.0 (components and the a11y checker copy). The php-test component now also runs an advisory PHP 8.6 job that may fail and never gates the pipeline.
 - Changed: the dev dependency ADVISOR is `^0.4` (was `^0.3`, which does not allow 0.4.0); 0.4.0 adds the `advisor install --runner` option and changes nothing this repo uses.
 - Docs: SECURITY.md says how to report a vulnerability privately.
 - Removed: Squire's parity kit files (D-095). Parity runs the app locally: `parity up` in `deploy/`; `deploy/parity.json` is committed.
