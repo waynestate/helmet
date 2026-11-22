@@ -12,6 +12,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
+## 1.5.1 (2026-11-21) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-5-1-2026-11-21)
+
 - Changed: CI pins Preflight 0.12.0 (components and the a11y checker copy). The php-test component now also runs an advisory PHP 8.6 job that may fail and never gates the pipeline.
 - Changed: the dev dependency ADVISOR is `^0.4` (was `^0.3`, which does not allow 0.4.0); 0.4.0 adds the `advisor install --runner` option and changes nothing this repo uses.
 - Docs: SECURITY.md says how to report a vulnerability privately.
