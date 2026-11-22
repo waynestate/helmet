@@ -7,7 +7,7 @@ description: How to move an app from one HELMET release to the next.
 
 This page walks an app from one HELMET release to the next, newest first, using only what CHANGELOG.md says. One
 section per released version; versions with a break get Breaking, Deprecated, Steps and How to verify. The current
-release is 1.5.0.
+release is 1.5.1.
 
 ## 1.4 to 1.5
 

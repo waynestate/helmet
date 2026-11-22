@@ -4,11 +4,15 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+## 1.5.1 (2026-11-21)
+
 - Changed: CI pins Preflight 0.12.0 (components and the a11y checker copy). The php-test component now also runs an advisory PHP 8.6 job that may fail and never gates the pipeline.
 - Changed: the dev dependency ADVISOR is `^0.4` (was `^0.3`, which does not allow 0.4.0); 0.4.0 adds the `advisor install --runner` option and changes nothing this repo uses.
 - Docs: SECURITY.md says how to report a vulnerability privately.
 - Removed: Squire's parity kit files (D-095). Parity runs the app locally: `parity up` in `deploy/`; `deploy/parity.json` is committed.
 - Fixed: the two private `NAMESPACE` class constants in the metrics classes are renamed `METRIC_NAMESPACE`, because PHP 8.6 deprecates a class constant named `namespace`. No behaviour change; the PHP 8.6 advisory job no longer reports the deprecation.
+- Changed: CI runs the browser-headers jobs on the a11y image of Preflight 0.12.0 (was 0.9.0), and the pin tests follow.
+- Changed: the private metric NAMESPACE constants are METRIC_NAMESPACE (PHP 8.6 deprecation); no public name changes.
 
 ## 1.5.0 (2026-11-19)
 
