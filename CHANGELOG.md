@@ -11,8 +11,6 @@ All notable changes to this project are documented in this file.
 - Docs: SECURITY.md says how to report a vulnerability privately.
 - Removed: Squire's parity kit files (D-095). Parity runs the app locally: `parity up` in `deploy/`; `deploy/parity.json` is committed.
 - Fixed: the two private `NAMESPACE` class constants in the metrics classes are renamed `METRIC_NAMESPACE`, because PHP 8.6 deprecates a class constant named `namespace`. No behaviour change; the PHP 8.6 advisory job no longer reports the deprecation.
-- Changed: CI runs the browser-headers jobs on the a11y image of Preflight 0.12.0 (was 0.9.0), and the pin tests follow.
-- Changed: the private metric NAMESPACE constants are METRIC_NAMESPACE (PHP 8.6 deprecation); no public name changes.
 
 ## 1.5.0 (2026-11-19)
 
