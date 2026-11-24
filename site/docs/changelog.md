@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file.
 ## Unreleased [#](https://helmet.apps.wayne.edu/docs/changelog.html#unreleased)
 
 - Changed: `deploy/` requires PROCTOR `^0.18` (was `^0.16`, which does not allow 0.18); 0.18.0 adds the update notice, the fake-driver check and the app-env warning (D-133).
+- Docs: the metrics dashboard is importable now and goes live when Grafana gets WSU's Prometheus data source.
 
 ## 1.5.1 (2026-11-21) [#](https://helmet.apps.wayne.edu/docs/changelog.html#1-5-1-2026-11-21)
 

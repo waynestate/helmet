@@ -1201,7 +1201,7 @@ helmet_metrics_track($config)->route('page'); // a group you name, never the raw
 ```
 
 A Grafana dashboard for every metric ships in [`docs/grafana/helmet.json`](docs/grafana/helmet.json),
-ready to import as soon as a Prometheus server exists. The
+importable now; it goes live once Grafana has the Prometheus data source. The
 [Metrics guide](docs/guides/metrics.md) covers turning it on for one site,
 the scrape config and the queries.
 

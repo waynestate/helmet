@@ -195,8 +195,8 @@ sum by (route) (rate(helmet_http_request_duration_seconds_count[5m]))
 histogram_quantile(0.95, sum by (le) (rate(helmet_http_request_duration_seconds_bucket[5m])))
 ```
 
-WSU has no Prometheus server yet, so the dashboard is ready, not live: it graphs as soon as a server
-exists and scrapes `/metrics`. The stack's own sites turn it on first.
+WSU's Prometheus server runs; the dashboard goes live when Grafana gets the Prometheus data source.
+The stack's own sites turn it on first.
 
 ## Limits
 
