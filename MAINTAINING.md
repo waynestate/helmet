@@ -44,7 +44,7 @@ fail oddly after a Docker install, delete `vendor/` and install again.
 ## CI
 
 - **GitLab:** Preflight's `php-test` (PHP 8.3, 8.4, 8.5), `composer-audit`, `proctor`, `secret-detection` and `a11y`
-  components (all pinned to Preflight 0.12.0), plus HELMET's own `wayneui-copies` and `composer-ci` jobs, and
+  components (all pinned to Preflight 0.13.0), plus HELMET's own `wayneui-copies` and `composer-ci` jobs, and
   `vue-fixture-build` (builds the Vue fixture for the raw-PHP and Laravel paths), `browser-headers-json` (prints
   HELMET's headers and renders the fixture's page through Laravel) and `browser-headers` (runs the CORP, COEP and
   Vue checks in real Chromium).
