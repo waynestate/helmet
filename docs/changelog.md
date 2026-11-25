@@ -11,6 +11,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Changed: CI follows D-176 and pins Preflight 0.13.0 (axe-core 4.14.1 in the a11y checker copy). A push runs the fast tier (composer ci, the audits, PROCTOR, secret detection, the WayneUI copies check); the full tier (PHP matrix and advisory PHP, browser a11y, the Vue fixture build and the browser-headers jobs) runs nightly, on tags and on manual runs. Branch pipelines only, so an open MR no longer doubles a push, and a new commit cancels the pipeline it replaces.
 - Changed: `deploy/` requires PROCTOR `^0.18` (was `^0.16`, which does not allow 0.18); 0.18.0 adds the update notice, the fake-driver check and the app-env warning (D-133).
 - Docs: the metrics dashboard is importable now and goes live when Grafana gets WSU's Prometheus data source.
 
